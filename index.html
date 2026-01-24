@@ -3,11 +3,23 @@
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/fm/Texture2D/Hammer.png" />
+    <link rel="icon" type="image/svg+xml" href="/Texture2D/Hammer.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ForgeMaster Helper</title>
-  <script type="module" crossorigin src="/fm/assets/index-Bi-9Lk-1.js"></script>
-  <link rel="stylesheet" crossorigin href="/fm/assets/index-CIMA4RQ0.css">
+    <script>
+        (function () {
+            const isGitHubPages = window.location.hostname.includes('github.io') ||
+                window.location.hostname === '1vcian.me';
+            const pathPrefix = isGitHubPages ? '/fm' : '';
+
+            // Crea e inserisci il tag base
+            const base = document.createElement('base');
+            base.href = window.location.origin + pathPrefix + '/';
+            document.head.insertBefore(base, document.head.firstChild);
+        })();
+    </script>
+  <script type="module" crossorigin src="/assets/index-bLQJ6bXi.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CIMA4RQ0.css">
 </head>
 
 <body>
