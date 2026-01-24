@@ -20,6 +20,15 @@ jobs:
           npm install
           npm run build
 
+      - name: Fix absolute paths for sub-folder deployment
+        run: |
+          find dist -type f \( -name "*.js" -o -name "*.html" \) -exec sed -i 's|"/parsed_configs/|"/fm/parsed_configs/|g' {} +
+          find dist -type f \( -name "*.js" -o -name "*.html" \) -exec sed -i 's|"/Texture2D/|"/fm/Texture2D/|g' {} +
+          find dist -type f \( -name "*.js" -o -name "*.html" \) -exec sed -i 's|"/icons/|"/fm/icons/|g' {} +
+          find dist -type f \( -name "*.js" -o -name "*.html" \) -exec sed -i "s|'/parsed_configs/|'/fm/parsed_configs/|g" {} +
+          find dist -type f \( -name "*.js" -o -name "*.html" \) -exec sed -i "s|'/Texture2D/|'/fm/Texture2D/|g" {} +
+          find dist -type f \( -name "*.js" -o -name "*.html" \) -exec sed -i "s|'/icons/|'/fm/icons/|g" {} +
+
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
