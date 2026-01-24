@@ -64,6 +64,8 @@ export default function Eggs() {
         probabilityData
     } = useEggsCalculator();
 
+    const availableStages = Object.keys(eggDropRates);
+
     const [activeTab, setActiveTab] = useState<'calculator' | 'info'>('calculator');
 
     const formatTime = (seconds: number) => {
