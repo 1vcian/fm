@@ -195,7 +195,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet }: PetS
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
                             <SpriteSheetIcon
-                                textureSrc="/Texture2D/Icons.png"
+                                textureSrc="./Texture2D/Icons.png"
                                 spriteWidth={256}
                                 spriteHeight={256}
                                 sheetWidth={2048}
@@ -347,7 +347,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet }: PetS
                                                 >
                                                     {petsConfig && (
                                                         <SpriteSheetIcon
-                                                            textureSrc="/icons/game/Pets.png"
+                                                            textureSrc="./icons/game/Pets.png"
                                                             spriteWidth={petsConfig.sprite_size.width}
                                                             spriteHeight={petsConfig.sprite_size.height}
                                                             sheetWidth={petsConfig.texture_size.width}
@@ -384,7 +384,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet }: PetS
                                         >
                                             {petsConfig && (
                                                 <SpriteSheetIcon
-                                                    textureSrc="/icons/game/Pets.png"
+                                                    textureSrc="./icons/game/Pets.png"
                                                     spriteWidth={petsConfig.sprite_size.width}
                                                     spriteHeight={petsConfig.sprite_size.height}
                                                     sheetWidth={petsConfig.texture_size.width}
@@ -528,7 +528,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet }: PetS
                                             >
                                                 {petsConfig && (
                                                     <SpriteSheetIcon
-                                                        textureSrc="/icons/game/Pets.png"
+                                                        textureSrc="./icons/game/Pets.png"
                                                         spriteWidth={petsConfig.sprite_size.width}
                                                         spriteHeight={petsConfig.sprite_size.height}
                                                         sheetWidth={petsConfig.texture_size.width}
@@ -580,7 +580,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet }: PetS
                                                         >
                                                             {petsConfig && spriteInfo && (
                                                                 <SpriteSheetIcon
-                                                                    textureSrc="/icons/game/Pets.png"
+                                                                    textureSrc="./icons/game/Pets.png"
                                                                     spriteWidth={petsConfig.sprite_size.width}
                                                                     spriteHeight={petsConfig.sprite_size.height}
                                                                     sheetWidth={petsConfig.texture_size.width}
@@ -635,7 +635,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet }: PetS
                                             if (displayPet && petsConfig) {
                                                 return (
                                                     <SpriteSheetIcon
-                                                        textureSrc="/icons/game/Pets.png"
+                                                        textureSrc="./icons/game/Pets.png"
                                                         spriteWidth={petsConfig.sprite_size.width}
                                                         spriteHeight={petsConfig.sprite_size.height}
                                                         sheetWidth={petsConfig.texture_size.width}
@@ -647,7 +647,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet }: PetS
                                             }
                                             return (
                                                 <SpriteSheetIcon
-                                                    textureSrc="/Texture2D/Icons.png"
+                                                    textureSrc="./Texture2D/Icons.png"
                                                     spriteWidth={256}
                                                     spriteHeight={256}
                                                     sheetWidth={2048}

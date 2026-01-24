@@ -157,7 +157,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
         <Card className="p-6">
             <div className="flex flex-col gap-3 mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                    <img src="/Texture2D/SkillTabIcon.png" alt="Active Skills" className="w-8 h-8 object-contain" />
+                    <img src="./Texture2D/SkillTabIcon.png" alt="Active Skills" className="w-8 h-8 object-contain" />
                     Active Skills
                 </h2>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -204,7 +204,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                 >
                                     {spriteInfo ? (
                                         <SpriteSheetIcon
-                                            textureSrc="/icons/game/SkillIcons.png"
+                                            textureSrc="./icons/game/SkillIcons.png"
                                             spriteWidth={spriteInfo.config.sprite_size.width}
                                             spriteHeight={spriteInfo.config.sprite_size.height}
                                             sheetWidth={spriteInfo.config.texture_size.width}

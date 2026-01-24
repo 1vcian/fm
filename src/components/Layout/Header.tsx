@@ -159,7 +159,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
                                     onClick={handleCreateProfile}
                                     className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bg-input text-text-secondary hover:text-text-primary transition-colors"
                                 >
-                                    <img src="/Texture2D/PlusIcon.png" alt="New Profile" className="w-4 h-4 object-contain" />
+                                    <img src="./Texture2D/PlusIcon.png" alt="New Profile" className="w-4 h-4 object-contain" />
                                     <span className="text-sm">New Profile</span>
                                 </button>
                                 <button
@@ -241,13 +241,13 @@ export function Header({ onMenuToggle }: HeaderProps) {
                         // Show toast with next mode (cycleTreeMode goes empty->my->max->empty)
                         const nextMode = treeMode === 'empty' ? 'my' : treeMode === 'my' ? 'max' : 'empty';
                         toast(treeModeLabels[nextMode], {
-                            icon: () => <img src="/Texture2D/SkillTabIcon.png" alt="" className="w-5 h-5" />,
+                            icon: () => <img src="./Texture2D/SkillTabIcon.png" alt="" className="w-5 h-5" />,
                         });
                     }}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${treeModeColors[treeMode]} hover:opacity-90`}
                     title="Click to cycle: Empty → My → Max Tree"
                 >
-                    <img src="/Texture2D/SkillTabIcon.png" alt="Tree Mode" className="w-5 h-5 object-contain" />
+                    <img src="./Texture2D/SkillTabIcon.png" alt="Tree Mode" className="w-5 h-5 object-contain" />
                     <span className="hidden sm:inline">{treeModeLabels[treeMode]}</span>
                 </button>
 

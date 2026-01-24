@@ -161,7 +161,7 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     return (
         <Card className="p-6">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <img src="/Texture2D/TechTreePower.png" alt="Skill Passives" className="w-8 h-8 object-contain" />
+                <img src="./Texture2D/TechTreePower.png" alt="Skill Passives" className="w-8 h-8 object-contain" />
                 Skill Passives
                 <span className="text-sm font-normal text-text-muted ml-auto">
                     {ownedCount}/{totalSkills}
@@ -268,7 +268,7 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                                     >
                                                         {spriteInfo ? (
                                                             <SpriteSheetIcon
-                                                                textureSrc="/icons/game/SkillIcons.png"
+                                                                textureSrc="./icons/game/SkillIcons.png"
                                                                 spriteWidth={spriteInfo.config.sprite_size.width}
                                                                 spriteHeight={spriteInfo.config.sprite_size.height}
                                                                 sheetWidth={spriteInfo.config.texture_size.width}

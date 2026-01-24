@@ -469,7 +469,7 @@ export default function ForgeCalculator() {
                                 : "text-text-muted hover:text-white hover:bg-white/5"
                         )}
                     >
-                        <img src="/Texture2D/Hammer.png" alt="Hammer" className="w-5 h-5 object-contain" />
+                        <img src="./Texture2D/Hammer.png" alt="Hammer" className="w-5 h-5 object-contain" />
                         I have Hammers
                     </button>
                     <button onClick={() => setMode((prev) => (prev === 'hammers' ? 'gold' : 'hammers'))} className="px-4 text-text-muted hover:text-white">
@@ -484,7 +484,7 @@ export default function ForgeCalculator() {
                                 : "text-text-muted hover:text-white hover:bg-white/5"
                         )}
                     >
-                        <img src="/Texture2D/CoinIcon.png" alt="Gold" className="w-5 h-5 object-contain" />
+                        <img src="./Texture2D/CoinIcon.png" alt="Gold" className="w-5 h-5 object-contain" />
                         I want Gold
                     </button>
                 </div>
@@ -510,8 +510,8 @@ export default function ForgeCalculator() {
                                 />
                                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
                                     {mode === 'hammers' ?
-                                        <img src="/Texture2D/Hammer.png" alt="Hammer" className="w-8 h-8 object-contain" /> :
-                                        <img src="/Texture2D/CoinIcon.png" alt="Gold" className="w-8 h-8 object-contain" />
+                                        <img src="./Texture2D/Hammer.png" alt="Hammer" className="w-8 h-8 object-contain" /> :
+                                        <img src="./Texture2D/CoinIcon.png" alt="Gold" className="w-8 h-8 object-contain" />
                                     }
                                 </div>
                             </div>
@@ -531,7 +531,7 @@ export default function ForgeCalculator() {
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
                             <div className="flex items-center gap-3">
                                 <div className="p-1 rounded bg-orange-500/20">
-                                    <img src="/Texture2D/Anvil.png" alt="Forge" className="w-8 h-8 object-contain filter drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                                    <img src="./Texture2D/Anvil.png" alt="Forge" className="w-8 h-8 object-contain filter drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
                                 </div>
                                 <span className="font-medium text-text-secondary">Forge Level</span>
                             </div>
@@ -572,7 +572,7 @@ export default function ForgeCalculator() {
                                 <div className="text-sm font-bold text-yellow-500 uppercase tracking-wider mb-1">Total Gold Value</div>
                                 <div className="text-2xl lg:text-3xl font-black text-white">{formatNumber(results.totalCoins)}</div>
                             </div>
-                            <img src="/Texture2D/CoinIcon.png" alt="Gold" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
+                            <img src="./Texture2D/CoinIcon.png" alt="Gold" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
 
                         <div className="card p-6 bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20 flex flex-col justify-between h-32 relative overflow-hidden group">
@@ -590,7 +590,7 @@ export default function ForgeCalculator() {
                                 <div className="text-sm font-bold text-red-500 uppercase tracking-wider mb-1">Total War Points</div>
                                 <div className="text-2xl lg:text-3xl font-black text-white">{formatNumber(results.totalWarPoints)}</div>
                             </div>
-                            <img src="/Texture2D/TechTreePower.png" alt="War Points" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
+                            <img src="./Texture2D/TechTreePower.png" alt="War Points" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
 
                         <div className="card p-6 bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20 flex flex-col justify-between h-32 relative overflow-hidden group">
@@ -600,7 +600,7 @@ export default function ForgeCalculator() {
                                 <div className="text-2xl lg:text-3xl font-black text-white">{formatNumber(results.totalForges)}</div>
                                 <div className="text-xs text-blue-300/60 mt-1">From {formatNumber(results.finalHammers)} Hammers</div>
                             </div>
-                            <img src="/Texture2D/Hammer.png" alt="Hammer" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
+                            <img src="./Texture2D/Hammer.png" alt="Hammer" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
                     </div>
 

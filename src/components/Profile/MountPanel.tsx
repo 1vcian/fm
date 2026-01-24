@@ -203,7 +203,7 @@ export function MountPanel() {
                             >
                                 {activeSprite ? (
                                     <SpriteSheetIcon
-                                        textureSrc="/icons/game/MountIcons.png"
+                                        textureSrc="./icons/game/MountIcons.png"
                                         spriteWidth={activeSprite.config.sprite_size.width}
                                         spriteHeight={activeSprite.config.sprite_size.height}
                                         sheetWidth={activeSprite.config.texture_size.width}

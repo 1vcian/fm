@@ -172,7 +172,7 @@ export function PetPanel() {
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <div className="w-8 h-8 flex items-center justify-center">
                     <SpriteSheetIcon
-                        textureSrc="/Texture2D/Icons.png"
+                        textureSrc="./Texture2D/Icons.png"
                         spriteWidth={256}
                         spriteHeight={256}
                         sheetWidth={2048}
@@ -208,7 +208,7 @@ export function PetPanel() {
                                 >
                                     {spriteInfo ? (
                                         <SpriteSheetIcon
-                                            textureSrc="/icons/game/Pets.png"
+                                            textureSrc="./icons/game/Pets.png"
                                             spriteWidth={spriteInfo.config.sprite_size.width}
                                             spriteHeight={spriteInfo.config.sprite_size.height}
                                             sheetWidth={spriteInfo.config.texture_size.width}

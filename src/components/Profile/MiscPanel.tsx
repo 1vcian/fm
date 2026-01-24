@@ -18,7 +18,7 @@ export function MiscPanel() {
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
-                <img src="/Texture2D/SettingsIcon.png" alt="Settings" className="w-8 h-8 object-contain" />
+                <img src="./Texture2D/SettingsIcon.png" alt="Settings" className="w-8 h-8 object-contain" />
                 Global Settings
             </h2>
 
@@ -27,7 +27,7 @@ export function MiscPanel() {
                 <Card className="p-4 bg-bg-secondary/40 border-border/50">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1">
-                            <img src="/Texture2D/Anvil.png" alt="Forge" className="w-full h-full object-contain" />
+                            <img src="./Texture2D/Anvil.png" alt="Forge" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <div className="font-bold">Forge Level</div>
@@ -68,7 +68,7 @@ export function MiscPanel() {
                 <Card className="p-4 bg-bg-secondary/40 border-border/50">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1">
-                            <img src="/Texture2D/HatchBed.png" alt="Egg Slots" className="w-full h-full object-contain" />
+                            <img src="./Texture2D/HatchBed.png" alt="Egg Slots" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <div className="font-bold">Egg Slots</div>

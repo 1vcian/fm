@@ -2,7 +2,7 @@
 import { cn } from '../../lib/utils';
 
 // Sprite Sheet Configuration
-const SPRITE_SHEET_URL = '/icons/game/Icons.png'; // Assuming it's here as per user
+const SPRITE_SHEET_URL = './icons/game/Icons.png'; // Assuming it's here as per user
 const TEXTURE_WIDTH = 2048;
 const TEXTURE_HEIGHT = 2048;
 const SPRITE_SIZE = 256; // Standard size of one sprite in the sheet

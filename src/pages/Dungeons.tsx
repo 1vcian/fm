@@ -156,7 +156,7 @@ export default function Dungeons() {
                     WeaponId: { Age: 10000, Type: 'Weapon', Idx: 0 }
                 };
 
-                const weaponSpriteSrc = "/Texture2D/IconMedievalWeaponWarhammer.png"; // Hardcoded guess for Hammer Thief
+                const weaponSpriteSrc = "./Texture2D/IconMedievalWeaponWarhammer.png"; // Hardcoded guess for Hammer Thief
 
                 waveEnemies.push({
                     id: 9999,
@@ -183,7 +183,7 @@ export default function Dungeons() {
 
                     // FORCE Hammer for Hammer Dungeon
                     if (selectedTab === 'Hammer') {
-                        weaponSpriteSrc = "/Texture2D/IconMedievalWeaponWarhammer.png";
+                        weaponSpriteSrc = "./Texture2D/IconMedievalWeaponWarhammer.png";
                     }
                     else if (enemyConfig?.WeaponId) {
                         const ageName = AGES[enemyConfig.WeaponId.Age];
@@ -196,7 +196,7 @@ export default function Dungeons() {
                     if (!weaponSpriteSrc && weaponInfo) {
                         const isRanged = (weaponInfo.AttackRange || 0) > 1.0;
                         if (isRanged) {
-                            weaponSpriteSrc = "/Texture2D/IconMedievalWeaponBow.png";
+                            weaponSpriteSrc = "./Texture2D/IconMedievalWeaponBow.png";
                         }
                     }
 
@@ -468,7 +468,7 @@ export default function Dungeons() {
                                                             : "bg-red-500/10 text-red-400 border-red-500/30"
                                                     )}>
                                                         {(enemy.weapon.AttackRange || 0) > 1.0 ? (
-                                                            <img src="/Texture2D/IconMedievalWeaponBow.png" className="w-3 h-3" alt="Ranged" />
+                                                            <img src="./Texture2D/IconMedievalWeaponBow.png" className="w-3 h-3" alt="Ranged" />
                                                         ) : (
                                                             <SpriteIcon name="Sword" size={12} />
                                                         )}

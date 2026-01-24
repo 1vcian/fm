@@ -110,7 +110,7 @@ export function EnemyBuilder() {
                         <div className="absolute inset-0 flex items-center justify-center" style={{ ...getRarityBgStyle(skill.rarity), opacity: 0.2 }} />
                         {spriteMapping?.skills && (
                             <SpriteSheetIcon
-                                textureSrc="/icons/game/SkillIcons.png"
+                                textureSrc="./icons/game/SkillIcons.png"
                                 spriteWidth={spriteMapping.skills.sprite_size.width}
                                 spriteHeight={spriteMapping.skills.sprite_size.height}
                                 sheetWidth={spriteMapping.skills.texture_size.width}

@@ -690,7 +690,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
-                            <img src="/Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
+                            <img src="./Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold">Select {slot}</h3>

@@ -1034,7 +1034,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                     >
                                         {(spriteIndex >= 0 && spriteMapping) ? (
                                             <SpriteSheetIcon
-                                                textureSrc="/icons/game/SkillIcons.png"
+                                                textureSrc="./icons/game/SkillIcons.png"
                                                 spriteWidth={spriteMapping.skills.sprite_size.width}
                                                 spriteHeight={spriteMapping.skills.sprite_size.height}
                                                 sheetWidth={spriteMapping.skills.texture_size.width}

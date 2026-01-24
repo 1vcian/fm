@@ -59,11 +59,11 @@ export function GameIcon({ name, size = 24, className, alt, ...props }: GameIcon
 
     // Fallback logic for legacy/static icons
     let src = '';
-    if (name === 'hammer') src = '/Texture2D/Hammer.png';
-    else if (name === 'gem') src = '/Texture2D/GemIcon.png';
-    else if (name === 'coin') src = '/icons/coin.png';
+    if (name === 'hammer') src = './Texture2D/Hammer.png';
+    else if (name === 'gem') src = './Texture2D/GemIcon.png';
+    else if (name === 'coin') src = './icons/coin.png';
     else if (name.includes('/') || name.includes('.')) src = name; // Direct path
-    else src = `/Texture2D/${name}.png`; // Fallback
+    else src = `./Texture2D/${name}.png`; // Fallback
 
     return (
         <img

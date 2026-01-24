@@ -306,7 +306,7 @@ export function EquipmentPanel() {
     return (
         <Card className="p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <img src="/Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
+                <img src="./Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
                 Equipment
             </h2>
 
@@ -743,7 +743,7 @@ function MountSlotWidget() {
                             >
                                 {spriteInfo ? (
                                     <SpriteSheetIcon
-                                        textureSrc="/icons/game/MountIcons.png"
+                                        textureSrc="./icons/game/MountIcons.png"
                                         spriteWidth={spriteInfo.config.sprite_size.width}
                                         spriteHeight={spriteInfo.config.sprite_size.height}
                                         sheetWidth={spriteInfo.config.texture_size.width}

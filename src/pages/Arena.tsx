@@ -79,7 +79,7 @@ export default function Arena() {
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className={cn("w-16 h-16 flex items-center justify-center")}>
                                         <img
-                                            src={`/icons/single/LeagueIcons_${5 - idx}.png`}
+                                            src={`./icons/single/LeagueIcons_${5 - idx}.png`}
                                             alt={name}
                                             className="w-full h-full object-contain drop-shadow-glow"
                                             onError={(e) => {

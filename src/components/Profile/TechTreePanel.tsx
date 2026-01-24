@@ -158,7 +158,7 @@ export function TechTreePanel() {
     return (
         <Card className="p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <img src="/Texture2D/TechTreeForge.png" alt="Tech Tree" className="w-8 h-8 object-contain" />
+                <img src="./Texture2D/TechTreeForge.png" alt="Tech Tree" className="w-8 h-8 object-contain" />
                 Tech Tree
             </h2>
 

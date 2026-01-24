@@ -185,7 +185,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount }: 
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
                             <SpriteSheetIcon
-                                textureSrc="/Texture2D/Icons.png"
+                                textureSrc="./Texture2D/Icons.png"
                                 spriteWidth={256}
                                 spriteHeight={256}
                                 sheetWidth={2048}
@@ -316,7 +316,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount }: 
                                             {mountsConfig && (
                                                 <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={getRarityBgStyle(selectedRarity)}>
                                                     <SpriteSheetIcon
-                                                        textureSrc="/icons/game/MountIcons.png"
+                                                        textureSrc="./icons/game/MountIcons.png"
                                                         spriteWidth={mountsConfig.sprite_size.width}
                                                         spriteHeight={mountsConfig.sprite_size.height}
                                                         sheetWidth={mountsConfig.texture_size.width}
@@ -347,7 +347,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount }: 
                                         <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-3" style={getRarityBgStyle(selectedRarity)}>
                                             {mountsConfig && (
                                                 <SpriteSheetIcon
-                                                    textureSrc="/icons/game/MountIcons.png"
+                                                    textureSrc="./icons/game/MountIcons.png"
                                                     spriteWidth={mountsConfig.sprite_size.width}
                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                     sheetWidth={mountsConfig.texture_size.width}
@@ -471,7 +471,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount }: 
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
                                                 <SpriteSheetIcon
-                                                    textureSrc="/icons/game/MountIcons.png"
+                                                    textureSrc="./icons/game/MountIcons.png"
                                                     spriteWidth={mountsConfig.sprite_size.width}
                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                     sheetWidth={mountsConfig.texture_size.width}
@@ -527,7 +527,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount }: 
                                                         >
                                                             {mountsConfig && (
                                                                 <SpriteSheetIcon
-                                                                    textureSrc="/icons/game/MountIcons.png"
+                                                                    textureSrc="./icons/game/MountIcons.png"
                                                                     spriteWidth={mountsConfig.sprite_size.width}
                                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                                     sheetWidth={mountsConfig.texture_size.width}
@@ -582,7 +582,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount }: 
                                             if (displayMount && mountsConfig) {
                                                 return (
                                                     <SpriteSheetIcon
-                                                        textureSrc="/icons/game/MountIcons.png"
+                                                        textureSrc="./icons/game/MountIcons.png"
                                                         spriteWidth={mountsConfig.sprite_size.width}
                                                         spriteHeight={mountsConfig.sprite_size.height}
                                                         sheetWidth={mountsConfig.texture_size.width}
@@ -594,7 +594,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount }: 
                                             }
                                             return (
                                                 <SpriteSheetIcon
-                                                    textureSrc="/Texture2D/Icons.png"
+                                                    textureSrc="./Texture2D/Icons.png"
                                                     spriteWidth={256}
                                                     spriteHeight={256}
                                                     sheetWidth={2048}

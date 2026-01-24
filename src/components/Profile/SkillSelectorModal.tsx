@@ -257,7 +257,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             {spriteMapping?.skills && (
                                                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={getRarityBgStyle(selectedRarity)}>
                                                     <SpriteSheetIcon
-                                                        textureSrc="/icons/game/SkillIcons.png"
+                                                        textureSrc="./icons/game/SkillIcons.png"
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}
@@ -286,7 +286,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                         <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-3" style={getRarityBgStyle(selectedRarity)}>
                                             {spriteMapping?.skills && (
                                                 <SpriteSheetIcon
-                                                    textureSrc="/icons/game/SkillIcons.png"
+                                                    textureSrc="./icons/game/SkillIcons.png"
                                                     spriteWidth={spriteMapping.skills.sprite_size.width}
                                                     spriteHeight={spriteMapping.skills.sprite_size.height}
                                                     sheetWidth={spriteMapping.skills.texture_size.width}
@@ -430,7 +430,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
                                                 <SpriteSheetIcon
-                                                    textureSrc="/icons/game/SkillIcons.png"
+                                                    textureSrc="./icons/game/SkillIcons.png"
                                                     spriteWidth={spriteMapping.skills.sprite_size.width}
                                                     spriteHeight={spriteMapping.skills.sprite_size.height}
                                                     sheetWidth={spriteMapping.skills.texture_size.width}
@@ -465,7 +465,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             if (displaySkill && spriteMapping?.skills) {
                                                 return (
                                                     <SpriteSheetIcon
-                                                        textureSrc="/icons/game/SkillIcons.png"
+                                                        textureSrc="./icons/game/SkillIcons.png"
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}
