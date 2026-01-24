@@ -1,0 +1,4052 @@
+{
+  "texture": "TechTreeIcons.png",
+  "texture_size": {
+    "width": 1024,
+    "height": 1024
+  },
+  "sprite_size": {
+    "width": 128,
+    "height": 128
+  },
+  "trees": {
+    "Forge": {
+      "type": "Forge",
+      "nodes": [
+        {
+          "id": 0,
+          "tier": 0,
+          "layer": 0,
+          "type": "ForgeTimerSpeed",
+          "sprite_index": 26,
+          "sprite_file": "TechTreeIcons_26",
+          "sprite_rect": {
+            "x": 256,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": []
+        },
+        {
+          "id": 1,
+          "tier": 0,
+          "layer": 0,
+          "type": "ForgeUpgradeCost",
+          "sprite_index": 27,
+          "sprite_file": "TechTreeIcons_27",
+          "sprite_rect": {
+            "x": 384,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": []
+        },
+        {
+          "id": 2,
+          "tier": 0,
+          "layer": 1,
+          "type": "EquipmentSellPrice",
+          "sprite_index": 3,
+          "sprite_file": "TechTreeIcons_3",
+          "sprite_rect": {
+            "x": 384,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            0,
+            1
+          ]
+        },
+        {
+          "id": 3,
+          "tier": 0,
+          "layer": 2,
+          "type": "HammerThiefHammerReward",
+          "sprite_index": 33,
+          "sprite_file": "TechTreeIcons_33",
+          "sprite_rect": {
+            "x": 128,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            2
+          ]
+        },
+        {
+          "id": 4,
+          "tier": 0,
+          "layer": 2,
+          "type": "HammerThiefCoinReward",
+          "sprite_index": 34,
+          "sprite_file": "TechTreeIcons_34",
+          "sprite_rect": {
+            "x": 256,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            2
+          ]
+        },
+        {
+          "id": 5,
+          "tier": 0,
+          "layer": 3,
+          "type": "AutoForge",
+          "sprite_index": 28,
+          "sprite_file": "TechTreeIcons_28",
+          "sprite_rect": {
+            "x": 512,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            3,
+            4
+          ]
+        },
+        {
+          "id": 6,
+          "tier": 0,
+          "layer": 4,
+          "type": "FreeForgeChance",
+          "sprite_index": 32,
+          "sprite_file": "TechTreeIcons_32",
+          "sprite_rect": {
+            "x": 0,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            5
+          ]
+        },
+        {
+          "id": 7,
+          "tier": 0,
+          "layer": 5,
+          "type": "MaxOfflineReward",
+          "sprite_index": 31,
+          "sprite_file": "TechTreeIcons_31",
+          "sprite_rect": {
+            "x": 896,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            6
+          ]
+        },
+        {
+          "id": 8,
+          "tier": 0,
+          "layer": 6,
+          "type": "CoinOfflineReward",
+          "sprite_index": 30,
+          "sprite_file": "TechTreeIcons_30",
+          "sprite_rect": {
+            "x": 768,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            7
+          ]
+        },
+        {
+          "id": 9,
+          "tier": 0,
+          "layer": 6,
+          "type": "HammerOfflineReward",
+          "sprite_index": 29,
+          "sprite_file": "TechTreeIcons_29",
+          "sprite_rect": {
+            "x": 640,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            7
+          ]
+        },
+        {
+          "id": 10,
+          "tier": 1,
+          "layer": 7,
+          "type": "ForgeTimerSpeed",
+          "sprite_index": 26,
+          "sprite_file": "TechTreeIcons_26",
+          "sprite_rect": {
+            "x": 256,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            8
+          ]
+        },
+        {
+          "id": 11,
+          "tier": 1,
+          "layer": 7,
+          "type": "ForgeUpgradeCost",
+          "sprite_index": 27,
+          "sprite_file": "TechTreeIcons_27",
+          "sprite_rect": {
+            "x": 384,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            9
+          ]
+        },
+        {
+          "id": 12,
+          "tier": 1,
+          "layer": 8,
+          "type": "EquipmentSellPrice",
+          "sprite_index": 3,
+          "sprite_file": "TechTreeIcons_3",
+          "sprite_rect": {
+            "x": 384,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            10,
+            11
+          ]
+        },
+        {
+          "id": 13,
+          "tier": 1,
+          "layer": 9,
+          "type": "HammerThiefHammerReward",
+          "sprite_index": 33,
+          "sprite_file": "TechTreeIcons_33",
+          "sprite_rect": {
+            "x": 128,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            12
+          ]
+        },
+        {
+          "id": 14,
+          "tier": 1,
+          "layer": 9,
+          "type": "HammerThiefCoinReward",
+          "sprite_index": 34,
+          "sprite_file": "TechTreeIcons_34",
+          "sprite_rect": {
+            "x": 256,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            12
+          ]
+        },
+        {
+          "id": 15,
+          "tier": 1,
+          "layer": 10,
+          "type": "AutoForge",
+          "sprite_index": 28,
+          "sprite_file": "TechTreeIcons_28",
+          "sprite_rect": {
+            "x": 512,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            13,
+            14
+          ]
+        },
+        {
+          "id": 16,
+          "tier": 1,
+          "layer": 11,
+          "type": "FreeForgeChance",
+          "sprite_index": 32,
+          "sprite_file": "TechTreeIcons_32",
+          "sprite_rect": {
+            "x": 0,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            15
+          ]
+        },
+        {
+          "id": 17,
+          "tier": 1,
+          "layer": 12,
+          "type": "MaxOfflineReward",
+          "sprite_index": 31,
+          "sprite_file": "TechTreeIcons_31",
+          "sprite_rect": {
+            "x": 896,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            16
+          ]
+        },
+        {
+          "id": 18,
+          "tier": 1,
+          "layer": 13,
+          "type": "CoinOfflineReward",
+          "sprite_index": 30,
+          "sprite_file": "TechTreeIcons_30",
+          "sprite_rect": {
+            "x": 768,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            17
+          ]
+        },
+        {
+          "id": 19,
+          "tier": 1,
+          "layer": 13,
+          "type": "HammerOfflineReward",
+          "sprite_index": 29,
+          "sprite_file": "TechTreeIcons_29",
+          "sprite_rect": {
+            "x": 640,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            17
+          ]
+        },
+        {
+          "id": 20,
+          "tier": 2,
+          "layer": 14,
+          "type": "ForgeTimerSpeed",
+          "sprite_index": 26,
+          "sprite_file": "TechTreeIcons_26",
+          "sprite_rect": {
+            "x": 256,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            18
+          ]
+        },
+        {
+          "id": 21,
+          "tier": 2,
+          "layer": 14,
+          "type": "ForgeUpgradeCost",
+          "sprite_index": 27,
+          "sprite_file": "TechTreeIcons_27",
+          "sprite_rect": {
+            "x": 384,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            19
+          ]
+        },
+        {
+          "id": 22,
+          "tier": 2,
+          "layer": 15,
+          "type": "EquipmentSellPrice",
+          "sprite_index": 3,
+          "sprite_file": "TechTreeIcons_3",
+          "sprite_rect": {
+            "x": 384,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            20,
+            21
+          ]
+        },
+        {
+          "id": 23,
+          "tier": 2,
+          "layer": 16,
+          "type": "HammerThiefHammerReward",
+          "sprite_index": 33,
+          "sprite_file": "TechTreeIcons_33",
+          "sprite_rect": {
+            "x": 128,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            22
+          ]
+        },
+        {
+          "id": 24,
+          "tier": 2,
+          "layer": 16,
+          "type": "HammerThiefCoinReward",
+          "sprite_index": 34,
+          "sprite_file": "TechTreeIcons_34",
+          "sprite_rect": {
+            "x": 256,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            22
+          ]
+        },
+        {
+          "id": 25,
+          "tier": 2,
+          "layer": 17,
+          "type": "AutoForge",
+          "sprite_index": 28,
+          "sprite_file": "TechTreeIcons_28",
+          "sprite_rect": {
+            "x": 512,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            23,
+            24
+          ]
+        },
+        {
+          "id": 26,
+          "tier": 2,
+          "layer": 18,
+          "type": "FreeForgeChance",
+          "sprite_index": 32,
+          "sprite_file": "TechTreeIcons_32",
+          "sprite_rect": {
+            "x": 0,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            25
+          ]
+        },
+        {
+          "id": 27,
+          "tier": 2,
+          "layer": 19,
+          "type": "MaxOfflineReward",
+          "sprite_index": 31,
+          "sprite_file": "TechTreeIcons_31",
+          "sprite_rect": {
+            "x": 896,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            26
+          ]
+        },
+        {
+          "id": 28,
+          "tier": 2,
+          "layer": 20,
+          "type": "CoinOfflineReward",
+          "sprite_index": 30,
+          "sprite_file": "TechTreeIcons_30",
+          "sprite_rect": {
+            "x": 768,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            27
+          ]
+        },
+        {
+          "id": 29,
+          "tier": 2,
+          "layer": 20,
+          "type": "HammerOfflineReward",
+          "sprite_index": 29,
+          "sprite_file": "TechTreeIcons_29",
+          "sprite_rect": {
+            "x": 640,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            27
+          ]
+        },
+        {
+          "id": 30,
+          "tier": 3,
+          "layer": 21,
+          "type": "ForgeTimerSpeed",
+          "sprite_index": 26,
+          "sprite_file": "TechTreeIcons_26",
+          "sprite_rect": {
+            "x": 256,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            28
+          ]
+        },
+        {
+          "id": 31,
+          "tier": 3,
+          "layer": 21,
+          "type": "ForgeUpgradeCost",
+          "sprite_index": 27,
+          "sprite_file": "TechTreeIcons_27",
+          "sprite_rect": {
+            "x": 384,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            29
+          ]
+        },
+        {
+          "id": 32,
+          "tier": 3,
+          "layer": 22,
+          "type": "EquipmentSellPrice",
+          "sprite_index": 3,
+          "sprite_file": "TechTreeIcons_3",
+          "sprite_rect": {
+            "x": 384,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            30,
+            31
+          ]
+        },
+        {
+          "id": 33,
+          "tier": 3,
+          "layer": 23,
+          "type": "HammerThiefHammerReward",
+          "sprite_index": 33,
+          "sprite_file": "TechTreeIcons_33",
+          "sprite_rect": {
+            "x": 128,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            32
+          ]
+        },
+        {
+          "id": 34,
+          "tier": 3,
+          "layer": 23,
+          "type": "HammerThiefCoinReward",
+          "sprite_index": 34,
+          "sprite_file": "TechTreeIcons_34",
+          "sprite_rect": {
+            "x": 256,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            32
+          ]
+        },
+        {
+          "id": 35,
+          "tier": 3,
+          "layer": 24,
+          "type": "AutoForge",
+          "sprite_index": 28,
+          "sprite_file": "TechTreeIcons_28",
+          "sprite_rect": {
+            "x": 512,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            33,
+            34
+          ]
+        },
+        {
+          "id": 36,
+          "tier": 3,
+          "layer": 25,
+          "type": "FreeForgeChance",
+          "sprite_index": 32,
+          "sprite_file": "TechTreeIcons_32",
+          "sprite_rect": {
+            "x": 0,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            35
+          ]
+        },
+        {
+          "id": 37,
+          "tier": 3,
+          "layer": 26,
+          "type": "MaxOfflineReward",
+          "sprite_index": 31,
+          "sprite_file": "TechTreeIcons_31",
+          "sprite_rect": {
+            "x": 896,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            36
+          ]
+        },
+        {
+          "id": 38,
+          "tier": 3,
+          "layer": 27,
+          "type": "CoinOfflineReward",
+          "sprite_index": 30,
+          "sprite_file": "TechTreeIcons_30",
+          "sprite_rect": {
+            "x": 768,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            37
+          ]
+        },
+        {
+          "id": 39,
+          "tier": 3,
+          "layer": 27,
+          "type": "HammerOfflineReward",
+          "sprite_index": 29,
+          "sprite_file": "TechTreeIcons_29",
+          "sprite_rect": {
+            "x": 640,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            37
+          ]
+        },
+        {
+          "id": 40,
+          "tier": 4,
+          "layer": 28,
+          "type": "ForgeTimerSpeed",
+          "sprite_index": 26,
+          "sprite_file": "TechTreeIcons_26",
+          "sprite_rect": {
+            "x": 256,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            38
+          ]
+        },
+        {
+          "id": 41,
+          "tier": 4,
+          "layer": 28,
+          "type": "ForgeUpgradeCost",
+          "sprite_index": 27,
+          "sprite_file": "TechTreeIcons_27",
+          "sprite_rect": {
+            "x": 384,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            39
+          ]
+        },
+        {
+          "id": 42,
+          "tier": 4,
+          "layer": 29,
+          "type": "EquipmentSellPrice",
+          "sprite_index": 3,
+          "sprite_file": "TechTreeIcons_3",
+          "sprite_rect": {
+            "x": 384,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            40,
+            41
+          ]
+        },
+        {
+          "id": 43,
+          "tier": 4,
+          "layer": 30,
+          "type": "HammerThiefHammerReward",
+          "sprite_index": 33,
+          "sprite_file": "TechTreeIcons_33",
+          "sprite_rect": {
+            "x": 128,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            42
+          ]
+        },
+        {
+          "id": 44,
+          "tier": 4,
+          "layer": 30,
+          "type": "HammerThiefCoinReward",
+          "sprite_index": 34,
+          "sprite_file": "TechTreeIcons_34",
+          "sprite_rect": {
+            "x": 256,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            42
+          ]
+        },
+        {
+          "id": 45,
+          "tier": 4,
+          "layer": 31,
+          "type": "AutoForge",
+          "sprite_index": 28,
+          "sprite_file": "TechTreeIcons_28",
+          "sprite_rect": {
+            "x": 512,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            43,
+            44
+          ]
+        },
+        {
+          "id": 46,
+          "tier": 4,
+          "layer": 32,
+          "type": "FreeForgeChance",
+          "sprite_index": 32,
+          "sprite_file": "TechTreeIcons_32",
+          "sprite_rect": {
+            "x": 0,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            45
+          ]
+        },
+        {
+          "id": 47,
+          "tier": 4,
+          "layer": 33,
+          "type": "MaxOfflineReward",
+          "sprite_index": 31,
+          "sprite_file": "TechTreeIcons_31",
+          "sprite_rect": {
+            "x": 896,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            46
+          ]
+        },
+        {
+          "id": 48,
+          "tier": 4,
+          "layer": 34,
+          "type": "CoinOfflineReward",
+          "sprite_index": 30,
+          "sprite_file": "TechTreeIcons_30",
+          "sprite_rect": {
+            "x": 768,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            47
+          ]
+        },
+        {
+          "id": 49,
+          "tier": 4,
+          "layer": 34,
+          "type": "HammerOfflineReward",
+          "sprite_index": 29,
+          "sprite_file": "TechTreeIcons_29",
+          "sprite_rect": {
+            "x": 640,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            47
+          ]
+        }
+      ]
+    },
+    "Power": {
+      "type": "Power",
+      "nodes": [
+        {
+          "id": 0,
+          "tier": 0,
+          "layer": 0,
+          "type": "WeaponBonus",
+          "sprite_index": 4,
+          "sprite_file": "TechTreeIcons_4",
+          "sprite_rect": {
+            "x": 512,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": []
+        },
+        {
+          "id": 1,
+          "tier": 0,
+          "layer": 0,
+          "type": "HelmetBonus",
+          "sprite_index": 5,
+          "sprite_file": "TechTreeIcons_5",
+          "sprite_rect": {
+            "x": 640,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": []
+        },
+        {
+          "id": 2,
+          "tier": 0,
+          "layer": 1,
+          "type": "GloveBonus",
+          "sprite_index": 10,
+          "sprite_file": "TechTreeIcons_10",
+          "sprite_rect": {
+            "x": 256,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            0
+          ]
+        },
+        {
+          "id": 3,
+          "tier": 0,
+          "layer": 1,
+          "type": "BodyBonus",
+          "sprite_index": 6,
+          "sprite_file": "TechTreeIcons_6",
+          "sprite_rect": {
+            "x": 768,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            1
+          ]
+        },
+        {
+          "id": 4,
+          "tier": 0,
+          "layer": 2,
+          "type": "NecklaceBonus",
+          "sprite_index": 12,
+          "sprite_file": "TechTreeIcons_12",
+          "sprite_rect": {
+            "x": 512,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            2
+          ]
+        },
+        {
+          "id": 5,
+          "tier": 0,
+          "layer": 2,
+          "type": "ShoeBonus",
+          "sprite_index": 7,
+          "sprite_file": "TechTreeIcons_7",
+          "sprite_rect": {
+            "x": 896,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            3
+          ]
+        },
+        {
+          "id": 6,
+          "tier": 0,
+          "layer": 3,
+          "type": "RingBonus",
+          "sprite_index": 13,
+          "sprite_file": "TechTreeIcons_13",
+          "sprite_rect": {
+            "x": 640,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            4
+          ]
+        },
+        {
+          "id": 7,
+          "tier": 0,
+          "layer": 3,
+          "type": "BeltBonus",
+          "sprite_index": 11,
+          "sprite_file": "TechTreeIcons_11",
+          "sprite_rect": {
+            "x": 384,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            5
+          ]
+        },
+        {
+          "id": 8,
+          "tier": 0,
+          "layer": 4,
+          "type": "MountDamage",
+          "sprite_index": 22,
+          "sprite_file": "TechTreeIcons_22",
+          "sprite_rect": {
+            "x": 768,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": 9,
+          "tier": 0,
+          "layer": 5,
+          "type": "MountHealth",
+          "sprite_index": 23,
+          "sprite_file": "TechTreeIcons_23",
+          "sprite_rect": {
+            "x": 896,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            8
+          ]
+        },
+        {
+          "id": 10,
+          "tier": 0,
+          "layer": 6,
+          "type": "WeaponLevelUp",
+          "sprite_index": 14,
+          "sprite_file": "TechTreeIcons_14",
+          "sprite_rect": {
+            "x": 768,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            9
+          ]
+        },
+        {
+          "id": 11,
+          "tier": 0,
+          "layer": 6,
+          "type": "HelmetLevelUp",
+          "sprite_index": 15,
+          "sprite_file": "TechTreeIcons_15",
+          "sprite_rect": {
+            "x": 896,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            9
+          ]
+        },
+        {
+          "id": 12,
+          "tier": 0,
+          "layer": 7,
+          "type": "GloveLevelUp",
+          "sprite_index": 18,
+          "sprite_file": "TechTreeIcons_18",
+          "sprite_rect": {
+            "x": 256,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            10
+          ]
+        },
+        {
+          "id": 13,
+          "tier": 0,
+          "layer": 7,
+          "type": "BodyLevelUp",
+          "sprite_index": 16,
+          "sprite_file": "TechTreeIcons_16",
+          "sprite_rect": {
+            "x": 0,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            11
+          ]
+        },
+        {
+          "id": 14,
+          "tier": 0,
+          "layer": 8,
+          "type": "NecklaceLevelUp",
+          "sprite_index": 20,
+          "sprite_file": "TechTreeIcons_20",
+          "sprite_rect": {
+            "x": 512,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            12
+          ]
+        },
+        {
+          "id": 15,
+          "tier": 0,
+          "layer": 8,
+          "type": "ShoeLevelUp",
+          "sprite_index": 17,
+          "sprite_file": "TechTreeIcons_17",
+          "sprite_rect": {
+            "x": 128,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            13
+          ]
+        },
+        {
+          "id": 16,
+          "tier": 0,
+          "layer": 9,
+          "type": "RingLevelUp",
+          "sprite_index": 21,
+          "sprite_file": "TechTreeIcons_21",
+          "sprite_rect": {
+            "x": 640,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            14
+          ]
+        },
+        {
+          "id": 17,
+          "tier": 0,
+          "layer": 9,
+          "type": "BeltLevelUp",
+          "sprite_index": 19,
+          "sprite_file": "TechTreeIcons_19",
+          "sprite_rect": {
+            "x": 384,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            15
+          ]
+        },
+        {
+          "id": 18,
+          "tier": 0,
+          "layer": 10,
+          "type": "MountSummonCost",
+          "sprite_index": 25,
+          "sprite_file": "TechTreeIcons_25",
+          "sprite_rect": {
+            "x": 128,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            16,
+            17
+          ]
+        },
+        {
+          "id": 19,
+          "tier": 0,
+          "layer": 11,
+          "type": "ExtraMountChance",
+          "sprite_index": 24,
+          "sprite_file": "TechTreeIcons_24",
+          "sprite_rect": {
+            "x": 0,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            18
+          ]
+        },
+        {
+          "id": 20,
+          "tier": 1,
+          "layer": 12,
+          "type": "WeaponBonus",
+          "sprite_index": 4,
+          "sprite_file": "TechTreeIcons_4",
+          "sprite_rect": {
+            "x": 512,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            19
+          ]
+        },
+        {
+          "id": 21,
+          "tier": 1,
+          "layer": 12,
+          "type": "HelmetBonus",
+          "sprite_index": 5,
+          "sprite_file": "TechTreeIcons_5",
+          "sprite_rect": {
+            "x": 640,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            19
+          ]
+        },
+        {
+          "id": 22,
+          "tier": 1,
+          "layer": 13,
+          "type": "GloveBonus",
+          "sprite_index": 10,
+          "sprite_file": "TechTreeIcons_10",
+          "sprite_rect": {
+            "x": 256,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            20
+          ]
+        },
+        {
+          "id": 23,
+          "tier": 1,
+          "layer": 13,
+          "type": "BodyBonus",
+          "sprite_index": 6,
+          "sprite_file": "TechTreeIcons_6",
+          "sprite_rect": {
+            "x": 768,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            21
+          ]
+        },
+        {
+          "id": 24,
+          "tier": 1,
+          "layer": 14,
+          "type": "NecklaceBonus",
+          "sprite_index": 12,
+          "sprite_file": "TechTreeIcons_12",
+          "sprite_rect": {
+            "x": 512,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            22
+          ]
+        },
+        {
+          "id": 25,
+          "tier": 1,
+          "layer": 14,
+          "type": "ShoeBonus",
+          "sprite_index": 7,
+          "sprite_file": "TechTreeIcons_7",
+          "sprite_rect": {
+            "x": 896,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            23
+          ]
+        },
+        {
+          "id": 26,
+          "tier": 1,
+          "layer": 15,
+          "type": "RingBonus",
+          "sprite_index": 13,
+          "sprite_file": "TechTreeIcons_13",
+          "sprite_rect": {
+            "x": 640,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            24
+          ]
+        },
+        {
+          "id": 27,
+          "tier": 1,
+          "layer": 15,
+          "type": "BeltBonus",
+          "sprite_index": 11,
+          "sprite_file": "TechTreeIcons_11",
+          "sprite_rect": {
+            "x": 384,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            25
+          ]
+        },
+        {
+          "id": 28,
+          "tier": 1,
+          "layer": 16,
+          "type": "MountDamage",
+          "sprite_index": 22,
+          "sprite_file": "TechTreeIcons_22",
+          "sprite_rect": {
+            "x": 768,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            26,
+            27
+          ]
+        },
+        {
+          "id": 29,
+          "tier": 1,
+          "layer": 17,
+          "type": "MountHealth",
+          "sprite_index": 23,
+          "sprite_file": "TechTreeIcons_23",
+          "sprite_rect": {
+            "x": 896,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            28
+          ]
+        },
+        {
+          "id": 30,
+          "tier": 1,
+          "layer": 18,
+          "type": "WeaponLevelUp",
+          "sprite_index": 14,
+          "sprite_file": "TechTreeIcons_14",
+          "sprite_rect": {
+            "x": 768,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            29
+          ]
+        },
+        {
+          "id": 31,
+          "tier": 1,
+          "layer": 18,
+          "type": "HelmetLevelUp",
+          "sprite_index": 15,
+          "sprite_file": "TechTreeIcons_15",
+          "sprite_rect": {
+            "x": 896,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            29
+          ]
+        },
+        {
+          "id": 32,
+          "tier": 1,
+          "layer": 19,
+          "type": "GloveLevelUp",
+          "sprite_index": 18,
+          "sprite_file": "TechTreeIcons_18",
+          "sprite_rect": {
+            "x": 256,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            30
+          ]
+        },
+        {
+          "id": 33,
+          "tier": 1,
+          "layer": 19,
+          "type": "BodyLevelUp",
+          "sprite_index": 16,
+          "sprite_file": "TechTreeIcons_16",
+          "sprite_rect": {
+            "x": 0,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            31
+          ]
+        },
+        {
+          "id": 34,
+          "tier": 1,
+          "layer": 20,
+          "type": "NecklaceLevelUp",
+          "sprite_index": 20,
+          "sprite_file": "TechTreeIcons_20",
+          "sprite_rect": {
+            "x": 512,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            32
+          ]
+        },
+        {
+          "id": 35,
+          "tier": 1,
+          "layer": 20,
+          "type": "ShoeLevelUp",
+          "sprite_index": 17,
+          "sprite_file": "TechTreeIcons_17",
+          "sprite_rect": {
+            "x": 128,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            33
+          ]
+        },
+        {
+          "id": 36,
+          "tier": 1,
+          "layer": 21,
+          "type": "RingLevelUp",
+          "sprite_index": 21,
+          "sprite_file": "TechTreeIcons_21",
+          "sprite_rect": {
+            "x": 640,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            34
+          ]
+        },
+        {
+          "id": 37,
+          "tier": 1,
+          "layer": 21,
+          "type": "BeltLevelUp",
+          "sprite_index": 19,
+          "sprite_file": "TechTreeIcons_19",
+          "sprite_rect": {
+            "x": 384,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            35
+          ]
+        },
+        {
+          "id": 38,
+          "tier": 1,
+          "layer": 22,
+          "type": "MountSummonCost",
+          "sprite_index": 25,
+          "sprite_file": "TechTreeIcons_25",
+          "sprite_rect": {
+            "x": 128,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            36,
+            37
+          ]
+        },
+        {
+          "id": 39,
+          "tier": 1,
+          "layer": 23,
+          "type": "ExtraMountChance",
+          "sprite_index": 24,
+          "sprite_file": "TechTreeIcons_24",
+          "sprite_rect": {
+            "x": 0,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            38
+          ]
+        },
+        {
+          "id": 40,
+          "tier": 2,
+          "layer": 24,
+          "type": "WeaponBonus",
+          "sprite_index": 4,
+          "sprite_file": "TechTreeIcons_4",
+          "sprite_rect": {
+            "x": 512,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            39
+          ]
+        },
+        {
+          "id": 41,
+          "tier": 2,
+          "layer": 24,
+          "type": "HelmetBonus",
+          "sprite_index": 5,
+          "sprite_file": "TechTreeIcons_5",
+          "sprite_rect": {
+            "x": 640,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            39
+          ]
+        },
+        {
+          "id": 42,
+          "tier": 2,
+          "layer": 25,
+          "type": "GloveBonus",
+          "sprite_index": 10,
+          "sprite_file": "TechTreeIcons_10",
+          "sprite_rect": {
+            "x": 256,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            40
+          ]
+        },
+        {
+          "id": 43,
+          "tier": 2,
+          "layer": 25,
+          "type": "BodyBonus",
+          "sprite_index": 6,
+          "sprite_file": "TechTreeIcons_6",
+          "sprite_rect": {
+            "x": 768,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            41
+          ]
+        },
+        {
+          "id": 44,
+          "tier": 2,
+          "layer": 26,
+          "type": "NecklaceBonus",
+          "sprite_index": 12,
+          "sprite_file": "TechTreeIcons_12",
+          "sprite_rect": {
+            "x": 512,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            42
+          ]
+        },
+        {
+          "id": 45,
+          "tier": 2,
+          "layer": 26,
+          "type": "ShoeBonus",
+          "sprite_index": 7,
+          "sprite_file": "TechTreeIcons_7",
+          "sprite_rect": {
+            "x": 896,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            43
+          ]
+        },
+        {
+          "id": 46,
+          "tier": 2,
+          "layer": 27,
+          "type": "RingBonus",
+          "sprite_index": 13,
+          "sprite_file": "TechTreeIcons_13",
+          "sprite_rect": {
+            "x": 640,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            44
+          ]
+        },
+        {
+          "id": 47,
+          "tier": 2,
+          "layer": 27,
+          "type": "BeltBonus",
+          "sprite_index": 11,
+          "sprite_file": "TechTreeIcons_11",
+          "sprite_rect": {
+            "x": 384,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            45
+          ]
+        },
+        {
+          "id": 48,
+          "tier": 2,
+          "layer": 28,
+          "type": "MountDamage",
+          "sprite_index": 22,
+          "sprite_file": "TechTreeIcons_22",
+          "sprite_rect": {
+            "x": 768,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            46,
+            47
+          ]
+        },
+        {
+          "id": 49,
+          "tier": 2,
+          "layer": 29,
+          "type": "MountHealth",
+          "sprite_index": 23,
+          "sprite_file": "TechTreeIcons_23",
+          "sprite_rect": {
+            "x": 896,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            48
+          ]
+        },
+        {
+          "id": 50,
+          "tier": 2,
+          "layer": 30,
+          "type": "WeaponLevelUp",
+          "sprite_index": 14,
+          "sprite_file": "TechTreeIcons_14",
+          "sprite_rect": {
+            "x": 768,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            49
+          ]
+        },
+        {
+          "id": 51,
+          "tier": 2,
+          "layer": 30,
+          "type": "HelmetLevelUp",
+          "sprite_index": 15,
+          "sprite_file": "TechTreeIcons_15",
+          "sprite_rect": {
+            "x": 896,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            49
+          ]
+        },
+        {
+          "id": 52,
+          "tier": 2,
+          "layer": 31,
+          "type": "GloveLevelUp",
+          "sprite_index": 18,
+          "sprite_file": "TechTreeIcons_18",
+          "sprite_rect": {
+            "x": 256,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            50
+          ]
+        },
+        {
+          "id": 53,
+          "tier": 2,
+          "layer": 31,
+          "type": "BodyLevelUp",
+          "sprite_index": 16,
+          "sprite_file": "TechTreeIcons_16",
+          "sprite_rect": {
+            "x": 0,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            51
+          ]
+        },
+        {
+          "id": 54,
+          "tier": 2,
+          "layer": 32,
+          "type": "NecklaceLevelUp",
+          "sprite_index": 20,
+          "sprite_file": "TechTreeIcons_20",
+          "sprite_rect": {
+            "x": 512,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            52
+          ]
+        },
+        {
+          "id": 55,
+          "tier": 2,
+          "layer": 32,
+          "type": "ShoeLevelUp",
+          "sprite_index": 17,
+          "sprite_file": "TechTreeIcons_17",
+          "sprite_rect": {
+            "x": 128,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            53
+          ]
+        },
+        {
+          "id": 56,
+          "tier": 2,
+          "layer": 33,
+          "type": "RingLevelUp",
+          "sprite_index": 21,
+          "sprite_file": "TechTreeIcons_21",
+          "sprite_rect": {
+            "x": 640,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            54
+          ]
+        },
+        {
+          "id": 57,
+          "tier": 2,
+          "layer": 33,
+          "type": "BeltLevelUp",
+          "sprite_index": 19,
+          "sprite_file": "TechTreeIcons_19",
+          "sprite_rect": {
+            "x": 384,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            55
+          ]
+        },
+        {
+          "id": 58,
+          "tier": 2,
+          "layer": 34,
+          "type": "MountSummonCost",
+          "sprite_index": 25,
+          "sprite_file": "TechTreeIcons_25",
+          "sprite_rect": {
+            "x": 128,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            56,
+            57
+          ]
+        },
+        {
+          "id": 59,
+          "tier": 2,
+          "layer": 35,
+          "type": "ExtraMountChance",
+          "sprite_index": 24,
+          "sprite_file": "TechTreeIcons_24",
+          "sprite_rect": {
+            "x": 0,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            58
+          ]
+        },
+        {
+          "id": 60,
+          "tier": 3,
+          "layer": 36,
+          "type": "WeaponBonus",
+          "sprite_index": 4,
+          "sprite_file": "TechTreeIcons_4",
+          "sprite_rect": {
+            "x": 512,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            59
+          ]
+        },
+        {
+          "id": 61,
+          "tier": 3,
+          "layer": 36,
+          "type": "HelmetBonus",
+          "sprite_index": 5,
+          "sprite_file": "TechTreeIcons_5",
+          "sprite_rect": {
+            "x": 640,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            59
+          ]
+        },
+        {
+          "id": 62,
+          "tier": 3,
+          "layer": 37,
+          "type": "GloveBonus",
+          "sprite_index": 10,
+          "sprite_file": "TechTreeIcons_10",
+          "sprite_rect": {
+            "x": 256,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            60
+          ]
+        },
+        {
+          "id": 63,
+          "tier": 3,
+          "layer": 37,
+          "type": "BodyBonus",
+          "sprite_index": 6,
+          "sprite_file": "TechTreeIcons_6",
+          "sprite_rect": {
+            "x": 768,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            61
+          ]
+        },
+        {
+          "id": 64,
+          "tier": 3,
+          "layer": 38,
+          "type": "NecklaceBonus",
+          "sprite_index": 12,
+          "sprite_file": "TechTreeIcons_12",
+          "sprite_rect": {
+            "x": 512,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            62
+          ]
+        },
+        {
+          "id": 65,
+          "tier": 3,
+          "layer": 38,
+          "type": "ShoeBonus",
+          "sprite_index": 7,
+          "sprite_file": "TechTreeIcons_7",
+          "sprite_rect": {
+            "x": 896,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            63
+          ]
+        },
+        {
+          "id": 66,
+          "tier": 3,
+          "layer": 39,
+          "type": "RingBonus",
+          "sprite_index": 13,
+          "sprite_file": "TechTreeIcons_13",
+          "sprite_rect": {
+            "x": 640,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            64
+          ]
+        },
+        {
+          "id": 67,
+          "tier": 3,
+          "layer": 39,
+          "type": "BeltBonus",
+          "sprite_index": 11,
+          "sprite_file": "TechTreeIcons_11",
+          "sprite_rect": {
+            "x": 384,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            65
+          ]
+        },
+        {
+          "id": 68,
+          "tier": 3,
+          "layer": 40,
+          "type": "MountDamage",
+          "sprite_index": 22,
+          "sprite_file": "TechTreeIcons_22",
+          "sprite_rect": {
+            "x": 768,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            66,
+            67
+          ]
+        },
+        {
+          "id": 69,
+          "tier": 3,
+          "layer": 41,
+          "type": "MountHealth",
+          "sprite_index": 23,
+          "sprite_file": "TechTreeIcons_23",
+          "sprite_rect": {
+            "x": 896,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            68
+          ]
+        },
+        {
+          "id": 70,
+          "tier": 3,
+          "layer": 42,
+          "type": "WeaponLevelUp",
+          "sprite_index": 14,
+          "sprite_file": "TechTreeIcons_14",
+          "sprite_rect": {
+            "x": 768,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            69
+          ]
+        },
+        {
+          "id": 71,
+          "tier": 3,
+          "layer": 42,
+          "type": "HelmetLevelUp",
+          "sprite_index": 15,
+          "sprite_file": "TechTreeIcons_15",
+          "sprite_rect": {
+            "x": 896,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            69
+          ]
+        },
+        {
+          "id": 72,
+          "tier": 3,
+          "layer": 43,
+          "type": "GloveLevelUp",
+          "sprite_index": 18,
+          "sprite_file": "TechTreeIcons_18",
+          "sprite_rect": {
+            "x": 256,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            70
+          ]
+        },
+        {
+          "id": 73,
+          "tier": 3,
+          "layer": 43,
+          "type": "BodyLevelUp",
+          "sprite_index": 16,
+          "sprite_file": "TechTreeIcons_16",
+          "sprite_rect": {
+            "x": 0,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            71
+          ]
+        },
+        {
+          "id": 74,
+          "tier": 3,
+          "layer": 44,
+          "type": "NecklaceLevelUp",
+          "sprite_index": 20,
+          "sprite_file": "TechTreeIcons_20",
+          "sprite_rect": {
+            "x": 512,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            72
+          ]
+        },
+        {
+          "id": 75,
+          "tier": 3,
+          "layer": 44,
+          "type": "ShoeLevelUp",
+          "sprite_index": 17,
+          "sprite_file": "TechTreeIcons_17",
+          "sprite_rect": {
+            "x": 128,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            73
+          ]
+        },
+        {
+          "id": 76,
+          "tier": 3,
+          "layer": 45,
+          "type": "RingLevelUp",
+          "sprite_index": 21,
+          "sprite_file": "TechTreeIcons_21",
+          "sprite_rect": {
+            "x": 640,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            74
+          ]
+        },
+        {
+          "id": 77,
+          "tier": 3,
+          "layer": 45,
+          "type": "BeltLevelUp",
+          "sprite_index": 19,
+          "sprite_file": "TechTreeIcons_19",
+          "sprite_rect": {
+            "x": 384,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            75
+          ]
+        },
+        {
+          "id": 78,
+          "tier": 3,
+          "layer": 46,
+          "type": "MountSummonCost",
+          "sprite_index": 25,
+          "sprite_file": "TechTreeIcons_25",
+          "sprite_rect": {
+            "x": 128,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            76,
+            77
+          ]
+        },
+        {
+          "id": 79,
+          "tier": 3,
+          "layer": 47,
+          "type": "ExtraMountChance",
+          "sprite_index": 24,
+          "sprite_file": "TechTreeIcons_24",
+          "sprite_rect": {
+            "x": 0,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            78
+          ]
+        },
+        {
+          "id": 80,
+          "tier": 4,
+          "layer": 48,
+          "type": "WeaponBonus",
+          "sprite_index": 4,
+          "sprite_file": "TechTreeIcons_4",
+          "sprite_rect": {
+            "x": 512,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            79
+          ]
+        },
+        {
+          "id": 81,
+          "tier": 4,
+          "layer": 48,
+          "type": "HelmetBonus",
+          "sprite_index": 5,
+          "sprite_file": "TechTreeIcons_5",
+          "sprite_rect": {
+            "x": 640,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            79
+          ]
+        },
+        {
+          "id": 82,
+          "tier": 4,
+          "layer": 49,
+          "type": "GloveBonus",
+          "sprite_index": 10,
+          "sprite_file": "TechTreeIcons_10",
+          "sprite_rect": {
+            "x": 256,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            80
+          ]
+        },
+        {
+          "id": 83,
+          "tier": 4,
+          "layer": 49,
+          "type": "BodyBonus",
+          "sprite_index": 6,
+          "sprite_file": "TechTreeIcons_6",
+          "sprite_rect": {
+            "x": 768,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            81
+          ]
+        },
+        {
+          "id": 84,
+          "tier": 4,
+          "layer": 50,
+          "type": "NecklaceBonus",
+          "sprite_index": 12,
+          "sprite_file": "TechTreeIcons_12",
+          "sprite_rect": {
+            "x": 512,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            82
+          ]
+        },
+        {
+          "id": 85,
+          "tier": 4,
+          "layer": 50,
+          "type": "ShoeBonus",
+          "sprite_index": 7,
+          "sprite_file": "TechTreeIcons_7",
+          "sprite_rect": {
+            "x": 896,
+            "y": 896,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            83
+          ]
+        },
+        {
+          "id": 86,
+          "tier": 4,
+          "layer": 51,
+          "type": "RingBonus",
+          "sprite_index": 13,
+          "sprite_file": "TechTreeIcons_13",
+          "sprite_rect": {
+            "x": 640,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            84
+          ]
+        },
+        {
+          "id": 87,
+          "tier": 4,
+          "layer": 51,
+          "type": "BeltBonus",
+          "sprite_index": 11,
+          "sprite_file": "TechTreeIcons_11",
+          "sprite_rect": {
+            "x": 384,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            85
+          ]
+        },
+        {
+          "id": 88,
+          "tier": 4,
+          "layer": 52,
+          "type": "MountDamage",
+          "sprite_index": 22,
+          "sprite_file": "TechTreeIcons_22",
+          "sprite_rect": {
+            "x": 768,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            86,
+            87
+          ]
+        },
+        {
+          "id": 89,
+          "tier": 4,
+          "layer": 53,
+          "type": "MountHealth",
+          "sprite_index": 23,
+          "sprite_file": "TechTreeIcons_23",
+          "sprite_rect": {
+            "x": 896,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            88
+          ]
+        },
+        {
+          "id": 90,
+          "tier": 4,
+          "layer": 54,
+          "type": "WeaponLevelUp",
+          "sprite_index": 14,
+          "sprite_file": "TechTreeIcons_14",
+          "sprite_rect": {
+            "x": 768,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            89
+          ]
+        },
+        {
+          "id": 91,
+          "tier": 4,
+          "layer": 54,
+          "type": "HelmetLevelUp",
+          "sprite_index": 15,
+          "sprite_file": "TechTreeIcons_15",
+          "sprite_rect": {
+            "x": 896,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            89
+          ]
+        },
+        {
+          "id": 92,
+          "tier": 4,
+          "layer": 55,
+          "type": "GloveLevelUp",
+          "sprite_index": 18,
+          "sprite_file": "TechTreeIcons_18",
+          "sprite_rect": {
+            "x": 256,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            90
+          ]
+        },
+        {
+          "id": 93,
+          "tier": 4,
+          "layer": 55,
+          "type": "BodyLevelUp",
+          "sprite_index": 16,
+          "sprite_file": "TechTreeIcons_16",
+          "sprite_rect": {
+            "x": 0,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            91
+          ]
+        },
+        {
+          "id": 94,
+          "tier": 4,
+          "layer": 56,
+          "type": "NecklaceLevelUp",
+          "sprite_index": 20,
+          "sprite_file": "TechTreeIcons_20",
+          "sprite_rect": {
+            "x": 512,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            92
+          ]
+        },
+        {
+          "id": 95,
+          "tier": 4,
+          "layer": 56,
+          "type": "ShoeLevelUp",
+          "sprite_index": 17,
+          "sprite_file": "TechTreeIcons_17",
+          "sprite_rect": {
+            "x": 128,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            93
+          ]
+        },
+        {
+          "id": 96,
+          "tier": 4,
+          "layer": 57,
+          "type": "RingLevelUp",
+          "sprite_index": 21,
+          "sprite_file": "TechTreeIcons_21",
+          "sprite_rect": {
+            "x": 640,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            94
+          ]
+        },
+        {
+          "id": 97,
+          "tier": 4,
+          "layer": 57,
+          "type": "BeltLevelUp",
+          "sprite_index": 19,
+          "sprite_file": "TechTreeIcons_19",
+          "sprite_rect": {
+            "x": 384,
+            "y": 640,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            95
+          ]
+        },
+        {
+          "id": 98,
+          "tier": 4,
+          "layer": 58,
+          "type": "MountSummonCost",
+          "sprite_index": 25,
+          "sprite_file": "TechTreeIcons_25",
+          "sprite_rect": {
+            "x": 128,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            96,
+            97
+          ]
+        },
+        {
+          "id": 99,
+          "tier": 4,
+          "layer": 59,
+          "type": "ExtraMountChance",
+          "sprite_index": 24,
+          "sprite_file": "TechTreeIcons_24",
+          "sprite_rect": {
+            "x": 0,
+            "y": 512,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            98
+          ]
+        }
+      ]
+    },
+    "SkillsPetTech": {
+      "type": "SkillsPetTech",
+      "nodes": [
+        {
+          "id": 0,
+          "tier": 0,
+          "layer": 0,
+          "type": "TechResearchTimer",
+          "sprite_index": 9,
+          "sprite_file": "TechTreeIcons_9",
+          "sprite_rect": {
+            "x": 128,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": []
+        },
+        {
+          "id": 1,
+          "tier": 0,
+          "layer": 1,
+          "type": "SkillDamage",
+          "sprite_index": 35,
+          "sprite_file": "TechTreeIcons_35",
+          "sprite_rect": {
+            "x": 384,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            0
+          ]
+        },
+        {
+          "id": 2,
+          "tier": 0,
+          "layer": 2,
+          "type": "SkillPassiveDamage",
+          "sprite_index": 36,
+          "sprite_file": "TechTreeIcons_36",
+          "sprite_rect": {
+            "x": 512,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            1
+          ]
+        },
+        {
+          "id": 3,
+          "tier": 0,
+          "layer": 2,
+          "type": "SkillPassiveHealth",
+          "sprite_index": 37,
+          "sprite_file": "TechTreeIcons_37",
+          "sprite_rect": {
+            "x": 640,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            1
+          ]
+        },
+        {
+          "id": 4,
+          "tier": 0,
+          "layer": 3,
+          "type": "TechNodeUpgradeCost",
+          "sprite_index": 50,
+          "sprite_file": "TechTreeIcons_50",
+          "sprite_rect": {
+            "x": 256,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": 5,
+          "tier": 0,
+          "layer": 4,
+          "type": "PetBonusDamage",
+          "sprite_index": 40,
+          "sprite_file": "TechTreeIcons_40",
+          "sprite_rect": {
+            "x": 0,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            4
+          ]
+        },
+        {
+          "id": 6,
+          "tier": 0,
+          "layer": 4,
+          "type": "PetBonusHealth",
+          "sprite_index": 41,
+          "sprite_file": "TechTreeIcons_41",
+          "sprite_rect": {
+            "x": 128,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            4
+          ]
+        },
+        {
+          "id": 7,
+          "tier": 0,
+          "layer": 5,
+          "type": "SkillSummonCost",
+          "sprite_index": 39,
+          "sprite_file": "TechTreeIcons_39",
+          "sprite_rect": {
+            "x": 896,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            5,
+            6
+          ]
+        },
+        {
+          "id": 8,
+          "tier": 0,
+          "layer": 6,
+          "type": "CommonEggTimer",
+          "sprite_index": 43,
+          "sprite_file": "TechTreeIcons_43",
+          "sprite_rect": {
+            "x": 384,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            7
+          ]
+        },
+        {
+          "id": 9,
+          "tier": 0,
+          "layer": 6,
+          "type": "RareEggTimer",
+          "sprite_index": 44,
+          "sprite_file": "TechTreeIcons_44",
+          "sprite_rect": {
+            "x": 512,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            7
+          ]
+        },
+        {
+          "id": 10,
+          "tier": 0,
+          "layer": 7,
+          "type": "EpicEggTimer",
+          "sprite_index": 45,
+          "sprite_file": "TechTreeIcons_45",
+          "sprite_rect": {
+            "x": 640,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            8
+          ]
+        },
+        {
+          "id": 11,
+          "tier": 0,
+          "layer": 7,
+          "type": "LegendaryEggTimer",
+          "sprite_index": 46,
+          "sprite_file": "TechTreeIcons_46",
+          "sprite_rect": {
+            "x": 768,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            9
+          ]
+        },
+        {
+          "id": 12,
+          "tier": 0,
+          "layer": 8,
+          "type": "UltimateEggTimer",
+          "sprite_index": 47,
+          "sprite_file": "TechTreeIcons_47",
+          "sprite_rect": {
+            "x": 896,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            10
+          ]
+        },
+        {
+          "id": 13,
+          "tier": 0,
+          "layer": 8,
+          "type": "MythicEggTimer",
+          "sprite_index": 48,
+          "sprite_file": "TechTreeIcons_48",
+          "sprite_rect": {
+            "x": 0,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            11
+          ]
+        },
+        {
+          "id": 14,
+          "tier": 0,
+          "layer": 9,
+          "type": "ExtraEggChance",
+          "sprite_index": 42,
+          "sprite_file": "TechTreeIcons_42",
+          "sprite_rect": {
+            "x": 256,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            12,
+            13
+          ]
+        },
+        {
+          "id": 15,
+          "tier": 0,
+          "layer": 10,
+          "type": "GhostTownSkillBonus",
+          "sprite_index": 38,
+          "sprite_file": "TechTreeIcons_38",
+          "sprite_rect": {
+            "x": 768,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            14
+          ]
+        },
+        {
+          "id": 16,
+          "tier": 0,
+          "layer": 10,
+          "type": "ZombieRushTechPotions",
+          "sprite_index": 49,
+          "sprite_file": "TechTreeIcons_49",
+          "sprite_rect": {
+            "x": 128,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            14
+          ]
+        },
+        {
+          "id": 17,
+          "tier": 1,
+          "layer": 11,
+          "type": "TechResearchTimer",
+          "sprite_index": 9,
+          "sprite_file": "TechTreeIcons_9",
+          "sprite_rect": {
+            "x": 128,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            15,
+            16
+          ]
+        },
+        {
+          "id": 18,
+          "tier": 1,
+          "layer": 12,
+          "type": "SkillDamage",
+          "sprite_index": 35,
+          "sprite_file": "TechTreeIcons_35",
+          "sprite_rect": {
+            "x": 384,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            17
+          ]
+        },
+        {
+          "id": 19,
+          "tier": 1,
+          "layer": 13,
+          "type": "SkillPassiveDamage",
+          "sprite_index": 36,
+          "sprite_file": "TechTreeIcons_36",
+          "sprite_rect": {
+            "x": 512,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            18
+          ]
+        },
+        {
+          "id": 20,
+          "tier": 1,
+          "layer": 13,
+          "type": "SkillPassiveHealth",
+          "sprite_index": 37,
+          "sprite_file": "TechTreeIcons_37",
+          "sprite_rect": {
+            "x": 640,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            18
+          ]
+        },
+        {
+          "id": 21,
+          "tier": 1,
+          "layer": 14,
+          "type": "TechNodeUpgradeCost",
+          "sprite_index": 50,
+          "sprite_file": "TechTreeIcons_50",
+          "sprite_rect": {
+            "x": 256,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            19,
+            20
+          ]
+        },
+        {
+          "id": 22,
+          "tier": 1,
+          "layer": 15,
+          "type": "PetBonusDamage",
+          "sprite_index": 40,
+          "sprite_file": "TechTreeIcons_40",
+          "sprite_rect": {
+            "x": 0,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            21
+          ]
+        },
+        {
+          "id": 23,
+          "tier": 1,
+          "layer": 15,
+          "type": "PetBonusHealth",
+          "sprite_index": 41,
+          "sprite_file": "TechTreeIcons_41",
+          "sprite_rect": {
+            "x": 128,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            21
+          ]
+        },
+        {
+          "id": 24,
+          "tier": 1,
+          "layer": 16,
+          "type": "SkillSummonCost",
+          "sprite_index": 39,
+          "sprite_file": "TechTreeIcons_39",
+          "sprite_rect": {
+            "x": 896,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            22,
+            23
+          ]
+        },
+        {
+          "id": 25,
+          "tier": 1,
+          "layer": 17,
+          "type": "CommonEggTimer",
+          "sprite_index": 43,
+          "sprite_file": "TechTreeIcons_43",
+          "sprite_rect": {
+            "x": 384,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            24
+          ]
+        },
+        {
+          "id": 26,
+          "tier": 1,
+          "layer": 17,
+          "type": "RareEggTimer",
+          "sprite_index": 44,
+          "sprite_file": "TechTreeIcons_44",
+          "sprite_rect": {
+            "x": 512,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            24
+          ]
+        },
+        {
+          "id": 27,
+          "tier": 1,
+          "layer": 18,
+          "type": "EpicEggTimer",
+          "sprite_index": 45,
+          "sprite_file": "TechTreeIcons_45",
+          "sprite_rect": {
+            "x": 640,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            25
+          ]
+        },
+        {
+          "id": 28,
+          "tier": 1,
+          "layer": 18,
+          "type": "LegendaryEggTimer",
+          "sprite_index": 46,
+          "sprite_file": "TechTreeIcons_46",
+          "sprite_rect": {
+            "x": 768,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            26
+          ]
+        },
+        {
+          "id": 29,
+          "tier": 1,
+          "layer": 19,
+          "type": "UltimateEggTimer",
+          "sprite_index": 47,
+          "sprite_file": "TechTreeIcons_47",
+          "sprite_rect": {
+            "x": 896,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            27
+          ]
+        },
+        {
+          "id": 30,
+          "tier": 1,
+          "layer": 19,
+          "type": "MythicEggTimer",
+          "sprite_index": 48,
+          "sprite_file": "TechTreeIcons_48",
+          "sprite_rect": {
+            "x": 0,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            28
+          ]
+        },
+        {
+          "id": 31,
+          "tier": 1,
+          "layer": 20,
+          "type": "ExtraEggChance",
+          "sprite_index": 42,
+          "sprite_file": "TechTreeIcons_42",
+          "sprite_rect": {
+            "x": 256,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            29,
+            30
+          ]
+        },
+        {
+          "id": 32,
+          "tier": 1,
+          "layer": 21,
+          "type": "GhostTownSkillBonus",
+          "sprite_index": 38,
+          "sprite_file": "TechTreeIcons_38",
+          "sprite_rect": {
+            "x": 768,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            31
+          ]
+        },
+        {
+          "id": 33,
+          "tier": 1,
+          "layer": 21,
+          "type": "ZombieRushTechPotions",
+          "sprite_index": 49,
+          "sprite_file": "TechTreeIcons_49",
+          "sprite_rect": {
+            "x": 128,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            31
+          ]
+        },
+        {
+          "id": 34,
+          "tier": 2,
+          "layer": 22,
+          "type": "TechResearchTimer",
+          "sprite_index": 9,
+          "sprite_file": "TechTreeIcons_9",
+          "sprite_rect": {
+            "x": 128,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            32,
+            33
+          ]
+        },
+        {
+          "id": 35,
+          "tier": 2,
+          "layer": 23,
+          "type": "SkillDamage",
+          "sprite_index": 35,
+          "sprite_file": "TechTreeIcons_35",
+          "sprite_rect": {
+            "x": 384,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            34
+          ]
+        },
+        {
+          "id": 36,
+          "tier": 2,
+          "layer": 24,
+          "type": "SkillPassiveDamage",
+          "sprite_index": 36,
+          "sprite_file": "TechTreeIcons_36",
+          "sprite_rect": {
+            "x": 512,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            35
+          ]
+        },
+        {
+          "id": 37,
+          "tier": 2,
+          "layer": 24,
+          "type": "SkillPassiveHealth",
+          "sprite_index": 37,
+          "sprite_file": "TechTreeIcons_37",
+          "sprite_rect": {
+            "x": 640,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            35
+          ]
+        },
+        {
+          "id": 38,
+          "tier": 2,
+          "layer": 25,
+          "type": "TechNodeUpgradeCost",
+          "sprite_index": 50,
+          "sprite_file": "TechTreeIcons_50",
+          "sprite_rect": {
+            "x": 256,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            36,
+            37
+          ]
+        },
+        {
+          "id": 39,
+          "tier": 2,
+          "layer": 26,
+          "type": "PetBonusDamage",
+          "sprite_index": 40,
+          "sprite_file": "TechTreeIcons_40",
+          "sprite_rect": {
+            "x": 0,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            38
+          ]
+        },
+        {
+          "id": 40,
+          "tier": 2,
+          "layer": 26,
+          "type": "PetBonusHealth",
+          "sprite_index": 41,
+          "sprite_file": "TechTreeIcons_41",
+          "sprite_rect": {
+            "x": 128,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            38
+          ]
+        },
+        {
+          "id": 41,
+          "tier": 2,
+          "layer": 27,
+          "type": "SkillSummonCost",
+          "sprite_index": 39,
+          "sprite_file": "TechTreeIcons_39",
+          "sprite_rect": {
+            "x": 896,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            39,
+            40
+          ]
+        },
+        {
+          "id": 42,
+          "tier": 2,
+          "layer": 28,
+          "type": "CommonEggTimer",
+          "sprite_index": 43,
+          "sprite_file": "TechTreeIcons_43",
+          "sprite_rect": {
+            "x": 384,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            41
+          ]
+        },
+        {
+          "id": 43,
+          "tier": 2,
+          "layer": 28,
+          "type": "RareEggTimer",
+          "sprite_index": 44,
+          "sprite_file": "TechTreeIcons_44",
+          "sprite_rect": {
+            "x": 512,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            41
+          ]
+        },
+        {
+          "id": 44,
+          "tier": 2,
+          "layer": 29,
+          "type": "EpicEggTimer",
+          "sprite_index": 45,
+          "sprite_file": "TechTreeIcons_45",
+          "sprite_rect": {
+            "x": 640,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            42
+          ]
+        },
+        {
+          "id": 45,
+          "tier": 2,
+          "layer": 29,
+          "type": "LegendaryEggTimer",
+          "sprite_index": 46,
+          "sprite_file": "TechTreeIcons_46",
+          "sprite_rect": {
+            "x": 768,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            43
+          ]
+        },
+        {
+          "id": 46,
+          "tier": 2,
+          "layer": 30,
+          "type": "UltimateEggTimer",
+          "sprite_index": 47,
+          "sprite_file": "TechTreeIcons_47",
+          "sprite_rect": {
+            "x": 896,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            44
+          ]
+        },
+        {
+          "id": 47,
+          "tier": 2,
+          "layer": 30,
+          "type": "MythicEggTimer",
+          "sprite_index": 48,
+          "sprite_file": "TechTreeIcons_48",
+          "sprite_rect": {
+            "x": 0,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            45
+          ]
+        },
+        {
+          "id": 48,
+          "tier": 2,
+          "layer": 31,
+          "type": "ExtraEggChance",
+          "sprite_index": 42,
+          "sprite_file": "TechTreeIcons_42",
+          "sprite_rect": {
+            "x": 256,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            46,
+            47
+          ]
+        },
+        {
+          "id": 49,
+          "tier": 2,
+          "layer": 32,
+          "type": "GhostTownSkillBonus",
+          "sprite_index": 38,
+          "sprite_file": "TechTreeIcons_38",
+          "sprite_rect": {
+            "x": 768,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            48
+          ]
+        },
+        {
+          "id": 50,
+          "tier": 2,
+          "layer": 32,
+          "type": "ZombieRushTechPotions",
+          "sprite_index": 49,
+          "sprite_file": "TechTreeIcons_49",
+          "sprite_rect": {
+            "x": 128,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            48
+          ]
+        },
+        {
+          "id": 51,
+          "tier": 3,
+          "layer": 33,
+          "type": "TechResearchTimer",
+          "sprite_index": 9,
+          "sprite_file": "TechTreeIcons_9",
+          "sprite_rect": {
+            "x": 128,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            49,
+            50
+          ]
+        },
+        {
+          "id": 52,
+          "tier": 3,
+          "layer": 34,
+          "type": "SkillDamage",
+          "sprite_index": 35,
+          "sprite_file": "TechTreeIcons_35",
+          "sprite_rect": {
+            "x": 384,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            51
+          ]
+        },
+        {
+          "id": 53,
+          "tier": 3,
+          "layer": 35,
+          "type": "SkillPassiveDamage",
+          "sprite_index": 36,
+          "sprite_file": "TechTreeIcons_36",
+          "sprite_rect": {
+            "x": 512,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            52
+          ]
+        },
+        {
+          "id": 54,
+          "tier": 3,
+          "layer": 35,
+          "type": "SkillPassiveHealth",
+          "sprite_index": 37,
+          "sprite_file": "TechTreeIcons_37",
+          "sprite_rect": {
+            "x": 640,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            52
+          ]
+        },
+        {
+          "id": 55,
+          "tier": 3,
+          "layer": 36,
+          "type": "TechNodeUpgradeCost",
+          "sprite_index": 50,
+          "sprite_file": "TechTreeIcons_50",
+          "sprite_rect": {
+            "x": 256,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            53,
+            54
+          ]
+        },
+        {
+          "id": 56,
+          "tier": 3,
+          "layer": 37,
+          "type": "PetBonusDamage",
+          "sprite_index": 40,
+          "sprite_file": "TechTreeIcons_40",
+          "sprite_rect": {
+            "x": 0,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            55
+          ]
+        },
+        {
+          "id": 57,
+          "tier": 3,
+          "layer": 37,
+          "type": "PetBonusHealth",
+          "sprite_index": 41,
+          "sprite_file": "TechTreeIcons_41",
+          "sprite_rect": {
+            "x": 128,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            55
+          ]
+        },
+        {
+          "id": 58,
+          "tier": 3,
+          "layer": 38,
+          "type": "SkillSummonCost",
+          "sprite_index": 39,
+          "sprite_file": "TechTreeIcons_39",
+          "sprite_rect": {
+            "x": 896,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            56,
+            57
+          ]
+        },
+        {
+          "id": 59,
+          "tier": 3,
+          "layer": 39,
+          "type": "CommonEggTimer",
+          "sprite_index": 43,
+          "sprite_file": "TechTreeIcons_43",
+          "sprite_rect": {
+            "x": 384,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            58
+          ]
+        },
+        {
+          "id": 60,
+          "tier": 3,
+          "layer": 39,
+          "type": "RareEggTimer",
+          "sprite_index": 44,
+          "sprite_file": "TechTreeIcons_44",
+          "sprite_rect": {
+            "x": 512,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            58
+          ]
+        },
+        {
+          "id": 61,
+          "tier": 3,
+          "layer": 40,
+          "type": "EpicEggTimer",
+          "sprite_index": 45,
+          "sprite_file": "TechTreeIcons_45",
+          "sprite_rect": {
+            "x": 640,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            59
+          ]
+        },
+        {
+          "id": 62,
+          "tier": 3,
+          "layer": 40,
+          "type": "LegendaryEggTimer",
+          "sprite_index": 46,
+          "sprite_file": "TechTreeIcons_46",
+          "sprite_rect": {
+            "x": 768,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            60
+          ]
+        },
+        {
+          "id": 63,
+          "tier": 3,
+          "layer": 41,
+          "type": "UltimateEggTimer",
+          "sprite_index": 47,
+          "sprite_file": "TechTreeIcons_47",
+          "sprite_rect": {
+            "x": 896,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            61
+          ]
+        },
+        {
+          "id": 64,
+          "tier": 3,
+          "layer": 41,
+          "type": "MythicEggTimer",
+          "sprite_index": 48,
+          "sprite_file": "TechTreeIcons_48",
+          "sprite_rect": {
+            "x": 0,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            62
+          ]
+        },
+        {
+          "id": 65,
+          "tier": 3,
+          "layer": 42,
+          "type": "ExtraEggChance",
+          "sprite_index": 42,
+          "sprite_file": "TechTreeIcons_42",
+          "sprite_rect": {
+            "x": 256,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            63,
+            64
+          ]
+        },
+        {
+          "id": 66,
+          "tier": 3,
+          "layer": 43,
+          "type": "GhostTownSkillBonus",
+          "sprite_index": 38,
+          "sprite_file": "TechTreeIcons_38",
+          "sprite_rect": {
+            "x": 768,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            65
+          ]
+        },
+        {
+          "id": 67,
+          "tier": 3,
+          "layer": 43,
+          "type": "ZombieRushTechPotions",
+          "sprite_index": 49,
+          "sprite_file": "TechTreeIcons_49",
+          "sprite_rect": {
+            "x": 128,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            65
+          ]
+        },
+        {
+          "id": 68,
+          "tier": 4,
+          "layer": 44,
+          "type": "TechResearchTimer",
+          "sprite_index": 9,
+          "sprite_file": "TechTreeIcons_9",
+          "sprite_rect": {
+            "x": 128,
+            "y": 768,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            66,
+            67
+          ]
+        },
+        {
+          "id": 69,
+          "tier": 4,
+          "layer": 45,
+          "type": "SkillDamage",
+          "sprite_index": 35,
+          "sprite_file": "TechTreeIcons_35",
+          "sprite_rect": {
+            "x": 384,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            68
+          ]
+        },
+        {
+          "id": 70,
+          "tier": 4,
+          "layer": 46,
+          "type": "SkillPassiveDamage",
+          "sprite_index": 36,
+          "sprite_file": "TechTreeIcons_36",
+          "sprite_rect": {
+            "x": 512,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            69
+          ]
+        },
+        {
+          "id": 71,
+          "tier": 4,
+          "layer": 46,
+          "type": "SkillPassiveHealth",
+          "sprite_index": 37,
+          "sprite_file": "TechTreeIcons_37",
+          "sprite_rect": {
+            "x": 640,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            69
+          ]
+        },
+        {
+          "id": 72,
+          "tier": 4,
+          "layer": 47,
+          "type": "TechNodeUpgradeCost",
+          "sprite_index": 50,
+          "sprite_file": "TechTreeIcons_50",
+          "sprite_rect": {
+            "x": 256,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            70,
+            71
+          ]
+        },
+        {
+          "id": 73,
+          "tier": 4,
+          "layer": 48,
+          "type": "PetBonusDamage",
+          "sprite_index": 40,
+          "sprite_file": "TechTreeIcons_40",
+          "sprite_rect": {
+            "x": 0,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            72
+          ]
+        },
+        {
+          "id": 74,
+          "tier": 4,
+          "layer": 48,
+          "type": "PetBonusHealth",
+          "sprite_index": 41,
+          "sprite_file": "TechTreeIcons_41",
+          "sprite_rect": {
+            "x": 128,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            72
+          ]
+        },
+        {
+          "id": 75,
+          "tier": 4,
+          "layer": 49,
+          "type": "SkillSummonCost",
+          "sprite_index": 39,
+          "sprite_file": "TechTreeIcons_39",
+          "sprite_rect": {
+            "x": 896,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            73,
+            74
+          ]
+        },
+        {
+          "id": 76,
+          "tier": 4,
+          "layer": 50,
+          "type": "CommonEggTimer",
+          "sprite_index": 43,
+          "sprite_file": "TechTreeIcons_43",
+          "sprite_rect": {
+            "x": 384,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            75
+          ]
+        },
+        {
+          "id": 77,
+          "tier": 4,
+          "layer": 50,
+          "type": "RareEggTimer",
+          "sprite_index": 44,
+          "sprite_file": "TechTreeIcons_44",
+          "sprite_rect": {
+            "x": 512,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            75
+          ]
+        },
+        {
+          "id": 78,
+          "tier": 4,
+          "layer": 51,
+          "type": "EpicEggTimer",
+          "sprite_index": 45,
+          "sprite_file": "TechTreeIcons_45",
+          "sprite_rect": {
+            "x": 640,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            76
+          ]
+        },
+        {
+          "id": 79,
+          "tier": 4,
+          "layer": 51,
+          "type": "LegendaryEggTimer",
+          "sprite_index": 46,
+          "sprite_file": "TechTreeIcons_46",
+          "sprite_rect": {
+            "x": 768,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            77
+          ]
+        },
+        {
+          "id": 80,
+          "tier": 4,
+          "layer": 52,
+          "type": "UltimateEggTimer",
+          "sprite_index": 47,
+          "sprite_file": "TechTreeIcons_47",
+          "sprite_rect": {
+            "x": 896,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            78
+          ]
+        },
+        {
+          "id": 81,
+          "tier": 4,
+          "layer": 52,
+          "type": "MythicEggTimer",
+          "sprite_index": 48,
+          "sprite_file": "TechTreeIcons_48",
+          "sprite_rect": {
+            "x": 0,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            79
+          ]
+        },
+        {
+          "id": 82,
+          "tier": 4,
+          "layer": 53,
+          "type": "ExtraEggChance",
+          "sprite_index": 42,
+          "sprite_file": "TechTreeIcons_42",
+          "sprite_rect": {
+            "x": 256,
+            "y": 256,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            80,
+            81
+          ]
+        },
+        {
+          "id": 83,
+          "tier": 4,
+          "layer": 54,
+          "type": "GhostTownSkillBonus",
+          "sprite_index": 38,
+          "sprite_file": "TechTreeIcons_38",
+          "sprite_rect": {
+            "x": 768,
+            "y": 384,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            82
+          ]
+        },
+        {
+          "id": 84,
+          "tier": 4,
+          "layer": 54,
+          "type": "ZombieRushTechPotions",
+          "sprite_index": 49,
+          "sprite_file": "TechTreeIcons_49",
+          "sprite_rect": {
+            "x": 128,
+            "y": 128,
+            "width": 128,
+            "height": 128
+          },
+          "requirements": [
+            82
+          ]
+        }
+      ]
+    }
+  }
+}

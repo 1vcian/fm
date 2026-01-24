@@ -1,0 +1,1613 @@
+{
+  "0": {
+    "LeagueId": 0,
+    "Rank": [
+      {
+        "RankId": 0,
+        "FromRank": 0,
+        "ToRank": 0,
+        "Rewards": [
+          {
+            "Amount": 175,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 9000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 210,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 180,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 1,
+        "FromRank": 1,
+        "ToRank": 1,
+        "Rewards": [
+          {
+            "Amount": 140,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 7000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 170,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 140,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 2,
+        "FromRank": 2,
+        "ToRank": 2,
+        "Rewards": [
+          {
+            "Amount": 110,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5600,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 140,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 3,
+        "FromRank": 3,
+        "ToRank": 4,
+        "Rewards": [
+          {
+            "Amount": 90,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4500,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 4,
+        "FromRank": 5,
+        "ToRank": 9,
+        "Rewards": [
+          {
+            "Amount": 70,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3500,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 5,
+        "FromRank": 10,
+        "ToRank": 19,
+        "Rewards": [
+          {
+            "Amount": 50,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2800,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 6,
+        "FromRank": 20,
+        "ToRank": 49,
+        "Rewards": [
+          {
+            "Amount": 40,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2300,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 7,
+        "FromRank": 50,
+        "ToRank": 99,
+        "Rewards": [
+          {
+            "Amount": 30,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1800,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "1": {
+    "LeagueId": 1,
+    "Rank": [
+      {
+        "RankId": 0,
+        "FromRank": 0,
+        "ToRank": 0,
+        "Rewards": [
+          {
+            "Amount": 350,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 17500,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 420,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 350,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 70,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 1,
+        "FromRank": 1,
+        "ToRank": 1,
+        "Rewards": [
+          {
+            "Amount": 280,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 14000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 330,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 280,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 20,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 2,
+        "FromRank": 2,
+        "ToRank": 2,
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 11200,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 270,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 220,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 3,
+        "FromRank": 3,
+        "ToRank": 4,
+        "Rewards": [
+          {
+            "Amount": 180,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 9000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 210,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 180,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 4,
+        "FromRank": 5,
+        "ToRank": 9,
+        "Rewards": [
+          {
+            "Amount": 140,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 7100,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 170,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 140,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 5,
+        "FromRank": 10,
+        "ToRank": 19,
+        "Rewards": [
+          {
+            "Amount": 110,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5700,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 130,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 110,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 6,
+        "FromRank": 20,
+        "ToRank": 49,
+        "Rewards": [
+          {
+            "Amount": 90,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4500,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 110,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 90,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 7,
+        "FromRank": 50,
+        "ToRank": 99,
+        "Rewards": [
+          {
+            "Amount": 70,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3600,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 90,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 70,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "2": {
+    "LeagueId": 2,
+    "Rank": [
+      {
+        "RankId": 0,
+        "FromRank": 0,
+        "ToRank": 0,
+        "Rewards": [
+          {
+            "Amount": 700,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 35000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 840,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 700,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 280,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 1,
+        "FromRank": 1,
+        "ToRank": 1,
+        "Rewards": [
+          {
+            "Amount": 550,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 28000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 672,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 560,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 230,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 2,
+        "FromRank": 2,
+        "ToRank": 2,
+        "Rewards": [
+          {
+            "Amount": 450,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 22400,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 538,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 448,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 180,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 3,
+        "FromRank": 3,
+        "ToRank": 4,
+        "Rewards": [
+          {
+            "Amount": 350,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 17920,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 430,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 358,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 4,
+        "FromRank": 5,
+        "ToRank": 9,
+        "Rewards": [
+          {
+            "Amount": 290,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 14336,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 344,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 287,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 5,
+        "FromRank": 10,
+        "ToRank": 19,
+        "Rewards": [
+          {
+            "Amount": 230,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 11469,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 275,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 229,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 6,
+        "FromRank": 20,
+        "ToRank": 49,
+        "Rewards": [
+          {
+            "Amount": 190,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 9175,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 184,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 7,
+        "FromRank": 50,
+        "ToRank": 99,
+        "Rewards": [
+          {
+            "Amount": 150,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 7340,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 176,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 147,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "3": {
+    "LeagueId": 3,
+    "Rank": [
+      {
+        "RankId": 0,
+        "FromRank": 0,
+        "ToRank": 0,
+        "Rewards": [
+          {
+            "Amount": 1225,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 61250,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1470,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1225,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 490,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 1,
+        "FromRank": 1,
+        "ToRank": 1,
+        "Rewards": [
+          {
+            "Amount": 980,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 49000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1176,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 980,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 392,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 2,
+        "FromRank": 2,
+        "ToRank": 2,
+        "Rewards": [
+          {
+            "Amount": 784,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 39200,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 941,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 784,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 314,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 3,
+        "FromRank": 3,
+        "ToRank": 4,
+        "Rewards": [
+          {
+            "Amount": 627,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 31360,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 753,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 627,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 251,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 4,
+        "FromRank": 5,
+        "ToRank": 9,
+        "Rewards": [
+          {
+            "Amount": 502,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 25088,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 602,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 502,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 201,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 5,
+        "FromRank": 10,
+        "ToRank": 19,
+        "Rewards": [
+          {
+            "Amount": 401,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 20070,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 482,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 401,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 161,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 6,
+        "FromRank": 20,
+        "ToRank": 49,
+        "Rewards": [
+          {
+            "Amount": 321,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 16056,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 385,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 321,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 128,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 7,
+        "FromRank": 50,
+        "ToRank": 99,
+        "Rewards": [
+          {
+            "Amount": 257,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 12845,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 308,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 257,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "4": {
+    "LeagueId": 4,
+    "Rank": [
+      {
+        "RankId": 0,
+        "FromRank": 0,
+        "ToRank": 0,
+        "Rewards": [
+          {
+            "Amount": 1750,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 87500,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2100,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 7,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1750,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 700,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 1,
+        "FromRank": 1,
+        "ToRank": 1,
+        "Rewards": [
+          {
+            "Amount": 1400,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 70000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1680,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 6,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 560,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 2,
+        "FromRank": 2,
+        "ToRank": 2,
+        "Rewards": [
+          {
+            "Amount": 1120,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 56000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1344,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1120,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 448,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 3,
+        "FromRank": 3,
+        "ToRank": 4,
+        "Rewards": [
+          {
+            "Amount": 896,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 44800,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1075,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 896,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 358,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 4,
+        "FromRank": 5,
+        "ToRank": 9,
+        "Rewards": [
+          {
+            "Amount": 717,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 35840,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 860,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 717,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 287,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 5,
+        "FromRank": 10,
+        "ToRank": 19,
+        "Rewards": [
+          {
+            "Amount": 573,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 28672,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 688,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 573,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 229,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 6,
+        "FromRank": 20,
+        "ToRank": 49,
+        "Rewards": [
+          {
+            "Amount": 459,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 22938,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 551,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 459,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 184,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 7,
+        "FromRank": 50,
+        "ToRank": 99,
+        "Rewards": [
+          {
+            "Amount": 367,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 18350,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 440,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 367,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 147,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "5": {
+    "LeagueId": 5,
+    "Rank": [
+      {
+        "RankId": 0,
+        "FromRank": 0,
+        "ToRank": 0,
+        "Rewards": [
+          {
+            "Amount": 2625,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 131250,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3150,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 11,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 2625,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1050,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 1,
+        "FromRank": 1,
+        "ToRank": 1,
+        "Rewards": [
+          {
+            "Amount": 2100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 105000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2520,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 8,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 2100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 840,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 2,
+        "FromRank": 2,
+        "ToRank": 2,
+        "Rewards": [
+          {
+            "Amount": 1680,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 84000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2016,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 7,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1680,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 672,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 3,
+        "FromRank": 3,
+        "ToRank": 4,
+        "Rewards": [
+          {
+            "Amount": 1344,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 67200,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1613,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1344,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 538,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 4,
+        "FromRank": 5,
+        "ToRank": 9,
+        "Rewards": [
+          {
+            "Amount": 1075,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 53760,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1290,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1075,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 430,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 5,
+        "FromRank": 10,
+        "ToRank": 19,
+        "Rewards": [
+          {
+            "Amount": 860,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 43008,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1032,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 860,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 344,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 6,
+        "FromRank": 20,
+        "ToRank": 49,
+        "Rewards": [
+          {
+            "Amount": 688,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 34406,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 826,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 688,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 275,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "RankId": 7,
+        "FromRank": 50,
+        "ToRank": 99,
+        "Rewards": [
+          {
+            "Amount": 551,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 27525,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 661,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 551,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 220,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  }
+}

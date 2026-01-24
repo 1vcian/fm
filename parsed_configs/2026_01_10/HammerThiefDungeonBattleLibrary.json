@@ -1,0 +1,502 @@
+{
+  "0": {
+    "Level": 0,
+    "Damage": 15,
+    "Health": 120
+  },
+  "1": {
+    "Level": 1,
+    "Damage": 45,
+    "Health": 360
+  },
+  "2": {
+    "Level": 2,
+    "Damage": 135,
+    "Health": 1080
+  },
+  "3": {
+    "Level": 3,
+    "Damage": 405,
+    "Health": 3240
+  },
+  "4": {
+    "Level": 4,
+    "Damage": 1215,
+    "Health": 9720
+  },
+  "5": {
+    "Level": 5,
+    "Damage": 1580,
+    "Health": 12636
+  },
+  "6": {
+    "Level": 6,
+    "Damage": 2053,
+    "Health": 16427
+  },
+  "7": {
+    "Level": 7,
+    "Damage": 2669,
+    "Health": 21355
+  },
+  "8": {
+    "Level": 8,
+    "Damage": 3470,
+    "Health": 27761
+  },
+  "9": {
+    "Level": 9,
+    "Damage": 4511,
+    "Health": 36090
+  },
+  "10": {
+    "Level": 10,
+    "Damage": 5865,
+    "Health": 46917
+  },
+  "11": {
+    "Level": 11,
+    "Damage": 6744,
+    "Health": 53954
+  },
+  "12": {
+    "Level": 12,
+    "Damage": 7756,
+    "Health": 62047
+  },
+  "13": {
+    "Level": 13,
+    "Damage": 8919,
+    "Health": 71354
+  },
+  "14": {
+    "Level": 14,
+    "Damage": 10257,
+    "Health": 82057
+  },
+  "15": {
+    "Level": 15,
+    "Damage": 11796,
+    "Health": 94366
+  },
+  "16": {
+    "Level": 16,
+    "Damage": 13565,
+    "Health": 108521
+  },
+  "17": {
+    "Level": 17,
+    "Damage": 15600,
+    "Health": 124799
+  },
+  "18": {
+    "Level": 18,
+    "Damage": 17940,
+    "Health": 143519
+  },
+  "19": {
+    "Level": 19,
+    "Damage": 20631,
+    "Health": 165047
+  },
+  "20": {
+    "Level": 20,
+    "Damage": 23725,
+    "Health": 189804
+  },
+  "21": {
+    "Level": 21,
+    "Damage": 26098,
+    "Health": 208784
+  },
+  "22": {
+    "Level": 22,
+    "Damage": 28708,
+    "Health": 229663
+  },
+  "23": {
+    "Level": 23,
+    "Damage": 31579,
+    "Health": 252629
+  },
+  "24": {
+    "Level": 24,
+    "Damage": 34736,
+    "Health": 277892
+  },
+  "25": {
+    "Level": 25,
+    "Damage": 38210,
+    "Health": 305681
+  },
+  "26": {
+    "Level": 26,
+    "Damage": 42031,
+    "Health": 336249
+  },
+  "27": {
+    "Level": 27,
+    "Damage": 46234,
+    "Health": 369874
+  },
+  "28": {
+    "Level": 28,
+    "Damage": 50858,
+    "Health": 406861
+  },
+  "29": {
+    "Level": 29,
+    "Damage": 55943,
+    "Health": 447547
+  },
+  "30": {
+    "Level": 30,
+    "Damage": 61538,
+    "Health": 492302
+  },
+  "31": {
+    "Level": 31,
+    "Damage": 67692,
+    "Health": 541532
+  },
+  "32": {
+    "Level": 32,
+    "Damage": 74461,
+    "Health": 595685
+  },
+  "33": {
+    "Level": 33,
+    "Damage": 81907,
+    "Health": 655254
+  },
+  "34": {
+    "Level": 34,
+    "Damage": 90097,
+    "Health": 720779
+  },
+  "35": {
+    "Level": 35,
+    "Damage": 99107,
+    "Health": 792857
+  },
+  "36": {
+    "Level": 36,
+    "Damage": 109018,
+    "Health": 872143
+  },
+  "37": {
+    "Level": 37,
+    "Damage": 119920,
+    "Health": 959357
+  },
+  "38": {
+    "Level": 38,
+    "Damage": 131912,
+    "Health": 1055293
+  },
+  "39": {
+    "Level": 39,
+    "Damage": 145103,
+    "Health": 1160822
+  },
+  "40": {
+    "Level": 40,
+    "Damage": 159613,
+    "Health": 1276905
+  },
+  "41": {
+    "Level": 41,
+    "Damage": 175574,
+    "Health": 1404595
+  },
+  "42": {
+    "Level": 42,
+    "Damage": 193132,
+    "Health": 1545055
+  },
+  "43": {
+    "Level": 43,
+    "Damage": 212445,
+    "Health": 1699560
+  },
+  "44": {
+    "Level": 44,
+    "Damage": 233690,
+    "Health": 1869516
+  },
+  "45": {
+    "Level": 45,
+    "Damage": 257058,
+    "Health": 2056468
+  },
+  "46": {
+    "Level": 46,
+    "Damage": 282764,
+    "Health": 2262115
+  },
+  "47": {
+    "Level": 47,
+    "Damage": 311041,
+    "Health": 2488326
+  },
+  "48": {
+    "Level": 48,
+    "Damage": 342145,
+    "Health": 2737159
+  },
+  "49": {
+    "Level": 49,
+    "Damage": 366095,
+    "Health": 2928760
+  },
+  "50": {
+    "Level": 50,
+    "Damage": 391722,
+    "Health": 3133773
+  },
+  "51": {
+    "Level": 51,
+    "Damage": 419142,
+    "Health": 3353137
+  },
+  "52": {
+    "Level": 52,
+    "Damage": 448482,
+    "Health": 3587857
+  },
+  "53": {
+    "Level": 53,
+    "Damage": 479876,
+    "Health": 3839007
+  },
+  "54": {
+    "Level": 54,
+    "Damage": 513467,
+    "Health": 4107737
+  },
+  "55": {
+    "Level": 55,
+    "Damage": 549410,
+    "Health": 4395279
+  },
+  "56": {
+    "Level": 56,
+    "Damage": 587869,
+    "Health": 4702948
+  },
+  "57": {
+    "Level": 57,
+    "Damage": 629019,
+    "Health": 5032154
+  },
+  "58": {
+    "Level": 58,
+    "Damage": 673051,
+    "Health": 5384405
+  },
+  "59": {
+    "Level": 59,
+    "Damage": 720164,
+    "Health": 5761314
+  },
+  "60": {
+    "Level": 60,
+    "Damage": 770576,
+    "Health": 6164606
+  },
+  "61": {
+    "Level": 61,
+    "Damage": 824516,
+    "Health": 6596128
+  },
+  "62": {
+    "Level": 62,
+    "Damage": 882232,
+    "Health": 7057857
+  },
+  "63": {
+    "Level": 63,
+    "Damage": 943988,
+    "Health": 7551907
+  },
+  "64": {
+    "Level": 64,
+    "Damage": 1010068,
+    "Health": 8080540
+  },
+  "65": {
+    "Level": 65,
+    "Damage": 1080772,
+    "Health": 8646178
+  },
+  "66": {
+    "Level": 66,
+    "Damage": 1156426,
+    "Health": 9251411
+  },
+  "67": {
+    "Level": 67,
+    "Damage": 1237376,
+    "Health": 9899010
+  },
+  "68": {
+    "Level": 68,
+    "Damage": 1323993,
+    "Health": 10591940
+  },
+  "69": {
+    "Level": 69,
+    "Damage": 1416672,
+    "Health": 11333376
+  },
+  "70": {
+    "Level": 70,
+    "Damage": 1515839,
+    "Health": 12126712
+  },
+  "71": {
+    "Level": 71,
+    "Damage": 1621948,
+    "Health": 12975582
+  },
+  "72": {
+    "Level": 72,
+    "Damage": 1735484,
+    "Health": 13883873
+  },
+  "73": {
+    "Level": 73,
+    "Damage": 1856968,
+    "Health": 14855744
+  },
+  "74": {
+    "Level": 74,
+    "Damage": 2414058,
+    "Health": 19312467
+  },
+  "75": {
+    "Level": 75,
+    "Damage": 3138276,
+    "Health": 25106207
+  },
+  "76": {
+    "Level": 76,
+    "Damage": 4079759,
+    "Health": 32638070
+  },
+  "77": {
+    "Level": 77,
+    "Damage": 5303686,
+    "Health": 42429491
+  },
+  "78": {
+    "Level": 78,
+    "Damage": 6894792,
+    "Health": 55158338
+  },
+  "79": {
+    "Level": 79,
+    "Damage": 8963230,
+    "Health": 71705839
+  },
+  "80": {
+    "Level": 80,
+    "Damage": 11652199,
+    "Health": 93217591
+  },
+  "81": {
+    "Level": 81,
+    "Damage": 15147859,
+    "Health": 121182868
+  },
+  "82": {
+    "Level": 82,
+    "Damage": 19692216,
+    "Health": 157537729
+  },
+  "83": {
+    "Level": 83,
+    "Damage": 25599881,
+    "Health": 204799047
+  },
+  "84": {
+    "Level": 84,
+    "Damage": 33279845,
+    "Health": 266238761
+  },
+  "85": {
+    "Level": 85,
+    "Damage": 43263799,
+    "Health": 346110390
+  },
+  "86": {
+    "Level": 86,
+    "Damage": 56242938,
+    "Health": 449943507
+  },
+  "87": {
+    "Level": 87,
+    "Damage": 73115820,
+    "Health": 584926559
+  },
+  "88": {
+    "Level": 88,
+    "Damage": 95050566,
+    "Health": 760404527
+  },
+  "89": {
+    "Level": 89,
+    "Damage": 123565736,
+    "Health": 988525884
+  },
+  "90": {
+    "Level": 90,
+    "Damage": 160635456,
+    "Health": 1285083650
+  },
+  "91": {
+    "Level": 91,
+    "Damage": 208826093,
+    "Health": 1670608745
+  },
+  "92": {
+    "Level": 92,
+    "Damage": 271473921,
+    "Health": 2171791368
+  },
+  "93": {
+    "Level": 93,
+    "Damage": 352916097,
+    "Health": 2823328779
+  },
+  "94": {
+    "Level": 94,
+    "Damage": 458790927,
+    "Health": 3670327412
+  },
+  "95": {
+    "Level": 95,
+    "Damage": 596428204,
+    "Health": 4771425636
+  },
+  "96": {
+    "Level": 96,
+    "Damage": 775356666,
+    "Health": 6202853327
+  },
+  "97": {
+    "Level": 97,
+    "Damage": 1007963666,
+    "Health": 8063709325
+  },
+  "98": {
+    "Level": 98,
+    "Damage": 1310352765,
+    "Health": 10482822122
+  },
+  "99": {
+    "Level": 99,
+    "Damage": 1703458595,
+    "Health": 13627668759
+  }
+}

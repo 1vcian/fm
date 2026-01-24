@@ -1,0 +1,9 @@
+{
+  "MaxAge": 9,
+  "EnemyHammerDropChance": 0.0,
+  "ForgeUnlockAfterForgesCount": 8,
+  "StartingGems": 100,
+  "StartingHammers": 100,
+  "ForgeLevelPushNoteTrigger": 4,
+  "SecondsToFullyRegenerate": 1.0
+}
