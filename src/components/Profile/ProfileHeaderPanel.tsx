@@ -45,7 +45,7 @@ export function ProfileIcon({ iconIndex, size = 48, className, onClick }: Profil
             style={{
                 width: size,
                 height: size,
-                backgroundImage: `url(/Texture2D/CardIcons.png)`,
+                backgroundImage: `url(./Texture2D/CardIcons.png)`,
                 backgroundPosition: `-${posX}px -${posY}px`,
                 backgroundSize: `${bgSize}px ${bgSize}px`,
             }}
