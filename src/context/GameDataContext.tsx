@@ -17,7 +17,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         async function fetchVersions() {
             try {
-                const res = await fetch('/parsed_configs/versions.json');
+                const res = await fetch('./parsed_configs/versions.json');
                 if (res.ok) {
                     const v = await res.json();
                     v.sort((a: string, b: string) => b.localeCompare(a));

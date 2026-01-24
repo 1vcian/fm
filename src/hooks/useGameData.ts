@@ -42,7 +42,7 @@ export function useGameData<T>(fileName: string) {
 
             // Create the promise and store it in cache
             const fetchPromise = (async () => {
-                const response = await fetch(`/parsed_configs/${selectedVersion}/${fileName}`);
+                const response = await fetch(`./parsed_configs/${selectedVersion}/${fileName}`);
                 if (!response.ok) {
                     throw new Error(`Failed to load ${fileName}`);
                 }

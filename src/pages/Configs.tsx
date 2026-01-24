@@ -48,7 +48,7 @@ export default function Configs() {
     useEffect(() => {
         async function fetchVersions() {
             try {
-                const res = await fetch('/parsed_configs/versions.json');
+                const res = await fetch('./parsed_configs/versions.json');
                 if (res.ok) {
                     const v = await res.json();
                     // Sort descending (latest first, assuming YYYY_MM_DD format)
@@ -80,7 +80,7 @@ export default function Configs() {
             try {
                 const promises = JSON_FILES.map(async (fileName) => {
                     try {
-                        const res = await fetch(`/parsed_configs/${selectedVersion}/${fileName}`);
+                        const res = await fetch(`./parsed_configs/${selectedVersion}/${fileName}`);
                         if (res.ok) {
                             const json = await res.json();
                             cache[fileName] = JSON.stringify(json, null, 2);
