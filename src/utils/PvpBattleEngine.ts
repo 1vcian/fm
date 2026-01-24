@@ -356,10 +356,8 @@ export class PvpBattleEngine {
             isCrit = true;
         }
 
-        let _isBlocked = false;
         if (Math.random() < target.blockChance) {
             damage = 0;
-            _isBlocked = true;
             this.log(`${attacker.isPlayer1 ? 'Player' : 'Enemy'} attacked but was BLOCKED!`, 'info');
         }
 
