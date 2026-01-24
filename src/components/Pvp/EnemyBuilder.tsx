@@ -296,7 +296,14 @@ export function EnemyBuilder() {
                 );
 
                 // 2. Convert Player 2 (Enemy) Stats
-                const p2Stats = enemyConfigToPvpStats(enemy, weaponLibrary, pvpBaseConfig, mountUpgradeLibrary);
+                const p2Stats = enemyConfigToPvpStats(
+                    enemy,
+                    weaponLibrary,
+                    pvpBaseConfig,
+                    mountUpgradeLibrary,
+                    petLibrary,
+                    petBalancingLibrary
+                );
 
                 // 3. Run Simulation
                 const results = simulatePvpBattleMulti(p1Stats, p2Stats, simCount);
@@ -326,7 +333,14 @@ export function EnemyBuilder() {
         if (!globalStats || !skillLibrary || !weaponLibrary || !pvpBaseConfig || !mountUpgradeLibrary) return null;
         try {
             const p1 = aggregatedStatsToPvpStats(globalStats, profile.skills.equipped, skillLibrary, pvpBaseConfig);
-            const p2 = enemyConfigToPvpStats(enemy, weaponLibrary, pvpBaseConfig, mountUpgradeLibrary);
+            const p2 = enemyConfigToPvpStats(
+                enemy,
+                weaponLibrary,
+                pvpBaseConfig,
+                mountUpgradeLibrary,
+                petLibrary,
+                petBalancingLibrary
+            );
             return { p1, p2 };
         } catch (e) {
             console.error(e);
@@ -471,7 +485,7 @@ export function EnemyBuilder() {
     };
 
     return (
-        <Card className="p-6 space-y-8 bg-bg-secondary/5">
+        <Card className="p-6 bg-bg-secondary/5">
             {/* Toolbar */}
             <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-border/50">
                 <div className="flex items-center gap-2 mr-auto">

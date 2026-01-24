@@ -187,10 +187,10 @@ export interface PvpBattleResult {
 }
 
 const PVP_TIME_LIMIT = 60.0;
-const SKILL_STARTUP_TIME = 3.2;
+const SKILL_STARTUP_TIME = 5;
 const TIME_STEP = 1 / 60;
 const SECONDS_TO_FULLY_REGENERATE = 1.0;
-const PLAYER_SPEED = 4.0;
+const PLAYER_SPEED = 2;
 
 const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale"];
 
@@ -214,7 +214,7 @@ export class PvpBattleEngine {
 
     constructor(player1Stats: PvpPlayerStats, player2Stats: PvpPlayerStats) {
         this.player1 = this.createEntity(1, true, player1Stats, 2);
-        this.player2 = this.createEntity(2, false, player2Stats, 18);
+        this.player2 = this.createEntity(2, false, player2Stats, 23); // Distance 21 (same as BattleEngine)
         this.player1Skills = this.createSkillStates(player1Stats.skills, true);
         this.player2Skills = this.createSkillStates(player2Stats.skills, false);
         this.initializeRegen(this.player1, player1Stats);
@@ -363,24 +363,39 @@ export class PvpBattleEngine {
     private tick(dt: number): void {
         this.time += dt;
 
-        // Health regen for both players
+        // Health regen for both players (Order doesn't matter much here, but let's be consistent)
         this.processRegen(this.player1, dt);
         this.processRegen(this.player2, dt);
 
-        // Skills for both players
-        this.processSkills(this.player1Skills, this.player1, this.player2, dt, true);
-        this.processSkills(this.player2Skills, this.player2, this.player1, dt, false);
+        // Skills for both players - Randomized Order
+        if (Math.random() < 0.5) {
+            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true);
+            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false);
+        } else {
+            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false);
+            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true);
+        }
 
-        // Active effects for both players
-        this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true);
-        this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false);
+        // Active effects for both players - Randomized Order
+        if (Math.random() < 0.5) {
+            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true);
+            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false);
+        } else {
+            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false);
+            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true);
+        }
 
         // Projectiles
         this.processProjectiles(dt);
 
-        // Movement and combat for both players
-        this.processMovementAndCombat(this.player1, this.player2, dt);
-        this.processMovementAndCombat(this.player2, this.player1, dt);
+        // Movement and combat for both players - Randomized Order
+        if (Math.random() < 0.5) {
+            this.processMovementAndCombat(this.player1, this.player2, dt);
+            this.processMovementAndCombat(this.player2, this.player1, dt);
+        } else {
+            this.processMovementAndCombat(this.player2, this.player1, dt);
+            this.processMovementAndCombat(this.player1, this.player2, dt);
+        }
     }
 
     private processRegen(entity: EntityState, dt: number) {
@@ -987,7 +1002,7 @@ export function enemyConfigToPvpStats(
     }
 
     // PvP Multipliers
-    const pvpHpBaseMulti = pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0;
+    const pvpHpBaseMulti = Math.max(2.0, pvpBaseConfig?.PvpHpBaseMultiplier ?? 2.0);
     const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
     const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
 
@@ -1090,6 +1105,8 @@ export function enemyConfigToPvpStats(
     // Final PvP HP = (pvpCombinedHp) * (1 + pvpMountHealthMulti + healthMulti)
     const pvpTotalHp = pvpCombinedHp * (1 + pvpMountHealthMulti + healthMulti);
 
+
+
     return {
         hp: Math.max(1, pvpTotalHp), // Ensure at least 1 HP
         damage: enemyConfig.stats.damage,
@@ -1191,7 +1208,7 @@ export function aggregatedStatsToPvpStats(
     derivedBaseHp = Math.max(0, derivedBaseHp);
 
     // 4. Apply PVP Multipliers
-    const pvpHpBaseMulti = pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0;
+    const pvpHpBaseMulti = Math.max(2.0, pvpBaseConfig?.PvpHpBaseMultiplier ?? 2.0);
     const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
     const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
 
@@ -1202,6 +1219,8 @@ export function aggregatedStatsToPvpStats(
     const pvpMountHealthMulti = mountHealthPct * pvpHpMountMulti;
 
     const pvpTotalHp = pvpCombinedHp * (1 + pvpMountHealthMulti + secHealthMulti);
+
+
 
     return {
         hp: Math.round(Math.max(1, pvpTotalHp)),
