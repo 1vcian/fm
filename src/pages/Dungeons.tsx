@@ -331,12 +331,6 @@ export default function Dungeons() {
         return 'GemSquare'; // Fallback
     };
 
-    const getSafeSpriteName = (name: string | undefined) => {
-        if (!name) return "Battle";
-        if (name === "Monster") return "Battle";
-        if (name === "ThiefGoblin") return "Battle"; // Fallback to avoid crash
-        return name;
-    }
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in">
@@ -580,7 +574,7 @@ export default function Dungeons() {
                     difficultyMode={0}
                     dungeonType={selectedTab === 'Hammer' ? 'hammer' : selectedTab === 'Skill' ? 'skill' : selectedTab === 'Egg' ? 'egg' : 'potion'}
                     dungeonLevel={level - 1} // 0-99
-                    customWaves={null}
+                    customWaves={undefined}
                 />
             )}
         </div>

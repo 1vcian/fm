@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeMode } from '../context/TreeModeContext';
 import { useGameData } from './useGameData';
-import { ItemSlot, PetSlot, MountSlot, UserProfile } from '../types/Profile';
+import { ItemSlot, PetSlot, MountSlot } from '../types/Profile';
 
 interface TechModifiers {
     [key: string]: number;

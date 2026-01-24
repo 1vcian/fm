@@ -3,7 +3,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { useGameData } from '../../hooks/useGameData';
 import { GameIcon } from '../../components/UI/GameIcon';
-import { Calculator, ArrowRightLeft, Swords } from 'lucide-react';
+import { Calculator, ArrowRightLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 

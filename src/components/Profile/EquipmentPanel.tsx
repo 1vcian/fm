@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
 import { MountSelectorModal } from './MountSelectorModal';
 import { InputModal } from '../UI/InputModal';
-import { cn, getAgeBgStyle, getRarityBgStyle, getAgeBorderStyle } from '../../lib/utils';
+import { cn, getAgeBgStyle, getAgeBorderStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
 import { AGES } from '../../utils/constants';

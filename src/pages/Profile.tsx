@@ -1,5 +1,5 @@
 import { useProfile } from '../context/ProfileContext';
-import { Download, Upload, Save, Trash2, Copy, Clipboard } from 'lucide-react';
+import { Download, Upload, Trash2, Copy, Clipboard } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -14,13 +14,10 @@ import { SkillsPassivesPanel } from '../components/Profile/SkillsPassivesPanel';
 
 export default function Profile() {
     const {
-        profile,
-        saveProfile,
         resetProfile,
         exportProfile,
         importProfile,
         cloneProfile,
-        saveSharedProfile,
         importProfileFromJsonString
     } = useProfile();
 

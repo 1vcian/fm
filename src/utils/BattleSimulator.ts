@@ -2,7 +2,6 @@ import type { AggregatedStats } from './statEngine.ts';
 import { UserProfile } from '../types/Profile';
 import { BattleEngine } from './BattleEngine.ts';
 import {
-    getAvailableStages,
     calculateEnemyHp,
     calculateEnemyDmg,
     calculateProgressDifficultyIdx,
@@ -11,8 +10,6 @@ import {
     BattleResult,
     WaveResult,
     DungeonLevelConfig,
-    AgeScaling,
-    WeaponInfo,
     LibraryData
 } from './BattleHelper';
 

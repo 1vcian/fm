@@ -1,6 +1,0 @@
-{
-  "MinIdleSeconds": 600.0,
-  "MaxIdleSeconds": 14400.0,
-  "CoinsPerSecond": 1.0,
-  "HammersPerMinute": 1.0
-}

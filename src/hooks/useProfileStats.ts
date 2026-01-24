@@ -15,9 +15,9 @@ export function useProfileStats() {
         if (!itemBalancing || !techTree) return {}; // Wait for critical libs
 
         return calculateStats(profile, {
-            itemBalancing,
-            secondaryStats,
-            techTree,
+            itemBalancingLibrary: itemBalancing,
+            secondaryStatLibrary: secondaryStats,
+            techTreeLibrary: techTree,
             petLibrary
         });
     }, [profile, itemBalancing, secondaryStats, techTree, petLibrary]);

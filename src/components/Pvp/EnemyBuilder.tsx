@@ -264,7 +264,7 @@ export function EnemyBuilder() {
     );
 }
 
-function StatInput({ label, value, onChange, icon, step = 1, isPercent = false }: any) {
+function StatInput({ label, value, onChange, icon, step = 1 }: any) {
     return (
         <div className="bg-bg-input p-2 rounded border border-border/50">
             <div className="flex items-center justify-between mb-1">

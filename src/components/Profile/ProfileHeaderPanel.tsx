@@ -4,7 +4,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
-import { Pencil, Check, X, User } from 'lucide-react';
+import { Pencil, Check, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 // CardIcons.png is 8x8 spritesheet with offset
@@ -12,7 +12,6 @@ const ICONS_PER_ROW = 8;
 const TOTAL_ICONS = 64;
 const SPRITE_OFFSET_X = 5; // Horizontal padding offset
 const SPRITE_OFFSET_Y = 7; // Vertical padding offset
-const ORIGINAL_ICON_SIZE = 124; // Actual icon size in spritesheet (128 - padding adjustments)
 const ORIGINAL_SHEET_SIZE = 1024;
 
 interface ProfileIconProps {
@@ -25,10 +24,10 @@ interface ProfileIconProps {
 export function ProfileIcon({ iconIndex, size = 48, className, onClick }: ProfileIconProps) {
     const col = iconIndex % ICONS_PER_ROW;
     const row = Math.floor(iconIndex / ICONS_PER_ROW);
-    
+
     // Scale factor from original to display size
     const scale = size / (ORIGINAL_SHEET_SIZE / ICONS_PER_ROW);
-    
+
     // Calculate position accounting for the offset in the spritesheet
     const cellSize = ORIGINAL_SHEET_SIZE / ICONS_PER_ROW; // 128px per cell
     const posX = (col * cellSize + SPRITE_OFFSET_X) * scale;

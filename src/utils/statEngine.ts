@@ -101,6 +101,8 @@ export interface AggregatedStats {
     maxItemLevels: Record<string, number>;
 }
 
+export type StatMap = Record<string, any>;
+
 export const DEFAULT_STATS: AggregatedStats = {
     basePlayerDamage: 10,
     basePlayerHealth: 80,
@@ -173,6 +175,7 @@ export interface LibraryData {
     itemBalancingConfig?: any;
     weaponLibrary?: any;
     projectilesLibrary?: any;
+    secondaryStats?: any;
     secondaryStatLibrary?: any;
 }
 
@@ -1090,7 +1093,7 @@ export class StatEngine {
 
 }
 
-export function calculateStats(profile: UserProfile, libs: LibraryData): AggregatedStats {
+export function calculateStats(profile: UserProfile, libs: LibraryData): any {
     const engine = new StatEngine(profile, libs);
     if (typeof window !== 'undefined') {
         (window as any).debugCalculator = engine;

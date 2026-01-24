@@ -1,6 +1,5 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
-import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
 import { Zap, Plus, X, Minus } from 'lucide-react';
@@ -22,7 +21,6 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
     const { profile, updateNestedProfile } = useProfile();
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
-    const techModifiers = useTreeModifiers();
     const globalStats = useGlobalStats();
     const equippedSkills = profile.skills.equipped;
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -286,11 +284,11 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                             <span className="text-text-muted text-[10px] uppercase truncate">Cooldown</span>
                                             <div className="flex flex-wrap items-baseline gap-1">
                                                 <span className="font-mono font-bold leading-tight">
-                                                    {(stats.cooldown * Math.max(0.1, 1 - (globalStats?.skillCooldownReduction || 0))).toFixed(2)}s
+                                                    {(stats.cooldown * Math.max(0.1, 1 - (globalStats?.skillCooldownReduction ?? 0))).toFixed(2)}s
                                                 </span>
-                                                {globalStats?.skillCooldownReduction > 0 && (
+                                                {(globalStats?.skillCooldownReduction ?? 0) > 0 && (
                                                     <span className="text-green-400 text-[10px] whitespace-nowrap">
-                                                        (-{(globalStats.skillCooldownReduction * 100).toFixed(0)}%)
+                                                        (-{(globalStats!.skillCooldownReduction * 100).toFixed(0)}%)
                                                     </span>
                                                 )}
                                             </div>

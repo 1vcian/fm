@@ -4,7 +4,7 @@ import { useGameDataContext } from '../context/GameDataContext';
 // Cache to store loaded data and prevent redundant fetches
 const dataCache: Record<string, any> = {};
 // Cache to store generic promises for in-flight requests
-const promiseCache: Record<string, Promise<any>> = {};
+const promiseCache: Record<string, Promise<any> | undefined> = {};
 
 export function useGameData<T>(fileName: string) {
     const { selectedVersion } = useGameDataContext();

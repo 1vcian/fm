@@ -165,12 +165,10 @@ export class BattleEngine {
     };
 
     private playerStats: AggregatedStats;
-    private initialMaxHealth: number; // Base max health for regen calculations
     private debugConfig?: DebugConfig;
 
     constructor(playerStats: AggregatedStats, debugConfig?: DebugConfig) {
         this.playerStats = playerStats;
-        this.initialMaxHealth = playerStats.totalHealth;
         this.debugConfig = debugConfig;
 
         // Speed Config (Default 4.0)

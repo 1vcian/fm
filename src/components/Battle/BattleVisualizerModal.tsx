@@ -9,8 +9,6 @@ import { SpriteIcon } from '../UI/SpriteIcon';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { Play, Pause, X, Zap, Heart, Sword, Shield, Clock, Users } from 'lucide-react';
 
-// Texture2D path for game assets
-const TEXTURE_PATH = '/Texture2D/';
 const basePath = import.meta.env.BASE_URL;
 import { getItemImage } from '../../utils/itemAssets';
 import { AGES, SKILL_MECHANICS } from '../../utils/constants';
@@ -851,8 +849,6 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                         const ehp = Math.max(0, Math.min(100, (enemy.health / (enemy.maxHealth || 1)) * 100));
 
                         // Get weapon sprite from AutoItemMapping
-                        const weaponData = (enemy.weaponSpriteKey && autoItemMapping) ? autoItemMapping[enemy.weaponSpriteKey] : null;
-                        const spriteName = weaponData?.SpriteName;
 
                         const weaponSpriteKey = enemy.weaponSpriteKey; // e.g. "0_5_0"
 

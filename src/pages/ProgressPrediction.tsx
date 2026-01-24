@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Shield, Heart, Zap, AlertTriangle, Flame, CheckCircle, XCircle, Play, Target, ChevronLeft, ChevronRight, Swords } from 'lucide-react';
+import { TrendingUp, Shield, Zap, AlertTriangle, Flame, CheckCircle, XCircle, Play, Target, ChevronLeft, ChevronRight, Swords } from 'lucide-react';
 import { useBattleSimulation } from '../hooks/useBattleSimulation';
 import { BattleResult } from '../utils/BattleSimulator';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
@@ -183,7 +183,6 @@ function MainBattleView({
     // Optimization: Use Ref for grid statuses to allow frequent updates without re-render spam, 
     // then trigger re-render once with tick.
     const [levelStatuses, setLevelStatuses] = useState<Map<string, number>>(new Map());
-    const [_tick, setTick] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Calculate Global Max Beatable (Furthest Progress)
