@@ -1,10 +1,81 @@
 import { useState, useMemo, useEffect } from 'react';
 import { forgeProbabilities, expValues } from '../constants/forgeData';
+import { useGameData } from './useGameData';
+import { useTreeModifiers } from './useCalculatedStats';
 
 export type CalculationMode = 'calculate' | 'target';
 
 interface UseForgeCalculatorProps {
     initialLevel?: number;
+}
+
+// Separate hook for reuse in Profile/MiscPanel
+export function useForgeUpgradeStats(level: number) {
+    const { data: upgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
+    const techModifiers = useTreeModifiers();
+    const forgeCostReduction = techModifiers['ForgeUpgradeCost'] || 0;
+    const forgeTimerSpeed = techModifiers['ForgeTimerSpeed'] || 0;
+    // FreeForgeChance is likely a multiplier e.g. 0.01 for 1%.
+    // In TechTreeLibrary it had Value: 0.01.
+    const freeForgeChance = techModifiers['FreeForgeChance'] || 0;
+
+    return useMemo(() => {
+        if (!upgradeData) return null;
+
+        // Cost Calculation
+        // Use `level` directly as JSON Key N represents upgrade FROM N to N+1.
+        // Previously we did level + 1, effectively fetching the NEXT tier.
+        // We want the current tier's upgrade cost.
+        const nextLevelData = upgradeData[String(level)] || upgradeData[level] || {};
+        // Cost Calculation
+        const baseCost = nextLevelData.Cost || 0;
+        const reduction = forgeCostReduction;
+        const cost = Math.floor(baseCost * (1 - reduction));
+
+        // Tiers (Steps)
+        const tiers = nextLevelData.Tiers || 1;
+        const costPerTier = Math.floor(cost / tiers);
+
+        // Steps (Hammers) & Time Calculation
+        // JSON "Duration" is the Base Time in SECONDS for the entire Level (Total).
+        // It matches the Excel sheet's "Time" column exactly.
+        const baseDurationSeconds = nextLevelData.Duration || 0;
+
+        // Time with Speed Bonus (Speed reduces time: Time / (1 + Bonus))
+        const speedMultiplier = 1 + forgeTimerSpeed;
+        const totalTimeSeconds = baseDurationSeconds / speedMultiplier;
+
+        // Hammers (Clicks)
+        // Derived from Time: If base speed is 0.25s/hammer, then Hammers = Duration / 0.25.
+        const baseSecondsPerHammer = 0.25;
+        const rawHammersNeeded = Math.ceil(baseDurationSeconds / baseSecondsPerHammer);
+
+        // Effective Hammers (paying for Free Forge)
+        const hammersToUpgrade = Math.ceil(rawHammersNeeded * (1 - freeForgeChance));
+        const hammersPerTier = tiers > 0 ? Math.ceil(hammersToUpgrade / tiers) : hammersToUpgrade;
+
+        /* Removed old Exp Calculation */
+        const requiredExp = baseDurationSeconds; // Mapping "Exp" to Seconds for stats compatibility if needed
+        const expPerHammer = baseSecondsPerHammer; // 1 hammer = 0.25 "seconds" of progress
+
+        const goldPerHammer = hammersToUpgrade > 0 ? cost / hammersToUpgrade : 0;
+
+        return {
+            cost,
+            baseCost,
+            reduction,
+            tiers,
+            costPerTier,
+            requiredExp,
+            hammersToUpgrade, // Now reflects "Expected Consumed Hammers"
+            hammersPerTier,
+            rawHammersNeeded, // Exposed if needed
+            goldPerHammer,
+            totalTimeSeconds,
+            expPerHammer,
+            freeForgeChance
+        };
+    }, [level, upgradeData, forgeCostReduction, forgeTimerSpeed, freeForgeChance]);
 }
 
 export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps = {}) {
@@ -31,18 +102,9 @@ export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps
         localStorage.setItem('forgeMasterLevel', level.toString());
     }, [level]);
 
-    // Derived Values
-    const expPerHammer = useMemo(() => {
-        const probs = forgeProbabilities[level];
-        if (!probs) return 0;
-
-        let expected = 0;
-        for (const [tier, probability] of Object.entries(probs)) {
-            const exp = expValues[tier] || 0;
-            expected += (probability / 100) * exp;
-        }
-        return expected;
-    }, [level]);
+    // Use shared hook for upgrade stats
+    const upgradeStats = useForgeUpgradeStats(level);
+    const expPerHammer = upgradeStats?.expPerHammer || 0;
 
     const freeMultiplier = useMemo(() => {
         return 1 / (1 - (freeSummonPercent / 100));
@@ -51,6 +113,10 @@ export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps
     const effectiveHammers = useMemo(() => {
         return hammerCount * freeMultiplier;
     }, [hammerCount, freeMultiplier]);
+
+    // Upgrade Cost Calculation (New)
+    // This section is now handled by useForgeUpgradeStats and its result is `upgradeStats`
+    // The original `upgradeStats` useMemo block is removed.
 
     // Results: Calculate Mode
     const totalExp = useMemo(() => {
@@ -145,6 +211,9 @@ export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps
         actualHammersNeeded,
         expectedWithRecommended,
         coinEstimates,
-        probabilityData
+        probabilityData,
+
+        // New Upgrade Data
+        upgradeStats
     };
 }

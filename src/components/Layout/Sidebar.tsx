@@ -45,6 +45,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Pets', path: '/pets', icon: Cat },
                 { name: 'Mounts', path: '/mounts', icon: Star },
                 { name: 'Skills', path: '/skills', icon: Star },
+                { name: 'Forge', path: '/wiki/forge', icon: Hammer },
                 { name: 'Tech Tree', path: '/tech-tree', icon: Cpu },
                 { name: 'Arena', path: '/arena', icon: Swords },
                 { name: 'Guild War', path: '/guild-war', icon: Shield },

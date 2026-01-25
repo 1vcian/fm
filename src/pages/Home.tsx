@@ -22,7 +22,8 @@ export default function Home() {
         actualHammersNeeded,
         expectedWithRecommended,
         coinEstimates,
-        probabilityData
+        probabilityData,
+        upgradeStats
     } = useForgeCalculator();
 
     return (
@@ -57,6 +58,65 @@ export default function Home() {
                                     <option key={lvl} value={lvl}>Level {lvl}</option>
                                 ))}
                             </Select>
+
+                            {/* Upgrade Info */}
+                            {upgradeStats && (
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                                            <div className="text-[10px] uppercase font-bold text-yellow-500/70 mb-1">Upgrade Cost</div>
+                                            <div className="flex flex-col">
+                                                <div className="font-mono font-bold text-yellow-400">
+                                                    {formatNumber(upgradeStats.cost)}
+                                                </div>
+                                                {upgradeStats.reduction > 0 && (
+                                                    <div className="text-[10px] text-text-muted line-through">
+                                                        {formatNumber(upgradeStats.baseCost)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-accent-primary/10 rounded-lg border border-accent-primary/20">
+                                            <div className="text-[10px] uppercase font-bold text-accent-primary/70 mb-1">Cost Per Hammer</div>
+                                            <div className="font-mono font-bold text-accent-primary">
+                                                {formatNumber(upgradeStats.goldPerHammer)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-3 bg-bg-secondary rounded-lg border border-border">
+                                            <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Total EXP Needed</div>
+                                            <div className="font-mono font-bold text-text-primary">
+                                                {formatNumber(upgradeStats.requiredExp)}
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-bg-secondary rounded-lg border border-border">
+                                            <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Steps (Hammers)</div>
+                                            <div className="font-mono font-bold text-text-primary">
+                                                {formatNumber(upgradeStats.hammersToUpgrade)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div className="p-3 bg-bg-secondary rounded-lg border border-border flex justify-between items-center">
+                                            <div className="text-[10px] uppercase font-bold text-text-muted">Estimated Time (Auto)</div>
+                                            <div className="font-mono font-bold text-text-primary">
+                                                {(() => {
+                                                    const seconds = upgradeStats.totalTimeSeconds;
+                                                    if (!seconds) return '-';
+                                                    if (seconds < 60) return `${Math.ceil(seconds)}s`;
+                                                    const mins = Math.floor(seconds / 60);
+                                                    if (mins < 60) return `${mins}m ${Math.ceil(seconds % 60)}s`;
+                                                    const hours = Math.floor(mins / 60);
+                                                    if (hours < 24) return `${hours}h ${Math.ceil(mins % 60)}m`;
+                                                    const days = Math.floor(hours / 24);
+                                                    return `${days}d ${hours % 24}h`;
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Free Summon Bonus */}
                             <div className="grid grid-cols-1 gap-4">
