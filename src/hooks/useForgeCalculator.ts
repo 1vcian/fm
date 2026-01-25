@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { forgeProbabilities, expValues } from '../constants/forgeData';
+import { forgeProbabilities } from '../constants/forgeData';
 import { useGameData } from './useGameData';
 import { useTreeModifiers } from './useCalculatedStats';
 
