@@ -5,29 +5,29 @@ import { Swords, Trophy, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // Constants
-const LEAGUE_NAMES = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master'];
+const LEAGUE_NAMES = ['Unranked', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 const LEAGUE_COLORS = [
+    'border-slate-500 text-slate-500', // Unranked
     'border-[#cd7f32] text-[#cd7f32]', // Bronze
     'border-[#c0c0c0] text-[#c0c0c0]', // Silver
     'border-[#ffd700] text-[#ffd700]', // Gold
-    'border-[#e5e4e2] text-[#e5e4e2]', // Platinum
-    'border-[#b9f2ff] text-[#b9f2ff]', // Diamond
-    'border-[#ff6b6b] text-[#ff6b6b]', // Master
+    'border-[#26c6da] text-[#26c6da]', // Platinum (Cyan)
+    'border-[#9c27b0] text-[#9c27b0]', // Diamond (Purple)
 ];
 const LEAGUE_BG_GRADIENTS = [
+    'from-slate-500/10 to-transparent',
     'from-[#cd7f32]/10 to-transparent',
     'from-[#c0c0c0]/10 to-transparent',
     'from-[#ffd700]/10 to-transparent',
-    'from-[#e5e4e2]/10 to-transparent',
-    'from-[#b9f2ff]/10 to-transparent',
-    'from-[#ff6b6b]/10 to-transparent',
+    'from-[#26c6da]/10 to-transparent',
+    'from-[#9c27b0]/10 to-transparent',
 ];
 
 /*
 - **Arena Wiki Icon Refactor**:
-    - **Official Shield Sprites**: Replaced broken individual image files with the high-quality shield sprites (`BronzeShield` to `MasterShield`) from the shared `Icons.png` sheet.
-    - **Reward Icon Standardization**: All ranking rewards (Hammers, Gold, Summon Tickets, etc.) now use the corresponding official game icons via the `GameIcon` component. Per your request, `ClockWinders` now correctly display the `MountKey` icon.
-    - **Visual Polish**: Improved the league card layout with better typography and shadow effects to make the icons pop.
+    - **Official Shield Sprites**: Replaced broken individual image files with the high-quality shield sprites from the shared `Icons.png` sheet.
+    - **Reward Icon Standardization**: All ranking rewards now use the corresponding official game icons.
+    - **Visual Polish**: Improved the league card layout with better typography and shadow effects.
 */
 
 interface RankReward {
@@ -41,23 +41,21 @@ interface LeagueReward {
 }
 
 export default function Arena() {
-    // Config hardcoded in legacy, but maybe in JSON too? 
-    // Legacy used hardcoded `leagueData` for thresholds. Let's replicate or try fetch.
     // 'ArenaRewardLibrary.json' for rewards.
     const { data: rewardsData, loading } = useGameData<Record<string, LeagueReward>>('ArenaRewardLibrary.json');
 
-    // Hardcoded thresholds from legacy if not found in JSON (ArenaLeagueLibrary might exist?)
+    // Thresholds match the progression: Unranked -> Diamond
     const leagueThresholds: Record<number, { p: number; d: number }> = {
-        0: { p: 90, d: 0 },  // Bronze
-        1: { p: 80, d: 0 },  // Silver
-        2: { p: 50, d: 90 }, // Gold (Promote 1-50, Demote 91-100)
-        3: { p: 20, d: 80 }, // Platinum
-        4: { p: 10, d: 70 }, // Diamond
-        5: { p: 0, d: 60 }   // Master
+        0: { p: 90, d: 0 },  // Unranked (Top 90 Promote)
+        1: { p: 80, d: 0 },  // Bronze (Top 80 Promote)
+        2: { p: 50, d: 90 }, // Silver (Top 50 Promote, Bottom 10 Demote)
+        3: { p: 20, d: 80 }, // Gold (Top 20 Promote, Bottom 20 Demote)
+        4: { p: 10, d: 70 }, // Platinum (Top 10 Promote, Bottom 30 Demote)
+        5: { p: 0, d: 60 }   // Diamond (None Promote, Bottom 40 Demote)
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+        <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
             <div className="flex items-center gap-4 border-b border-border pb-6">
                 <Swords className="w-10 h-10 text-accent-primary" />
                 <div>
@@ -126,6 +124,7 @@ export default function Arena() {
 
                                     <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                                         {loading && <div className="text-xs text-text-muted">Loading...</div>}
+                                        {!loading && !rewardData && <div className="text-xs text-text-muted opacity-50">No reward data found</div>}
                                         {rewardData && rewardData.Rank?.map((r, rIdx) => (
                                             <div key={rIdx} className="text-sm flex flex-col gap-1 bg-bg-primary/20 p-2 rounded">
                                                 <div className="font-bold text-xs text-accent-secondary">
@@ -169,13 +168,14 @@ function mapRewardType(type: string): string {
 }
 
 function getLeagueIconName(idx: number): string {
+    // Shifted to match Unranked -> Diamond
     const shields = [
-        'BronzeShield',
-        'SilverShield',
-        'GoldShield',
-        'PlatinumShield',
-        'PlatinumShield', // Diamond fallback
-        'MasterShield'
+        'Battle',         // Unranked (Generic Battle Icon)
+        'BronzeShield',   // Bronze
+        'SilverShield',   // Silver
+        'GoldShield',     // Gold
+        'PlatinumShield', // Platinum
+        'MasterShield'    // Diamond (using MasterShield asset which is usually purple/top tier)
     ];
-    return shields[idx] || 'BronzeShield';
+    return shields[idx] || 'Battle';
 }
