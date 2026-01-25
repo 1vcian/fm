@@ -97,9 +97,19 @@ export default function Dungeons() {
 
     const [showDebug, setShowDebug] = useState(false);
 
-    const { profile } = useProfile();
+    const { profile, updateNestedProfile } = useProfile();
     const { playerStats, libs } = useBattleSimulation();
     const { treeMode } = useTreeMode();
+
+    const updateKeys = (type: string, count: number) => {
+        const currentCounts = profile?.misc?.dungeonKeyCounts || { Hammer: 0, Skill: 0, Egg: 0, Potion: 0 };
+        updateNestedProfile('misc', {
+            dungeonKeyCounts: {
+                ...currentCounts,
+                [type]: count
+            }
+        });
+    };
 
     // Reward Data
     const { data: rewardData } = useGameData<any>('DungeonRewardLibrary.json');
@@ -331,11 +341,38 @@ export default function Dungeons() {
     };
 
 
+    // War Config
+    const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
+
+    // Dynamic War Points Mapping
+    const warPointsPerKey = useMemo(() => {
+        if (!warDayConfig) return { Hammer: 1000, Skill: 1000, Egg: 1000, Potion: 1000 };
+
+        const day1 = warDayConfig['1'] || warDayConfig[1]; // Verify key is string or number in JSON
+        if (!day1 || !day1.Tasks) return { Hammer: 1000, Skill: 1000, Egg: 1000, Potion: 1000 };
+
+        const getPoints = (taskName: string) => {
+            const task = day1.Tasks.find((t: any) => t.Task === taskName);
+            // Reward is usually a list, get first WarPointsReward
+            const reward = task?.Rewards?.find((r: any) => r.$type === 'WarPointsReward');
+            return reward?.Amount || 0;
+        };
+
+        return {
+            Hammer: getPoints('UseHammerThiefDungeonKey') || 1000,
+            Skill: getPoints('UseGhostTownDungeonKey') || 1000, // Check mapping: GhostTown usually gives Skill Tickets
+            Egg: getPoints('UseInvasionDungeonKey') || 1000,
+            Potion: getPoints('UseZombieInvasionDungeonKey') || 1000
+        };
+    }, [warDayConfig]);
+
+    // ... (rest of code) ...
+
     return (
         <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in">
             {/* Header / Tabs */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/10 pb-6">
-                <div>
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-6 border-b border-white/10 pb-6">
+                <div className="flex-1">
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent mb-2 flex items-center gap-3">
                         <SpriteIcon name="UnknownKey" size={40} className="drop-shadow-glow" />
                         Dungeon Analyzer
@@ -343,7 +380,48 @@ export default function Dungeons() {
                     <p className="text-text-secondary">Analyze enemy compositions and rewards for every stage.</p>
                 </div>
 
-                <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
+                {/* Key Calculator */}
+                <Card className="bg-bg-secondary/40 border-white/10 p-4 min-w-[340px] shrink-0">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
+                            <SpriteIcon name="GemSquare" size={16} />
+                            Guild War Points (Day 1)
+                        </h3>
+                        <div className="bg-accent-primary/20 text-accent-primary px-2 py-1 rounded text-xs font-bold border border-accent-primary/20">
+                            {Object.entries(profile?.misc?.dungeonKeyCounts || {}).reduce((sum, [type, count]) => {
+                                const pts = warPointsPerKey[type as DungeonType] || 0;
+                                return sum + (count * pts);
+                            }, 0)} Points
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                        {DUNGEON_TABS.map(tab => {
+                            const keyCount = (profile?.misc?.dungeonKeyCounts as any)?.[tab.id] || 0;
+                            const pts = warPointsPerKey[tab.id];
+                            const totalPts = keyCount * pts;
+                            return (
+                                <div key={tab.id} className="flex flex-col items-center gap-2">
+                                    <div className="relative group">
+                                        <SpriteIcon name={tab.icon} size={32} className="drop-shadow-md" />
+                                        <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/90 px-1.5 py-0.5 rounded text-[9px] border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none text-white">
+                                            {totalPts} pts ({pts}/key)
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="w-14 bg-black/40 border border-white/10 rounded-lg text-center text-sm font-bold p-1 focus:border-accent-primary outline-none transition-colors"
+                                        value={keyCount}
+                                        onChange={(e) => updateKeys(tab.id, Math.max(0, parseInt(e.target.value) || 0))}
+                                        onFocus={(e) => e.target.select()}
+                                    />
+                                </div>
+                            )
+                        })}
+                    </div>
+                </Card>
+
+                <div className="flex bg-black/20 p-1 rounded-xl border border-white/5 shrink-0">
                     {DUNGEON_TABS.map(tab => (
                         <button
                             key={tab.id}

@@ -112,6 +112,12 @@ export interface UserProfile {
         mountCalculatorProgress?: number;
         mountCalculatorWinders?: number;
         techPotions?: number;
+        dungeonKeyCounts?: {
+            Hammer: number;
+            Skill: number;
+            Egg: number;
+            Potion: number;
+        };
     };
 }
 
@@ -173,6 +179,12 @@ export const INITIAL_PROFILE: UserProfile = {
         mountCalculatorLevel: 1,
         mountCalculatorProgress: 0,
         mountCalculatorWinders: 0,
-        techPotions: 0
+        techPotions: 0,
+        dungeonKeyCounts: {
+            Hammer: 0,
+            Skill: 0,
+            Egg: 0,
+            Potion: 0
+        }
     }
 };
