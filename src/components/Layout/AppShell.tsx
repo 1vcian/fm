@@ -38,7 +38,7 @@ export default function AppShell() {
                                 </a>
                                 <span className="text-border">|</span>
                                 <a
-                                    href="https://github.com/1vcian/ForgeMasterCalculator"
+                                    href="https://github.com/1vcian/fm"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-1.5 text-text-secondary hover:text-white transition-colors"

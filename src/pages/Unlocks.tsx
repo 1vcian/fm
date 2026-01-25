@@ -34,12 +34,14 @@ const FEATURE_NAMES: Record<string, string> = {
     SkillSlot2: 'Skill Slot 3',
     Hammer_1: 'Extra Hammer 1',
     PetSlot2: 'Pet Slot 3',
-    Hammer_2: 'Extra Hammer 2'
+    Hammer_2: 'Extra Hammer 2',
+    RateUs_1: 'Rate Us (Phase 1)',
+    RateUs_2: 'Rate Us (Phase 2)',
 };
 
 interface UnlockCondition {
-    age: number;
-    battle: number; // 0-indexed stage?
+    AgeIdx: number;
+    BattleIdx: number;
 }
 
 export default function Unlocks() {
@@ -52,7 +54,7 @@ export default function Unlocks() {
         const byAge: Record<number, { feature: string; data: UnlockCondition }[]> = {};
 
         Object.entries(unlockData).forEach(([feature, data]) => {
-            const age = data.age;
+            const age = data.AgeIdx;
             if (!byAge[age]) byAge[age] = [];
             byAge[age].push({ feature, data });
         });
@@ -62,7 +64,7 @@ export default function Unlocks() {
             .map(([ageStr, features]) => {
                 const age = parseInt(ageStr);
                 // Sort features within age by battle stage
-                features.sort((a, b) => a.data.battle - b.data.battle);
+                features.sort((a, b) => a.data.BattleIdx - b.data.BattleIdx);
                 return {
                     age,
                     ageName: AGES[age] || `Age ${age + 1}`,
@@ -114,15 +116,14 @@ export default function Unlocks() {
                             {group.features.map(({ feature, data }) => (
                                 <Card key={feature} className="flex items-center gap-4 p-4 hover:border-accent-primary/50 transition-colors">
                                     <div className="w-10 h-10 rounded bg-accent-primary/10 flex items-center justify-center shrink-0">
-                                        {/* Try to match icon or generic */}
-                                        <GameIcon name="chest-unlocked" className="w-6 h-6" />
+                                        <GameIcon name={getFeatureIcon(feature)} className="w-6 h-6" />
                                     </div>
                                     <div className="overflow-hidden">
                                         <div className="font-semibold truncate" title={FEATURE_NAMES[feature] || feature}>
                                             {FEATURE_NAMES[feature] || feature}
                                         </div>
                                         <div className="text-sm text-text-muted">
-                                            Stage {group.age + 1}-{data.battle + 1}
+                                            Stage {group.age + 1}-{data.BattleIdx + 1}
                                         </div>
                                     </div>
                                 </Card>
@@ -135,4 +136,24 @@ export default function Unlocks() {
             {/* Detailed Table View if needed, or just keep timeline which is nicer */}
         </div>
     );
+}
+
+function getFeatureIcon(feature: string): string {
+    const f = feature.toLowerCase();
+    if (f.includes('hammer')) return 'Hammer';
+    if (f.includes('coin') || f.includes('idle')) return 'Coin';
+    if (f.includes('shop') || f.includes('starter')) return 'GemSquare';
+    if (f.includes('skill')) return 'SkillTicket';
+    if (f.includes('pet') || f.includes('egg')) return 'Egg';
+    if (f.includes('dungeon_hammer')) return 'HammerKey';
+    if (f.includes('dungeon_skill')) return 'SkillKey';
+    if (f.includes('dungeon_pet')) return 'PetKey';
+    if (f.includes('dungeon_potion')) return 'PotionKey';
+    if (f.includes('dungeon')) return 'Battle';
+    if (f.includes('arena')) return 'Battle';
+    if (f.includes('techtree')) return 'Potion';
+    if (f.includes('guild')) return 'MasterShield';
+    if (f.includes('rateus')) return 'Star';
+    if (f.includes('login') || f.includes('name')) return 'Male';
+    return 'CommonChest';
 }
