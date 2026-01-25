@@ -25,6 +25,8 @@ import Profile from './pages/Profile';
 import ProgressPrediction from './pages/ProgressPrediction';
 import PvpArena from './pages/PvpArena';
 import ForgeCalculator from './pages/Calculators/ForgeCalculator';
+import MountCalculator from './pages/Calculators/MountCalculator';
+import SkillCalculator from './pages/Calculators/SkillCalculator';
 import Verify from './pages/Verify';
 
 function App() {
@@ -57,6 +59,9 @@ function App() {
                                 <Route path="colors" element={<Colors />} />
                                 <Route path="faq" element={<FAQ />} />
                                 <Route path="pvp-arena" element={<PvpArena />} />
+                                <Route path="calculators/forge" element={<ForgeCalculator />} />
+                                <Route path="calculators/mounts" element={<MountCalculator />} />
+                                <Route path="calculators/skills" element={<SkillCalculator />} />
                                 <Route path="*" element={<Home />} />
                             </Route>
                         </Routes>

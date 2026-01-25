@@ -31,7 +31,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Eggs', path: '/eggs', icon: Egg },
                 { name: 'Dungeons', path: '/dungeons', icon: Key },
                 { name: 'PVP Arena', path: '/pvp-arena', icon: Swords },
-                { name: 'Forge Calculator', path: '/forge-calculator', icon: Hammer },
+                { name: 'Forge', path: '/forge-calculator', icon: Hammer },
+                { name: 'Mounts', path: '/calculators/mounts', icon: Star },
+                { name: 'Skills', path: '/calculators/skills', icon: Star },
             ]
         },
         {

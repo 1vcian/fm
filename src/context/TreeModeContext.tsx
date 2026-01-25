@@ -6,6 +6,8 @@ interface TreeModeContextType {
     treeMode: TreeMode;
     setTreeMode: (mode: TreeMode) => void;
     cycleTreeMode: () => void;
+    activeTree?: any;
+    simulatedTree?: any;
 }
 
 const TreeModeContext = createContext<TreeModeContextType | undefined>(undefined);

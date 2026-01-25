@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { SecondaryStatInput } from '../UI/SecondaryStatInput';
 import { Plus, Trash2, Save, Info, Minus, X, Search, Star, Grid, Settings } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { PetSlot } from '../../types/Profile';
@@ -140,19 +141,13 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
 
             newStats[index] = { ...newStats[index], statId: value, value: currentValue };
         } else {
-            // Apply max value check for manual entry
-            if (field === 'value') {
-                const range = getStatRange(newStats[index].statId);
-                // Clamp to max
-                if (range && value > (range.max * 100)) {
-                    value = parseFloat((range.max * 100).toFixed(2));
-                }
-            }
             newStats[index] = { ...newStats[index], [field]: value };
         }
 
         setManualStats(newStats);
     };
+
+
 
     const handleRemoveStat = (index: number) => {
         setManualStats(manualStats.filter((_, i) => i !== index));
@@ -165,7 +160,10 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                 rarity: selectedRarity,
                 level: petLevel,
                 evolution: 0,
-                secondaryStats: manualStats
+                secondaryStats: manualStats.map(s => ({
+                    statId: s.statId,
+                    value: s.value
+                }))
             });
             onClose();
         }
@@ -430,15 +428,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                                 <option key={t} value={t}>{getStatName(t)}</option>
                                                             ))}
                                                         </select>
-                                                        <input
-                                                            type="number"
-                                                            step="0.01"
+                                                        <SecondaryStatInput
+                                                            value={stat.value as number}
+                                                            onChange={(val) => handleUpdateStat(idx, 'value', val)}
                                                             min={(range?.min || 0) * 100}
                                                             max={(range?.max || 1) * 100}
-                                                            value={stat.value}
-                                                            onChange={(e) => handleUpdateStat(idx, 'value', parseFloat(e.target.value) || 0)}
-                                                            className="w-16 bg-bg-input border border-border rounded px-2 py-1 text-xs font-mono"
-                                                            onFocus={(e) => e.target.select()}
                                                         />
                                                         <button
                                                             onClick={() => handleRemoveStat(idx)}
@@ -761,15 +755,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                                     <option key={t} value={t}>{getStatName(t)}</option>
                                                                 ))}
                                                             </select>
-                                                            <input
-                                                                type="number"
-                                                                step="0.01"
+                                                            <SecondaryStatInput
+                                                                value={stat.value as number}
+                                                                onChange={(val) => handleUpdateStat(idx, 'value', val)}
                                                                 min={(range?.min || 0) * 100}
                                                                 max={(range?.max || 1) * 100}
-                                                                value={stat.value}
-                                                                onChange={(e) => handleUpdateStat(idx, 'value', parseFloat(e.target.value) || 0)}
-                                                                className="w-16 bg-bg-input border border-border rounded px-2 py-1 text-xs font-mono"
-                                                                onFocus={(e) => e.target.select()}
                                                             />
                                                             <button
                                                                 onClick={() => handleRemoveStat(idx)}

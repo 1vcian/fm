@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
-import { eggDropRates } from '../constants/eggData';
+import { useTreeMode } from '../context/TreeModeContext';
+
 
 export interface EggOptimizationResult {
     toOpen: Record<string, number>;
@@ -18,18 +19,54 @@ export function useEggsCalculator() {
     const { data: guildWarConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: techTreeMapping } = useGameData<any>('TechTreeMapping.json');
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
-    const { profile } = useProfile();
+    const { data: dungeonEggData } = useGameData<any>('DungeonRewardEggLibrary.json');
+    const { data: petConfig } = useGameData<any>('PetBaseConfig.json');
+    const { profile, updateNestedProfile } = useProfile();
+    const { treeMode } = useTreeMode();
+
+    // Helper to get effective tech level based on Mode
+    const getTechLevel = (treeName: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number, maxLevel: number = 0) => {
+        if (treeMode === 'max') return maxLevel || 999;
+        if (treeMode === 'empty') return 0;
+        return profile?.techTree?.[treeName]?.[nodeId] || 0;
+    };
 
     // --- Optimization State ---
     const [ownedEggs, setOwnedEggs] = useState<Record<string, number>>({
         Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0
     });
     const [timeLimitHours, setTimeLimitHours] = useState(24);
-    const [availableSlots, setAvailableSlots] = useState(3);
+    const [availableSlots, _setAvailableSlots] = useState(3);
+    const maxSlots = petConfig?.EggHatchSlotMaxCount || 4; // Dynamic max from config
 
-    // --- Drop Rate State ---
-    const [difficulty, setDifficulty] = useState('1-1');
-    const [manualSpeedBonus, setManualSpeedBonus] = useState(0);
+    const setAvailableSlots = (val: number) => {
+        const safeVal = Math.min(maxSlots, Math.max(1, val));
+        _setAvailableSlots(safeVal);
+        if (profile) {
+            updateNestedProfile('misc', { eggSlots: safeVal });
+        }
+    };
+
+    // --- Drop Rate State (Stage Selector) ---
+    const [selectedStage, _setSelectedStage] = useState(1);
+
+    const setSelectedStage = (val: number) => {
+        const safeVal = Math.min(Math.max(1, val), 100); // 1-100 limit?
+        _setSelectedStage(safeVal);
+        if (profile) {
+            updateNestedProfile('misc', { eggStage: safeVal });
+        }
+    };
+
+    const [dungeonKeys, _setDungeonKeys] = useState(1);
+
+    const setDungeonKeys = (val: number) => {
+        const safeVal = Math.max(1, val);
+        _setDungeonKeys(safeVal);
+        if (profile) {
+            updateNestedProfile('misc', { dungeonKeys: safeVal });
+        }
+    };
 
     // Load State
     useEffect(() => {
@@ -38,12 +75,19 @@ export function useEggsCalculator() {
             if (savedOwned) setOwnedEggs(JSON.parse(savedOwned));
 
             if (profile.misc?.eggSlots) {
-                setAvailableSlots(profile.misc.eggSlots);
+                if (profile.misc?.eggSlots && profile.misc.eggSlots !== availableSlots) {
+                    _setAvailableSlots(profile.misc.eggSlots);
+                }
+            }
+
+            if (profile.misc?.eggStage) {
+                _setSelectedStage(profile.misc.eggStage);
+            }
+
+            if (profile.misc?.dungeonKeys) {
+                _setDungeonKeys(profile.misc.dungeonKeys);
             }
         }
-
-        const savedDiff = localStorage.getItem('eggDifficulty');
-        if (savedDiff && eggDropRates[savedDiff]) setDifficulty(savedDiff);
     }, [profile]);
 
     // Save State
@@ -55,33 +99,10 @@ export function useEggsCalculator() {
         // Optional: Save to profile if we had a dedicated field
     };
 
-    useEffect(() => {
-        localStorage.setItem('eggDifficulty', difficulty);
-    }, [difficulty]);
 
-    // --- Drop Rate Logic ---
-    const rates = useMemo(() => {
-        return eggDropRates[difficulty] || {};
-    }, [difficulty]);
-
-    const probabilityData = useMemo(() => {
-        const tiers = ['common', 'rare', 'epic', 'legendary', 'ultimate', 'mythic']; // lowercase in eggData?
-        // Check eggData keys. Usually they are lowercase in constants, capitalized in GameData.
-        // Assuming lowercase 'common' matches `eggDropRates` keys.
-        return tiers.filter(tier => rates[tier]).map(tier => ({
-            tier, // Keep original case
-            probability: rates[tier]
-        }));
-    }, [rates]);
 
     // --- Hatch Time Logic (Shared) ---
-    // We calculate "Optimized Time" (using Profile) AND "Manual Time" (using Input).
-    // The UI uses 'hatchingTimes' for display.
-    // Let's return both or normalize.
-    // The "Info" tab uses 'hatchingTimes' based on 'speedBonus' (manual).
-    // The "Calculator" tab uses Profile bonuses.
-
-    // 1. Profile-based Hatch Values (for Calculator)
+    // 1. Profile-based Hatch Values (for Calculator & Info)
     const hatchValuesProfile = useMemo(() => {
         if (!eggLibrary || !profile?.techTree || !techTreeMapping) return null;
 
@@ -108,9 +129,9 @@ export function useEggsCalculator() {
             const nodeId = findNodeId(nodeTypeName);
 
             if (nodeConfig && nodeId !== null) {
-                // 3. Get User Level from Profile
-                // Access dynamic key safely
-                const userLevel = profile.techTree.SkillsPetTech?.[nodeId] || 0;
+                // 3. Get User Level (respecting Tree Mode)
+                const userLevel = getTechLevel('SkillsPetTech', nodeId, nodeConfig.MaxLevel);
+
                 if (userLevel > 0) {
                     const stat = nodeConfig.Stats?.[0]; // Usually only one stat for these
                     if (stat) {
@@ -123,25 +144,28 @@ export function useEggsCalculator() {
             times[rarity] = baseTime / speedDivisor;
         });
         return times;
-    }, [eggLibrary, profile, techTreeLibrary, techTreeMapping]);
+    }, [eggLibrary, profile, techTreeLibrary, techTreeMapping, treeMode]);
 
-    // 2. Manual Hatch Values (for Info Tab)
-    const hatchValuesManual = useMemo(() => {
-        if (!eggLibrary) return {};
-        const times: Record<string, number> = {};
-        // Manual bonus is %. e.g. 50 = +50% speed? = Divisor 1.5? Or reduction?
-        // Previous code: base / (1 + speedBonus/100)
-        const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
-        const lowerRarities = ['common', 'rare', 'epic', 'legendary', 'ultimate', 'mythic'];
+    // --- Drop Rate Logic (Dynamic from Stage) ---
+    const stageDropRates = useMemo(() => {
+        if (!dungeonEggData) return [];
 
-        rarities.forEach((rarity, idx) => {
-            // Mapping Case if needed. EggLibrary uses Capitalized.
-            const baseTime = eggLibrary[rarity]?.HatchTime || 0;
-            times[lowerRarities[idx]] = baseTime / (1 + (manualSpeedBonus / 100)); // Map to lower for Info Tab display?
-            // Actually 'probabilityData' uses lowercase.
-        });
-        return times;
-    }, [eggLibrary, manualSpeedBonus]);
+        // Data index is (Level - 1) string
+        const levelKey = (selectedStage - 1).toString();
+        const dropRates = dungeonEggData[levelKey];
+
+        if (!dropRates) return [];
+
+        const tiers = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+
+        return tiers.map(tier => {
+            const probability = dropRates[tier] || 0;
+            return {
+                tier,
+                probability
+            };
+        }).filter(item => item.probability > 0 || item.tier === 'Common'); // Keep at least one or filter zeros? Keeping zeros might be informative.
+    }, [dungeonEggData, selectedStage]);
 
     // --- War Logic ---
     const warPoints = useMemo(() => {
@@ -217,13 +241,10 @@ export function useEggsCalculator() {
             if (count > 0) {
                 hPoints += count * (warPoints[rarity]?.hatch || 0);
 
-                // Estimate Merges:
-                // Simple logic: Every 5 opened gives 1 merge of THIS rarity (creating next)
-                // BUT, user might already have some. Ideally, "Total Owned after Open" / 5.
-                // Calculator asks for "Number of Eggs". Assuming they open them all.
-                // Let's assume user merges everything they hatch.
-                const merges = Math.floor(count / 5);
-                mPoints += merges * (warPoints[rarity]?.merge || 0);
+                // User Feedback: "Every egg you open, you also merge".
+                // Detailed meaning: Hatching provides a pet which is immediately used for an upgrade/merge action.
+                // Thus, 1 Hatch Event = 1 Merge Event.
+                mPoints += count * (warPoints[rarity]?.merge || 0);
             }
         });
 
@@ -240,18 +261,51 @@ export function useEggsCalculator() {
 
     }, [ownedEggs, timeLimitHours, availableSlots, hatchValuesProfile, warPoints]);
 
+    // --- Tech Tree Multiplier ---
+    const eggDungeonMultiplier = useMemo(() => {
+        if (!profile || !techTreeMapping || !techTreeLibrary) return 1;
+
+        let bonus = 0;
+        // Check all trees for ExtraEggChance
+        ['Forge', 'Power', 'SkillsPetTech'].forEach((treeName) => {
+            const nodes = techTreeMapping.trees?.[treeName]?.nodes;
+            if (!nodes) return;
+
+            nodes.forEach((node: any) => {
+                if (node.type === 'ExtraEggChance') {
+                    // Check Mode
+                    const def = techTreeLibrary[node.type];
+                    const level = getTechLevel(treeName as any, node.id, def?.MaxLevel || 0);
+
+                    if (level > 0) {
+                        if (def && def.Stats && def.Stats[0]) {
+                            const stat = def.Stats[0];
+                            const val = stat.Value + ((level - 1) * stat.ValueIncrease);
+                            bonus += val;
+                        }
+                    }
+                }
+            });
+        });
+
+        return 1 + bonus;
+    }, [profile, techTreeMapping, techTreeLibrary, treeMode]);
+
     return {
         // Optimization
         ownedEggs, setOwnedEggs, updateOwnedEggs,
         timeLimitHours, setTimeLimitHours,
-        availableSlots, setAvailableSlots,
+        availableSlots, setAvailableSlots, maxSlots,
         hatchValues: hatchValuesProfile, // Default to profile values
         optimization,
+        eggDungeonMultiplier, // Export this
 
         // Info / Manual
-        difficulty, setDifficulty,
-        speedBonus: manualSpeedBonus, setSpeedBonus: setManualSpeedBonus,
-        hatchingTimes: hatchValuesManual, // For info tab using manual speed
-        probabilityData
+        selectedStage, setSelectedStage,
+        dungeonKeys, setDungeonKeys,
+        stageDropRates,
+        todayTotalDrops: dungeonKeys * 2 * eggDungeonMultiplier, // Export total for display
+        hatchingTimes: hatchValuesProfile, // Use real profile times now
+        warPoints
     };
 }

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { SecondaryStatInput } from '../UI/SecondaryStatInput';
 import { X, Bike as MountIcon, Save, Info, Plus, Minus, Trash2, Star, Grid, Settings } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSlot } from '../../types/Profile';
@@ -122,19 +123,13 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
 
             newStats[index] = { ...newStats[index], statId: value, value: currentValue };
         } else {
-            // Apply max value check for manual entry
-            if (field === 'value') {
-                const range = getStatRange(newStats[index].statId);
-                // Clamp to max
-                if (range && value > (range.max * 100)) {
-                    value = parseFloat((range.max * 100).toFixed(2));
-                }
-            }
             newStats[index] = { ...newStats[index], [field]: value };
         }
 
         setManualStats(newStats);
     };
+
+
 
     const removeStat = (index: number) => {
         setManualStats(manualStats.filter((_, i) => i !== index));
@@ -155,10 +150,12 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     const handleSave = () => {
         if (selectedMountId !== null) {
             // Convert percentage back to decimal for storage (19.7 -> 0.197)
-            const statsToSave = manualStats.map(s => ({
-                ...s,
-                value: s.value / 100
-            }));
+            const statsToSave = manualStats.map(s => {
+                return {
+                    ...s,
+                    value: s.value / 100
+                };
+            });
             onSelect(selectedRarity, selectedMountId, mountLevel, statsToSave);
             onClose();
         }
@@ -398,15 +395,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                                     <option key={t} value={t}>{getStatName(t)}</option>
                                                                 ))}
                                                             </select>
-                                                            <input
-                                                                type="number"
-                                                                step="0.01"
+                                                            <SecondaryStatInput
+                                                                value={stat.value as number}
+                                                                onChange={(val) => updateStat(i, 'value', val)}
                                                                 min={(range?.min || 0) * 100}
                                                                 max={(range?.max || 1) * 100}
-                                                                value={stat.value}
-                                                                onChange={(e) => updateStat(i, 'value', parseFloat(e.target.value) || 0)}
-                                                                className="w-16 bg-bg-input border border-border rounded px-2 py-1 text-xs font-mono"
-                                                                onFocus={(e) => e.target.select()}
                                                             />
                                                             <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
                                                                 <Trash2 className="w-3 h-3" />
@@ -697,15 +690,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                                     <option key={t} value={t}>{getStatName(t)}</option>
                                                                 ))}
                                                             </select>
-                                                            <input
-                                                                type="number"
-                                                                step="0.01"
+                                                            <SecondaryStatInput
+                                                                value={stat.value as number}
+                                                                onChange={(val) => updateStat(i, 'value', val)}
                                                                 min={(range?.min || 0) * 100}
                                                                 max={(range?.max || 1) * 100}
-                                                                value={stat.value}
-                                                                onChange={(e) => updateStat(i, 'value', parseFloat(e.target.value) || 0)}
-                                                                className="w-16 bg-bg-input border border-border rounded px-2 py-1 text-xs font-mono"
-                                                                onFocus={(e) => e.target.select()}
                                                             />
                                                             <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
                                                                 <Trash2 className="w-3 h-3" />

@@ -33,6 +33,9 @@ const SPRITE_MAPPING: Record<string, { x: number; y: number }> = {
     'RareChest': { x: 256, y: 768 },
     'EpicChest': { x: 512, y: 768 },
     'LegendaryChest': { x: 768, y: 768 },
+    'MountKey': { x: 1024, y: 768 },
+    'Timer': { x: 1280, y: 768 },
+    'WarTicket': { x: 1536, y: 768 },
     // Fallback/Generic Icons
     'Sword': { x: 1024, y: 0 }, // Using Battle icon as placeholder
     'Bow': { x: 512, y: 0 },    // Using ArrowDown icon as placeholder

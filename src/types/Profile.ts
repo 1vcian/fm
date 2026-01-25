@@ -97,6 +97,8 @@ export interface UserProfile {
             [dungeonId: string]: number; // e.g. "Dungeon_Hammer" -> 50
         };
         eggSlots: number;
+        eggStage?: number; // Persisted selection for Drop Rates tab
+        dungeonKeys?: number; // Persisted for Drop Predictor
         researchLevel: number;
         forgeCalculator?: {
             hammers: string;
@@ -104,6 +106,8 @@ export interface UserProfile {
             mode: 'hammers' | 'gold';
             usePlayerItems?: boolean;
         };
+        skillCalculatorLevel?: number;
+        skillCalculatorTickets?: number;
     };
 }
 
@@ -152,11 +156,15 @@ export const INITIAL_PROFILE: UserProfile = {
         forgeLevel: 1,
         dungeonLevels: {},
         eggSlots: 2,
+        eggStage: 1,
+        dungeonKeys: 1,
         researchLevel: 1,
         forgeCalculator: {
             hammers: '0',
             targetGold: '0',
             mode: 'hammers'
-        }
+        },
+        skillCalculatorLevel: 1,
+        skillCalculatorTickets: 0
     }
 };

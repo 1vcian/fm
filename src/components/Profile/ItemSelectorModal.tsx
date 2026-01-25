@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { SecondaryStatInput } from '../UI/SecondaryStatInput';
 import { X, Sword, Heart, Shield, Plus, Trash2, Clock, Target, Unlock, Calendar, Grid, Settings, Bookmark } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
@@ -315,7 +316,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 idx: ageIdx === -1 ? (selectedItemData as ItemSlot).idx : (selectedItemData as any).ItemId?.Idx || 0,
                 level: level,
                 rarity: 'Common',
-                secondaryStats: manualStats.map(s => ({ statId: s.type, value: s.value }))
+                secondaryStats: manualStats.map(s => ({
+                    statId: s.type,
+                    value: s.value
+                }))
             };
             onSelect(newItem);
             onClose();
@@ -341,20 +345,12 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         if (field === 'type') {
             const range = getStatRange(value);
             let currentValue = newStats[index].value;
-
             if (range && currentValue > (range.max * 100)) {
                 currentValue = parseFloat((range.max * 100).toFixed(2));
             }
-
             newStats[index] = { ...newStats[index], type: value, value: currentValue };
         } else {
-            // Apply max value check for manual entry
-            if (field === 'value') {
-                const range = getStatRange(newStats[index].type);
-                if (range && value > (range.max * 100)) {
-                    value = parseFloat((range.max * 100).toFixed(2));
-                }
-            }
+            // value comes from SecondaryStatInput as a number
             newStats[index] = { ...newStats[index], [field]: value };
         }
 
@@ -649,15 +645,11 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                 <option key={t} value={t}>{getStatName(t)}</option>
                                             ))}
                                         </select>
-                                        <input
-                                            type="number"
-                                            step="0.01"
+                                        <SecondaryStatInput
+                                            value={stat.value as number}
+                                            onChange={(val) => updateStat(i, 'value', val)}
                                             min={(range?.min || 0) * 100}
                                             max={(range?.max || 1) * 100}
-                                            value={stat.value}
-                                            onChange={(e) => updateStat(i, 'value', parseFloat(e.target.value) || 0)}
-                                            className="w-16 bg-bg-input border border-border rounded px-2 py-1 text-xs font-mono"
-                                            onFocus={(e) => e.target.select()}
                                         />
                                         <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
                                             <Trash2 className="w-3 h-3" />
@@ -1037,15 +1029,11 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                             <option key={t} value={t}>{getStatName(t)}</option>
                                                         ))}
                                                     </select>
-                                                    <input
-                                                        type="number"
-                                                        step="0.0001"
+                                                    <SecondaryStatInput
+                                                        value={stat.value as number}
+                                                        onChange={(val) => updateStat(i, 'value', val)}
                                                         min={(range?.min || 0) * 100}
                                                         max={(range?.max || 1) * 100}
-                                                        value={stat.value}
-                                                        onChange={(e) => updateStat(i, 'value', parseFloat(e.target.value.replace(',', '.')) || 0)}
-                                                        className="w-16 bg-bg-input border border-border rounded px-2 py-1 text-xs font-mono"
-                                                        onFocus={(e) => e.target.select()}
                                                     />
                                                     <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
                                                         <Trash2 className="w-3 h-3" />
