@@ -24,6 +24,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'My Profile', path: '/', isProfile: true },
                 { name: 'Progress Prediction', path: '/progress-prediction', icon: TrendingUp },
                 { name: 'PVP Simulator', path: '/pvp-arena', icon: Swords },
+                { name: 'Colors', path: '/colors', icon: Palette },
             ]
         },
         {
@@ -55,7 +56,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             title: 'Info',
             items: [
                 { name: 'Unlocks', path: '/unlocks', icon: Lock },
-                { name: 'Colors', path: '/colors', icon: Palette },
                 { name: 'Configs', path: '/configs', icon: FileJson },
                 { name: 'FAQ', path: '/faq', icon: HelpCircle },
                 { name: 'GitHub', path: 'https://github.com/1vcian/fm', icon: Github, external: true },
