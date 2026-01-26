@@ -12,7 +12,7 @@ interface ColorStop {
 
 export default function Colors() {
     const [text, setText] = useState('1vcian.me/fm');
-    const [startColor, setStartColor] = useState('#ff0000ff');
+    const [startColor, setStartColor] = useState('#ff0000');
     const [endColor, setEndColor] = useState('#FFD700');
     const [middleColors, setMiddleColors] = useState<ColorStop[]>([]);
     const [mode, setMode] = useState<'chars' | 'words'>('chars');
