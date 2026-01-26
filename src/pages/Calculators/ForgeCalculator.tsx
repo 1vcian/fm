@@ -471,13 +471,13 @@ export default function ForgeCalculator() {
         Object.entries(forgeStats.dropChanceData).forEach(([key, val]) => {
             const chanceVal = val as number;
             if (!key.startsWith('Age') || typeof chanceVal !== 'number' || chanceVal <= 0) return;
-            const ageIdx = parseInt(key.replace('Age', ''));
+            // const ageIdx = parseInt(key.replace('Age', '')); // Removed
 
             // Granular Price Calculation for this specific age
             // Formula: The highest age corresponds to referenceLevel. 
-            // Lower ages are offset by 5 levels each (matching the brackets midpoint difference).
-            // Crucially, we calculate price PER SLOT because Price(AvgLevel) != Avg(Price(SlotLevel)) due to exponents.
-            const ageOffset = maxAgeIdx - ageIdx;
+            // We removed the 'Age Offset' logic (-5 levels per tier) as per user request/verification.
+            // Items from previous ages now drop at full Slot Level.
+            // const ageOffset = maxAgeIdx - ageIdx;
 
             let ageTotalCoins = 0;
             const slots = ['Weapon', 'Helmet', 'Body', 'Glove', 'Ring', 'Necklace', 'Belt', 'Shoe'];
@@ -492,9 +492,9 @@ export default function ForgeCalculator() {
                     slotTechBonus = profileSlotBonuses[slot] || 0;
                 }
 
-                // Base Level + Slot Tech + Latent Bonus - Age Offset
+                // Base Level + Slot Tech + Latent Bonus
                 // Note: Latent Bonus is global (Forge Level), Slot Tech is specific.
-                const slotLevel = (balancingConfig.ItemBaseMaxLevel + 1) + slotTechBonus + (bonuses.latentLevelBonus || 0) - (ageOffset * 5);
+                const slotLevel = balancingConfig.ItemBaseMaxLevel + slotTechBonus + (bonuses.latentLevelBonus || 0);
 
                 const baseScaling = 1.0100000000093132;
                 const basePrice = balancingConfig.SellBasePrice * Math.pow(baseScaling, slotLevel);
@@ -536,7 +536,7 @@ export default function ForgeCalculator() {
             const chanceVal = val as number;
             if (!key.startsWith('Age') || typeof chanceVal !== 'number' || chanceVal <= 0) return;
             const ageIdx = parseInt(key.replace('Age', ''));
-            const ageOffset = maxAgeIdx - ageIdx;
+            // const ageOffset = maxAgeIdx - ageIdx; // Removed
 
             let ageTotalCoinsMin = 0;
             let ageTotalCoinsMax = 0;
@@ -551,7 +551,7 @@ export default function ForgeCalculator() {
                 } else {
                     slotTechBonus = profileSlotBonuses[slot] || 0;
                 }
-                const baseLevel = (balancingConfig.ItemBaseMaxLevel + 1) + slotTechBonus + (bonuses.latentLevelBonus || 0) - (ageOffset * 5);
+                const baseLevel = balancingConfig.ItemBaseMaxLevel + slotTechBonus + (bonuses.latentLevelBonus || 0);
                 const baseScaling = 1.0100000000093132;
 
                 ageTotalCoinsMin += balancingConfig.SellBasePrice * Math.pow(baseScaling, baseLevel + diffMin);
@@ -580,7 +580,7 @@ export default function ForgeCalculator() {
             const itemsFound = totalForges * chanceVal;
 
             // Use the same slot-specific logic for per-age breakdown
-            const ageOffset = maxAgeIdx - ageIdx;
+            // const ageOffset = maxAgeIdx - ageIdx; // Removed offset logic
 
             let ageTotalCoins = 0;
             const slots = ['Weapon', 'Helmet', 'Body', 'Glove', 'Ring', 'Necklace', 'Belt', 'Shoe'];
@@ -594,7 +594,7 @@ export default function ForgeCalculator() {
                     slotTechBonus = profileSlotBonuses[slot] || 0;
                 }
 
-                const slotLevel = (balancingConfig.ItemBaseMaxLevel + 1) + slotTechBonus + (bonuses.latentLevelBonus || 0) - (ageOffset * 5);
+                const slotLevel = (balancingConfig.ItemBaseMaxLevel + 1) + slotTechBonus + (bonuses.latentLevelBonus || 0);
                 const baseScaling = 1.0100000000093132;
                 const basePrice = balancingConfig.SellBasePrice * Math.pow(baseScaling, slotLevel);
                 ageTotalCoins += basePrice;
@@ -917,7 +917,9 @@ export default function ForgeCalculator() {
                                 </div>
                                 <span className="font-medium text-text-secondary">Free Forges</span>
                             </div>
-                            <span className="text-xl font-bold text-blue-400">+{(bonuses.freeForgeChance * 100).toFixed(1)}%</span>
+                            <span className="text-xl font-bold text-blue-400">
+                                +{((!usePlayerItems && manualBonuses['FreeForgeChance'] !== undefined) ? (manualBonuses['FreeForgeChance'] * 100) : (bonuses.freeForgeChance * 100)).toFixed(1)}%
+                            </span>
                         </div>
                     </div>
                 </div>
