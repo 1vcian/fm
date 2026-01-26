@@ -79,8 +79,13 @@ export function getAgeBorderStyle(ageIndex: number): React.CSSProperties {
  * Uses 4x4 grid (512x512 total, 128x128 per icon)
  */
 export function getAgeIconStyle(ageIndex: number, size: number = 32): React.CSSProperties {
-    const col = ageIndex % 4;
-    const row = Math.floor(ageIndex / 4);
+    // Fix: Swap Multiverse (6) and Quantum (7) as they are inverted in the sprite sheet
+    let spriteIndex = ageIndex;
+    if (ageIndex === 6) spriteIndex = 7;
+    else if (ageIndex === 7) spriteIndex = 6;
+
+    const col = spriteIndex % 4;
+    const row = Math.floor(spriteIndex / 4);
     const spriteSize = 128;
     const sheetWidth = 512;
     const sheetHeight = 512;
