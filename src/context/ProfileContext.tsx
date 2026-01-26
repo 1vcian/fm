@@ -349,17 +349,42 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     }, [activeProfileId, importedProfile]);
 
-    const exportProfile = useCallback(() => {
+    const exportProfile = useCallback(async () => {
         const currentProfile = importedProfile || profiles.find(p => p.id === activeProfileId);
         if (!currentProfile) return;
 
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentProfile));
+        const filename = `${currentProfile.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+        const jsonStr = JSON.stringify(currentProfile, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const file = new File([blob], filename, { type: "application/json" });
+
+        // Try Native Share (Mobile/Supported Browsers)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Export Profile',
+                    text: 'ForgeMaster Profile Config',
+                });
+                return;
+            } catch (err) {
+                // User cancelled or share failed, fall through to download
+                if ((err as Error).name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                }
+            }
+        }
+
+        // Fallback: Blob Download (Desktop)
+        // Better than Data URI for handling filenames
+        const url = URL.createObjectURL(blob);
         const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `${currentProfile.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`);
+        downloadAnchorNode.setAttribute("href", url);
+        downloadAnchorNode.setAttribute("download", filename);
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
+        URL.revokeObjectURL(url);
     }, [profiles, activeProfileId, importedProfile]);
 
     const importProfile = useCallback(async (file: File) => {

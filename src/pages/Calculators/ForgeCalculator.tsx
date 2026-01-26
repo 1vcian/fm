@@ -421,7 +421,10 @@ export default function ForgeCalculator() {
         // Currently we clamp to the highest known bracket for "Bracket" display info, 
         // but Price Calculation uses exponential formula so it scales indefinitely.
 
-        const dropChanceData = dropChances[currentForgeLevel.toString()];
+        // Fix off-by-one: ItemAgeDropChancesLibrary uses 0-based indexing (or shifted by 1 relative to Level)
+        // Level 1 corresponds to Key "0", Level 5 to Key "4".
+        // Fallback to direct access if shifted key doesn't exist.
+        const dropChanceData = dropChances[(currentForgeLevel - 1).toString()] || dropChances[currentForgeLevel.toString()];
 
         return {
             dropChanceData,
