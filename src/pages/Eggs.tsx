@@ -1,13 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEggsCalculator } from '../hooks/useEggsCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/UI/Card';
 import { cn } from '../lib/utils';
 import { Calculator, Percent, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
+
 // Updated to correct path
 const EGG_SPRITE_SHEET = './Texture2D/Eggs.png';
-// These constants are no longer directly used by EggIcon with % positioning, but kept for context if needed elsewhere.
-
 
 function EggIcon({ rarity, size = 48, className }: { rarity: string; size?: number; className?: string }) {
     const rarityIndex: Record<string, number> = {
@@ -19,8 +18,7 @@ function EggIcon({ rarity, size = 48, className }: { rarity: string; size?: numb
     const col = idx % 4;
     const row = Math.floor(idx / 4);
 
-    // For a 4x4 grid, we use standard CSS sprite percentage positioning:
-    // (index / (total_columns - 1)) * 100
+    // For a 4x4 grid, we use standard CSS sprite percentage positioning
     const xPos = (col / 3) * 100;
     const yPos = (row / 3) * 100;
 
@@ -65,9 +63,24 @@ export default function Eggs() {
 
     const [activeTab, setActiveTab] = useState<'calculator' | 'info'>('calculator');
 
+    const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+    // Create a stable hash of the timeline structure.
+    // We strictly want to reset only if the ACTUAL schedule changes.
+    // JSON.stringify is efficient enough for this data size.
+    const timelineHash = optimization && optimization.timeline
+        ? JSON.stringify(optimization.timeline)
+        : '';
+
+    // Effect to reset checks only when the timeline content actually changes
+    useEffect(() => {
+        setCheckedItems({});
+    }, [timelineHash]);
+
     // Format Helpers
     const formatTime = (seconds: number) => {
-        const totalMinutes = Math.round(seconds / 60);
+        const totalMinutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
 
         if (totalMinutes >= 1440) {
             const days = Math.floor(totalMinutes / 1440);
@@ -77,8 +90,13 @@ export default function Eggs() {
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
             return `${hours}h ${mins.toString().padStart(2, '0')}m`;
+        } else {
+            // Updated to show seconds if present
+            if (secs > 0) {
+                return `${totalMinutes}m ${secs}s`;
+            }
+            return `${totalMinutes}m`;
         }
-        return `${totalMinutes}m`;
     };
 
     return (
@@ -293,25 +311,82 @@ export default function Eggs() {
                                             </div>
                                         </div>
 
-                                        {/* Open List */}
-                                        <div className="space-y-2">
-                                            <h3 className="font-bold text-text-primary">Action Plan</h3>
-                                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                                                {Object.entries(optimization.toOpen)
-                                                    .filter(([_, count]) => count > 0)
-                                                    .map(([rarity, count]) => (
-                                                        <div key={rarity} className="flex items-center justify-between p-3 bg-bg-primary rounded-lg border-l-4" style={{ borderColor: `var(--color-rarity-${rarity})` }}>
-                                                            <div className="flex items-center gap-3">
-                                                                <EggIcon rarity={rarity} size={32} />
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-bold text-text-primary">Open {count}x {rarity}</span>
-                                                                    <span className="text-xs text-text-secondary capitalize">
-                                                                        {rarity} Eggs
-                                                                    </span>
-                                                                </div>
+                                        {/* Parallel Slot Timelines */}
+                                        <div className="space-y-4">
+                                            <h3 className="font-bold text-text-primary">Slot Schedule (Priority by Points)</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {optimization.timeline?.map((slotEvents: any[], slotIdx: number) => (
+                                                    <div key={slotIdx} className="bg-bg-primary rounded-xl border border-border overflow-hidden flex flex-col">
+                                                        {/* Slot Header */}
+                                                        <div className="bg-black/20 p-3 border-b border-border/50 flex justify-between items-center">
+                                                            <div className="font-bold text-text-secondary flex items-center gap-2">
+                                                                <img src="./Texture2D/HatchBed.png" alt="Bed" className="w-4 h-4 opacity-70" />
+                                                                Slot {slotIdx + 1}
+                                                            </div>
+                                                            <div className="text-xs text-text-tertiary font-mono">
+                                                                {slotEvents.length} Eggs
                                                             </div>
                                                         </div>
-                                                    ))}
+
+                                                        {/* Vertical List */}
+                                                        <div className="p-2 space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                                            {slotEvents.length > 0 ? (
+                                                                slotEvents.map((event: any, idx: number) => {
+                                                                    const itemKey = `${slotIdx}-${idx}`;
+                                                                    const isChecked = checkedItems[itemKey] || false;
+
+                                                                    return (
+                                                                        <div
+                                                                            key={idx}
+                                                                            onClick={() => {
+                                                                                setCheckedItems(prev => ({
+                                                                                    ...prev,
+                                                                                    [itemKey]: !prev[itemKey]
+                                                                                }));
+                                                                            }}
+                                                                            className={cn(
+                                                                                "relative flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer group",
+                                                                                isChecked
+                                                                                    ? "bg-black/20 border-border/20 opacity-50 grayscale hover:opacity-70 hover:grayscale-0"
+                                                                                    : `border-rarity-${event.rarity}/30 bg-rarity-${event.rarity}/5 hover:bg-white/5`
+                                                                            )}
+                                                                        >
+                                                                            {/* Time Marker */}
+                                                                            <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-lg transition-colors", isChecked ? "bg-text-tertiary" : "")} style={!isChecked ? { backgroundColor: `var(--color-rarity-${event.rarity})` } : {}} />
+
+                                                                            {/* Checkbox */}
+                                                                            <div className={cn(
+                                                                                "w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-all",
+                                                                                isChecked
+                                                                                    ? "bg-accent-primary border-accent-primary text-bg-primary"
+                                                                                    : "border-text-tertiary/50 group-hover:border-text-secondary"
+                                                                            )}>
+                                                                                {isChecked && <Plus className="w-3 h-3 rotate-45" />}
+                                                                            </div>
+
+                                                                            <EggIcon rarity={event.rarity} size={32} />
+
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className={cn("font-bold text-sm truncate", isChecked ? "text-text-muted line-through" : `text-rarity-${event.rarity}`)}>
+                                                                                    {event.rarity}
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
+                                                                                    <span>{formatTime(event.startTime * 60)}</span>
+                                                                                    <span className="text-text-tertiary">➜</span>
+                                                                                    <span>{formatTime(event.endTime * 60)}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <div className="text-center py-8 text-xs text-text-tertiary italic">
+                                                                    Unused
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </>
@@ -325,6 +400,9 @@ export default function Eggs() {
                     </div>
                 </div>
             )}
+
+            {/* Timeline Visualizer (REMOVED as per request) */}
+
 
             {activeTab === 'info' && (
                 <div className="space-y-6">
@@ -487,6 +565,7 @@ export default function Eggs() {
                     </Card>
                 </div>
             )}
+
             {/* Background Decoration */}
             <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none overflow-hidden">
                 <SpriteIcon name="Egg" size={256} className="grayscale" />

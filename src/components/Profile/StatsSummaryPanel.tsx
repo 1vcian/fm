@@ -102,11 +102,22 @@ export function StatsSummaryPanel() {
 
     // Calculate effective Weapon DPS
     // Formula: Damage × AttackSpeed × CritMultiplier × DoubleDamageMultiplier
-    const critMultiplier = 1 + stats.criticalChance * (stats.criticalDamage - 1);
-    const doubleDmgMultiplier = 1 + stats.doubleDamageChance;
-    const attacksPerSecond = 1 / stats.weaponAttackDuration;
-    const weaponDps = stats.totalDamage * attacksPerSecond * critMultiplier * doubleDmgMultiplier;
+    // User Requirement: Caps at 100% (1.0)
+    const cappedCritChance = Math.min(stats.criticalChance, 1);
+    const cappedDoubleDamageChance = Math.min(stats.doubleDamageChance, 1);
 
+    const critMultiplier = 1 + cappedCritChance * (stats.criticalDamage - 1);
+    const doubleDmgMultiplier = 1 + cappedDoubleDamageChance;
+    const modifiedAttackDuration = (stats.weaponAttackDuration) / stats.attackSpeedMultiplier;
+
+    // Tempo totale per attacco
+    const totalAttackTime = modifiedAttackDuration;
+
+    // Attacchi al secondo
+    const attacksPerSecond = 1 / totalAttackTime;
+
+    // DPS finale
+    const weaponDps = stats.totalDamage * attacksPerSecond * critMultiplier * doubleDmgMultiplier;
     // Skill DPS (already fully calculated in statEngine including crits/multipliers)
     // Total Effective DPS = Weapon DPS + Skill DPS
     const effectiveDps = weaponDps + stats.skillDps;
@@ -403,6 +414,48 @@ export function StatsSummaryPanel() {
                         </div>
                     )}
                 </CollapsibleSection>
+                {/* DPS Breakdown */}
+                <CollapsibleSection
+                    title="DPS Calculation"
+                    icon={<Target className="w-4 h-4 text-pink-400" />}
+                >
+                    <div className="p-3 bg-bg-input/30 rounded-lg border border-border/30 space-y-3 font-mono text-xs text-text-muted">
+                        <div className="flex flex-col gap-1">
+                            <span className="font-bold text-text-primary mb-1 border-b border-border/30 pb-1">Weapon DPS Formula</span>
+                            <div className="text-[10px] text-text-tertiary">
+                                DPS = Damage × APS × CritMult × DoubleMult
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <span>Base Damage</span>
+                                <span className="text-text-primary">{formatCompactNumber(stats.totalDamage)}</span>
+                            </div>
+
+                            <div className="flex justify-between">
+                                <span>APS (1 / {totalAttackTime.toFixed(2)}s)</span>
+                                <span className="text-text-primary">{attacksPerSecond.toFixed(2)}/s</span>
+                            </div>
+
+                            <div className="flex justify-between">
+                                <span>Crit Avg (1 + {formatPercent(Math.min(stats.criticalChance, 1))} × {(stats.criticalDamage - 1).toFixed(2)})</span>
+                                <span className="text-text-primary">{critMultiplier.toFixed(2)}x</span>
+                            </div>
+
+                            <div className="flex justify-between">
+                                <span>Double Dmg (1 + {formatPercent(Math.min(stats.doubleDamageChance, 1))})</span>
+                                <span className="text-text-primary">{doubleDmgMultiplier.toFixed(2)}x</span>
+                            </div>
+
+                            <div className="border-t border-border/30 pt-2 flex justify-between font-bold">
+                                <span className="text-accent-primary">Weapon DPS</span>
+                                <span className="text-accent-primary">{formatCompactNumber(weaponDps)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </CollapsibleSection>
+
             </div>
         </Card>
     );

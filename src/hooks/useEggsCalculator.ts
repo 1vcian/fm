@@ -11,7 +11,17 @@ export interface EggOptimizationResult {
     mergePoints: number;
     timeUsed: number;
     timeLeft: number;
+    timeline: Timeline;
 }
+
+export interface TimelineEvent {
+    rarity: string;
+    startTime: number; // minutes
+    endTime: number; // minutes
+    duration: number; // minutes
+}
+
+export type Timeline = TimelineEvent[][];
 
 export function useEggsCalculator() {
     // Game Data
@@ -109,38 +119,35 @@ export function useEggsCalculator() {
         const times: Record<string, number> = {};
         const raritiesKeys = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
 
-        // Helper to find Node ID by Type name in SkillsPetTech tree
-        const findNodeId = (type: string): number | null => {
-            const nodes = techTreeMapping.trees?.SkillsPetTech?.nodes;
-            if (!nodes) return null;
-            const node = nodes.find((n: any) => n.type === type);
-            return node ? node.id : null;
-        };
+
 
         raritiesKeys.forEach(rarity => {
             let baseTime = eggLibrary[rarity]?.HatchTime || 0;
             let speedDivisor = 1.0;
 
-            // 1. Find the Node Config in Library (for stats per level)
+            // 1. Iterate ALL nodes in the tree to find ALL matches for this type
+            // (e.g. Node 8 is CommonEggTimer AND Node 25 is CommonEggTimer)
             const nodeTypeName = `${rarity}EggTimer`; // e.g. CommonEggTimer
-            const nodeConfig = techTreeLibrary?.[nodeTypeName];
+            const treeNodes = techTreeMapping.trees?.SkillsPetTech?.nodes || [];
 
-            // 2. Find the Node ID in Mapping (to start lookup in Profile)
-            const nodeId = findNodeId(nodeTypeName);
-
-            if (nodeConfig && nodeId !== null) {
-                // 3. Get User Level (respecting Tree Mode)
-                const userLevel = getTechLevel('SkillsPetTech', nodeId, nodeConfig.MaxLevel);
-
-                if (userLevel > 0) {
-                    const stat = nodeConfig.Stats?.[0]; // Usually only one stat for these
-                    if (stat) {
-                        const valIncrease = stat.ValueIncrease || 0; // e.g. 0.10
-                        // Bonus is additive: 1 + (Level * 0.10)
-                        speedDivisor += (userLevel * valIncrease);
+            treeNodes.forEach((node: any) => {
+                if (node.type === nodeTypeName) {
+                    const nodeConfig = techTreeLibrary?.[nodeTypeName];
+                    if (nodeConfig) {
+                        const userLevel = getTechLevel('SkillsPetTech', node.id, nodeConfig.MaxLevel);
+                        if (userLevel > 0) {
+                            const stat = nodeConfig.Stats?.[0];
+                            if (stat) {
+                                const valIncrease = stat.ValueIncrease || 0;
+                                const baseVal = stat.Value || 0;
+                                // Match TechTreePanel Logic: Base + ((Level - 1) * Increase)
+                                const nodeVal = baseVal + ((userLevel - 1) * valIncrease);
+                                speedDivisor += nodeVal;
+                            }
+                        }
                     }
                 }
-            }
+            });
             times[rarity] = baseTime / speedDivisor;
         });
         return times;
@@ -195,68 +202,110 @@ export function useEggsCalculator() {
         if (!hatchValuesProfile || !warPoints) return null;
 
         const totalMinutesAvailable = timeLimitHours * 60;
-        const totalSlotMinutes = totalMinutesAvailable * availableSlots;
-
-        let remainingSlotMinutes = totalSlotMinutes;
-        const toOpen: Record<string, number> = {};
         const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
 
-        // Metrics for Efficiency: Points per Minute
-        // Note: Opening an egg gives Hatch Points AND potential Merge points.
-        // If we assume we hold onto them to merge, 1 Hatch = 1 Pet.
-        // 5 Pets = 1 Merge + 1 Next Rarity Pet.
-        // For simple maximization, we focus on Hatch Points density first?
-        // Actually, pure Hatch Points per minute is the constraint for TIME.
-        // Merge points come "free" instantly after hatching.
+        // 1. Prepare Pool of All Eggs (Sorted by Efficiency)
+        interface EggCandidate {
+            rarity: string;
+            time: number; // minutes
+            eff: number;  // points per minute
+            hPoints: number;
+            mPoints: number;
+        }
 
-        const efficiencies = rarities.map(rarity => {
-            const hatchTimeMin = (hatchValuesProfile[rarity] || 0) / 60;
-            const pts = warPoints[rarity]?.hatch || 0;
-            // Add expected merge value? (1/5 of a merge reward)
-            // + (MergePoints / 5)? 
-            // Let's stick to Hatch Efficiency for the Knapsack, as Merges are derivative.
-
-            const eff = hatchTimeMin > 0 ? pts / hatchTimeMin : 0;
-            return { rarity, eff, timeCost: hatchTimeMin };
-        }).sort((a, b) => b.eff - a.eff); // Highest efficiency first
-
-        // Fill slots
-        efficiencies.forEach(({ rarity, timeCost }) => {
+        const allCandidates: EggCandidate[] = [];
+        rarities.forEach(rarity => {
             const count = ownedEggs[rarity] || 0;
-            if (count === 0) return;
+            if (count <= 0) return;
 
-            const maxCanDo = Math.floor(remainingSlotMinutes / timeCost);
-            const doCount = Math.min(count, maxCanDo);
+            const time = (hatchValuesProfile[rarity] || 0) / 60;
+            const h = warPoints[rarity]?.hatch || 0;
+            const m = warPoints[rarity]?.merge || 0;
+            const totalP = h + m;
 
-            toOpen[rarity] = doCount;
-            remainingSlotMinutes -= (doCount * timeCost);
+            // Efficiency: Points / Time
+            // If time is 0 (shouldn't happen), use infinity
+            const eff = time > 0 ? totalP / time : 999999;
+
+            for (let i = 0; i < count; i++) {
+                allCandidates.push({ rarity, time, eff, hPoints: h, mPoints: m });
+            }
         });
 
-        // Compute Totals
+        // Sort descending by Total Points (Importance), then Time, then Efficiency
+        allCandidates.sort((a, b) => {
+            const pointsA = a.hPoints + a.mPoints;
+            const pointsB = b.hPoints + b.mPoints;
+
+            // Primary: High Points items first ("Most Important")
+            if (Math.abs(pointsB - pointsA) > 0.1) return pointsB - pointsA;
+
+            // Secondary: Time Descending (Big Rocks)
+            if (Math.abs(b.time - a.time) > 0.1) return b.time - a.time;
+
+            // Tertiary: Efficiency
+            return b.eff - a.eff;
+        });
+
+        // 2. Simulation State
+        const slots = new Array(availableSlots).fill(0);
+        const timeline: Timeline = Array.from({ length: availableSlots }, () => []);
+        const toOpen: Record<string, number> = {
+            Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0
+        };
         let hPoints = 0;
         let mPoints = 0;
 
-        Object.keys(toOpen).forEach(rarity => {
-            const count = toOpen[rarity];
-            if (count > 0) {
-                hPoints += count * (warPoints[rarity]?.hatch || 0);
+        // 3. Greedy Assignment (Least Loaded / Earliest Finish)
+        // User wants to balance slots ("non tutto sul primo") and minimize makespan.
+        // Since we sorted by Time Descending (Big Rocks), using parameters of LPT (Longest Processing Time) 
+        // with Least Loaded assignment gives the most balanced schedule.
 
-                // User Feedback: "Every egg you open, you also merge".
-                // Detailed meaning: Hatching provides a pet which is immediately used for an upgrade/merge action.
-                // Thus, 1 Hatch Event = 1 Merge Event.
-                mPoints += count * (warPoints[rarity]?.merge || 0);
+        for (const egg of allCandidates) {
+            // Find slot with minimum current time that fits the egg
+            let bestSlotIdx = -1;
+            let minCurrentTime = Number.MAX_VALUE;
+
+            for (let i = 0; i < availableSlots; i++) {
+                // Must fit within limit
+                if (slots[i] + egg.time <= totalMinutesAvailable) {
+                    // We want the LEAST loaded slot to balance
+                    if (slots[i] < minCurrentTime) {
+                        minCurrentTime = slots[i];
+                        bestSlotIdx = i;
+                    }
+                }
             }
-        });
+
+            // If we found a valid slot
+            if (bestSlotIdx !== -1) {
+                const startTime = slots[bestSlotIdx];
+                const endTime = startTime + egg.time;
+
+                // Commit
+                slots[bestSlotIdx] = endTime;
+                timeline[bestSlotIdx].push({
+                    rarity: egg.rarity,
+                    startTime,
+                    endTime,
+                    duration: egg.time
+                });
+                toOpen[egg.rarity] = (toOpen[egg.rarity] || 0) + 1;
+                hPoints += egg.hPoints;
+                mPoints += egg.mPoints;
+            }
+        }
+
+        const makeSpan = Math.max(...slots);
 
         return {
             toOpen,
             totalPoints: hPoints + mPoints,
             hatchPoints: hPoints,
             mergePoints: mPoints,
-            timeUsed: (totalSlotMinutes - remainingSlotMinutes) / availableSlots, // Average time used per slot? or Total?
-            // Actually "Time Used" usually means "When will I finish?". 
-            // If valid, it's total minutes / slots.
-            timeLeft: remainingSlotMinutes / availableSlots
+            timeUsed: makeSpan, // This will now be <= totalMinutesAvailable
+            timeLeft: totalMinutesAvailable - makeSpan,
+            timeline
         };
 
     }, [ownedEggs, timeLimitHours, availableSlots, hatchValuesProfile, warPoints]);
