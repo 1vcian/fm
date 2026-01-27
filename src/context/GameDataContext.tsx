@@ -5,6 +5,7 @@ interface GameDataContextType {
     selectedVersion: string;
     setSelectedVersion: (version: string) => void;
     isLoadingVersions: boolean;
+    isDebug: boolean;
 }
 
 const GameDataContext = createContext<GameDataContextType | undefined>(undefined);
@@ -13,6 +14,17 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     const [versions, setVersions] = useState<string[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<string>('');
     const [isLoadingVersions, setIsLoadingVersions] = useState(true);
+    const [isDebug, setIsDebug] = useState(false);
+
+    useEffect(() => {
+        const checkDebug = () => {
+            const hasDebug = window.location.href.includes('debug=true');
+            setIsDebug(hasDebug);
+        };
+        checkDebug();
+        window.addEventListener('hashchange', checkDebug);
+        return () => window.removeEventListener('hashchange', checkDebug);
+    }, []);
 
     useEffect(() => {
         async function fetchVersions() {
@@ -36,7 +48,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <GameDataContext.Provider value={{ versions, selectedVersion, setSelectedVersion, isLoadingVersions }}>
+        <GameDataContext.Provider value={{ versions, selectedVersion, setSelectedVersion, isLoadingVersions, isDebug }}>
             {children}
         </GameDataContext.Provider>
     );

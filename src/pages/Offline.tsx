@@ -3,10 +3,11 @@ import { useProfile } from '../context/ProfileContext';
 import { useGameData } from '../hooks/useGameData';
 import { useTreeMode } from '../context/TreeModeContext';
 import { Card } from '../components/UI/Card';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Info } from 'lucide-react';
 import { GameIcon } from '../components/UI/GameIcon';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { formatNumber } from '../utils/format';
+import { cn } from '../lib/utils';
 
 export default function Offline() {
     const { profile } = useProfile();
@@ -86,8 +87,9 @@ export default function Offline() {
         return `${h}h${m > 0 ? ` ${m}m` : ''}`;
     };
 
-    // Constrain total offline hours to max
+    // Constrain total offline hours to max for ACTUAL earnings
     const effectiveHours = Math.min(totalOfflineHours, maxOfflineHours);
+    const isOverCap = totalOfflineHours > maxOfflineHours;
 
     // Calculate rates
     const rates = useMemo(() => {
@@ -102,8 +104,13 @@ export default function Offline() {
         };
     }, [idleConfig, bonuses]);
 
+    // Actual Earnings (Capped)
     const totalCoins = Math.floor(rates.coinsPerSec * effectiveHours * 3600);
     const totalHammers = Math.floor((rates.hammersPerMin / 60) * effectiveHours * 3600);
+
+    // Projected Earnings (If uncapped)
+    const projectedCoins = Math.floor(rates.coinsPerSec * totalOfflineHours * 3600);
+    const projectedHammers = Math.floor((rates.hammersPerMin / 60) * totalOfflineHours * 3600);
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in relative">
@@ -134,13 +141,12 @@ export default function Offline() {
                                 <input
                                     type="number"
                                     min="0"
-                                    max={Math.floor(maxOfflineHours)}
                                     className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-12 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
                                     value={Math.floor(totalOfflineHours)}
                                     onChange={(e) => {
-                                        const h = parseInt(e.target.value) || 0;
+                                        const h = Math.max(0, parseInt(e.target.value) || 0);
                                         const m = Math.round((totalOfflineHours - Math.floor(totalOfflineHours)) * 60);
-                                        setTotalOfflineHours(Math.min(maxOfflineHours, h + (m / 60)));
+                                        setTotalOfflineHours(h + (m / 60));
                                     }}
                                     placeholder="0"
                                 />
@@ -161,7 +167,7 @@ export default function Offline() {
                                     onChange={(e) => {
                                         const m = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
                                         const h = Math.floor(totalOfflineHours);
-                                        setTotalOfflineHours(Math.min(maxOfflineHours, h + (m / 60)));
+                                        setTotalOfflineHours(h + (m / 60));
                                     }}
                                     placeholder="0"
                                 />
@@ -194,6 +200,25 @@ export default function Offline() {
                 <div className="space-y-6">
                     <Card className="h-full">
                         <h2 className="font-semibold mb-6 text-accent-primary text-center">Calculated Rates</h2>
+
+                        {isOverCap && (
+                            <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+                                <div className="flex items-center gap-2 mb-2 text-orange-400 font-bold text-sm">
+                                    <Info className="w-4 h-4" />
+                                    <span>Time Exceeds Capacity ({formatHmMessages(maxOfflineHours)})</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-center">
+                                    <div className="p-2 bg-black/20 rounded">
+                                        <div className="text-[10px] uppercase text-text-muted">Projected</div>
+                                        <div className="text-white font-bold">{formatHmMessages(totalOfflineHours)}</div>
+                                    </div>
+                                    <div className="p-2 bg-black/20 rounded ring-1 ring-orange-500/30">
+                                        <div className="text-[10px] uppercase text-orange-400/80">Actual Cap</div>
+                                        <div className="text-orange-400 font-bold">{formatHmMessages(maxOfflineHours)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 gap-4 mb-4">
                             <div className="p-4 bg-bg-input rounded-xl border border-border/50 flex flex-col gap-1">
@@ -232,29 +257,77 @@ export default function Offline() {
                         <div className="py-6 border-t border-border/50 mt-4">
                             <h2 className="font-semibold mb-6 text-accent-primary text-center flex items-center justify-center gap-2">
                                 <TrendingUp className="w-5 h-5" />
-                                Estimated Total Earnings
+                                {isOverCap ? 'Earnings Comparison' : 'Estimated Total Earnings'}
                             </h2>
-                            <div className="space-y-4">
-                                <div className="p-4 bg-accent-primary/5 rounded-xl border border-accent-primary/20 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <GameIcon name="coin" className="w-10 h-10" />
-                                        <span className="font-bold text-text-secondary">Coins</span>
-                                    </div>
-                                    <div className="text-3xl font-black text-accent-primary drop-shadow-glow">
-                                        {formatNumber(totalCoins)}
-                                    </div>
-                                </div>
 
-                                <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <GameIcon name="hammer" className="w-10 h-10" />
-                                        <span className="font-bold text-text-secondary">Hammers</span>
+                            {isOverCap ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Projected */}
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/10 opacity-60">
+                                        <div className="text-xs text-center mb-3 font-bold text-text-muted uppercase tracking-wider">Projected</div>
+                                        <div className="space-y-3">
+                                            <div className="flex flex-col items-center">
+                                                <div className="flex items-center gap-1.5 mb-0.5">
+                                                    <GameIcon name="coin" className="w-4 h-4 grayscale opacity-70" />
+                                                    <span className="text-[10px] text-text-muted uppercase">Coins</span>
+                                                </div>
+                                                <div className="font-mono font-bold text-white">{formatNumber(projectedCoins)}</div>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <div className="flex items-center gap-1.5 mb-0.5">
+                                                    <GameIcon name="hammer" className="w-4 h-4 grayscale opacity-70" />
+                                                    <span className="text-[10px] text-text-muted uppercase">Hammers</span>
+                                                </div>
+                                                <div className="font-mono font-bold text-white">{formatNumber(projectedHammers)}</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-3xl font-black text-white">
-                                        {formatNumber(totalHammers)}
+
+                                    {/* Actual */}
+                                    <div className="p-3 bg-accent-primary/10 rounded-xl border border-accent-primary/30 relative overflow-hidden ring-1 ring-accent-primary/50">
+                                        <div className="absolute top-0 right-0 bg-accent-primary text-black text-[9px] font-bold px-2 py-0.5 rounded-bl shadow-sm">REAL</div>
+                                        <div className="text-xs text-center mb-3 font-bold text-accent-primary uppercase tracking-wider">Actual</div>
+                                        <div className="space-y-3">
+                                            <div className="flex flex-col items-center">
+                                                <div className="flex items-center gap-1.5 mb-0.5">
+                                                    <GameIcon name="coin" className="w-4 h-4" />
+                                                    <span className="text-[10px] text-text-muted uppercase">Coins</span>
+                                                </div>
+                                                <div className="font-mono font-black text-accent-primary text-lg">{formatNumber(totalCoins)}</div>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <div className="flex items-center gap-1.5 mb-0.5">
+                                                    <GameIcon name="hammer" className="w-4 h-4" />
+                                                    <span className="text-[10px] text-text-muted uppercase">Hammers</span>
+                                                </div>
+                                                <div className="font-mono font-black text-white text-lg">{formatNumber(totalHammers)}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-accent-primary/5 rounded-xl border border-accent-primary/20 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <GameIcon name="coin" className="w-10 h-10" />
+                                            <span className="font-bold text-text-secondary">Coins</span>
+                                        </div>
+                                        <div className="text-3xl font-black text-accent-primary drop-shadow-glow">
+                                            {formatNumber(totalCoins)}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <GameIcon name="hammer" className="w-10 h-10" />
+                                            <span className="font-bold text-text-secondary">Hammers</span>
+                                        </div>
+                                        <div className="text-3xl font-black text-white">
+                                            {formatNumber(totalHammers)}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>
