@@ -110,9 +110,9 @@ export function formatStatValue(value: number, statId?: string): string {
 
     // Special handling for HealthRegen and LifeSteal which are often small "Point" values (e.g. 1.32%)
     // If we multiply 1.32 * 100 we get 132%, which is wrong.
-    // So for these, we treat anything > 0.05 as a Point (Keep).
+    // So for these, we treat anything > 0.5 as a Point (Keep).
     if (statId && ['HealthRegen', 'LifeSteal', 'BlockChance'].includes(statId)) {
-        val = value > 0.05 ? value : value * 100;
+        val = value > 0.5 ? value : value * 100;
     } else {
         // Standard Heuristic
         val = value > 2 ? value : value * 100;

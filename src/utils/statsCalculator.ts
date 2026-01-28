@@ -410,6 +410,17 @@ export function getMountStats(
         });
     }
 
+    // Include manual passive stats
+    if (mount.secondaryStats) {
+        for (const secondary of mount.secondaryStats) {
+            stats.push({
+                statType: secondary.statId,
+                statNature: 'Multiplier',
+                value: secondary.value,
+            });
+        }
+    }
+
     return stats;
 }
 
