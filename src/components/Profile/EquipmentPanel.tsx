@@ -1,6 +1,8 @@
 import { useProfile } from '../../context/ProfileContext';
+import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
-import { X, Bookmark } from 'lucide-react';
+import { Button } from '../UI/Button';
+import { X, Bookmark, GitCompare } from 'lucide-react';
 import { ItemSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
@@ -81,21 +83,68 @@ const SLOT_TYPE_ID_MAP: Record<string, number> = {
     'Belt': 7
 };
 
-export function EquipmentPanel() {
+interface EquipmentPanelProps {
+    variant?: 'default' | 'original' | 'test';
+    title?: string;
+    showCompareButton?: boolean;
+    compareItems?: UserProfile['items'] | null;
+}
+
+export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems }: EquipmentPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
+    const { isComparing, originalItems, testItems, updateOriginalItem, updateTestItem, enterCompareMode } = useComparison();
     const [selectedSlot, setSelectedSlot] = useState<keyof UserProfile['items'] | null>(null);
     const [itemToSave, setItemToSave] = useState<{ slot: keyof UserProfile['items']; item: ItemSlot } | null>(null);
 
+    // Determine which items to use based on variant
+    const items = useMemo(() => {
+        if (variant === 'original' && originalItems) return originalItems;
+        if (variant === 'test' && testItems) return testItems;
+        return profile.items;
+    }, [variant, originalItems, testItems, profile.items]);
+
     const handleEquip = (item: ItemSlot | null) => {
         if (selectedSlot) {
-            updateNestedProfile('items', { [selectedSlot]: item });
+            if (variant === 'original') {
+                updateOriginalItem(selectedSlot, item);
+            } else if (variant === 'test') {
+                updateTestItem(selectedSlot, item);
+            } else {
+                updateNestedProfile('items', { [selectedSlot]: item });
+            }
         }
         setSelectedSlot(null);
     };
 
     const handleUnequip = (slotKey: keyof UserProfile['items'], e: React.MouseEvent) => {
         e.stopPropagation();
-        updateNestedProfile('items', { [slotKey]: null });
+        if (variant === 'original') {
+            updateOriginalItem(slotKey, null);
+        } else if (variant === 'test') {
+            updateTestItem(slotKey, null);
+        } else {
+            updateNestedProfile('items', { [slotKey]: null });
+        }
+    };
+
+    // Check if items differ for golden border (only in test panel)
+    const itemsDiffer = (slotKey: keyof UserProfile['items']): boolean => {
+        if (variant !== 'test' || !compareItems) return false;
+        const testItem = items[slotKey];
+        const originalItem = compareItems[slotKey];
+
+        // Both null = same
+        if (!testItem && !originalItem) return false;
+        // One null, other not = different
+        if (!testItem || !originalItem) return true;
+        // Compare key fields
+        if (testItem.age !== originalItem.age) return true;
+        if (testItem.idx !== originalItem.idx) return true;
+        if (testItem.level !== originalItem.level) return true;
+        if (testItem.rarity !== originalItem.rarity) return true;
+        // Deep compare secondary stats
+        if (JSON.stringify(testItem.secondaryStats) !== JSON.stringify(originalItem.secondaryStats)) return true;
+        return false;
     };
 
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
@@ -273,18 +322,29 @@ export function EquipmentPanel() {
 
     const saveModalProps = getSaveModalProps();
 
+    const panelTitle = title || 'Equipment';
+
     return (
         <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <img src="./Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
-                Equipment
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                    <img src="./Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
+                    {panelTitle}
+                </h2>
+                {showCompareButton && !isComparing && variant === 'default' && (
+                    <Button variant="secondary" size="sm" onClick={enterCompareMode}>
+                        <GitCompare className="w-4 h-4 mr-2" />
+                        Compare
+                    </Button>
+                )}
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {SLOTS.map((slot) => {
-                    const equipped = profile.items[slot.key];
+                    const equipped = items[slot.key];
                     const itemImage = getEquippedImage(slot.key, equipped);
                     const inventoryStyle = getInventoryIconStyle(slot.key, 48);
+                    const hasDiff = itemsDiffer(slot.key);
 
                     return (
                         <div
@@ -292,14 +352,15 @@ export function EquipmentPanel() {
                             onClick={() => setSelectedSlot(slot.key)}
                             className={cn(
                                 "h-full min-h-[160px] rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col items-center p-1.5 gap-1 group",
-                                equipped ? "border-solid bg-bg-secondary" : "bg-bg-input/30 justify-center"
+                                equipped ? "border-solid bg-bg-secondary" : "bg-bg-input/30 justify-center",
+                                hasDiff && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
                             )}
                         >
                             {equipped ? (
                                 <>
                                     {/* Top Row: Level (Left) and Unequip (Right) */}
                                     <div className="absolute top-1 left-1 z-10">
-                                        <span className="bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
+                                        <span className="bg-black/60 text-white text-[11px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
                                             Lv{equipped.level}
                                         </span>
                                     </div>
@@ -353,7 +414,7 @@ export function EquipmentPanel() {
                                     <div className="w-full px-0.5 min-h-[1.5em] flex items-center justify-center">
                                         {(() => {
                                             const name = getItemName(slot.key, equipped);
-                                            const fontSizeClass = name.length > 20 ? "text-[8px]" : name.length > 15 ? "text-[9px]" : "text-[10px]";
+                                            const fontSizeClass = name.length > 20 ? "text-[10px]" : name.length > 15 ? "text-[11px]" : "text-xs";
                                             return (
                                                 <span className={cn("font-bold text-center leading-tight line-clamp-2", fontSizeClass)}>
                                                     {name}
@@ -367,17 +428,17 @@ export function EquipmentPanel() {
                                         {(() => {
                                             const stats = getItemStats(equipped, slot.key);
                                             return (
-                                                <div className="text-[9px] font-mono text-center leading-normal w-full">
+                                                <div className="text-[11px] font-mono text-center leading-normal w-full">
                                                     {stats.damage > 0 && (
                                                         <div className="text-red-400 break-words flex flex-col items-center">
                                                             <span>⚔️{Math.round(stats.damage).toLocaleString()}</span>
-                                                            {stats.bonus > 0 && <span className="text-green-400 text-[8px]">(+{Math.round(stats.bonus * 100)}%)</span>}
+                                                            {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
                                                         </div>
                                                     )}
                                                     {stats.health > 0 && (
                                                         <div className="text-green-400 break-words flex flex-col items-center mt-0.5">
                                                             <span>♥{Math.round(stats.health).toLocaleString()}</span>
-                                                            {stats.bonus > 0 && <span className="text-green-400 text-[8px]">(+{Math.round(stats.bonus * 100)}%)</span>}
+                                                            {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
                                                         </div>
                                                     )}
                                                 </div>
@@ -392,13 +453,13 @@ export function EquipmentPanel() {
                                                 const formatted = formatSecondaryStat(stat.statId, stat.value);
                                                 const statPerf = getStatPerfection(stat.statId, stat.value);
                                                 return (
-                                                    <div key={idx} className={cn("flex justify-between items-start text-[8px] leading-tight gap-1", formatted.color)}>
+                                                    <div key={idx} className={cn("flex justify-between items-start text-[10px] leading-tight gap-1", formatted.color)}>
                                                         <span className="whitespace-normal break-words text-left opacity-80 flex-1">{formatted.name}</span>
                                                         <span className="font-bold shrink-0 flex items-center gap-0.5">
                                                             {formatted.formattedValue}
                                                             {statPerf !== null && (
                                                                 <span className={cn(
-                                                                    "text-[7px]",
+                                                                    "text-[9px]",
                                                                     statPerf >= 100 ? "text-yellow-400" :
                                                                         statPerf >= 80 ? "text-green-500" :
                                                                             statPerf >= 50 ? "text-blue-400" : "text-gray-500"
@@ -427,7 +488,7 @@ export function EquipmentPanel() {
                                                                     style={{ width: `${Math.min(100, perfection)}%` }}
                                                                 />
                                                             </div>
-                                                            <div className="text-[7px] text-right text-text-muted leading-none">
+                                                            <div className="text-[9px] text-right text-text-muted leading-none">
                                                                 {perfection.toFixed(0)}% Perfect
                                                             </div>
                                                         </div>
@@ -445,8 +506,8 @@ export function EquipmentPanel() {
                                     ) : (
                                         <div className="w-12 h-12 bg-bg-input rounded-lg mb-2" />
                                     )}
-                                    <span className="text-xs text-text-muted font-bold text-center">{slot.label}</span>
-                                    <span className="text-[10px] text-text-muted/50 text-center">Empty Slot</span>
+                                    <span className="text-sm text-text-muted font-bold text-center">{slot.label}</span>
+                                    <span className="text-xs text-text-muted/50 text-center">Empty Slot</span>
                                 </>
                             )}
                         </div>
@@ -464,7 +525,7 @@ export function EquipmentPanel() {
                         onClose={() => setSelectedSlot(null)}
                         onSelect={handleEquip}
                         slot={selectedSlot}
-                        current={profile.items[selectedSlot]}
+                        current={items[selectedSlot]}
                     />
                 )
             }
@@ -734,22 +795,22 @@ function MountSlotWidget() {
                             {spriteInfo?.name || `${mount.rarity} Mount #${mount.id}`}
                         </div>
 
-                        {/* Base Stats (DMG/HP) - Centered Box */}
+                        {/* Base Stats (DMG/HP) - Side by side on larger screens */}
                         {mountStats && (mountStats.damage > 0 || mountStats.health > 0) && (
-                            <div className="w-full bg-bg-input/30 rounded p-1.5 flex flex-col items-center justify-center gap-1 max-w-[90%] font-mono text-[10px]">
+                            <div className="w-full bg-bg-input/30 rounded p-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 max-w-[95%] font-mono text-xs">
                                 {mountStats.damage > 0 && (
                                     <div className="text-red-400 flex flex-col items-center">
                                         <span>DMG +{(mountStats.damage * 100).toFixed(2)}%</span>
                                         {mountStats.damageBonus > 0 && (
-                                            <span className="text-green-400 text-[9px]">(+{(mountStats.damageBonus * 100).toFixed(0)}%)</span>
+                                            <span className="text-green-400 text-[11px]">(+{(mountStats.damageBonus * 100).toFixed(0)}%)</span>
                                         )}
                                     </div>
                                 )}
                                 {mountStats.health > 0 && (
-                                    <div className="text-green-400 flex flex-col items-center mt-0.5">
+                                    <div className="text-green-400 flex flex-col items-center">
                                         <span>HP +{(mountStats.health * 100).toFixed(2)}%</span>
                                         {mountStats.healthBonus > 0 && (
-                                            <span className="text-green-400 text-[9px]">(+{(mountStats.healthBonus * 100).toFixed(0)}%)</span>
+                                            <span className="text-green-400 text-[11px]">(+{(mountStats.healthBonus * 100).toFixed(0)}%)</span>
                                         )}
                                     </div>
                                 )}
@@ -763,7 +824,7 @@ function MountSlotWidget() {
                                     {mount.secondaryStats.map((stat: any, idx: number) => {
                                         const formatted = formatSecondaryStat(stat.statId, stat.value);
                                         return (
-                                            <div key={idx} className="text-[10px] flex items-start justify-between gap-2 border-b border-border/10 pb-0.5 last:border-0">
+                                            <div key={idx} className="text-xs flex items-start justify-between gap-2 border-b border-border/10 pb-0.5 last:border-0">
                                                 <span className="text-text-muted text-left whitespace-normal break-words flex-1 leading-tight">{formatted.name}</span>
                                                 <span className={cn("font-mono font-bold shrink-0 flex items-center gap-1", formatted.color)}>
                                                     {formatted.formattedValue}
@@ -772,7 +833,7 @@ function MountSlotWidget() {
                                                         if (statPerf !== null) {
                                                             return (
                                                                 <span className={cn(
-                                                                    "text-[8px] opacity-80",
+                                                                    "text-[10px] opacity-80",
                                                                     statPerf >= 100 ? "text-yellow-400" :
                                                                         statPerf >= 80 ? "text-green-500" :
                                                                             statPerf >= 50 ? "text-blue-400" : "text-gray-500"
@@ -805,7 +866,7 @@ function MountSlotWidget() {
                                                         style={{ width: `${Math.min(100, perfection)}%` }}
                                                     />
                                                 </div>
-                                                <div className="text-[7px] text-right text-text-muted leading-none">
+                                                <div className="text-[9px] text-right text-text-muted leading-none">
                                                     {perfection.toFixed(0)}% Perfect
                                                 </div>
                                             </div>
@@ -819,7 +880,7 @@ function MountSlotWidget() {
                 ) : (
                     <div className="flex items-center justify-center w-full gap-3">
                         <div style={getInventoryIconStyle('Mount', 48) || {}} className="opacity-30 group-hover:opacity-50 transition-opacity" />
-                        <span className="text-xs text-text-muted">Click to select Mount</span>
+                        <span className="text-sm text-text-muted">Click to select Mount</span>
                     </div>
                 )}
             </div >
