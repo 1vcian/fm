@@ -25,6 +25,7 @@ export default function Profile() {
     const {
         isComparing,
         originalItems,
+        originalMount,
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
@@ -103,6 +104,7 @@ export default function Profile() {
                                     title="Test Build"
                                     showCompareButton={false}
                                     compareItems={originalItems}
+                                    compareMount={originalMount}
                                 />
                             </div>
 

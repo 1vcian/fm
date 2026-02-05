@@ -214,7 +214,7 @@ function ComparisonStatRow({
 export function StatsSummaryPanel() {
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
-    const { isComparing, originalItems, testItems } = useComparison();
+    const { isComparing, originalItems, testItems, originalMount, testMount } = useComparison();
     const { profile } = useProfile();
     const { treeMode } = useTreeMode();
 
@@ -281,14 +281,24 @@ export function StatsSummaryPanel() {
             effectiveTechTree = maxTree;
         }
 
-        const originalProfile = { ...profile, items: originalItems, techTree: effectiveTechTree };
-        const testProfile = { ...profile, items: testItems, techTree: effectiveTechTree };
+        const originalProfile = {
+            ...profile,
+            items: originalItems,
+            techTree: effectiveTechTree,
+            mount: { ...profile.mount, active: originalMount }
+        };
+        const testProfile = {
+            ...profile,
+            items: testItems,
+            techTree: effectiveTechTree,
+            mount: { ...profile.mount, active: testMount }
+        };
 
         const origStats = calculateStats(originalProfile, libs);
         const tstStats = calculateStats(testProfile, libs);
 
         return { originalStats: origStats, testStats: tstStats };
-    }, [isComparing, originalItems, testItems, profile, libs, itemBalancingConfig, itemBalancingLibrary, treeMode, techTreePositionLibrary, techTreeLibrary]);
+    }, [isComparing, originalItems, testItems, originalMount, testMount, profile, libs, itemBalancingConfig, itemBalancingLibrary, treeMode, techTreePositionLibrary, techTreeLibrary]);
 
     if (!stats) {
         return (

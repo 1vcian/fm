@@ -3,7 +3,7 @@ import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { X, Bookmark, GitCompare } from 'lucide-react';
-import { ItemSlot, UserProfile } from '../../types/Profile';
+import { ItemSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
 import { MountSelectorModal } from './MountSelectorModal';
@@ -88,9 +88,10 @@ interface EquipmentPanelProps {
     title?: string;
     showCompareButton?: boolean;
     compareItems?: UserProfile['items'] | null;
+    compareMount?: MountSlot | null;
 }
 
-export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems }: EquipmentPanelProps) {
+export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems, compareMount }: EquipmentPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
     const { isComparing, originalItems, testItems, updateOriginalItem, updateTestItem, enterCompareMode } = useComparison();
     const [selectedSlot, setSelectedSlot] = useState<keyof UserProfile['items'] | null>(null);
@@ -515,7 +516,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                 })}
 
                 {/* Mount Slot - spans 2 columns */}
-                <MountSlotWidget />
+                <MountSlotWidget variant={variant} compareMount={compareMount} />
             </div>
 
             {
@@ -544,14 +545,27 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
 }
 
 // Inline Mount Slot Widget with all mount data
-function MountSlotWidget() {
+interface MountSlotWidgetProps {
+    variant?: 'default' | 'original' | 'test';
+    compareMount?: MountSlot | null;
+}
+
+function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetProps) {
     const { profile, updateNestedProfile } = useProfile();
+    const { originalMount, testMount, updateOriginalMount, updateTestMount } = useComparison();
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-    const mount = profile.mount.active;
+
+    // Get the correct mount based on variant
+    const mount = useMemo(() => {
+        if (variant === 'original' && originalMount !== null) return originalMount;
+        if (variant === 'test' && testMount !== null) return testMount;
+        if (variant === 'original' || variant === 'test') return variant === 'original' ? originalMount : testMount;
+        return profile.mount.active;
+    }, [variant, originalMount, testMount, profile.mount.active]);
 
     // Tech tree bonuses
     const techModifiers = useTreeModifiers();
@@ -601,22 +615,33 @@ function MountSlotWidget() {
     }, [mount, profile.mount.savedBuilds]);
 
     const handleSelectMount = (rarity: string, id: number, level: number, secondaryStats: { statId: string; value: number }[]) => {
-        updateNestedProfile('mount', {
-            active: {
-                rarity,
-                id,
-                level,
-                evolution: 0,
-                skills: [],
-                secondaryStats
-            }
-        });
+        const newMount: MountSlot = {
+            rarity,
+            id,
+            level,
+            evolution: 0,
+            skills: [],
+            secondaryStats
+        };
+        if (variant === 'original') {
+            updateOriginalMount(newMount);
+        } else if (variant === 'test') {
+            updateTestMount(newMount);
+        } else {
+            updateNestedProfile('mount', { active: newMount });
+        }
         setIsModalOpen(false);
     };
 
     const handleRemove = (e: React.MouseEvent) => {
         e.stopPropagation();
-        updateNestedProfile('mount', { active: null });
+        if (variant === 'original') {
+            updateOriginalMount(null);
+        } else if (variant === 'test') {
+            updateTestMount(null);
+        } else {
+            updateNestedProfile('mount', { active: null });
+        }
     };
 
     const handleSavePreset = (name: string) => {
@@ -644,7 +669,14 @@ function MountSlotWidget() {
         e.stopPropagation();
         if (!mount) return;
         const newLevel = Math.max(1, Math.min(100, mount.level + delta));
-        updateNestedProfile('mount', { active: { ...mount, level: newLevel } });
+        const updatedMount = { ...mount, level: newLevel };
+        if (variant === 'original') {
+            updateOriginalMount(updatedMount);
+        } else if (variant === 'test') {
+            updateTestMount(updatedMount);
+        } else {
+            updateNestedProfile('mount', { active: updatedMount });
+        }
     };
 
     // Corrected sprite lookup - matching MountPanel.tsx
@@ -716,13 +748,32 @@ function MountSlotWidget() {
 
     const modalProps = getModalProps();
 
+    // Check if mount differs from compareMount (for golden border in test panel)
+    const mountDiffers = (): boolean => {
+        if (variant !== 'test' || compareMount === undefined) return false;
+        // Both null = same
+        if (!mount && !compareMount) return false;
+        // One null, other not = different
+        if (!mount || !compareMount) return true;
+        // Compare key fields
+        if (mount.id !== compareMount.id) return true;
+        if (mount.rarity !== compareMount.rarity) return true;
+        if (mount.level !== compareMount.level) return true;
+        // Deep compare secondary stats
+        if (JSON.stringify(mount.secondaryStats) !== JSON.stringify(compareMount.secondaryStats)) return true;
+        return false;
+    };
+
+    const isDifferent = mountDiffers();
+
     return (
         <>
             <div
                 onClick={() => setIsModalOpen(true)}
                 className={cn(
                     "col-span-2 sm:col-span-2 md:col-span-2 rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col gap-2 p-3 group min-h-[160px]",
-                    mount ? "border-solid bg-bg-secondary" : "bg-bg-input/30"
+                    mount ? "border-solid bg-bg-secondary" : "bg-bg-input/30",
+                    isDifferent && "border-yellow-400 border-solid shadow-[0_0_12px_rgba(250,204,21,0.4)]"
                 )}
             >
                 {mount ? (
