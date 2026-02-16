@@ -1,0 +1,19 @@
+{
+  "TokenPack0": {
+    "Id": "TokenPack0",
+    "Reward": {
+      "Amount": 3,
+      "Type": "Token",
+      "$type": "CurrencyReward"
+    },
+    "Price": {
+      "Amount": 0,
+      "Currency": "Gems"
+    },
+    "Limit": {
+      "ResetsWithNewDay": 0,
+      "CooldownInSeconds": 0,
+      "AllowedPurchasesPerCooldown": 1
+    }
+  }
+}

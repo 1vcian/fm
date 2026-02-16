@@ -25,6 +25,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Progress Prediction', path: '/progress-prediction', icon: TrendingUp },
                 { name: 'PVP Simulator', path: '/pvp-arena', icon: Swords },
                 { name: 'Colors', path: '/colors', icon: Palette },
+                { name: 'Emblems', path: '/emblems', icon: Shield },
             ]
         },
         {

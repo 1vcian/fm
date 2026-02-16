@@ -1,0 +1,10 @@
+{
+  "PvpHpBaseMultiplier": 1.0,
+  "PvpHpPetMultiplier": 0.5,
+  "PvpHpSkillMultiplier": 0.5,
+  "PvpHpMountMultiplier": 2.0,
+  "PvpMatchTimerSeconds": 60,
+  "DailyArenaTickets": 5,
+  "GuildWarBattleMatchTimerSeconds": 120,
+  "GuildWarMeleeHpScaling": 2.6000000000931323
+}

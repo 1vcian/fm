@@ -1,0 +1,353 @@
+{
+  "{'Amount': 10000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 10000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 60,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 20000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 20000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 5000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 70,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 35,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 50000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 50000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 140,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 84,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 75000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 75000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 7000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 98,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 100000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 100000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 118,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 150000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 150000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 9800,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 137,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 70,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 200000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 200000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 280,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 165,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 250000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 250000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 13700,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 192,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 300000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 300000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 380,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 230,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 350000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 350000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 19000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 269,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 140,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 400000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 400000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 550,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 323,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 450000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 450000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 27000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 376,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 190,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'Amount': 500000, '$type': 'WarPointsProgressKey'}": {
+    "ProgressKey": {
+      "Amount": 500000,
+      "$type": "WarPointsProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 750,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 452,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          }
+        ]
+      }
+    ]
+  }
+}

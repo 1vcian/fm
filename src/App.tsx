@@ -21,6 +21,7 @@ import GuildWar from './pages/GuildWar';
 import Unlocks from './pages/Unlocks';
 import Offline from './pages/Offline';
 import Colors from './pages/Colors';
+import Emblems from './pages/Emblems';
 import FAQ from './pages/FAQ';
 import Profile from './pages/Profile';
 import ProgressPrediction from './pages/ProgressPrediction';
@@ -38,41 +39,42 @@ function App() {
             <ProfileProvider>
                 <ComparisonProvider>
                     <TreeModeProvider>
-                    <HashRouter>
-                        <Routes>
-                            <Route path="/" element={<AppShell />}>
-                                <Route index element={<Profile />} />
-                                <Route path="progress-prediction" element={<ProgressPrediction />} />
-                                <Route path="home" element={<Home />} />
-                                <Route path="configs" element={<Configs />} />
-                                <Route path="mounts" element={<Mounts />} />
-                                <Route path="skills" element={<Skills />} />
-                                <Route path="eggs" element={<Eggs />} />
-                                <Route path="dungeons" element={<Dungeons />} />
-                                <Route path="forge-calculator" element={<ForgeCalculator />} />
-                                <Route path="items" element={<Items />} />
-                                <Route path="pets" element={<Pets />} />
+                        <HashRouter>
+                            <Routes>
+                                <Route path="/" element={<AppShell />}>
+                                    <Route index element={<Profile />} />
+                                    <Route path="progress-prediction" element={<ProgressPrediction />} />
+                                    <Route path="home" element={<Home />} />
+                                    <Route path="configs" element={<Configs />} />
+                                    <Route path="mounts" element={<Mounts />} />
+                                    <Route path="skills" element={<Skills />} />
+                                    <Route path="eggs" element={<Eggs />} />
+                                    <Route path="dungeons" element={<Dungeons />} />
+                                    <Route path="forge-calculator" element={<ForgeCalculator />} />
+                                    <Route path="items" element={<Items />} />
+                                    <Route path="pets" element={<Pets />} />
 
-                                <Route path="tech-tree" element={<TechTree />} />
-                                <Route path="arena" element={<Arena />} />
-                                <Route path="guild-war" element={<GuildWar />} />
-                                <Route path="verify" element={<Verify />} />
+                                    <Route path="tech-tree" element={<TechTree />} />
+                                    <Route path="arena" element={<Arena />} />
+                                    <Route path="guild-war" element={<GuildWar />} />
+                                    <Route path="verify" element={<Verify />} />
 
-                                <Route path="unlocks" element={<Unlocks />} />
-                                <Route path="offline" element={<Offline />} />
-                                <Route path="colors" element={<Colors />} />
-                                <Route path="faq" element={<FAQ />} />
-                                <Route path="pvp-arena" element={<PvpArena />} />
-                                <Route path="calculators/forge" element={<ForgeCalculator />} />
-                                <Route path="calculators/mounts" element={<MountCalculator />} />
-                                <Route path="calculators/skills" element={<SkillCalculator />} />
-                                <Route path="calculators/tree" element={<TreeCalculator />} />
-                                <Route path="wiki/forge" element={<ForgeWiki />} />
-                                <Route path="*" element={<Home />} />
-                            </Route>
-                        </Routes>
-                    </HashRouter>
-                </TreeModeProvider>
+                                    <Route path="unlocks" element={<Unlocks />} />
+                                    <Route path="offline" element={<Offline />} />
+                                    <Route path="colors" element={<Colors />} />
+                                    <Route path="emblems" element={<Emblems />} />
+                                    <Route path="faq" element={<FAQ />} />
+                                    <Route path="pvp-arena" element={<PvpArena />} />
+                                    <Route path="calculators/forge" element={<ForgeCalculator />} />
+                                    <Route path="calculators/mounts" element={<MountCalculator />} />
+                                    <Route path="calculators/skills" element={<SkillCalculator />} />
+                                    <Route path="calculators/tree" element={<TreeCalculator />} />
+                                    <Route path="wiki/forge" element={<ForgeWiki />} />
+                                    <Route path="*" element={<Home />} />
+                                </Route>
+                            </Routes>
+                        </HashRouter>
+                    </TreeModeProvider>
                 </ComparisonProvider>
             </ProfileProvider>
             <ToastContainer

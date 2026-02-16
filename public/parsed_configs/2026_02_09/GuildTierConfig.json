@@ -1,0 +1,422 @@
+{
+  "E": {
+    "Tier": "E",
+    "RequiredPoints": 0,
+    "WarWonRewards": [
+      {
+        "Amount": 1400,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 47000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 950,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 4,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 700,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 380,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 700,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 24000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 470,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 350,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 190,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 3
+  },
+  "D": {
+    "Tier": "D",
+    "RequiredPoints": 5,
+    "WarWonRewards": [
+      {
+        "Amount": 2000,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 67000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1350,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 5,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 1000,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 540,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 1000,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 33000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 670,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 3,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 500,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 270,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 2
+  },
+  "C": {
+    "Tier": "C",
+    "RequiredPoints": 10,
+    "WarWonRewards": [
+      {
+        "Amount": 2900,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 96000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1900,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 8,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 1500,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 750,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 1400,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 48000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 960,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 4,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 720,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 400,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 1
+  },
+  "B": {
+    "Tier": "B",
+    "RequiredPoints": 15,
+    "WarWonRewards": [
+      {
+        "Amount": 4000,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 140000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2800,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 11,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 2000,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1000,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 2000,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 70000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1400,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 5,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 1000,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 550,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 0
+  },
+  "A": {
+    "Tier": "A",
+    "RequiredPoints": 20,
+    "WarWonRewards": [
+      {
+        "Amount": 5900,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 196000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 4000,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 16,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 3000,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1550,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 3000,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 98000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2000,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 8,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 1500,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 780,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 2
+  },
+  "S": {
+    "Tier": "S",
+    "RequiredPoints": 25,
+    "WarWonRewards": [
+      {
+        "Amount": 8400,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 280000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 5600,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 22,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 4200,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2300,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 4200,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 140000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2800,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 11,
+        "Type": "Pet",
+        "$type": "DungeonKeyReward"
+      },
+      {
+        "Amount": 2100,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1120,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 4
+  }
+}

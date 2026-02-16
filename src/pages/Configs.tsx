@@ -5,34 +5,11 @@ import { cn } from '../lib/utils';
 import { Search, FileJson, FolderOpen, RefreshCw, Copy, Download, Check } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 
-// Constants
-const JSON_FILES = [
-    'ArenaLeagueLibrary.json', 'ArenaRewardLibrary.json', 'BaseConfig.json',
-    'CountryComplianceLibrary.json', 'DailyDealLibrary.json', 'DungeonBaseConfig.json',
-    'DungeonRewardEggLibrary.json', 'DungeonRewardLibrary.json', 'EggDungeonBattleLibrary.json',
-    'EggLibrary.json', 'EnemyAgeScalingLibrary.json', 'EnemyLibrary.json',
-    'ForgeConfig.json', 'ForgeUpgradeLibrary.json', 'GuildBaseConfig.json',
-    'GuildEmblemColors.json', 'GuildTierConfig.json', 'GuildWarConfig.json',
-    'GuildWarDayConfigLibrary.json', 'GuildWarProgressPassLibrary.json',
-    'HammerThiefDungeonBattleLibrary.json', 'IdleConfig.json', 'InAppProducts.json',
-    'ItemAgeDropChancesLibrary.json', 'ItemBalancingConfig.json', 'ItemBalancingLibrary.json',
-    'ItemLevelBracketsLibrary.json', 'MainBattleConfig.json', 'MainBattleLibrary.json',
-    'MainGameProgressPassLibrary.json', 'MountLibrary.json', 'MountSummonConfig.json',
-    'MountSummonDropChancesLibrary.json', 'MountSummonUpgradeLibrary.json',
-    'MountUpgradeLibrary.json', 'PetBalancingLibrary.json', 'PetBaseConfig.json',
-    'PetLibrary.json', 'PetUpgradeLibrary.json', 'PotionDungeonBattleLibrary.json',
-    'ProfileBaseConfig.json', 'ProjectilesLibrary.json', 'PvpBaseConfig.json',
-    'SecondaryStatItemUnlockLibrary.json', 'SecondaryStatLibrary.json',
-    'SecondaryStatPetUnlockLibrary.json', 'ShopResourcesLibrary.json', 'SkillBaseConfig.json',
-    'SkillDungeonBattleLibrary.json', 'SkillLibrary.json', 'SkillPassiveLibrary.json',
-    'SkillSummonDropChancesLibrary.json', 'SkillUpgradeLibrary.json', 'StatConfigLibrary.json',
-    'TechTreeLibrary.json', 'TechTreePositionLibrary.json', 'TechTreeUpgradeLibrary.json',
-    'UnlockConditions.json', 'WeaponLibrary.json', 'WorldIndexConfigLibrary.json'
-];
-
 export default function Configs() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const [configManifest, setConfigManifest] = useState<Record<string, string[]>>({});
+    const [configFiles, setConfigFiles] = useState<string[]>([]);
 
     // Versioning State
     const [versions, setVersions] = useState<string[]>([]);
@@ -44,30 +21,47 @@ export default function Configs() {
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [copied, setCopied] = useState(false);
 
-    // Initial fetch of versions
+    // Initial fetch of versions and manifest
     useEffect(() => {
-        async function fetchVersions() {
+        async function fetchData() {
             try {
-                const res = await fetch('./parsed_configs/versions.json');
-                if (res.ok) {
-                    const v = await res.json();
-                    // Sort descending (latest first, assuming YYYY_MM_DD format)
+                const [versionsRes, manifestRes] = await Promise.all([
+                    fetch('./parsed_configs/versions.json'),
+                    fetch('./parsed_configs/config_manifest.json')
+                ]);
+
+                if (versionsRes.ok) {
+                    const v = await versionsRes.json();
                     v.sort((a: string, b: string) => b.localeCompare(a));
                     setVersions(v);
                     if (v.length > 0) {
                         setSelectedVersion(v[0]);
                     }
                 }
+
+                if (manifestRes.ok) {
+                    const manifest = await manifestRes.json();
+                    setConfigManifest(manifest);
+                }
             } catch (e) {
-                console.error("Failed to load versions", e);
+                console.error("Failed to load initial data", e);
             }
         }
-        fetchVersions();
+        fetchData();
     }, []);
+
+    // Update config files list when version or manifest changes
+    useEffect(() => {
+        if (selectedVersion && configManifest[selectedVersion]) {
+            setConfigFiles(configManifest[selectedVersion]);
+        } else {
+            setConfigFiles([]);
+        }
+    }, [selectedVersion, configManifest]);
 
     // Initial background fetch (triggered when version is set)
     useEffect(() => {
-        if (!selectedVersion) return;
+        if (!selectedVersion || configFiles.length === 0) return;
 
         const fetchAll = async () => {
             setIsLoadingAll(true);
@@ -78,7 +72,7 @@ export default function Configs() {
             let loaded = 0;
 
             try {
-                const promises = JSON_FILES.map(async (fileName) => {
+                const promises = configFiles.map(async (fileName) => {
                     try {
                         const res = await fetch(`./parsed_configs/${selectedVersion}/${fileName}`);
                         if (res.ok) {
@@ -89,7 +83,7 @@ export default function Configs() {
                         console.error(`Failed to load ${fileName}`, e);
                     } finally {
                         loaded++;
-                        setLoadingProgress(Math.round((loaded / JSON_FILES.length) * 100));
+                        setLoadingProgress(Math.round((loaded / configFiles.length) * 100));
                     }
                 });
 
@@ -103,20 +97,20 @@ export default function Configs() {
         };
 
         fetchAll();
-    }, [selectedVersion]);
+    }, [selectedVersion, configFiles]);
 
     // Filter files based on Global Search (Name OR Content)
     const filteredFiles = useMemo(() => {
-        if (!searchTerm) return JSON_FILES;
+        if (!searchTerm) return configFiles;
 
         const lowerTerm = searchTerm.toLowerCase();
-        return JSON_FILES.filter(fileName => {
+        return configFiles.filter(fileName => {
             if (fileName.toLowerCase().includes(lowerTerm)) return true;
             const content = fileCache[fileName];
             if (content && content.toLowerCase().includes(lowerTerm)) return true;
             return false;
         });
-    }, [searchTerm, fileCache]);
+    }, [searchTerm, fileCache, configFiles]);
 
     // Helper to render content with highlighted search terms
     const renderHighlightedContent = (content: string, term: string) => {
