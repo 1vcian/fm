@@ -1,5 +1,6 @@
 import { useProfile } from '../context/ProfileContext';
-import { Download, Upload, Trash2, Copy, Clipboard } from 'lucide-react';
+import { useComparison } from '../context/ComparisonContext';
+import { Download, Upload, Trash2, Copy, Clipboard, X, Check, ArrowRight } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -20,6 +21,15 @@ export default function Profile() {
         cloneProfile,
         importProfileFromJsonString
     } = useProfile();
+
+    const {
+        isComparing,
+        originalItems,
+        originalMount,
+        exitCompareMode,
+        keepOriginal,
+        applyTestBuild,
+    } = useComparison();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [considerAnimation, setConsiderAnimation] = useState(false);
@@ -42,7 +52,7 @@ export default function Profile() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 animate-fade-in pb-12">
+        <div className="max-w-[100rem] mx-auto space-y-8 animate-fade-in pb-12 px-4 xl:px-8">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-border pb-6">
                 <ProfileHeaderPanel />
@@ -79,7 +89,44 @@ export default function Profile() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                     <MiscPanel />
-                    <EquipmentPanel />
+
+                    {isComparing ? (
+                        <div className="space-y-6">
+                            {/* Comparison Equipment Panels */}
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                <EquipmentPanel
+                                    variant="original"
+                                    title="Equipped"
+                                    showCompareButton={false}
+                                />
+                                <EquipmentPanel
+                                    variant="test"
+                                    title="Test Build"
+                                    showCompareButton={false}
+                                    compareItems={originalItems}
+                                    compareMount={originalMount}
+                                />
+                            </div>
+
+                            {/* Comparison Action Buttons */}
+                            <div className="flex flex-wrap items-center justify-center gap-3 p-4 bg-bg-secondary rounded-xl border border-border">
+                                <Button variant="ghost" onClick={exitCompareMode}>
+                                    <X className="w-4 h-4 mr-2" />
+                                    Exit Compare
+                                </Button>
+                                <Button variant="secondary" onClick={keepOriginal}>
+                                    <Check className="w-4 h-4 mr-2" />
+                                    Keep Equipped
+                                </Button>
+                                <Button variant="primary" onClick={applyTestBuild}>
+                                    <ArrowRight className="w-4 h-4 mr-2" />
+                                    Apply Test Build
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <EquipmentPanel />
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <PetPanel />

@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { GameDataProvider } from './context/GameDataContext';
 import { ProfileProvider } from './context/ProfileContext';
 import { TreeModeProvider } from './context/TreeModeContext';
+import { ComparisonProvider } from './context/ComparisonContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AppShell from './components/Layout/AppShell';
@@ -35,7 +36,8 @@ function App() {
     return (
         <GameDataProvider>
             <ProfileProvider>
-                <TreeModeProvider>
+                <ComparisonProvider>
+                    <TreeModeProvider>
                     <HashRouter>
                         <Routes>
                             <Route path="/" element={<AppShell />}>
@@ -71,6 +73,7 @@ function App() {
                         </Routes>
                     </HashRouter>
                 </TreeModeProvider>
+                </ComparisonProvider>
             </ProfileProvider>
             <ToastContainer
                 position="top-center"
