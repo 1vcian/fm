@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useGameData } from './useGameData';
-import { ItemSlot, UserProfile } from '../types/Profile';
+import { UserProfile } from '../types/Profile';
 
 interface SkinEntry {
     SkinId: {

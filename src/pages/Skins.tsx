@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { cn } from '../lib/utils';
+
 import { Shield, Sword, Heart, Zap } from 'lucide-react';
 
 interface SkinStat {

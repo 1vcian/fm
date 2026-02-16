@@ -2,7 +2,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
-import { X, Bookmark, GitCompare, Shield, Zap } from 'lucide-react';
+import { X, Bookmark, GitCompare } from 'lucide-react';
 import { ItemSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
@@ -13,7 +13,6 @@ import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
 import { AGES } from '../../utils/constants';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
-import { useSetBonuses } from '../../hooks/useSetBonuses';
 import { formatSecondaryStat } from '../../utils/statNames';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 
@@ -85,11 +84,7 @@ const SLOT_TYPE_ID_MAP: Record<string, number> = {
 };
 
 // Map Set IDs to Icon filenames (same as Skins.tsx)
-const SET_ICONS: Record<string, string> = {
-    'SantaSet': 'SteppingStoneCharIcon0.png',
-    'SnowmanSet': 'SteppingStoneCharIcon1.png',
-    'SkiSet': 'SteppingStoneCharIcon2.png'
-};
+
 
 interface EquipmentPanelProps {
     variant?: 'default' | 'original' | 'test';
@@ -208,13 +203,13 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     // Calculate item stats with tech tree bonus
     // For weapons: includes melee base multiplier (1.6x) to match in-game display
     const getItemStats = (item: ItemSlot | null, slotKey: string) => {
-        if (!item || !itemBalancingLibrary) return { damage: 0, health: 0, bonus: 0, isMelee: true };
+        if (!item || !itemBalancingLibrary) return { damage: 0, health: 0, bonus: 0, skinBonuses: { damage: 0, health: 0 }, isMelee: true };
 
         const jsonType = SLOT_TO_JSON_TYPE[slotKey] || slotKey;
         const key = `{'Age': ${item.age}, 'Type': '${jsonType}', 'Idx': ${item.idx}}`;
         const itemData = itemBalancingLibrary[key];
 
-        if (!itemData?.EquipmentStats) return { damage: 0, health: 0, bonus: 0, isMelee: true };
+        if (!itemData?.EquipmentStats) return { damage: 0, health: 0, bonus: 0, skinBonuses: { damage: 0, health: 0 }, isMelee: true };
 
         // Check if weapon is melee (for applying melee base multiplier)
         // Melee = AttackRange < 1, Ranged = AttackRange >= 1
@@ -442,7 +437,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                                 {(() => {
                                                     // Calculate sprite position for skin icon
                                                     // This logic mimics ItemSelectorModal and Skins.tsx
-                                                    const skinId = equipped.skin.idx;
+
                                                     // We need a helper or context to get global sorted index for precise sprite pos,
                                                     // but for now, let's try to map it if possible or just use the generic icon.
                                                     // Actually, without the full sorted list context, accurate sprite mapping is hard locally.
@@ -536,7 +531,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                                             <span>⚔️{Math.round(stats.damage).toLocaleString()}</span>
                                                             <div className="flex gap-1 flex-wrap justify-center font-bold">
                                                                 {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
-                                                                {stats.skinBonuses?.damage > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round(stats.skinBonuses.damage * 100)}% S)</span>}
+                                                                {stats.skinBonuses?.damage > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round((stats.skinBonuses?.damage || 0) * 100)}% S)</span>}
                                                             </div>
                                                         </div>
                                                     )}
@@ -545,7 +540,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                                             <span>♥{Math.round(stats.health).toLocaleString()}</span>
                                                             <div className="flex gap-1 flex-wrap justify-center font-bold">
                                                                 {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
-                                                                {stats.skinBonuses?.health > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round(stats.skinBonuses.health * 100)}% S)</span>}
+                                                                {stats.skinBonuses?.health > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round((stats.skinBonuses?.health || 0) * 100)}% S)</span>}
                                                             </div>
                                                         </div>
                                                     )}

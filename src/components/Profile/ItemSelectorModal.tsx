@@ -539,7 +539,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 {skinIdx !== null && (
                     <div className="space-y-2 bg-bg-input/30 p-2 rounded">
                         {(() => {
-                            const selectedSkin = availableSkins.find((s: any) => s.SkinId.Idx === skinIdx);
+                            const selectedSkin = availableSkins.find((s: any) => s.SkinId.Idx === skinIdx) as any;
                             const possibleStats = selectedSkin?.PossibleStats || [];
                             const maxStats = selectedSkin?.MaxStatCount || 0;
 
@@ -579,7 +579,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                                 </option>
                                                             ))}
                                                     </select>
-                                                    <Button variant="ghost" size="icon" onClick={() => removeSkinStat(i)} className="h-6 w-6 text-text-muted hover:text-red-400">
+                                                    <Button variant="ghost" size="sm" onClick={() => removeSkinStat(i)} className="h-6 w-6 text-text-muted hover:text-red-400 p-0">
                                                         <X className="w-3 h-3" />
                                                     </Button>
                                                 </div>
