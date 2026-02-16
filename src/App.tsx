@@ -32,6 +32,7 @@ import SkillCalculator from './pages/Calculators/SkillCalculator';
 import TreeCalculator from './pages/Calculators/TreeCalculator';
 import Verify from './pages/Verify';
 import ForgeWiki from './pages/ForgeWiki';
+import SkinsPage from './pages/Skins';
 
 function App() {
     return (
@@ -70,6 +71,7 @@ function App() {
                                     <Route path="calculators/skills" element={<SkillCalculator />} />
                                     <Route path="calculators/tree" element={<TreeCalculator />} />
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
+                                    <Route path="skins" element={<SkinsPage />} />
                                     <Route path="*" element={<Home />} />
                                 </Route>
                             </Routes>

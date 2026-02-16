@@ -44,6 +44,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             title: 'Wiki',
             items: [
                 { name: 'Items', path: '/items', icon: Shirt }, // Shirt as placeholder for Items/Chest
+                { name: 'Skins', path: '/skins', icon: Shirt },
                 { name: 'Pets', path: '/pets', icon: Cat },
                 { name: 'Mounts', path: '/mounts', icon: Star },
                 { name: 'Skills', path: '/skills', icon: Star },
