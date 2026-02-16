@@ -1,0 +1,42 @@
+{
+  "0": {
+    "ItemAge": 0,
+    "NumberOfSecondStats": 0
+  },
+  "1": {
+    "ItemAge": 1,
+    "NumberOfSecondStats": 0
+  },
+  "2": {
+    "ItemAge": 2,
+    "NumberOfSecondStats": 0
+  },
+  "3": {
+    "ItemAge": 3,
+    "NumberOfSecondStats": 1
+  },
+  "4": {
+    "ItemAge": 4,
+    "NumberOfSecondStats": 1
+  },
+  "5": {
+    "ItemAge": 5,
+    "NumberOfSecondStats": 1
+  },
+  "6": {
+    "ItemAge": 6,
+    "NumberOfSecondStats": 1
+  },
+  "7": {
+    "ItemAge": 7,
+    "NumberOfSecondStats": 2
+  },
+  "8": {
+    "ItemAge": 8,
+    "NumberOfSecondStats": 2
+  },
+  "9": {
+    "ItemAge": 9,
+    "NumberOfSecondStats": 2
+  }
+}

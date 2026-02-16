@@ -1,0 +1,110 @@
+{
+  "SantaSet": {
+    "Id": "SantaSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 2,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "StatTarget": {
+                  "$type": "PlayerSkinMultiplierStatTarget"
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "StatTarget": {
+                  "$type": "PlayerSkinMultiplierStatTarget"
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "SkiSet": {
+    "Id": "SkiSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 2,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "StatTarget": {
+                  "$type": "PlayerSkinMultiplierStatTarget"
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "StatTarget": {
+                  "$type": "PlayerSkinMultiplierStatTarget"
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "SnowmanSet": {
+    "Id": "SnowmanSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 2,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "StatTarget": {
+                  "$type": "PlayerSkinMultiplierStatTarget"
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "StatTarget": {
+                  "$type": "PlayerSkinMultiplierStatTarget"
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

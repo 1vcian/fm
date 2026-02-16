@@ -1,0 +1,290 @@
+{
+  "{'Type': 'Helmet', 'Idx': 0}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "SetId": "SantaSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 0}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 0
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "SetId": "SantaSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 1}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "SetId": "SkiSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 1}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 1
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "SetId": "SkiSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 2}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "SetId": "SnowmanSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 2}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 2
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "SetId": "SnowmanSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 100}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 100
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "SetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 101}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 101
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "StatTarget": {
+            "$type": "PlayerSkinMultiplierStatTarget"
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "SetId": "",
+    "MaxStatCount": 1
+  }
+}
