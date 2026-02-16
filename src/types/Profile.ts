@@ -7,6 +7,11 @@ export interface ItemSlot {
         statId: string;
         value: number;
     }[];
+    skin?: {
+        idx: number;
+        type?: string; // Cache the skin type (e.g. "Helmet", "Armour") for easier lookup
+        stats: { [statType: string]: number };
+    };
 }
 
 export interface PetSlot {

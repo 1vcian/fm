@@ -195,12 +195,11 @@
         background: rgb(var(--border));
     }
 }
-@keyframes clock-pendulum {
-    0% { transform: rotate(-90deg); }
-    50% { transform: rotate(90deg); }
-    100% { transform: rotate(-90deg); }
+@keyframes pulse-subtle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.02); }
 }
 
-.animate-clock-pendulum {
-    animation: clock-pendulum 2s infinite ease-in-out;
+.animate-pulse-subtle {
+    animation: pulse-subtle 2s infinite ease-in-out;
 }

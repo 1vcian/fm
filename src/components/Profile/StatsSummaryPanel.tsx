@@ -232,6 +232,8 @@ export function StatsSummaryPanel() {
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
+    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
+    const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
 
     const libs: LibraryData = useMemo(() => ({
         petUpgradeLibrary,
@@ -247,12 +249,15 @@ export function StatsSummaryPanel() {
         weaponLibrary,
         projectilesLibrary,
         secondaryStatLibrary,
+        skinsLibrary,
+        setsLibrary,
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary,
         skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
         techTreeLibrary, techTreePositionLibrary,
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
+        skinsLibrary, setsLibrary,
     ]);
 
     // Calculate stats for original and test items when comparing

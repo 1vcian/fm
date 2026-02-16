@@ -29,6 +29,8 @@ export function useGlobalStats(): AggregatedStats | null {
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
+    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
+    const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
 
     // Combine into LibraryData object
     const libs: LibraryData = useMemo(() => ({
@@ -45,12 +47,15 @@ export function useGlobalStats(): AggregatedStats | null {
         weaponLibrary,
         projectilesLibrary,
         secondaryStatLibrary,
+        skinsLibrary,
+        setsLibrary,
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary,
         skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
         techTreeLibrary, techTreePositionLibrary,
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
+        skinsLibrary, setsLibrary,
     ]);
 
     // Build effective profile based on tree mode

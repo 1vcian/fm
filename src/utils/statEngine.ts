@@ -183,6 +183,8 @@ export interface LibraryData {
     projectilesLibrary?: any;
     secondaryStats?: any;
     secondaryStatLibrary?: any;
+    skinsLibrary?: any;
+    setsLibrary?: any;
 }
 
 export class StatEngine {
@@ -232,6 +234,14 @@ export class StatEngine {
     private mountDamageMulti = 0;
     private mountHealthMulti = 0;
 
+    // Skin multipliers (accumulated per-item in collectItemStats)
+    private skinDamageMulti = 0;
+    private skinHealthMulti = 0;
+
+    // Set bonuses (from SetsLibrary.json)
+    private setDamageMulti = 0;
+    private setHealthMulti = 0;
+
     // Item Max Level Bonuses per slot
     private maxLevelBonuses: Record<string, number> = {
         'Weapon': 0,
@@ -258,8 +268,12 @@ export class StatEngine {
         this.collectTechModifiers();
 
         // Phase 2: Collect Flat Stats (Items, Pets) with tech tree bonuses applied
+        // collectItemStats also applies per-item skin multipliers
         this.collectItemStats();
         this.collectPetStats();
+
+        // Phase 2.5: Collect Skin Set Bonuses
+        this.collectSkinSetBonuses();
 
         // Phase 3: Collect Mount Multipliers (NOT flat stats!)
         this.collectMountStats();
@@ -369,6 +383,12 @@ export class StatEngine {
         this.mountDamageMulti = 0;
         this.mountHealthMulti = 0;
         this.stats.mountDamageMulti = 0;
+
+        // Reset skin/set multipliers
+        this.skinDamageMulti = 0;
+        this.skinHealthMulti = 0;
+        this.setDamageMulti = 0;
+        this.setHealthMulti = 0;
 
         // Reset max levels
         this.maxLevelBonuses = { 'Weapon': 0, 'Helmet': 0, 'Body': 0, 'Gloves': 0, 'Belt': 0, 'Necklace': 0, 'Ring': 0, 'Shoe': 0 };
@@ -518,6 +538,16 @@ export class StatEngine {
                 if (statType === 'Health') hp += value;
             }
 
+            // Collect Skin Multipliers (global player-level, NOT per-item)
+            // StatTarget is PlayerSkinMultiplierStatTarget => applied to total player damage/health
+            if (item.skin && item.skin.stats) {
+                const skinDmgBonus = item.skin.stats['Damage'] || 0;
+                const skinHpBonus = item.skin.stats['Health'] || 0;
+                this.skinDamageMulti += skinDmgBonus;
+                this.skinHealthMulti += skinHpBonus;
+                this.debugLogs.push(`SKIN ${slotKey}: idx=${item.skin.idx} Damage=+${(skinDmgBonus * 100).toFixed(1)}% Health=+${(skinHpBonus * 100).toFixed(1)}%`);
+            }
+
             // Accumulate totals
             this.stats.itemDamage += dmg;
             this.stats.itemHealth += hp;
@@ -556,6 +586,58 @@ export class StatEngine {
     }
 
 
+    /**
+     * Collect Skin Set Bonuses from SetsLibrary.json
+     * Counts equipped set pieces across all items and applies active set tier bonuses.
+     * Set bonuses are Multiplier type (e.g. +10% Damage, +10% Health).
+     */
+    private collectSkinSetBonuses() {
+        if (!this.libs.skinsLibrary || !this.libs.setsLibrary) return;
+
+        const slotToJsonType: Record<string, string> = {
+            'Weapon': 'Weapon', 'Helmet': 'Helmet', 'Body': 'Armour',
+            'Gloves': 'Gloves', 'Belt': 'Belt', 'Necklace': 'Necklace',
+            'Ring': 'Ring', 'Shoe': 'Shoes'
+        };
+
+        const equippedSetCounts: Record<string, number> = {};
+        const slots: (keyof UserProfile['items'])[] = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
+
+        for (const slotKey of slots) {
+            const item = this.profile.items[slotKey];
+            if (!item?.skin) continue;
+
+            const jsonType = slotToJsonType[slotKey];
+            const lookupType = item.skin?.type || jsonType;
+            const skinEntry = Object.values(this.libs.skinsLibrary).find(
+                (s: any) => s.SkinId.Type === lookupType && s.SkinId.Idx === item.skin?.idx
+            ) as any;
+
+            this.debugLogs.push(`SET LOOKUP ${slotKey}: skinType=${lookupType} skinIdx=${item.skin.idx} found=${!!skinEntry} setId=${skinEntry?.SetId || 'none'}`);
+
+            if (skinEntry?.SetId) {
+                equippedSetCounts[skinEntry.SetId] = (equippedSetCounts[skinEntry.SetId] || 0) + 1;
+            }
+        }
+
+        for (const [setId, count] of Object.entries(equippedSetCounts)) {
+            const setEntry = this.libs.setsLibrary[setId];
+            if (!setEntry?.BonusTiers) continue;
+
+            for (const tier of setEntry.BonusTiers) {
+                if (count >= tier.RequiredPieces) {
+                    for (const stat of tier.BonusStats.Stats) {
+                        const statType = stat.StatNode?.UniqueStat?.StatType;
+                        const value = stat.Value || 0;
+                        if (statType === 'Damage') this.setDamageMulti += value;
+                        if (statType === 'Health') this.setHealthMulti += value;
+                    }
+                }
+            }
+
+            this.debugLogs.push(`Set ${setId}: ${count} pieces, SetDamage +${(this.setDamageMulti * 100).toFixed(0)}%, SetHealth +${(this.setHealthMulti * 100).toFixed(0)}%`);
+        }
+    }
 
     /**
      * Collect Pet Stats using VERIFIED logic from Verify.tsx
@@ -991,9 +1073,9 @@ export class StatEngine {
 
         this.debugLogs.push(`Flat Stats: Damage=${flatDamageWithMelee.toFixed(0)} (skillPassive: ${this.stats.skillPassiveDamage.toFixed(0)}), Health=${flatHealth.toFixed(0)} (skillPassive: ${this.stats.skillPassiveHealth.toFixed(0)})`);
 
-        // 4. Mount and Secondary DamageMulti/HealthMulti are ADDITIVE (from Verify.tsx)
-        const damageAdditiveMulti = 1 + this.mountDamageMulti + this.secondaryStats.damageMulti;
-        const healthAdditiveMulti = 1 + this.mountHealthMulti + this.secondaryStats.healthMulti;
+        // 4. Mount, Secondary DamageMulti/HealthMulti, Skin Bonuses, and Set Bonuses are ADDITIVE
+        const damageAdditiveMulti = 1 + this.mountDamageMulti + this.secondaryStats.damageMulti + this.skinDamageMulti + this.setDamageMulti;
+        const healthAdditiveMulti = 1 + this.mountHealthMulti + this.secondaryStats.healthMulti + this.skinHealthMulti + this.setHealthMulti;
 
         this.debugLogs.push(`Additive Multipliers: Damage=${damageAdditiveMulti.toFixed(3)} (1 + ${this.mountDamageMulti.toFixed(3)} + ${this.secondaryStats.damageMulti.toFixed(3)})`);
         this.debugLogs.push(`Additive Multipliers: Health=${healthAdditiveMulti.toFixed(3)} (1 + ${this.mountHealthMulti.toFixed(3)} + ${this.secondaryStats.healthMulti.toFixed(3)})`);

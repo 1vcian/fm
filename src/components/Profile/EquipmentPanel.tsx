@@ -2,7 +2,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
-import { X, Bookmark, GitCompare } from 'lucide-react';
+import { X, Bookmark, GitCompare, Shield, Zap } from 'lucide-react';
 import { ItemSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
@@ -13,6 +13,7 @@ import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
 import { AGES } from '../../utils/constants';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useSetBonuses } from '../../hooks/useSetBonuses';
 import { formatSecondaryStat } from '../../utils/statNames';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 
@@ -81,6 +82,13 @@ const SLOT_TYPE_ID_MAP: Record<string, number> = {
     'Weapon': 5,
     'Shoe': 6,
     'Belt': 7
+};
+
+// Map Set IDs to Icon filenames (same as Skins.tsx)
+const SET_ICONS: Record<string, string> = {
+    'SantaSet': 'SteppingStoneCharIcon0.png',
+    'SnowmanSet': 'SteppingStoneCharIcon1.png',
+    'SkiSet': 'SteppingStoneCharIcon2.png'
 };
 
 interface EquipmentPanelProps {
@@ -153,6 +161,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
+    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
 
     // Helper to calculate item perfection (avg of secondary stats vs max)
     const getPerfection = (item: ItemSlot): number | null => {
@@ -240,12 +249,26 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
             if (statType === 'Health') health += value;
         }
 
-        // For melee weapons: apply melee base multiplier (1.6x) to match in-game display
         if (slotKey === 'Weapon' && isMelee && damage > 0) {
             damage = damage * meleeBaseMulti;
         }
 
-        return { damage, health, bonus, isMelee };
+        // Apply Skin Multipliers
+        let skinBonuses = { damage: 0, health: 0 };
+        if (item.skin && item.skin.stats) {
+            const skinDamage = item.skin.stats['Damage'] || 0;
+            const skinHealth = item.skin.stats['Health'] || 0;
+
+            if (skinDamage) {
+                damage *= (1 + skinDamage);
+            }
+            if (skinHealth) {
+                health *= (1 + skinHealth);
+            }
+            skinBonuses = { damage: skinDamage, health: skinHealth };
+        }
+
+        return { damage, health, bonus, skinBonuses, isMelee };
     };
 
     const getEquippedImage = (slotKey: string, item: ItemSlot | null): string | null => {
@@ -333,9 +356,14 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                     {panelTitle}
                 </h2>
                 {showCompareButton && !isComparing && variant === 'default' && (
-                    <Button variant="secondary" size="sm" onClick={enterCompareMode}>
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={enterCompareMode}
+                        className="shadow-lg shadow-accent-primary/20 animate-pulse-subtle"
+                    >
                         <GitCompare className="w-4 h-4 mr-2" />
-                        Compare
+                        Compare Build
                     </Button>
                 )}
             </div>
@@ -409,6 +437,79 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                                 )
                                             )}
                                         </div>
+                                        {equipped.skin ? (
+                                            <div className="absolute -bottom-2 -right-2 z-20 w-8 h-8 rounded-md bg-bg-secondary border border-accent-primary shadow-sm overflow-hidden" title={`Skin ID: ${equipped.skin.idx}`}>
+                                                {(() => {
+                                                    // Calculate sprite position for skin icon
+                                                    // This logic mimics ItemSelectorModal and Skins.tsx
+                                                    const skinId = equipped.skin.idx;
+                                                    // We need a helper or context to get global sorted index for precise sprite pos,
+                                                    // but for now, let's try to map it if possible or just use the generic icon.
+                                                    // Actually, without the full sorted list context, accurate sprite mapping is hard locally.
+                                                    // Let's use a simplified approach or generic skin icon if specific mapping is complex.
+                                                    // Ideally we should export getVisualOrder/sortedGlobalSkins logic.
+
+                                                    // For now, let's display a styled indicator that looks better than "S"
+                                                    // Or better: Show the Skin Icon if we can calculate the background position.
+                                                    // Since we don't have the SkinsLibrary here easily without extra fetch, 
+                                                    // let's stick to a robust visual indicator or fetch it.
+                                                    // Wait, we can use the same logic if we pass the mapping or use a helper.
+
+                                                    return (
+                                                        <div className="w-full h-full flex items-center justify-center bg-accent-primary/20">
+                                                            <div
+                                                                className="w-full h-full opacity-80"
+                                                                style={{
+                                                                    backgroundImage: 'url(./Texture2D/SkinsUiIcons.png)',
+                                                                    backgroundSize: '400% 400%',
+                                                                    backgroundPosition: (() => {
+                                                                        if (!skinsLibrary) return 'center';
+
+                                                                        const allSkins = Object.values(skinsLibrary);
+                                                                        // Sort using same getVisualOrder logic as Skins.tsx
+                                                                        const getVisualOrder = (idx: number) => {
+                                                                            if (idx === 0) return 0;
+                                                                            if (idx === 2) return 1;
+                                                                            if (idx === 1) return 2;
+                                                                            return 10 + idx;
+                                                                        };
+                                                                        const sortedSkins = [...allSkins].sort((a: any, b: any) => {
+                                                                            const orderA = getVisualOrder(a.SkinId.Idx);
+                                                                            const orderB = getVisualOrder(b.SkinId.Idx);
+                                                                            if (orderA !== orderB) return orderA - orderB;
+
+                                                                            const isHelmetA = a.SkinId.Type === 'Helmet';
+                                                                            const isHelmetB = b.SkinId.Type === 'Helmet';
+                                                                            if (isHelmetA && !isHelmetB) return -1;
+                                                                            if (!isHelmetA && isHelmetB) return 1;
+                                                                            return 0;
+                                                                        });
+
+                                                                        const globalIndex = sortedSkins.findIndex((s: any) =>
+                                                                            s.SkinId.Idx === equipped.skin!.idx &&
+                                                                            s.SkinId.Type === (equipped.skin!.type || SLOT_TO_JSON_TYPE[slot.key] || slot.key)
+                                                                        );
+
+                                                                        if (globalIndex === -1) return 'center';
+
+                                                                        const SPRITE_COLS = 4;
+                                                                        const SPRITE_ROWS = 4;
+                                                                        const col = globalIndex % SPRITE_COLS;
+                                                                        const row = Math.floor(globalIndex / SPRITE_COLS);
+
+                                                                        const bgX = (col * 100) / (SPRITE_COLS - 1);
+                                                                        const bgY = (row * 100) / (SPRITE_ROWS - 1);
+
+                                                                        return `${Number.isNaN(bgX) ? 0 : bgX}% ${Number.isNaN(bgY) ? 0 : bgY}%`;
+                                                                    })(),
+                                                                    imageRendering: 'pixelated'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        ) : null}
                                     </div>
 
                                     {/* Name - Below Icon */}
@@ -433,13 +534,19 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                                     {stats.damage > 0 && (
                                                         <div className="text-red-400 break-words flex flex-col items-center">
                                                             <span>⚔️{Math.round(stats.damage).toLocaleString()}</span>
-                                                            {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
+                                                            <div className="flex gap-1 flex-wrap justify-center font-bold">
+                                                                {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
+                                                                {stats.skinBonuses?.damage > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round(stats.skinBonuses.damage * 100)}% S)</span>}
+                                                            </div>
                                                         </div>
                                                     )}
                                                     {stats.health > 0 && (
                                                         <div className="text-green-400 break-words flex flex-col items-center mt-0.5">
                                                             <span>♥{Math.round(stats.health).toLocaleString()}</span>
-                                                            {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
+                                                            <div className="flex gap-1 flex-wrap justify-center font-bold">
+                                                                {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
+                                                                {stats.skinBonuses?.health > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round(stats.skinBonuses.health * 100)}% S)</span>}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>

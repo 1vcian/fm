@@ -75,6 +75,17 @@ const ITEM_TYPE_MAP: Record<string, number> = {
     'Belt': 7
 };
 
+const SLOT_TO_JSON_TYPE: Record<string, string> = {
+    'Weapon': 'Weapon',
+    'Helmet': 'Helmet',
+    'Body': 'Armour',
+    'Gloves': 'Gloves',
+    'Belt': 'Belt',
+    'Necklace': 'Necklace',
+    'Ring': 'Ring',
+    'Shoe': 'Shoes'
+};
+
 
 type MobileTab = 'age' | 'items' | 'config';
 
@@ -88,10 +99,14 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
+    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json'); // New
 
     const jsonType = SLOT_MAPPING[slot] || slot;
     const [unlockAll, setUnlockAll] = useState(false);
-    const [mobileTab, setMobileTab] = useState<MobileTab>('age');
+    const [mobileTab, setMobileTab] = useState<MobileTab | 'skin'>('age'); // Added 'skin' to tab type implicitly by usage, but let's update type if strict.
+
+    // Skin State
+    const [skinIdx, setSkinIdx] = useState<number | null>(null);
 
     // Get unlocked ages based on drop chances (age is unlocked if drop chance > 0 OR unlockAll is true)
     const unlockedAges = useMemo(() => {
@@ -147,6 +162,15 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             setSelectedSavedItemIndex(null);
             setLevel(current ? current.level : 1);
             setManualStats(current?.secondaryStats?.map(s => ({ type: s.statId, value: s.value })) || []);
+            // Initialize Skin State
+            if (current?.skin) {
+                setSkinIdx(current.skin.idx);
+                // Convert record to array for UI
+                setSkinStatsList(Object.entries(current.skin.stats).map(([key, val]) => ({ type: key, value: val })));
+            } else {
+                setSkinIdx(null);
+                setSkinStatsList([]);
+            }
             setMobileTab('age');
         }
     }, [isOpen, current, unlockedAges]);
@@ -291,8 +315,47 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         };
     };
 
+    // availableSkins
+    const availableSkins = useMemo(() => {
+        if (!skinsLibrary) return [];
+        return Object.values(skinsLibrary).filter((s: any) =>
+            s.SkinId?.Type === jsonType
+        ).sort((a: any, b: any) => a.SkinId.Idx - b.SkinId.Idx); // Sort by ID local for list order
+    }, [skinsLibrary, jsonType]);
+
+    // Helper for visual order (same as Skins.tsx)
+    const getVisualOrder = (idx: number) => {
+        if (idx === 0) return 0;
+        if (idx === 2) return 1;
+        if (idx === 1) return 2;
+        return 10 + idx;
+    };
+
+    // Memoize sorted global skins to determine sprite index
+    const sortedGlobalSkins = useMemo(() => {
+        if (!skinsLibrary) return [];
+        return Object.values(skinsLibrary).sort((a: any, b: any) => {
+            const orderA = getVisualOrder(a.SkinId.Idx);
+            const orderB = getVisualOrder(b.SkinId.Idx);
+            if (orderA !== orderB) return orderA - orderB;
+
+            const isHelmetA = a.SkinId.Type === 'Helmet';
+            const isHelmetB = b.SkinId.Type === 'Helmet';
+            if (isHelmetA && !isHelmetB) return -1;
+            if (!isHelmetA && isHelmetB) return 1;
+
+            return 0;
+        });
+    }, [skinsLibrary]);
+
     const handleSave = () => {
         if (selectedItemData) {
+            // Convert skinStatsList array back to Record for storage
+            const skinStatsRecord: Record<string, number> = {};
+            skinStatsList.forEach(s => {
+                skinStatsRecord[s.type] = s.value;
+            });
+
             const newItem: ItemSlot = {
                 age: ageIdx === -1 ? (selectedItemData as ItemSlot).age : ageIdx,
                 idx: ageIdx === -1 ? (selectedItemData as ItemSlot).idx : (selectedItemData as any).ItemId?.Idx || 0,
@@ -301,7 +364,20 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 secondaryStats: manualStats.map(s => ({
                     statId: s.type,
                     value: s.value
-                }))
+                })),
+                skin: skinIdx !== null ? {
+                    idx: skinIdx,
+                    // Look up Type from library if possible to ensure we have the correct casing (e.g. Armour vs Body)
+                    type: skinsLibrary ? (() => {
+                        const skinEntry = Object.values(skinsLibrary).find((s: any) =>
+                            s.SkinId.Idx === skinIdx &&
+                            (s.SkinId.Type === (SLOT_TO_JSON_TYPE[slot] || slot) ||
+                                s.SkinId.Type === 'Helmet' && slot === 'Helmet')
+                        );
+                        return skinEntry ? (skinEntry as any).SkinId.Type : undefined;
+                    })() : undefined,
+                    stats: skinStatsRecord
+                } : undefined
             };
             onSelect(newItem);
             onClose();
@@ -343,9 +419,354 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         setManualStats(manualStats.filter((_, i) => i !== index));
     };
 
-    if (!isOpen) return null;
+    // Skin Stats Management
+    const [skinStatsList, setSkinStatsList] = useState<{ type: string; value: number }[]>([]);
 
-    // Mobile tab content renderers
+    const addSkinStat = (possibleStats: any[]) => {
+        if (skinStatsList.length < (possibleStats.length || 0)) {
+            const existingTypes = new Set(skinStatsList.map(s => s.type));
+            // Find first available type
+            const nextStat = possibleStats.find(s => !existingTypes.has(s.StatNode.UniqueStat.StatType));
+
+            if (nextStat) {
+                const type = nextStat.StatNode.UniqueStat.StatType;
+                setSkinStatsList([...skinStatsList, {
+                    type,
+                    value: nextStat.MinValue // Default to min value
+                }]);
+            }
+        }
+    };
+
+    const updateSkinStat = (index: number, field: 'type' | 'value', value: any, possibleStats: any[]) => {
+        const newStats = [...skinStatsList];
+
+        if (field === 'type') {
+            // Find limits for new type and clamp value
+            const statDef = possibleStats.find(s => s.StatNode.UniqueStat.StatType === value);
+            let val = newStats[index].value;
+            if (statDef) {
+                val = Math.max(statDef.MinValue, Math.min(statDef.MaxValue, val));
+            }
+            newStats[index] = { ...newStats[index], type: value, value: val };
+        } else {
+            newStats[index] = { ...newStats[index], [field]: value };
+        }
+        setSkinStatsList(newStats);
+    };
+
+    const removeSkinStat = (index: number) => {
+        setSkinStatsList(skinStatsList.filter((_, i) => i !== index));
+    };
+
+
+    const renderSkinSelection = () => {
+        if (availableSkins.length === 0) return null;
+
+        return (
+            <div className="pt-4 border-t border-border mt-4">
+                <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-sm text-text-muted uppercase tracking-wider">Skin</h4>
+                    {skinIdx !== null && (
+                        <Button variant="ghost" size="sm" onClick={() => { setSkinIdx(null); setSkinStatsList([]); }} className="h-6 text-xs text-red-400">
+                            <Trash2 className="w-3 h-3 mr-1" /> Remove
+                        </Button>
+                    )}
+                </div>
+
+                {/* Skin List */}
+                <div className="grid grid-cols-5 gap-2 mb-4">
+                    {availableSkins.map((skin: any) => {
+                        const isSelected = skinIdx === skin.SkinId.Idx;
+
+                        // Find global index for sprite position
+                        const globalIndex = sortedGlobalSkins.findIndex((s: any) =>
+                            s.SkinId.Type === skin.SkinId.Type && s.SkinId.Idx === skin.SkinId.Idx
+                        );
+
+                        let bgX = 0, bgY = 0;
+                        if (globalIndex !== -1) {
+                            const SPRITE_COLS = 4;
+                            const SPRITE_ROWS = 4;
+                            const col = globalIndex % SPRITE_COLS;
+                            const row = Math.floor(globalIndex / SPRITE_COLS);
+                            bgX = (col * 100) / (SPRITE_COLS - 1);
+                            bgX = Number.isNaN(bgX) ? 0 : bgX;
+                            bgY = (row * 100) / (SPRITE_ROWS - 1);
+                            bgY = Number.isNaN(bgY) ? 0 : bgY;
+                        }
+
+                        return (
+                            <button
+                                key={skin.SkinId.Idx}
+                                onClick={() => {
+                                    setSkinIdx(skin.SkinId.Idx);
+                                    // Reset stats if not already set, or load defaults? 
+                                    // If switching skins, probably want to reset to defaults of new skin.
+                                    // Default to 1 stat if available? Or none?
+                                    // Let's add the first available stat by default for better UX
+                                    if (skin.PossibleStats && skin.PossibleStats.length > 0) {
+                                        const firstStat = skin.PossibleStats[0];
+                                        setSkinStatsList([{
+                                            type: firstStat.StatNode.UniqueStat.StatType,
+                                            value: firstStat.MinValue
+                                        }]);
+                                    } else {
+                                        setSkinStatsList([]);
+                                    }
+                                }}
+                                className={cn(
+                                    "aspect-square rounded-lg border-2 flex items-center justify-center relative overflow-hidden bg-bg-secondary",
+                                    isSelected ? "border-accent-primary" : "border-border hover:border-accent-primary/50"
+                                )}
+                                title={`Skin ${skin.SkinId.Idx}`}
+                            >
+                                <div
+                                    className="w-full h-full"
+                                    style={{
+                                        backgroundImage: 'url(./Texture2D/SkinsUiIcons.png)',
+                                        backgroundSize: '400% 400%',
+                                        backgroundPosition: `${bgX}% ${bgY}%`,
+                                        imageRendering: 'pixelated'
+                                    }}
+                                />
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Skin Stats Inputs */}
+                {skinIdx !== null && (
+                    <div className="space-y-2 bg-bg-input/30 p-2 rounded">
+                        {(() => {
+                            const selectedSkin = availableSkins.find((s: any) => s.SkinId.Idx === skinIdx);
+                            const possibleStats = selectedSkin?.PossibleStats || [];
+                            const maxStats = selectedSkin?.MaxStatCount || 0;
+
+                            return (
+                                <>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold text-text-muted">
+                                            SKIN STATS ({skinStatsList.length}/{maxStats})
+                                        </span>
+                                        {skinStatsList.length < maxStats && (
+                                            <Button variant="ghost" size="sm" onClick={() => addSkinStat(possibleStats)} className="h-6 text-xs">
+                                                <Plus className="w-3 h-3 mr-1" /> Add
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    {skinStatsList.map((stat, i) => {
+                                        // Get constraints for this stat type
+                                        const statDef = possibleStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === stat.type);
+                                        const min = statDef?.MinValue || 0;
+                                        const max = statDef?.MaxValue || 1;
+
+                                        return (
+                                            <div key={i} className="flex flex-col gap-1 bg-bg-secondary/50 p-1.5 rounded border border-border/50">
+                                                <div className="flex gap-2 items-center">
+                                                    <select
+                                                        value={stat.type}
+                                                        onChange={(e) => updateSkinStat(i, 'type', e.target.value, possibleStats)}
+                                                        className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
+                                                    >
+                                                        {possibleStats
+                                                            // Filter options: show current value OR options not already selected
+                                                            .filter((s: any) => s.StatNode.UniqueStat.StatType === stat.type || !skinStatsList.some(existing => existing.type === s.StatNode.UniqueStat.StatType))
+                                                            .map((s: any) => (
+                                                                <option key={s.StatNode.UniqueStat.StatType} value={s.StatNode.UniqueStat.StatType}>
+                                                                    {s.StatNode.UniqueStat.StatType}
+                                                                </option>
+                                                            ))}
+                                                    </select>
+                                                    <Button variant="ghost" size="icon" onClick={() => removeSkinStat(i)} className="h-6 w-6 text-text-muted hover:text-red-400">
+                                                        <X className="w-3 h-3" />
+                                                    </Button>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={parseFloat((stat.value * 100).toFixed(2))}
+                                                        onChange={(e) => {
+                                                            const raw = e.target.value.replace(',', '.');
+                                                            const num = parseFloat(raw);
+                                                            if (!isNaN(num)) {
+                                                                const clamped = Math.max(min * 100, Math.min(max * 100, num));
+                                                                updateSkinStat(i, 'value', clamped / 100, possibleStats);
+                                                            }
+                                                        }}
+                                                        onFocus={(e) => e.target.select()}
+                                                        className="w-full bg-bg-input border border-border rounded px-2 py-1 text-xs"
+                                                    />
+                                                    <span className="text-[10px] text-text-muted w-6 text-right shrink-0">
+                                                        %
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-[10px] text-text-muted px-1">
+                                                    <span>Min: {(min * 100).toFixed(0)}%</span>
+                                                    <span>Max: {(max * 100).toFixed(0)}%</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {skinStatsList.length === 0 && (
+                                        <div className="text-center text-xs text-text-muted py-2 italic opacity-50">
+                                            No skin stats active. Click "Add" to configure.
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderConfig = () => (
+        <div className="p-4 overflow-y-auto custom-scrollbar h-full space-y-4">
+            <h4 className="font-bold text-sm text-text-muted uppercase tracking-wider">Item Details</h4>
+
+            {/* Base Stats */}
+            <div className="space-y-2">
+                <div className="text-xs font-bold text-text-muted">BASE STATS</div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
+                        <Sword className="w-4 h-4 text-red-400" />
+                        <span className="font-mono text-sm">{baseStats.damage.toFixed(0)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
+                        <Heart className="w-4 h-4 text-green-400" />
+                        <span className="font-mono text-sm">{baseStats.health.toFixed(0)}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Weapon Info */}
+            {slot === 'Weapon' && weaponInfo && (
+                <div className="space-y-2 p-3 bg-bg-input/30 rounded-lg border border-border">
+                    <div className="text-xs font-bold text-text-muted">WEAPON INFO</div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm">Type</span>
+                        <span className={cn(
+                            "font-bold px-2 py-0.5 rounded text-xs",
+                            weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
+                        )}>
+                            {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="flex items-center gap-1">
+                            <Target className="w-3 h-3 text-text-muted" />
+                            <span className="text-text-muted">Range:</span>
+                            <span className="font-mono">{weaponInfo.attackRange.toFixed(1)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-text-muted" />
+                            <span className="text-text-muted">Windup:</span>
+                            <span className="font-mono">{weaponInfo.windupTime.toFixed(2)}s</span>
+                        </div>
+                        {weaponInfo.hasProjectile && (
+                            <>
+                                <div className="flex items-center gap-1">
+                                    <Target className="w-3 h-3 text-text-muted" />
+                                    <span className="text-text-muted">Proj Speed:</span>
+                                    <span className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <Target className="w-3 h-3 text-text-muted" />
+                                    <span className="text-text-muted">Proj Radius:</span>
+                                    <span className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Level - Hidden in PVP */}
+            {!isPvp && (
+                <div>
+                    <label className="text-xs font-bold text-text-muted block mb-2">ITEM LEVEL (MAX {maxLevelCap})</label>
+                    <Input
+                        type="number"
+                        min={1}
+                        max={maxLevelCap}
+                        value={level}
+                        onChange={(e) => setLevel(Math.max(1, Math.min(maxLevelCap, parseInt(e.target.value) || 1)))}
+                        className="w-full"
+                    />
+                </div>
+            )}
+
+            {/* Secondary Stats - Hidden in PVP */}
+            {!isPvp && (
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-text-muted">
+                            PASSIVE STATS ({manualStats.length}/{numSecondarySlots})
+                        </span>
+                        {manualStats.length < numSecondarySlots && (
+                            <Button variant="ghost" size="sm" onClick={addStat}>
+                                <Plus className="w-3 h-3 mr-1" /> Add
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        {manualStats.map((stat, i) => {
+                            const range = getStatRange(stat.type);
+                            return (
+                                <div key={i} className="flex flex-col gap-1">
+                                    <div className="flex gap-2 items-center">
+                                        <select
+                                            value={stat.type}
+                                            onChange={(e) => updateStat(i, 'type', e.target.value)}
+                                            className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
+                                        >
+                                            {STAT_TYPES.filter(t =>
+                                                // Allow if it's the current value of this row OR if it's not selected in any other row
+                                                t === stat.type || !manualStats.some(s => s.type === t)
+                                            ).map(t => (
+                                                <option key={t} value={t}>{getStatName(t)}</option>
+                                            ))}
+                                        </select>
+                                        <SecondaryStatInput
+                                            value={stat.value as number}
+                                            onChange={(val) => updateStat(i, 'value', val)}
+                                            min={(range?.min || 0) * 100}
+                                            max={(range?.max || 1) * 100}
+                                        />
+                                        <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                    {range && (
+                                        <div className="text-[10px] text-text-muted px-1">
+                                            Range: {(range.min * 100).toFixed(1)}% - {(range.max * 100).toFixed(1)}%
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Skins Selection */}
+            {renderSkinSelection()}
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-4">
+                <Button variant="ghost" onClick={onClose} className="flex-1">Cancel</Button>
+                <Button variant="primary" onClick={handleSave} className="flex-1">Equip</Button>
+            </div>
+        </div>
+    );
+
     const renderAgeSelection = () => (
         <div className="p-3 space-y-2 overflow-y-auto custom-scrollbar h-full">
             <div className="flex items-center justify-between mb-3">
@@ -516,144 +937,6 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             ) : (
                 <div className="text-center text-text-muted py-8 text-sm">No items available</div>
             )}
-        </div>
-    );
-
-    const renderConfig = () => (
-        <div className="p-4 overflow-y-auto custom-scrollbar h-full space-y-4">
-            <h4 className="font-bold text-sm text-text-muted uppercase tracking-wider">Item Details</h4>
-
-            {/* Base Stats */}
-            <div className="space-y-2">
-                <div className="text-xs font-bold text-text-muted">BASE STATS</div>
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
-                        <Sword className="w-4 h-4 text-red-400" />
-                        <span className="font-mono text-sm">{baseStats.damage.toFixed(0)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
-                        <Heart className="w-4 h-4 text-green-400" />
-                        <span className="font-mono text-sm">{baseStats.health.toFixed(0)}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Weapon Info */}
-            {slot === 'Weapon' && weaponInfo && (
-                <div className="space-y-2 p-3 bg-bg-input/30 rounded-lg border border-border">
-                    <div className="text-xs font-bold text-text-muted">WEAPON INFO</div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm">Type</span>
-                        <span className={cn(
-                            "font-bold px-2 py-0.5 rounded text-xs",
-                            weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
-                        )}>
-                            {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
-                        </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="flex items-center gap-1">
-                            <Target className="w-3 h-3 text-text-muted" />
-                            <span className="text-text-muted">Range:</span>
-                            <span className="font-mono">{weaponInfo.attackRange.toFixed(1)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-text-muted" />
-                            <span className="text-text-muted">Windup:</span>
-                            <span className="font-mono">{weaponInfo.windupTime.toFixed(2)}s</span>
-                        </div>
-                        {weaponInfo.hasProjectile && (
-                            <>
-                                <div className="flex items-center gap-1">
-                                    <Target className="w-3 h-3 text-text-muted" />
-                                    <span className="text-text-muted">Proj Speed:</span>
-                                    <span className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Target className="w-3 h-3 text-text-muted" />
-                                    <span className="text-text-muted">Proj Radius:</span>
-                                    <span className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</span>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Level - Hidden in PVP */}
-            {!isPvp && (
-                <div>
-                    <label className="text-xs font-bold text-text-muted block mb-2">ITEM LEVEL (MAX {maxLevelCap})</label>
-                    <Input
-                        type="number"
-                        min={1}
-                        max={maxLevelCap}
-                        value={level}
-                        onChange={(e) => setLevel(Math.max(1, Math.min(maxLevelCap, parseInt(e.target.value) || 1)))}
-                        className="w-full"
-                    />
-                </div>
-            )}
-
-            {/* Secondary Stats - Hidden in PVP */}
-            {!isPvp && (
-                <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-text-muted">
-                            PASSIVE STATS ({manualStats.length}/{numSecondarySlots})
-                        </span>
-                        {manualStats.length < numSecondarySlots && (
-                            <Button variant="ghost" size="sm" onClick={addStat}>
-                                <Plus className="w-3 h-3 mr-1" /> Add
-                            </Button>
-                        )}
-                    </div>
-
-                    <div className="space-y-2">
-                        {manualStats.map((stat, i) => {
-                            const range = getStatRange(stat.type);
-                            return (
-                                <div key={i} className="flex flex-col gap-1">
-                                    <div className="flex gap-2 items-center">
-                                        <select
-                                            value={stat.type}
-                                            onChange={(e) => updateStat(i, 'type', e.target.value)}
-                                            className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                        >
-                                            {STAT_TYPES.filter(t =>
-                                                // Allow if it's the current value of this row OR if it's not selected in any other row
-                                                t === stat.type || !manualStats.some(s => s.type === t)
-                                            ).map(t => (
-                                                <option key={t} value={t}>{getStatName(t)}</option>
-                                            ))}
-                                        </select>
-                                        <SecondaryStatInput
-                                            value={stat.value as number}
-                                            onChange={(val) => updateStat(i, 'value', val)}
-                                            min={(range?.min || 0) * 100}
-                                            max={(range?.max || 1) * 100}
-                                        />
-                                        <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
-                                            <Trash2 className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                    {range && (
-                                        <div className="text-[10px] text-text-muted px-1">
-                                            Range: {(range.min * 100).toFixed(1)}% - {(range.max * 100).toFixed(1)}%
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4">
-                <Button variant="ghost" onClick={onClose} className="flex-1">Cancel</Button>
-                <Button variant="primary" onClick={handleSave} className="flex-1">Equip</Button>
-            </div>
         </div>
     );
 
@@ -1032,6 +1315,9 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 </div>
                             </div>
                         )}
+
+                        {/* Skins Selection */}
+                        {renderSkinSelection()}
 
                         {/* Actions */}
                         <div className="flex gap-2 mt-6">
