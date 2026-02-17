@@ -369,7 +369,72 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                     <div className="text-center text-text-muted py-8">No pets found</div>
                                 )
                             ) : (
-                                <div className="text-center text-text-muted py-8">View saved builds on Pets tab</div>
+                                <div className="w-full">
+                                    {profile.pets.savedBuilds && profile.pets.savedBuilds.length > 0 ? (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {profile.pets.savedBuilds.map((savedPet, idx) => {
+                                                const spriteInfo = petsConfig?.mapping ?
+                                                    Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedPet.id && v.rarity === savedPet.rarity)
+                                                    : null;
+
+                                                const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
+
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className="relative rounded-xl border border-border bg-bg-secondary p-2 hover:border-accent-primary transition-colors cursor-pointer group"
+                                                        onClick={() => {
+                                                            setSelectedRarity(savedPet.rarity);
+                                                            setSelectedPetId(savedPet.id);
+                                                            setPetLevel(savedPet.level);
+                                                            setManualStats(savedPet.secondaryStats || []);
+                                                            setMobileTab('config');
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <div
+                                                                className="w-10 h-10 rounded-lg flex items-center justify-center border shrink-0 overflow-hidden"
+                                                                style={getRarityBgStyle(savedPet.rarity)}
+                                                            >
+                                                                {petsConfig && (
+                                                                    <SpriteSheetIcon
+                                                                        textureSrc="./icons/game/Pets.png"
+                                                                        spriteWidth={petsConfig.sprite_size.width}
+                                                                        spriteHeight={petsConfig.sprite_size.height}
+                                                                        sheetWidth={petsConfig.texture_size.width}
+                                                                        sheetHeight={petsConfig.texture_size.height}
+                                                                        iconIndex={spriteIndex}
+                                                                        className="w-8 h-8"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="font-bold text-xs truncate">{savedPet.customName || `Pet #${savedPet.id}`}</div>
+                                                                <div className="text-[10px] text-text-muted">Lv {savedPet.level}</div>
+                                                            </div>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newSaved = [...(profile.pets.savedBuilds || [])];
+                                                                    newSaved.splice(idx, 1);
+                                                                    updateNestedProfile('pets', { savedBuilds: newSaved });
+                                                                }}
+                                                                className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded transition-colors"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+                                            <Save className="w-12 h-12 opacity-20 mb-4" />
+                                            <p>No saved pet builds found.</p>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
                     )}

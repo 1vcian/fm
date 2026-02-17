@@ -336,7 +336,76 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                     )}
                                 </div>
                             ) : (
-                                <div className="text-center text-text-muted py-8">View saved builds</div>
+                                <div className="w-full">
+                                    {profile.mount.savedBuilds && profile.mount.savedBuilds.length > 0 ? (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {profile.mount.savedBuilds.map((savedMount, idx) => {
+                                                const spriteInfo = mountsConfig?.mapping ?
+                                                    Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedMount.id && v.rarity === savedMount.rarity)
+                                                    : null;
+
+                                                const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
+                                                const mountName = (spriteInfo?.[1] as any)?.name || `Mount #${savedMount.id}`;
+
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className="relative rounded-xl border border-border bg-bg-secondary p-2 hover:border-accent-primary transition-colors cursor-pointer group"
+                                                        onClick={() => {
+                                                            setSelectedRarity(savedMount.rarity);
+                                                            setSelectedMountId(savedMount.id);
+                                                            setMountLevel(savedMount.level);
+                                                            setManualStats(savedMount.secondaryStats?.map(s => ({
+                                                                ...s,
+                                                                value: s.value * 100
+                                                            })) || []);
+                                                            setMobileTab('config');
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <div
+                                                                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border"
+                                                                style={getRarityBgStyle(savedMount.rarity)}
+                                                            >
+                                                                {mountsConfig && (
+                                                                    <SpriteSheetIcon
+                                                                        textureSrc="./icons/game/MountIcons.png"
+                                                                        spriteWidth={mountsConfig.sprite_size.width}
+                                                                        spriteHeight={mountsConfig.sprite_size.height}
+                                                                        sheetWidth={mountsConfig.texture_size.width}
+                                                                        sheetHeight={mountsConfig.texture_size.height}
+                                                                        iconIndex={spriteIndex}
+                                                                        className="w-8 h-8"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="font-bold text-xs truncate">{savedMount.customName || mountName}</div>
+                                                                <div className="text-[10px] text-text-muted">Lv {savedMount.level}</div>
+                                                            </div>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newSaved = [...(profile.mount.savedBuilds || [])];
+                                                                    newSaved.splice(idx, 1);
+                                                                    updateNestedProfile('mount', { savedBuilds: newSaved });
+                                                                }}
+                                                                className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded transition-colors"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+                                            <Save className="w-12 h-12 opacity-20 mb-4" />
+                                            <p>No saved mount builds found.</p>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
                     )}

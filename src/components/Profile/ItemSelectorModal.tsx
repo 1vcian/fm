@@ -90,7 +90,7 @@ const SLOT_TO_JSON_TYPE: Record<string, string> = {
 type MobileTab = 'age' | 'items' | 'config';
 
 export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, isPvp = false }: ItemSelectorModalProps) {
-    const { profile } = useProfile();
+    const { profile, updateNestedProfile } = useProfile();
     const stats = useGlobalStats();
     const { data: itemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: secondaryData } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');
@@ -348,6 +348,27 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         });
     }, [skinsLibrary]);
 
+    const handleDeleteSavedItem = (index: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        const currentSaved = profile.savedItems?.[slot] || [];
+        const newSaved = currentSaved.filter((_, i) => i !== index);
+        updateNestedProfile('savedItems', { [slot]: newSaved });
+
+        // If the deleted item was selected, deselect it
+        if (ageIdx === -1 && selectedSavedItemIndex === index) {
+            setSelectedSavedItemIndex(null);
+            if (newSaved.length > 0) {
+                // Select the first one or previous one? Let's just deselect for safety
+            } else {
+                // No items left
+            }
+        } else if (ageIdx === -1 && selectedSavedItemIndex !== null && selectedSavedItemIndex > index) {
+            // Shift selection index if we deleted a preceding item
+            setSelectedSavedItemIndex(selectedSavedItemIndex - 1);
+        }
+    };
+
     const handleSave = () => {
         if (selectedItemData) {
             // Convert skinStatsList array back to Record for storage
@@ -585,19 +606,11 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
-                                                    <input
-                                                        type="text"
-                                                        inputMode="decimal"
+                                                    <DecimalInput
                                                         value={parseFloat((stat.value * 100).toFixed(2))}
-                                                        onChange={(e) => {
-                                                            const raw = e.target.value.replace(',', '.');
-                                                            const num = parseFloat(raw);
-                                                            if (!isNaN(num)) {
-                                                                const clamped = Math.max(min * 100, Math.min(max * 100, num));
-                                                                updateSkinStat(i, 'value', clamped / 100, possibleStats);
-                                                            }
-                                                        }}
-                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(val) => updateSkinStat(i, 'value', val / 100, possibleStats)}
+                                                        min={min * 100}
+                                                        max={max * 100}
                                                         className="w-full bg-bg-input border border-border rounded px-2 py-1 text-xs"
                                                     />
                                                     <span className="text-[10px] text-text-muted w-6 text-right shrink-0">
@@ -896,7 +909,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         }
 
                         return (
-                            <button
+                            <div
                                 key={listIdx}
                                 onClick={() => {
                                     if (ageIdx === -1) {
@@ -911,12 +924,21 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                     setMobileTab('config');
                                 }}
                                 className={cn(
-                                    "relative rounded-xl border-2 transition-all p-1.5 flex flex-col items-center gap-1 group overflow-hidden",
+                                    "relative rounded-xl border-2 transition-all p-1.5 flex flex-col items-center gap-1 group overflow-hidden cursor-pointer",
                                     isSelected
                                         ? "border-accent-primary shadow-lg shadow-accent-primary/20 bg-accent-primary/5"
                                         : "border-border hover:border-accent-primary/50"
                                 )}
                             >
+                                {ageIdx === -1 && (
+                                    <button
+                                        onClick={(e) => handleDeleteSavedItem(listIdx, e)}
+                                        className="absolute top-1 right-1 z-20 p-1.5 bg-red-500 hover:bg-red-600 rounded-md text-white shadow-sm transition-opacity"
+                                        title="Delete Preset"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
                                 <div
                                     className="w-12 h-12 rounded-lg flex items-center justify-center pointer-events-none"
                                     style={getAgeBgStyle(ageForBg)}
@@ -927,10 +949,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         <Shield className="w-6 h-6 text-text-muted" />
                                     )}
                                 </div>
-                                <span className="text-[9px] text-center text-text-secondary truncate w-full leading-tight">
+                                <span className="text-[9px] text-center text-text-secondary truncate w-full leading-tight select-none">
                                     {itemName}
                                 </span>
-                            </button>
+                            </div>
                         );
                     })}
                 </div>
@@ -1142,7 +1164,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                     }
 
                                     return (
-                                        <button
+                                        <div
                                             key={listIdx}
                                             onClick={() => {
                                                 if (ageIdx === -1) {
@@ -1156,12 +1178,21 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                 }
                                             }}
                                             className={cn(
-                                                "relative rounded-xl border-2 transition-all p-1.5 flex flex-col items-center gap-1 group overflow-hidden",
+                                                "relative rounded-xl border-2 transition-all p-1.5 flex flex-col items-center gap-1 group overflow-hidden cursor-pointer",
                                                 isSelected
                                                     ? "border-accent-primary shadow-lg shadow-accent-primary/20 bg-accent-primary/5"
                                                     : "border-border hover:border-accent-primary/50"
                                             )}
                                         >
+                                            {ageIdx === -1 && (
+                                                <button
+                                                    onClick={(e) => handleDeleteSavedItem(listIdx, e)}
+                                                    className="absolute top-1 right-1 z-20 p-1.5 bg-red-500 hover:bg-red-600 rounded-md text-white shadow-sm transition-opacity"
+                                                    title="Delete Preset"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                             <div
                                                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center pointer-events-none"
                                                 style={getAgeBgStyle(ageForBg)}
@@ -1172,10 +1203,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     <Shield className="w-6 h-6 text-text-muted" />
                                                 )}
                                             </div>
-                                            <span className="text-[9px] sm:text-[10px] text-center text-text-secondary truncate w-full leading-tight">
+                                            <span className="text-[9px] sm:text-[10px] text-center text-text-secondary truncate w-full leading-tight select-none">
                                                 {itemName}
                                             </span>
-                                        </button>
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -1329,5 +1360,66 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             </div>
         </div>,
         document.body
+    );
+}
+// Helper component for decimal input
+function DecimalInput({ value, onChange, min, max, className }: { value: number, onChange: (val: number) => void, min: number, max: number, className?: string }) {
+    const [localValue, setLocalValue] = useState<string>(value.toString());
+
+    // Sync from parent only if value differs significantly (external update)
+    // and we are not currently typing a compatible string
+    useEffect(() => {
+        const currentNum = parseFloat(localValue.replace(',', '.'));
+        // If the prop value matches our current parsed value, don't touch strict string
+        // This allows "0.50" to remain "0.50" even if prop is 0.5
+        // But if prop changes to 0.6, we must update.
+        if (Math.abs(currentNum - value) > 0.0001) {
+            setLocalValue(value.toString());
+        }
+    }, [value]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = e.target.value;
+        setLocalValue(raw);
+
+        if (raw === '') return;
+
+        const normalized = raw.replace(',', '.');
+        const num = parseFloat(normalized);
+
+        if (!isNaN(num)) {
+            // Propagate change immediately without clamping string
+            // We clamp for data integrity but keep string free
+            // Actually parent expects clamped value usually?
+            // Let's pass raw num to parent, parent logic updates state.
+            // If we want strict clamping, do it on blur or let parent clamp.
+            // Existing logic clamped immediately. Ideally we clamp result passed to parent.
+            const clamped = Math.max(min, Math.min(max, num));
+            onChange(clamped);
+        }
+    };
+
+    const handleBlur = () => {
+        const normalized = localValue.replace(',', '.');
+        let num = parseFloat(normalized);
+        if (isNaN(num)) {
+            num = min;
+        }
+        const clamped = Math.max(min, Math.min(max, num));
+        // On blur, format nicely
+        setLocalValue(clamped.toString());
+        onChange(clamped);
+    };
+
+    return (
+        <input
+            type="text"
+            inputMode="decimal"
+            value={localValue}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onFocus={(e) => e.target.select()}
+            className={className}
+        />
     );
 }
