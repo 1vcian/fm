@@ -1073,31 +1073,42 @@ export class StatEngine {
 
         this.debugLogs.push(`Flat Stats: Damage=${flatDamageWithMelee.toFixed(0)} (skillPassive: ${this.stats.skillPassiveDamage.toFixed(0)}), Health=${flatHealth.toFixed(0)} (skillPassive: ${this.stats.skillPassiveHealth.toFixed(0)})`);
 
-        // 4. Mount, Secondary DamageMulti/HealthMulti, Skin Bonuses, and Set Bonuses are ADDITIVE
-        const damageAdditiveMulti = 1 + this.mountDamageMulti + this.secondaryStats.damageMulti + this.skinDamageMulti + this.setDamageMulti;
-        const healthAdditiveMulti = 1 + this.mountHealthMulti + this.secondaryStats.healthMulti + this.skinHealthMulti + this.setHealthMulti;
+        // 4. Additive Multipliers: Mount + Secondary (Tech Tree/Items)
+        const damageAdditiveMulti = 1 + this.mountDamageMulti + this.secondaryStats.damageMulti;
+        const healthAdditiveMulti = 1 + this.mountHealthMulti + this.secondaryStats.healthMulti;
 
         this.debugLogs.push(`Additive Multipliers: Damage=${damageAdditiveMulti.toFixed(3)} (1 + ${this.mountDamageMulti.toFixed(3)} + ${this.secondaryStats.damageMulti.toFixed(3)})`);
         this.debugLogs.push(`Additive Multipliers: Health=${healthAdditiveMulti.toFixed(3)} (1 + ${this.mountHealthMulti.toFixed(3)} + ${this.secondaryStats.healthMulti.toFixed(3)})`);
 
-        const damageAfterAdditive = flatDamageWithMelee * damageAdditiveMulti;
-        const healthAfterAdditive = flatHealth * healthAdditiveMulti;
+        // 5. Distinct Multipliers: Skin and Sets
+        // These are applied fully multiplicatively to the result to avoid dilution
+        const skinDmgFactor = 1 + this.skinDamageMulti;
+        const skinHpFactor = 1 + this.skinHealthMulti;
 
-        // 5. MeleeDamageMulti is applied MULTIPLICATIVELY (only for melee weapons)
-        // RangedDamageMulti is applied MULTIPLICATIVELY (only for ranged weapons)
+        const setDmgFactor = 1 + this.setDamageMulti;
+        const setHpFactor = 1 + this.setHealthMulti;
+
+        this.debugLogs.push(`Skin Factor: Dmg=${skinDmgFactor.toFixed(3)}, Hp=${skinHpFactor.toFixed(3)}`);
+        this.debugLogs.push(`Set Factor: Dmg=${setDmgFactor.toFixed(3)}, Hp=${setHpFactor.toFixed(3)}`);
+
+        const damageAfterGlobalMultis = flatDamageWithMelee * damageAdditiveMulti * skinDmgFactor * setDmgFactor;
+        const healthAfterGlobalMultis = flatHealth * healthAdditiveMulti * skinHpFactor * setHpFactor;
+
+        // 6. Melee/Ranged Specific Multipliers (Multiplicative)
         const specificDamageMulti = isWeaponMelee
             ? (1 + this.secondaryStats.meleeDamageMulti)
             : (1 + this.secondaryStats.rangedDamageMulti);
 
-        const finalDamage = damageAfterAdditive * specificDamageMulti;
+        const finalDamage = damageAfterGlobalMultis * specificDamageMulti;
 
         this.debugLogs.push(`After SpecificMulti (×${specificDamageMulti.toFixed(3)}): Damage=${finalDamage.toFixed(0)}`);
 
-        // 6. Final stats (no empirical corrections applied)
+        // 7. Final stats
         this.stats.totalDamage = finalDamage;
-        this.stats.totalHealth = healthAfterAdditive;
+        this.stats.totalHealth = healthAfterGlobalMultis;
 
         // Store multipliers for display
+        // We report the 'base' keys as just the additive parts correctly.
         this.stats.damageMultiplier = damageAdditiveMulti;
         this.stats.healthMultiplier = healthAdditiveMulti;
         this.stats.secondaryDamageMulti = this.secondaryStats.damageMulti;
@@ -1110,8 +1121,9 @@ export class StatEngine {
         const flatDamageNoMelee = this.stats.basePlayerDamage + this.stats.itemDamage + this.stats.petDamage;
 
         // Melee/Ranged specific damage (for display)
-        this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * damageAdditiveMulti * (1 + this.secondaryStats.meleeDamageMulti));
-        this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * damageAdditiveMulti * (1 + this.secondaryStats.rangedDamageMulti));
+        const globalDmgFactor = damageAdditiveMulti * skinDmgFactor * setDmgFactor;
+        this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * globalDmgFactor * (1 + this.secondaryStats.meleeDamageMulti));
+        this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * globalDmgFactor * (1 + this.secondaryStats.rangedDamageMulti));
 
         // Power calculation - GHIDRA REVERSE ENGINEERED FORMULA (VERIFIED):
         // Power = ((Damage - 10) × 8 + (Health - 80)) × 3
@@ -1120,7 +1132,7 @@ export class StatEngine {
         const baseDmg = this.stats.basePlayerDamage; // 10.0 from config
         const baseHp = this.stats.basePlayerHealth;  // 80.0 from config
 
-        const basePower = ((finalDamage - baseDmg) * powerDmgMulti + (healthAfterAdditive - baseHp)) * 3;
+        const basePower = ((finalDamage - baseDmg) * powerDmgMulti + (healthAfterGlobalMultis - baseHp)) * 3;
         this.stats.power = Math.round(basePower); // Game uses RoundToInt128
 
 
@@ -1193,7 +1205,10 @@ export class StatEngine {
 
                     const effectiveMultiplier = skillMulti + globalDamageMulti - 1 - mountMulti;
 
-                    const dmgPerHit = flatSkillDmg * effectiveMultiplier * statMultiplier;
+                    // Apply Skin and Set Multipliers to Skills as well
+                    const skinFactor = 1 + this.skinDamageMulti;
+                    const setFactor = 1 + this.setDamageMulti;
+                    const dmgPerHit = flatSkillDmg * effectiveMultiplier * statMultiplier * skinFactor * setFactor;
 
                     this.stats.skillDps += dmgPerHit / finalCd;
                 }
