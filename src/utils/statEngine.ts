@@ -1091,6 +1091,12 @@ export class StatEngine {
         this.debugLogs.push(`Skin Factor: Dmg=${skinDmgFactor.toFixed(3)}, Hp=${skinHpFactor.toFixed(3)}`);
         this.debugLogs.push(`Set Factor: Dmg=${setDmgFactor.toFixed(3)}, Hp=${setHpFactor.toFixed(3)}`);
 
+        console.log(`[StatEngine DEBUG] flatDmg=${flatDamageWithMelee.toFixed(2)}, flatHp=${flatHealth.toFixed(2)}`);
+        console.log(`[StatEngine DEBUG] additiveDmg=${damageAdditiveMulti.toFixed(4)}, additiveHp=${healthAdditiveMulti.toFixed(4)}`);
+        console.log(`[StatEngine DEBUG] skinDmg=${skinDmgFactor.toFixed(4)}, skinHp=${skinHpFactor.toFixed(4)}`);
+        console.log(`[StatEngine DEBUG] setDmg=${setDmgFactor.toFixed(4)}, setHp=${setHpFactor.toFixed(4)}`);
+        console.log(`[StatEngine DEBUG] totalDmg=${(flatDamageWithMelee * damageAdditiveMulti * skinDmgFactor * setDmgFactor).toFixed(2)}, totalHp=${(flatHealth * healthAdditiveMulti * skinHpFactor * setHpFactor).toFixed(2)}`);
+
         const damageAfterGlobalMultis = flatDamageWithMelee * damageAdditiveMulti * skinDmgFactor * setDmgFactor;
         const healthAfterGlobalMultis = flatHealth * healthAdditiveMulti * skinHpFactor * setHpFactor;
 

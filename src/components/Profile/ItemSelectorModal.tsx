@@ -962,6 +962,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         </div>
     );
 
+    if (!isOpen) return null;
+
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
             <div className="bg-bg-primary w-full max-w-5xl h-[90vh] md:h-[85vh] rounded-2xl border border-border shadow-2xl relative flex flex-col overflow-hidden">
