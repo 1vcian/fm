@@ -139,8 +139,10 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-6">
-                    <div className="sticky top-6">
-                        <StatsSummaryPanel />
+                    <div className="sticky top-6 h-[calc(100vh-10.5rem)] overflow-y-auto overscroll-y-auto custom-scrollbar">
+                        <div className="pb-6">
+                            <StatsSummaryPanel />
+                        </div>
                     </div>
                 </div>
             </div>
