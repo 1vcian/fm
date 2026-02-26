@@ -18,7 +18,7 @@ const STAT_TYPES = [
     'CriticalChance', 'CriticalMulti', 'BlockChance', 'HealthRegen', 'LifeSteal',
     'DoubleDamageChance', 'DamageMulti', 'MeleeDamageMulti', 'RangedDamageMulti',
     'AttackSpeed', 'SkillDamageMulti', 'SkillCooldownMulti', 'HealthMulti',
-    'MovementSpeed', 'BossDamageMulti'
+    'MovementSpeed' // , 'BossDamageMulti'
 ];
 
 interface MountSelectorModalProps {

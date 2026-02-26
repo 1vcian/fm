@@ -8,7 +8,7 @@ export const STAT_NAMES: Record<string, string> = {
     'MeleeDamageMulti': 'Melee Damage',
     'RangedDamageMulti': 'Ranged Damage',
     'SkillDamageMulti': 'Skill Damage',
-    'BossDamageMulti': 'Boss Damage',
+    //  'BossDamageMulti': 'Boss Damage',
 
     // Health
     'HealthMulti': 'Health',
