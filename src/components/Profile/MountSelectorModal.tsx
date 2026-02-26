@@ -17,8 +17,8 @@ type MobileTab = 'rarity' | 'mounts' | 'config';
 const STAT_TYPES = [
     'CriticalChance', 'CriticalMulti', 'BlockChance', 'HealthRegen', 'LifeSteal',
     'DoubleDamageChance', 'DamageMulti', 'MeleeDamageMulti', 'RangedDamageMulti',
-    'AttackSpeed', 'SkillDamageMulti', 'SkillCooldownMulti', 'HealthMulti',
-    'MovementSpeed' // , 'BossDamageMulti'
+    'AttackSpeed', 'SkillDamageMulti', 'SkillCooldownMulti', 'HealthMulti'
+    //,'MovementSpeed' , 'BossDamageMulti'
 ];
 
 interface MountSelectorModalProps {
