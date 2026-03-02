@@ -15,6 +15,7 @@ import { AGES } from '../../utils/constants';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { formatSecondaryStat } from '../../utils/statNames';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { getSkinSpriteStyle } from '../../utils/skinSprites';
 
 
 // InventoryTextures.png is a 4x4 sprite sheet (512x512, each icon 128x128)
@@ -156,7 +157,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
-    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
+    useGameData<any>('SkinsLibrary.json');
 
     // Helper to calculate item perfection (avg of secondary stats vs max)
     const getPerfection = (item: ItemSlot): number | null => {
@@ -454,51 +455,12 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                                         <div className="w-full h-full flex items-center justify-center bg-accent-primary/20">
                                                             <div
                                                                 className="w-full h-full opacity-80"
-                                                                style={{
-                                                                    backgroundImage: 'url(./Texture2D/SkinsUiIcons.png)',
-                                                                    backgroundSize: '400% 400%',
-                                                                    backgroundPosition: (() => {
-                                                                        if (!skinsLibrary) return 'center';
-
-                                                                        const allSkins = Object.values(skinsLibrary);
-                                                                        // Sort using same getVisualOrder logic as Skins.tsx
-                                                                        const getVisualOrder = (idx: number) => {
-                                                                            if (idx === 0) return 0;
-                                                                            if (idx === 2) return 1;
-                                                                            if (idx === 1) return 2;
-                                                                            return 10 + idx;
-                                                                        };
-                                                                        const sortedSkins = [...allSkins].sort((a: any, b: any) => {
-                                                                            const orderA = getVisualOrder(a.SkinId.Idx);
-                                                                            const orderB = getVisualOrder(b.SkinId.Idx);
-                                                                            if (orderA !== orderB) return orderA - orderB;
-
-                                                                            const isHelmetA = a.SkinId.Type === 'Helmet';
-                                                                            const isHelmetB = b.SkinId.Type === 'Helmet';
-                                                                            if (isHelmetA && !isHelmetB) return -1;
-                                                                            if (!isHelmetA && isHelmetB) return 1;
-                                                                            return 0;
-                                                                        });
-
-                                                                        const globalIndex = sortedSkins.findIndex((s: any) =>
-                                                                            s.SkinId.Idx === equipped.skin!.idx &&
-                                                                            s.SkinId.Type === (equipped.skin!.type || SLOT_TO_JSON_TYPE[slot.key] || slot.key)
-                                                                        );
-
-                                                                        if (globalIndex === -1) return 'center';
-
-                                                                        const SPRITE_COLS = 4;
-                                                                        const SPRITE_ROWS = 4;
-                                                                        const col = globalIndex % SPRITE_COLS;
-                                                                        const row = Math.floor(globalIndex / SPRITE_COLS);
-
-                                                                        const bgX = (col * 100) / (SPRITE_COLS - 1);
-                                                                        const bgY = (row * 100) / (SPRITE_ROWS - 1);
-
-                                                                        return `${Number.isNaN(bgX) ? 0 : bgX}% ${Number.isNaN(bgY) ? 0 : bgY}%`;
-                                                                    })(),
-                                                                    imageRendering: 'pixelated'
-                                                                }}
+                                                                style={getSkinSpriteStyle({
+                                                                    SkinId: {
+                                                                        Idx: equipped.skin!.idx,
+                                                                        Type: equipped.skin!.type || SLOT_TO_JSON_TYPE[slot.key] || slot.key
+                                                                    }
+                                                                })}
                                                             />
                                                         </div>
                                                     );

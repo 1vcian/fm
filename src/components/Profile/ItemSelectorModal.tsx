@@ -12,6 +12,7 @@ import { cn, getAgeBgStyle, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 import { getItemImage, getItemName } from '../../utils/itemAssets';
 import { getStatName } from '../../utils/statNames';
+import { getSkinSpriteStyle } from '../../utils/skinSprites';
 
 interface ItemSelectorModalProps {
     isOpen: boolean;
@@ -323,31 +324,6 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         ).sort((a: any, b: any) => a.SkinId.Idx - b.SkinId.Idx); // Sort by ID local for list order
     }, [skinsLibrary, jsonType]);
 
-    // Helper for visual order (same as Skins.tsx)
-    const getVisualOrder = (idx: number) => {
-        if (idx === 0) return 0;
-        if (idx === 2) return 1;
-        if (idx === 1) return 2;
-        return 10 + idx;
-    };
-
-    // Memoize sorted global skins to determine sprite index
-    const sortedGlobalSkins = useMemo(() => {
-        if (!skinsLibrary) return [];
-        return Object.values(skinsLibrary).sort((a: any, b: any) => {
-            const orderA = getVisualOrder(a.SkinId.Idx);
-            const orderB = getVisualOrder(b.SkinId.Idx);
-            if (orderA !== orderB) return orderA - orderB;
-
-            const isHelmetA = a.SkinId.Type === 'Helmet';
-            const isHelmetB = b.SkinId.Type === 'Helmet';
-            if (isHelmetA && !isHelmetB) return -1;
-            if (!isHelmetA && isHelmetB) return 1;
-
-            return 0;
-        });
-    }, [skinsLibrary]);
-
     const handleDeleteSavedItem = (index: number, e: React.MouseEvent) => {
         e.stopPropagation();
 
@@ -500,32 +476,11 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                     {availableSkins.map((skin: any) => {
                         const isSelected = skinIdx === skin.SkinId.Idx;
 
-                        // Find global index for sprite position
-                        const globalIndex = sortedGlobalSkins.findIndex((s: any) =>
-                            s.SkinId.Type === skin.SkinId.Type && s.SkinId.Idx === skin.SkinId.Idx
-                        );
-
-                        let bgX = 0, bgY = 0;
-                        if (globalIndex !== -1) {
-                            const SPRITE_COLS = 4;
-                            const SPRITE_ROWS = 4;
-                            const col = globalIndex % SPRITE_COLS;
-                            const row = Math.floor(globalIndex / SPRITE_COLS);
-                            bgX = (col * 100) / (SPRITE_COLS - 1);
-                            bgX = Number.isNaN(bgX) ? 0 : bgX;
-                            bgY = (row * 100) / (SPRITE_ROWS - 1);
-                            bgY = Number.isNaN(bgY) ? 0 : bgY;
-                        }
-
                         return (
                             <button
                                 key={skin.SkinId.Idx}
                                 onClick={() => {
                                     setSkinIdx(skin.SkinId.Idx);
-                                    // Reset stats if not already set, or load defaults? 
-                                    // If switching skins, probably want to reset to defaults of new skin.
-                                    // Default to 1 stat if available? Or none?
-                                    // Let's add the first available stat by default for better UX
                                     if (skin.PossibleStats && skin.PossibleStats.length > 0) {
                                         const firstStat = skin.PossibleStats[0];
                                         setSkinStatsList([{
@@ -544,12 +499,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             >
                                 <div
                                     className="w-full h-full"
-                                    style={{
-                                        backgroundImage: 'url(./Texture2D/SkinsUiIcons.png)',
-                                        backgroundSize: '400% 400%',
-                                        backgroundPosition: `${bgX}% ${bgY}%`,
-                                        imageRendering: 'pixelated'
-                                    }}
+                                    style={getSkinSpriteStyle(skin)}
                                 />
                             </button>
                         );

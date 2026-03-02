@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-
 import { Shield, Sword, Heart, Zap } from 'lucide-react';
+import { getSkinSpriteStyle } from '../utils/skinSprites';
 
 interface SkinStat {
     StatNode: {
@@ -46,15 +46,13 @@ interface SetEntry {
     BonusTiers: SetBonus[];
 }
 
-// 4x4 Grid -> 16 slots.
-// 4x4 Grid -> 16 slots.
-const SPRITE_COLS = 4;
-const SPRITE_ROWS = 4;
-
 const SET_ICONS: Record<string, string> = {
     'SantaSet': 'SteppingStoneCharIcon0.png',
     'SnowmanSet': 'SteppingStoneCharIcon1.png',
-    'SkiSet': 'SteppingStoneCharIcon2.png'
+    'SkiSet': 'SteppingStoneCharIcon2.png',
+    'LeprechaunSet': 'SteppingStoneCharIcon4.png',
+    'FlowerSet': 'SteppingStoneCharIcon5.png',
+    'DruidSet': 'SteppingStoneCharIcon3.png',
 };
 
 export default function Skins() {
@@ -62,51 +60,6 @@ export default function Skins() {
     const { data: setsData, loading: loadingSets } = useGameData<Record<string, SetEntry>>('SetsLibrary.json');
 
     const loading = loadingSkins || loadingSets;
-
-    // Helper for visual order (same as before)
-    const getVisualOrder = (idx: number) => {
-        if (idx === 0) return 0;
-        if (idx === 2) return 1;
-        if (idx === 1) return 2;
-        return 10 + idx;
-    };
-
-    // Helper to get sprite background position
-    const getSpriteStyle = (skin: SkinEntry, allSkins: SkinEntry[]) => {
-        // We need to sort ALL skins globally to determine the sprite index, 
-        // regardless of how we display them in groups.
-        // The sprite sheet layout is fixed.
-
-        // Sort all skins to match sprite layout
-        const sortedGlobal = [...allSkins].sort((a, b) => {
-            const orderA = getVisualOrder(a.SkinId.Idx);
-            const orderB = getVisualOrder(b.SkinId.Idx);
-            if (orderA !== orderB) return orderA - orderB;
-
-            const isHelmetA = a.SkinId.Type === 'Helmet';
-            const isHelmetB = b.SkinId.Type === 'Helmet';
-            if (isHelmetA && !isHelmetB) return -1;
-            if (!isHelmetA && isHelmetB) return 1;
-            return 0;
-        });
-
-        const index = sortedGlobal.findIndex(s => s.SkinId.Type === skin.SkinId.Type && s.SkinId.Idx === skin.SkinId.Idx);
-        if (index === -1) return {};
-
-        const col = index % SPRITE_COLS;
-        const row = Math.floor(index / SPRITE_COLS);
-        const bgX = (col * 100) / (SPRITE_COLS - 1);
-        const bgY = (row * 100) / (SPRITE_ROWS - 1);
-
-        return {
-            backgroundImage: 'url(./Texture2D/SkinsUiIcons.png)',
-            backgroundSize: '400% 400%',
-            backgroundPosition: `${Number.isNaN(bgX) ? 0 : bgX}% ${Number.isNaN(bgY) ? 0 : bgY}%`,
-            imageRendering: 'pixelated' as const
-        };
-    };
-
-    const allSkinsList = useMemo(() => skinsData ? Object.values(skinsData) : [], [skinsData]);
 
     const groupedSkins = useMemo(() => {
         if (!skinsData) return { sets: [], misc: [] };
@@ -224,7 +177,7 @@ export default function Skins() {
                                     <SkinCard
                                         key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                         skin={skin}
-                                        bgStyle={getSpriteStyle(skin, allSkinsList)}
+                                        bgStyle={getSkinSpriteStyle(skin)}
                                     />
                                 ))}
                             </div>
@@ -245,7 +198,7 @@ export default function Skins() {
                             <SkinCard
                                 key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                 skin={skin}
-                                bgStyle={getSpriteStyle(skin, allSkinsList)}
+                                bgStyle={getSkinSpriteStyle(skin)}
                             />
                         ))}
                     </div>
