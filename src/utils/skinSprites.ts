@@ -15,55 +15,40 @@ interface SkinId {
 }
 
 /**
- * Maps a skin to a set-based visual group to ensure consistent ordering.
- */
-export const getSkinGroupOrder = (idx: number): number => {
-    switch (idx) {
-        case 0: return 0;   // Santa
-        case 2: return 1;   // Snowman
-        case 1: return 2;   // Ski
-        case 100:
-        case 101: return 3; // Unnamed Row 1
-        case 5: return 4;   // Druid
-        case 3: return 5;   // Leprechaun
-        case 4: return 6;   // Flower
-        case 102:
-        case 103: return 7; // Unnamed Row 2
-        default: return 100 + idx;
-    }
-};
-
-/**
  * Returns the sort value for a skin based on the 8x8 sprite sheet layout.
  */
 export const getSkinSortValue = (skin: { SkinId: SkinId }): number => {
     const { Type, Idx } = skin.SkinId;
-    const group = getSkinGroupOrder(Idx);
 
-    // Type priority: Helmet(0) -> Armour(1) -> Weapon(2)
-    const typePriority = Type === 'Helmet' ? 0 : (Type === 'Armour' ? 1 : 2);
-
-    // Row 3 logic: Weapons always come after Row 1/2
-    if (typePriority === 2) {
-        // Weapons start at index 16 (start of Row 3)
-        // Group 4 (Druid) weapon -> 16
-        // Group 5 (Leprechaun) weapon -> 17
-        // Group 6 (Flower) weapon -> 18
-        return 16 + (group - 4);
+    // Row 3 logic: Weapons always come after Row 1/2 (starts at index 16)
+    if (Type === 'Weapon') {
+        switch (Idx) {
+            case 5: return 16; // Druid Weapon
+            case 3: return 17; // Leprechaun Weapon
+            case 4: return 18; // Flower Weapon
+            default: return 64 - Idx; // Fallback to end of sheet
+        }
     }
 
-    // Row 1/2 logic: Pairs of (H,A) or single H
+    // Rows 1/2 logic: Pairs of (H,A) or single H
     // Indices 0-15
-    // group 0 (Santa): 0,1
-    // group 1 (Snowman): 2,3
-    // group 2 (Ski): 4,5
-    // group 3 (Unnamed): 6,7
-    // group 4 (Druid): 8,9
-    // group 5 (Leprechaun): 10,11
-    // group 6 (Flower): 12,13
-    // group 7 (Unnamed): 14,15
+    let baseIndex = 0;
+    switch (Idx) {
+        case 0: baseIndex = 0; break;  // Santa (0, 1)
+        case 2: baseIndex = 2; break;  // Snowman (2, 3)
+        case 1: baseIndex = 4; break;  // Ski (4, 5)
+        case 100: return 6;            // Unnamed 100 (Row 1, Col 6)
+        case 101: return 7;            // Unnamed 101 (Row 1, Col 7)
+        case 5: baseIndex = 8; break;  // Druid (8, 9)
+        case 3: baseIndex = 10; break; // Leprechaun (10, 11)
+        case 4: baseIndex = 12; break; // Flower (12, 13)
+        case 102: return 14;           // Unnamed 102 (Row 2, Col 6)
+        case 103: return 15;           // Unnamed 103 (Row 2, Col 7)
+        default: baseIndex = 32 + Idx * 2;
+    }
 
-    return group * 2 + typePriority;
+    const typeOffset = Type === 'Helmet' ? 0 : 1;
+    return baseIndex + typeOffset;
 };
 
 /**
