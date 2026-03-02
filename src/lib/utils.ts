@@ -83,6 +83,8 @@ export function getAgeIconStyle(ageIndex: number, size: number = 32): React.CSSP
     let spriteIndex = ageIndex;
     if (ageIndex === 6) spriteIndex = 7;
     else if (ageIndex === 7) spriteIndex = 6;
+    if (ageIndex === 8) spriteIndex = 9;
+    else if (ageIndex === 9) spriteIndex = 8;
 
     const col = spriteIndex % 4;
     const row = Math.floor(spriteIndex / 4);
