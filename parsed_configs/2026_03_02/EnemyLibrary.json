@@ -1,0 +1,1110 @@
+{
+  "0": {
+    "EnemyIdx": 0,
+    "WeaponId": {
+      "Age": 10000,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "1": {
+    "EnemyIdx": 1,
+    "WeaponId": {
+      "Age": 0,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 0,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 0,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "2": {
+    "EnemyIdx": 2,
+    "WeaponId": {
+      "Age": 0,
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "HelmetId": {
+      "Age": 0,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": {
+      "Age": 0,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3": {
+    "EnemyIdx": 3,
+    "WeaponId": {
+      "Age": 0,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 0,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "4": {
+    "EnemyIdx": 4,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 1,
+      "Type": "Helmet",
+      "Idx": 4
+    },
+    "ArmourId": {
+      "Age": 1,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "5": {
+    "EnemyIdx": 5,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 1,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": {
+      "Age": 1,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "6": {
+    "EnemyIdx": 6,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 5
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 1,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "7": {
+    "EnemyIdx": 7,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 5
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": {
+      "Age": 2,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "8": {
+    "EnemyIdx": 8,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": {
+      "Age": 2,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "9": {
+    "EnemyIdx": 9,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": {
+      "Age": 2,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "10": {
+    "EnemyIdx": 10,
+    "WeaponId": {
+      "Age": 3,
+      "Type": "Weapon",
+      "Idx": 7
+    },
+    "HelmetId": {
+      "Age": 3,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 3,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "11": {
+    "EnemyIdx": 11,
+    "WeaponId": {
+      "Age": 3,
+      "Type": "Weapon",
+      "Idx": 6
+    },
+    "HelmetId": {
+      "Age": 3,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 3,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "12": {
+    "EnemyIdx": 12,
+    "WeaponId": {
+      "Age": 3,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 3,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 3,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "13": {
+    "EnemyIdx": 13,
+    "WeaponId": {
+      "Age": 4,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 4,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": {
+      "Age": 4,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "14": {
+    "EnemyIdx": 14,
+    "WeaponId": {
+      "Age": 4,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 4,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 4,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "16": {
+    "EnemyIdx": 16,
+    "WeaponId": {
+      "Age": 5,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 5,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": {
+      "Age": 5,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "17": {
+    "EnemyIdx": 17,
+    "WeaponId": {
+      "Age": 5,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 5,
+      "Type": "Helmet",
+      "Idx": 5
+    },
+    "ArmourId": {
+      "Age": 5,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "18": {
+    "EnemyIdx": 18,
+    "WeaponId": {
+      "Age": 5,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 5,
+      "Type": "Helmet",
+      "Idx": 5
+    },
+    "ArmourId": {
+      "Age": 5,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "19": {
+    "EnemyIdx": 19,
+    "WeaponId": {
+      "Age": 6,
+      "Type": "Weapon",
+      "Idx": 5
+    },
+    "HelmetId": {
+      "Age": 6,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": {
+      "Age": 6,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "20": {
+    "EnemyIdx": 20,
+    "WeaponId": {
+      "Age": 6,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 6,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": {
+      "Age": 6,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "21": {
+    "EnemyIdx": 21,
+    "WeaponId": {
+      "Age": 6,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 6,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": {
+      "Age": 6,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "22": {
+    "EnemyIdx": 22,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 7,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "23": {
+    "EnemyIdx": 23,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 7,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "24": {
+    "EnemyIdx": 24,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 7,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "25": {
+    "EnemyIdx": 25,
+    "WeaponId": {
+      "Age": 8,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 8,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 8,
+      "Type": "Armour",
+      "Idx": 2
+    }
+  },
+  "26": {
+    "EnemyIdx": 26,
+    "WeaponId": {
+      "Age": 8,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 8,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 8,
+      "Type": "Armour",
+      "Idx": 2
+    }
+  },
+  "27": {
+    "EnemyIdx": 27,
+    "WeaponId": {
+      "Age": 8,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 8,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 8,
+      "Type": "Armour",
+      "Idx": 2
+    }
+  },
+  "28": {
+    "EnemyIdx": 28,
+    "WeaponId": {
+      "Age": 9,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 9,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "29": {
+    "EnemyIdx": 29,
+    "WeaponId": {
+      "Age": 9,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 9,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "30": {
+    "EnemyIdx": 30,
+    "WeaponId": {
+      "Age": 9,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 9,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "1001": {
+    "EnemyIdx": 1001,
+    "WeaponId": {
+      "Age": 0,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "1002": {
+    "EnemyIdx": 1002,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "HelmetId": {
+      "Age": 1,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": null
+  },
+  "1003": {
+    "EnemyIdx": 1003,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 6
+    },
+    "HelmetId": {
+      "Age": 1,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": null
+  },
+  "1004": {
+    "EnemyIdx": 1004,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": null
+  },
+  "1005": {
+    "EnemyIdx": 1005,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": null
+  },
+  "1006": {
+    "EnemyIdx": 1006,
+    "WeaponId": {
+      "Age": 3,
+      "Type": "Weapon",
+      "Idx": 7
+    },
+    "HelmetId": {
+      "Age": 3,
+      "Type": "Helmet",
+      "Idx": 4
+    },
+    "ArmourId": null
+  },
+  "1007": {
+    "EnemyIdx": 1007,
+    "WeaponId": {
+      "Age": 3,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 3,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": null
+  },
+  "1008": {
+    "EnemyIdx": 1008,
+    "WeaponId": {
+      "Age": 4,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 4,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": null
+  },
+  "1009": {
+    "EnemyIdx": 1009,
+    "WeaponId": {
+      "Age": 4,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 4,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": null
+  },
+  "1010": {
+    "EnemyIdx": 1010,
+    "WeaponId": {
+      "Age": 5,
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "HelmetId": {
+      "Age": 5,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": null
+  },
+  "1011": {
+    "EnemyIdx": 1011,
+    "WeaponId": {
+      "Age": 6,
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "HelmetId": {
+      "Age": 6,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": null
+  },
+  "1012": {
+    "EnemyIdx": 1012,
+    "WeaponId": {
+      "Age": 6,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 6,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": null
+  },
+  "1013": {
+    "EnemyIdx": 1013,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 7,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": null
+  },
+  "1014": {
+    "EnemyIdx": 1014,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "HelmetId": {
+      "Age": 7,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": null
+  },
+  "1015": {
+    "EnemyIdx": 1015,
+    "WeaponId": {
+      "Age": 8,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 8,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": null
+  },
+  "1016": {
+    "EnemyIdx": 1016,
+    "WeaponId": {
+      "Age": 9,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 9,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": null
+  },
+  "2001": {
+    "EnemyIdx": 2001,
+    "WeaponId": {
+      "Age": 0,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "2002": {
+    "EnemyIdx": 2002,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "2003": {
+    "EnemyIdx": 2003,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 6
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "2004": {
+    "EnemyIdx": 2004,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 5
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": null
+  },
+  "2005": {
+    "EnemyIdx": 2005,
+    "WeaponId": {
+      "Age": 3,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 3,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": null
+  },
+  "2006": {
+    "EnemyIdx": 2006,
+    "WeaponId": {
+      "Age": 4,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 4,
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "ArmourId": null
+  },
+  "2007": {
+    "EnemyIdx": 2007,
+    "WeaponId": {
+      "Age": 5,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "2008": {
+    "EnemyIdx": 2008,
+    "WeaponId": {
+      "Age": 6,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 6,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": null
+  },
+  "2009": {
+    "EnemyIdx": 2009,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "2010": {
+    "EnemyIdx": 2010,
+    "WeaponId": {
+      "Age": 8,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "2011": {
+    "EnemyIdx": 2011,
+    "WeaponId": {
+      "Age": 9,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": null,
+    "ArmourId": null
+  },
+  "3001": {
+    "EnemyIdx": 3001,
+    "WeaponId": {
+      "Age": 0,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 0,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": {
+      "Age": 0,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3002": {
+    "EnemyIdx": 3002,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 1,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": {
+      "Age": 1,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3003": {
+    "EnemyIdx": 3003,
+    "WeaponId": {
+      "Age": 1,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 1,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": {
+      "Age": 1,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3004": {
+    "EnemyIdx": 3004,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 2,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3005": {
+    "EnemyIdx": 3005,
+    "WeaponId": {
+      "Age": 2,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 2,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 2,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3006": {
+    "EnemyIdx": 3006,
+    "WeaponId": {
+      "Age": 3,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 3,
+      "Type": "Helmet",
+      "Idx": 5
+    },
+    "ArmourId": {
+      "Age": 3,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "3007": {
+    "EnemyIdx": 3007,
+    "WeaponId": {
+      "Age": 4,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 4,
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "ArmourId": {
+      "Age": 4,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3008": {
+    "EnemyIdx": 3008,
+    "WeaponId": {
+      "Age": 5,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": {
+      "Age": 5,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 5,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3009": {
+    "EnemyIdx": 3009,
+    "WeaponId": {
+      "Age": 6,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": {
+      "Age": 6,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": {
+      "Age": 6,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "3010": {
+    "EnemyIdx": 3010,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 5
+    },
+    "HelmetId": {
+      "Age": 7,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 7,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3011": {
+    "EnemyIdx": 3011,
+    "WeaponId": {
+      "Age": 7,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 7,
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "ArmourId": {
+      "Age": 7,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3012": {
+    "EnemyIdx": 3012,
+    "WeaponId": {
+      "Age": 8,
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 8,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "3013": {
+    "EnemyIdx": 3013,
+    "WeaponId": {
+      "Age": 8,
+      "Type": "Weapon",
+      "Idx": 1
+    },
+    "HelmetId": null,
+    "ArmourId": {
+      "Age": 8,
+      "Type": "Armour",
+      "Idx": 0
+    }
+  },
+  "3014": {
+    "EnemyIdx": 3014,
+    "WeaponId": {
+      "Age": 9,
+      "Type": "Weapon",
+      "Idx": 2
+    },
+    "HelmetId": {
+      "Age": 9,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": {
+      "Age": 9,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  },
+  "3015": {
+    "EnemyIdx": 3015,
+    "WeaponId": {
+      "Age": 9,
+      "Type": "Weapon",
+      "Idx": 0
+    },
+    "HelmetId": {
+      "Age": 9,
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "ArmourId": {
+      "Age": 9,
+      "Type": "Armour",
+      "Idx": 1
+    }
+  }
+}

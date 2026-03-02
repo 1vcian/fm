@@ -1,0 +1,41 @@
+{
+  "Hammer": {
+    "DungeonType": "Hammer",
+    "CurrencyType": [
+      "Hammers",
+      "Coins"
+    ],
+    "RewardBase": [
+      60.0,
+      4000.0
+    ],
+    "RewardIncrease": [
+      4.0,
+      180.0
+    ]
+  },
+  "Skill": {
+    "DungeonType": "Skill",
+    "CurrencyType": [
+      "SkillSummonTickets"
+    ],
+    "RewardBase": [
+      200.0
+    ],
+    "RewardIncrease": [
+      5.0
+    ]
+  },
+  "Potion": {
+    "DungeonType": "Potion",
+    "CurrencyType": [
+      "TechPotions"
+    ],
+    "RewardBase": [
+      140.0
+    ],
+    "RewardIncrease": [
+      3.0
+    ]
+  }
+}

@@ -1,0 +1,297 @@
+{
+    "texture": "Icons.png",
+    "texture_size": {
+        "width": 2048,
+        "height": 2048
+    },
+    "sprite_size": {
+        "width": 256,
+        "height": 256
+    },
+    "grid": {
+        "columns": 8,
+        "rows": 4
+    },
+    "total_sprites": 31,
+    "mapping": {
+        "0": {
+            "name": "Coin",
+            "sprite_rect": {
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "1": {
+            "name": "Hammer",
+            "sprite_rect": {
+                "x": 256,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "2": {
+            "name": "ArrowDown",
+            "sprite_rect": {
+                "x": 512,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "3": {
+            "name": "ArrowUp",
+            "sprite_rect": {
+                "x": 768,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "4": {
+            "name": "Battle",
+            "sprite_rect": {
+                "x": 1024,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "5": {
+            "name": "VideoAd",
+            "sprite_rect": {
+                "x": 1280,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "6": {
+            "name": "GemSquare",
+            "sprite_rect": {
+                "x": 1536,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "7": {
+            "name": "SkillTicket",
+            "sprite_rect": {
+                "x": 1792,
+                "y": 0,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "8": {
+            "name": "Potion",
+            "sprite_rect": {
+                "x": 0,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "9": {
+            "name": "HammerKey",
+            "sprite_rect": {
+                "x": 256,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "10": {
+            "name": "SkillKey",
+            "sprite_rect": {
+                "x": 512,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "11": {
+            "name": "PetKey",
+            "sprite_rect": {
+                "x": 768,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "12": {
+            "name": "PotionKey",
+            "sprite_rect": {
+                "x": 1024,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "13": {
+            "name": "UnknownKey",
+            "sprite_rect": {
+                "x": 1280,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "14": {
+            "name": "Egg",
+            "sprite_rect": {
+                "x": 1536,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "15": {
+            "name": "PVPTicket",
+            "sprite_rect": {
+                "x": 1792,
+                "y": 256,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "16": {
+            "name": "Male",
+            "sprite_rect": {
+                "x": 0,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "17": {
+            "name": "Female",
+            "sprite_rect": {
+                "x": 256,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "18": {
+            "name": "Star",
+            "sprite_rect": {
+                "x": 512,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "19": {
+            "name": "BronzeShield",
+            "sprite_rect": {
+                "x": 768,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "20": {
+            "name": "SilverShield",
+            "sprite_rect": {
+                "x": 1024,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "21": {
+            "name": "GoldShield",
+            "sprite_rect": {
+                "x": 1280,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "22": {
+            "name": "PlatinumShield",
+            "sprite_rect": {
+                "x": 1536,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "23": {
+            "name": "MasterShield",
+            "sprite_rect": {
+                "x": 1792,
+                "y": 512,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "24": {
+            "name": "CommonChest",
+            "sprite_rect": {
+                "x": 0,
+                "y": 768,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "25": {
+            "name": "RareChest",
+            "sprite_rect": {
+                "x": 256,
+                "y": 768,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "26": {
+            "name": "EpicChest",
+            "sprite_rect": {
+                "x": 512,
+                "y": 768,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "27": {
+            "name": "LegendaryChest",
+            "sprite_rect": {
+                "x": 768,
+                "y": 768,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "28": {
+            "name": "MountKey",
+            "sprite_rect": {
+                "x": 1024,
+                "y": 768,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "29": {
+            "name": "Timer",
+            "sprite_rect": {
+                "x": 1280,
+                "y": 768,
+                "width": 256,
+                "height": 256
+            }
+        },
+        "30": {
+            "name": "WarTicket",
+            "sprite_rect": {
+                "x": 1536,
+                "y": 768,
+                "width": 256,
+                "height": 256
+            }
+        }
+    }
+}

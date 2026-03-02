@@ -1,0 +1,328 @@
+{
+  "mounts": {
+    "texture": "MountIcons.png",
+    "texture_size": {
+      "width": 1024,
+      "height": 1024
+    },
+    "sprite_size": {
+      "width": 256,
+      "height": 256
+    },
+    "grid": {
+      "columns": 4,
+      "rows": 4
+    },
+    "total_sprites": 15,
+    "mapping": {
+      "0": {
+        "name": "LilyPad",
+        "rarity": "Common",
+        "id": 0
+      },
+      "1": {
+        "name": "BrownHorse",
+        "rarity": "Rare",
+        "id": 0
+      },
+      "2": {
+        "name": "Dino",
+        "rarity": "Rare",
+        "id": 1
+      },
+      "3": {
+        "name": "LilyLeaf",
+        "rarity": "Common",
+        "id": 1
+      },
+      "4": {
+        "name": "BrownLeaf",
+        "rarity": "Common",
+        "id": 2
+      },
+      "5": {
+        "name": "Crab",
+        "rarity": "Rare",
+        "id": 2
+      },
+      "6": {
+        "name": "Turtle",
+        "rarity": "Rare",
+        "id": 3
+      },
+      "7": {
+        "name": "Pig",
+        "rarity": "Epic",
+        "id": 0
+      },
+      "8": {
+        "name": "Goat",
+        "rarity": "Epic",
+        "id": 1
+      },
+      "9": {
+        "name": "Bike",
+        "rarity": "Legendary",
+        "id": 0
+      },
+      "10": {
+        "name": "GiantBee",
+        "rarity": "Legendary",
+        "id": 1
+      },
+      "11": {
+        "name": "OneWheelDroid",
+        "rarity": "Ultimate",
+        "id": 0
+      },
+      "12": {
+        "name": "MiniDragon",
+        "rarity": "Ultimate",
+        "id": 1
+      },
+      "13": {
+        "name": "HoverDisk",
+        "rarity": "Mythic",
+        "id": 0
+      },
+      "14": {
+        "name": "HoverBoard",
+        "rarity": "Mythic",
+        "id": 1
+      }
+    }
+  },
+  "pets": {
+    "texture": "Pets.png",
+    "texture_size": {
+      "width": 2048,
+      "height": 2048
+    },
+    "sprite_size": {
+      "width": 256,
+      "height": 256
+    },
+    "grid": {
+      "columns": 8,
+      "rows": 8
+    },
+    "total_sprites": 25,
+    "mapping": {
+      "0": {
+        "name": "Panda",
+        "rarity": "Epic",
+        "id": 4
+      },
+      "1": {
+        "name": "Chicken",
+        "rarity": "Common",
+        "id": 0
+      },
+      "2": {
+        "name": "Serpent",
+        "rarity": "Legendary",
+        "id": 0
+      },
+      "3": {
+        "name": "Cerberus",
+        "rarity": "Legendary",
+        "id": 1
+      },
+      "4": {
+        "name": "Kitsune",
+        "rarity": "Legendary",
+        "id": 2
+      },
+      "5": {
+        "name": "Electry",
+        "rarity": "Ultimate",
+        "id": 0
+      },
+      "6": {
+        "name": "Dog",
+        "rarity": "Common",
+        "id": 1
+      },
+      "7": {
+        "name": "Cat",
+        "rarity": "Common",
+        "id": 2
+      },
+      "8": {
+        "name": "Snail",
+        "rarity": "Common",
+        "id": 3
+      },
+      "9": {
+        "name": "Mouse",
+        "rarity": "Common",
+        "id": 4
+      },
+      "10": {
+        "name": "Turtle",
+        "rarity": "Common",
+        "id": 5
+      },
+      "11": {
+        "name": "Hedgehog",
+        "rarity": "Rare",
+        "id": 0
+      },
+      "12": {
+        "name": "Bear",
+        "rarity": "Rare",
+        "id": 1
+      },
+      "13": {
+        "name": "Ostrich",
+        "rarity": "Rare",
+        "id": 2
+      },
+      "14": {
+        "name": "Spider",
+        "rarity": "Rare",
+        "id": 3
+      },
+      "15": {
+        "name": "Scorpion",
+        "rarity": "Rare",
+        "id": 4
+      },
+      "16": {
+        "name": "Griffin",
+        "rarity": "Epic",
+        "id": 0
+      },
+      "17": {
+        "name": "SaberTooth",
+        "rarity": "Epic",
+        "id": 1
+      },
+      "18": {
+        "name": "Unicorn",
+        "rarity": "Epic",
+        "id": 2
+      },
+      "19": {
+        "name": "Tiger",
+        "rarity": "Epic",
+        "id": 3
+      },
+      "20": {
+        "name": "Treant",
+        "rarity": "Ultimate",
+        "id": 1
+      },
+      "21": {
+        "name": "EnchantedElk",
+        "rarity": "Ultimate",
+        "id": 2
+      },
+      "22": {
+        "name": "BabyDragon",
+        "rarity": "Mythic",
+        "id": 0
+      },
+      "23": {
+        "name": "Genie",
+        "rarity": "Mythic",
+        "id": 1
+      },
+      "24": {
+        "name": "SpectralTiger",
+        "rarity": "Mythic",
+        "id": 2
+      }
+    }
+  },
+  "skills": {
+    "texture": "SkillIcons.png",
+    "texture_size": {
+      "width": 2048,
+      "height": 2048
+    },
+    "sprite_size": {
+      "width": 256,
+      "height": 256
+    },
+    "grid": {
+      "columns": 8,
+      "rows": 8
+    },
+    "total_sprites": 18,
+    "mapping": {
+      "0": {
+        "name": "Meat",
+        "enum_value": 0
+      },
+      "1": {
+        "name": "Arrows",
+        "enum_value": 2
+      },
+      "2": {
+        "name": "Shout",
+        "enum_value": 4
+      },
+      "3": {
+        "name": "Berserk",
+        "enum_value": 6
+      },
+      "4": {
+        "name": "Thorns",
+        "enum_value": 8
+      },
+      "5": {
+        "name": "Worm",
+        "enum_value": 10
+      },
+      "6": {
+        "name": "Buff",
+        "enum_value": 12
+      },
+      "7": {
+        "name": "RainOfArrows",
+        "enum_value": 13
+      },
+      "8": {
+        "name": "CannonBarrage",
+        "enum_value": 16
+      },
+      "9": {
+        "name": "Morale",
+        "enum_value": 11
+      },
+      "10": {
+        "name": "Shuriken",
+        "enum_value": 3
+      },
+      "11": {
+        "name": "Meteorite",
+        "enum_value": 5
+      },
+      "12": {
+        "name": "Stampede",
+        "enum_value": 7
+      },
+      "13": {
+        "name": "Bomb",
+        "enum_value": 9
+      },
+      "14": {
+        "name": "Lightning",
+        "enum_value": 14
+      },
+      "15": {
+        "name": "HigherMorale",
+        "enum_value": 1
+      },
+      "16": {
+        "name": "StrafeRun",
+        "enum_value": 15
+      },
+      "17": {
+        "name": "Drone",
+        "enum_value": 17
+      }
+    }
+  }
+}

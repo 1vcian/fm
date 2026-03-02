@@ -1,0 +1,17 @@
+{
+  "UnlockedSteppingStones": {
+    "SegmentId": "UnlockedSteppingStones",
+    "Description": "Determines if player has unlocked Stepping Stones event",
+    "DisplayName": "Stepping Stones Unlocked",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {},
+          "Min": [],
+          "Max": {}
+        }
+      ],
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  }
+}
