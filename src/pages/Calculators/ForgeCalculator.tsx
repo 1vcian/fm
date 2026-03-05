@@ -450,17 +450,10 @@ export default function ForgeCalculator() {
 
     // 3. Perform Final Calculation (Bidirectional)
     const results = useMemo(() => {
-        if (!forgeStats || !forgeStats.dropChanceData || !balancingConfig) return null;
+        if (!forgeStats || !forgeStats.dropChanceData || !balancingConfig || !brackets) return null;
 
         const inputVal = parseFloat(inputValue) || 0;
         if (inputVal <= 0) return null;
-
-        const bracketMin = forgeStats.currentBracket?.LowerRange || 0;
-        const bracketMax = forgeStats.currentBracket?.UpperRange || 0;
-        const refLevel = forgeStats.referenceLevel;
-
-        const diffMin = bracketMin - refLevel;
-        const diffMax = bracketMax - refLevel;
 
         const freeForgeBase = (!usePlayerItems && manualBonuses['FreeForgeChance'] !== undefined)
             ? manualBonuses['FreeForgeChance']
@@ -537,19 +530,27 @@ export default function ForgeCalculator() {
         const freeForges = totalForges - finalHammers;
         const totalCoins = totalForges * avgCoinsPerForge;
 
-        // Accurate Total Min/Max
-        // We need to sum up (TotalForges * Chance * PriceMin) for all ages.
-        // Re-iterating is safer or we can accumulate above.
-        // Let's accumulate above.
-        // Actually, let's just do it here properly to avoid mess.
+        // Per-slot bracket Min/Max calculation
+        // Each slot finds its own bracket to avoid artificial ~5% jumps when the
+        // global average reference level crosses a bracket boundary.
         let totalCoinsMin = 0;
         let totalCoinsMax = 0;
+
+        const sortedBracketKeys = Object.keys(brackets).sort((a, b) => Number(a) - Number(b));
+        const findBracketForLevel = (level: number) => {
+            for (const key of sortedBracketKeys) {
+                const b = brackets[key];
+                if (level >= b.LowerRange && level <= b.UpperRange) {
+                    return b;
+                }
+            }
+            // Fallback to highest bracket if level exceeds all ranges
+            return brackets[sortedBracketKeys[sortedBracketKeys.length - 1]];
+        };
 
         Object.entries(forgeStats.dropChanceData).forEach(([key, val]) => {
             const chanceVal = val as number;
             if (!key.startsWith('Age') || typeof chanceVal !== 'number' || chanceVal <= 0) return;
-            // const ageIdx = parseInt(key.replace('Age', '')); // Removed
-            // const ageOffset = maxAgeIdx - ageIdx; // Removed
 
             let ageTotalCoinsMin = 0;
             let ageTotalCoinsMax = 0;
@@ -567,8 +568,13 @@ export default function ForgeCalculator() {
                 const baseLevel = balancingConfig.ItemBaseMaxLevel + slotTechBonus + (bonuses.latentLevelBonus || 0);
                 const baseScaling = 1.0100000000093132;
 
-                ageTotalCoinsMin += balancingConfig.SellBasePrice * Math.pow(baseScaling, baseLevel + diffMin);
-                ageTotalCoinsMax += balancingConfig.SellBasePrice * Math.pow(baseScaling, baseLevel + diffMax);
+                // Find bracket specific to this slot's level
+                // Cap to the slot's actual level: item can't drop higher than baseLevel
+                const slotBracket = findBracketForLevel(baseLevel);
+                const effectiveMin = Math.min(slotBracket.LowerRange, baseLevel);
+                const effectiveMax = Math.min(slotBracket.UpperRange, baseLevel);
+                ageTotalCoinsMin += balancingConfig.SellBasePrice * Math.pow(baseScaling, effectiveMin);
+                ageTotalCoinsMax += balancingConfig.SellBasePrice * Math.pow(baseScaling, effectiveMax);
             });
 
             const priceMin = (ageTotalCoinsMin / 8) * (1 + forgeStats.effectiveSellPriceBonus);
