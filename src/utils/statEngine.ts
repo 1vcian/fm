@@ -1085,8 +1085,8 @@ export class StatEngine {
         const skinDmgFactor = 1 + this.skinDamageMulti;
         const skinHpFactor = 1 + this.skinHealthMulti;
 
-        const setDmgFactor = 1 + this.setDamageMulti;
-        const setHpFactor = 1 + this.setHealthMulti;
+        const setDmgFactor = this.setDamageMulti;
+        const setHpFactor = this.setHealthMulti;
 
         this.debugLogs.push(`Skin Factor: Dmg=${skinDmgFactor.toFixed(3)}, Hp=${skinHpFactor.toFixed(3)}`);
         this.debugLogs.push(`Set Factor: Dmg=${setDmgFactor.toFixed(3)}, Hp=${setHpFactor.toFixed(3)}`);
@@ -1095,10 +1095,10 @@ export class StatEngine {
         console.log(`[StatEngine DEBUG] additiveDmg=${damageAdditiveMulti.toFixed(4)}, additiveHp=${healthAdditiveMulti.toFixed(4)}`);
         console.log(`[StatEngine DEBUG] skinDmg=${skinDmgFactor.toFixed(4)}, skinHp=${skinHpFactor.toFixed(4)}`);
         console.log(`[StatEngine DEBUG] setDmg=${setDmgFactor.toFixed(4)}, setHp=${setHpFactor.toFixed(4)}`);
-        console.log(`[StatEngine DEBUG] totalDmg=${(flatDamageWithMelee * damageAdditiveMulti * skinDmgFactor * setDmgFactor).toFixed(2)}, totalHp=${(flatHealth * healthAdditiveMulti * skinHpFactor * setHpFactor).toFixed(2)}`);
+        console.log(`[StatEngine DEBUG] totalDmg=${(flatDamageWithMelee * damageAdditiveMulti * (skinDmgFactor + setDmgFactor)).toFixed(2)}, totalHp=${(flatHealth * healthAdditiveMulti * (skinHpFactor + setHpFactor)).toFixed(2)}`);
 
-        const damageAfterGlobalMultis = flatDamageWithMelee * damageAdditiveMulti * skinDmgFactor * setDmgFactor;
-        const healthAfterGlobalMultis = flatHealth * healthAdditiveMulti * skinHpFactor * setHpFactor;
+        const damageAfterGlobalMultis = flatDamageWithMelee * damageAdditiveMulti * (skinDmgFactor + setDmgFactor);
+        const healthAfterGlobalMultis = flatHealth * healthAdditiveMulti * (skinHpFactor + setHpFactor);
 
         // 6. Melee/Ranged Specific Multipliers (Multiplicative)
         const specificDamageMulti = isWeaponMelee
@@ -1127,7 +1127,7 @@ export class StatEngine {
         const flatDamageNoMelee = this.stats.basePlayerDamage + this.stats.itemDamage + this.stats.petDamage;
 
         // Melee/Ranged specific damage (for display)
-        const globalDmgFactor = damageAdditiveMulti * skinDmgFactor * setDmgFactor;
+        const globalDmgFactor = damageAdditiveMulti * (skinDmgFactor + setDmgFactor);
         this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * globalDmgFactor * (1 + this.secondaryStats.meleeDamageMulti));
         this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * globalDmgFactor * (1 + this.secondaryStats.rangedDamageMulti));
 
