@@ -379,23 +379,34 @@ export class BattleEngine {
         // --- Skill System (Independent of everything) ---
         this.processSkills(dt);
         this.processActiveEffects(dt);
+
+        // Projectiles
         this.processProjectiles(dt);
+
+        // --- Start of Tick Distance Calculations ---
+        // We capture existing distances BEFORE movement to prevent a player/enemy from moving 
+        // and THEN having the second-processed entity immediately trigger an attack in the same tick.
+        const enemyDistancesAtStart: Record<number, number> = {};
+        this.currentWaveEnemies.forEach(enemy => {
+            if (!enemy.isDead) {
+                enemyDistancesAtStart[enemy.id] = Math.abs(enemy.position - this.player.position);
+            }
+        });
 
         // --- Player Movement & Combat ---
         if (!this.player.isDead) {
             let playerTarget: EntityState | null = null;
 
-            // Find closest alive enemy in range
-            // Sort by position (closest to player first)
+            // Find closest alive enemy in range AT START OF TICK
             const sortedEnemies = this.currentWaveEnemies
                 .filter(e => !e.isDead)
                 .sort((a, b) => a.position - b.position);
 
             for (const enemy of sortedEnemies) {
-                const dist = enemy.position - this.player.position;
-                if (dist <= this.player.attackRange) {
+                const distAtStart = enemyDistancesAtStart[enemy.id];
+                if (distAtStart <= this.player.attackRange) {
                     playerTarget = enemy;
-                    break; // Pick the first one (closest)
+                    break;
                 }
             }
 
@@ -414,10 +425,9 @@ export class BattleEngine {
         this.currentWaveEnemies.forEach(enemy => {
             if (enemy.isDead) return;
 
-            // Dist to player
-            const dist = enemy.position - this.player.position;
+            const distAtStart = enemyDistancesAtStart[enemy.id];
 
-            if (!this.player.isDead && dist <= enemy.attackRange) {
+            if (!this.player.isDead && distAtStart <= enemy.attackRange) {
                 // FIGHTING
                 enemy.combatState = 'FIGHTING';
                 this.processEntityCombat(enemy, [this.player], dt);
@@ -655,10 +665,9 @@ export class BattleEngine {
         const windup = entity.baseWindupTime || 0.5;
         const duration = entity.attackDuration || 1.5;
 
-        // CORRETTO: Scala ENTRAMBI con speedMult
+        // WindupTime è compreso in AttackDuration, entrambi scalano con AttackSpeed
         const effectiveWindup = windup / speedMult;
-        const effectiveDuration = duration / speedMult;
-        const effectiveRecovery = Math.max(0.01, effectiveDuration - effectiveWindup);
+        const effectiveRecovery = Math.max(0.01, (duration - windup) / speedMult);
 
         // State Machine
         switch (entity.combatPhase) {

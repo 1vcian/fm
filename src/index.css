@@ -200,6 +200,35 @@
     50% { opacity: 0.85; transform: scale(1.02); }
 }
 
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
 .animate-pulse-subtle {
     animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite;
+}
+
+.animate-float {
+    animation: float 3s infinite ease-in-out;
+}
+
+.coffee-btn-glow {
+    box-shadow: 0 0 15px rgba(255, 221, 0, 0.5);
+    transition: box-shadow 0.3s ease;
+}
+
+.coffee-btn-glow:hover {
+    box-shadow: 0 0 25px rgba(255, 221, 0, 0.8);
 }

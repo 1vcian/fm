@@ -71,10 +71,15 @@ export default function AppShell() {
                     href="https://www.buymeacoffee.com/1vcian"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="fixed bottom-6 right-6 z-50 bg-[#FFDD00] text-black font-bold py-2 px-3 md:py-3 md:px-4 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 animate-bounce-slow"
+                    className="fixed bottom-8 right-8 z-50 group flex items-center gap-3 overflow-hidden px-5 md:px-7 py-3 md:py-4 rounded-full bg-[#FFDD00] text-black font-extrabold shadow-[0_8px_25px_-5px_rgba(255,221,0,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(255,221,0,0.6)] transition-all duration-300 hover:-translate-y-1.5 active:scale-95 animate-float coffee-btn-glow"
                 >
-                    <Coffee className="w-5 h-5" />
-                    <span className="font-bold">Buy me a coffee</span>
+                    {/* Shimmer Effect Layer */}
+                    <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-30" />
+
+                    <div className="relative flex items-center gap-2.5">
+                        <Coffee className="w-6 h-6 group-hover:rotate-[15deg] transition-transform duration-300" />
+                        <span className="text-base md:text-lg tracking-tight">Buy me a coffee</span>
+                    </div>
                 </a>
             </div>
         </div>

@@ -28,7 +28,8 @@ import {
     EnemyConfig,
     EnemySkillConfig,
     PassiveStatType,
-    initPassiveStats
+    initPassiveStats,
+    SkinEntry
 } from '../../utils/PvpBattleEngine';
 import { useRef, useEffect, useMemo } from 'react';
 import { Upload, Save, User } from 'lucide-react';
@@ -69,6 +70,8 @@ export function EnemyBuilder() {
     const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
+    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
+    const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
 
     // Consolidated libraries object for helper
     const allLibs = {
@@ -83,7 +86,9 @@ export function EnemyBuilder() {
         itemBalancingLibrary,
         itemBalancingConfig,
         weaponLibrary,
-        projectilesLibrary
+        projectilesLibrary,
+        skinsLibrary,
+        setsLibrary
     };
 
     // UI State
@@ -123,7 +128,18 @@ export function EnemyBuilder() {
         const saved = localStorage.getItem('forgeMaster_savedEnemies');
         if (saved) {
             try {
-                setSavedEnemies(JSON.parse(saved));
+                const parsed: EnemyConfig[] = JSON.parse(saved);
+                // Migrate old configs that don't have skinEntries/hasCompleteSet
+                const migrated = parsed.map(e => ({
+                    ...e,
+                    skinEntries: e.skinEntries ?? (
+                        (e.stats.skinDmgMulti || e.stats.skinHpMulti)
+                            ? [{ dmg: e.stats.skinDmgMulti || 0, hp: e.stats.skinHpMulti || 0 }]
+                            : []
+                    ),
+                    hasCompleteSet: e.hasCompleteSet ?? ((e.stats.setDmgMulti || 0) > 0 || (e.stats.setHpMulti || 0) > 0),
+                }));
+                setSavedEnemies(migrated);
             } catch (e) { console.error(e); }
         }
     }, []);
@@ -687,6 +703,116 @@ export function EnemyBuilder() {
                             className="h-10 text-lg font-mono font-bold text-right"
                         />
                     </div>
+                </div>
+            </div>
+
+            {/* Skin & Set Bonuses */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase text-text-muted flex items-center gap-2 border-t border-border pt-4">
+                    <Sparkles className="w-4 h-4" /> Skin & Set Bonuses
+                </h3>
+
+                {/* Skin Entries */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase text-text-muted">Skins Equipped</span>
+                        <button
+                            onClick={() => setEnemy(prev => ({
+                                ...prev,
+                                skinEntries: [...(prev.skinEntries || []), { dmg: 0, hp: 0 }]
+                            }))}
+                            className="flex items-center gap-1 text-xs text-accent-primary hover:text-accent-primary/80 transition-colors font-bold"
+                        >
+                            <Plus className="w-3 h-3" /> Add Skin
+                        </button>
+                    </div>
+
+                    {(enemy.skinEntries || []).length === 0 && (
+                        <div className="text-xs text-text-muted/50 text-center py-2 border border-dashed border-border/30 rounded-lg">
+                            No skins — tap "Add Skin" to add bonuses
+                        </div>
+                    )}
+
+                    {(enemy.skinEntries || []).map((entry: SkinEntry, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 bg-bg-input/50 rounded-lg p-2 border border-border/30">
+                            <span className="text-[10px] font-bold text-text-muted w-10 shrink-0">#{idx + 1}</span>
+                            <div className="flex items-center gap-1.5 flex-1">
+                                <Sword className="w-3 h-3 text-red-400 shrink-0" />
+                                <Input
+                                    type="number"
+                                    value={((entry.dmg || 0) * 100).toFixed(1)}
+                                    onChange={(e) => setEnemy(prev => {
+                                        const entries = [...(prev.skinEntries || [])];
+                                        entries[idx] = { ...entries[idx], dmg: (parseFloat(e.target.value) || 0) / 100 };
+                                        return { ...prev, skinEntries: entries };
+                                    })}
+                                    className="h-6 text-[11px] font-mono font-bold text-right flex-1 min-w-0"
+                                    step="0.1"
+                                />
+                                <span className="text-[10px] text-text-muted">%</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-1">
+                                <Heart className="w-3 h-3 text-green-400 shrink-0" />
+                                <Input
+                                    type="number"
+                                    value={((entry.hp || 0) * 100).toFixed(1)}
+                                    onChange={(e) => setEnemy(prev => {
+                                        const entries = [...(prev.skinEntries || [])];
+                                        entries[idx] = { ...entries[idx], hp: (parseFloat(e.target.value) || 0) / 100 };
+                                        return { ...prev, skinEntries: entries };
+                                    })}
+                                    className="h-6 text-[11px] font-mono font-bold text-right flex-1 min-w-0"
+                                    step="0.1"
+                                />
+                                <span className="text-[10px] text-text-muted">%</span>
+                            </div>
+                            <button
+                                onClick={() => setEnemy(prev => ({
+                                    ...prev,
+                                    skinEntries: (prev.skinEntries || []).filter((_, i) => i !== idx)
+                                }))}
+                                className="p-1 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors shrink-0"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        </div>
+                    ))}
+
+                    {/* Skin Totals */}
+                    {(enemy.skinEntries || []).length > 0 && (
+                        <div className="flex items-center gap-4 px-2 pt-1 border-t border-border/20">
+                            <span className="text-[10px] font-bold text-text-muted uppercase">Total:</span>
+                            <span className="text-xs font-mono font-bold text-red-400">
+                                DMG +{((enemy.skinEntries || []).reduce((s, e) => s + (e.dmg || 0), 0) * 100).toFixed(1)}%
+                            </span>
+                            <span className="text-xs font-mono font-bold text-green-400">
+                                HP +{((enemy.skinEntries || []).reduce((s, e) => s + (e.hp || 0), 0) * 100).toFixed(1)}%
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Set Toggle */}
+                <div className="flex items-center justify-between bg-bg-input/30 p-3 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-2">
+                        <Award className="w-4 h-4 text-amber-400" />
+                        <div>
+                            <span className="text-xs font-bold uppercase text-text-muted">Complete Set</span>
+                            <div className="text-[10px] text-text-muted/60">+10% DMG, +10% HP</div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setEnemy(prev => ({ ...prev, hasCompleteSet: !prev.hasCompleteSet }))}
+                        className={cn(
+                            "w-12 h-6 rounded-full transition-all relative",
+                            enemy.hasCompleteSet ? "bg-amber-500" : "bg-bg-input border border-border"
+                        )}
+                    >
+                        <div className={cn(
+                            "w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all",
+                            enemy.hasCompleteSet ? "left-[26px]" : "left-0.5"
+                        )} />
+                    </button>
                 </div>
             </div>
 

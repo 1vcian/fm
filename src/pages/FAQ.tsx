@@ -79,11 +79,12 @@ export default function FAQ() {
                                 href="https://www.buymeacoffee.com/1vcian"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FFDD00] text-black font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"
+                                className="group relative flex items-center gap-2 px-8 py-3 rounded-full bg-[#FFDD00] text-black font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_5px_15px_-3px_rgba(255,221,0,0.4)] overflow-hidden coffee-btn-glow"
                             >
-                                <Coffee className="w-5 h-5 fill-current" />
-                                BUY ME A COFFEE
-                                <ExternalLink className="w-4 h-4" />
+                                <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-20" />
+                                <Coffee className="w-5 h-5 fill-current group-hover:rotate-12 transition-transform" />
+                                <span className="relative z-10">BUY ME A COFFEE</span>
+                                <ExternalLink className="w-4 h-4 opacity-50 relative z-10" />
                             </a>
                         </div>
                     </div>

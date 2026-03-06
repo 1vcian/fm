@@ -327,10 +327,8 @@ export function StatsSummaryPanel() {
 
     const critMultiplier = 1 + cappedCritChance * (stats.criticalDamage - 1);
     const doubleDmgMultiplier = 1 + cappedDoubleDamageChance;
-    const modifiedAttackDuration = (stats.weaponAttackDuration) / stats.attackSpeedMultiplier;
-
-    // Tempo totale per attacco
-    const totalAttackTime = modifiedAttackDuration;
+    // WindupTime è compreso nella AttackDuration. Ciclo totale = AttackDuration / AttackSpeed
+    const totalAttackTime = stats.weaponAttackDuration / stats.attackSpeedMultiplier;
 
     // Attacchi al secondo
     const attacksPerSecond = 1 / totalAttackTime;
@@ -344,8 +342,8 @@ export function StatsSummaryPanel() {
     // Healing Per Second calculations
     // 1. Passive Health Regen: MaxHP × HealthRegen% per second
     const regenHps = stats.totalHealth * stats.healthRegen;
-    // 2. Lifesteal: DPS × Lifesteal% (healing from damage dealt)
-    const lifestealHps = effectiveDps * stats.lifeSteal;
+    // 2. Lifesteal: Weapon DPS × Lifesteal% (healing from basic attacks)
+    const lifestealHps = weaponDps * stats.lifeSteal;
     // 3. Skill Healing (already calculated as HPS)
     const skillHps = stats.skillHps;
     // Total Effective HPS
@@ -379,8 +377,8 @@ export function StatsSummaryPanel() {
     // Calculate DPS/HPS for comparison stats with details
     const originalDpsDetails = originalStats ? calculateDpsDetails(originalStats) : { total: 0, weapon: 0, skills: 0 };
     const testDpsDetails = testStats ? calculateDpsDetails(testStats) : { total: 0, weapon: 0, skills: 0 };
-    const originalHpsDetails = originalStats ? calculateHpsDetails(originalStats, originalDpsDetails.total) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const testHpsDetails = testStats ? calculateHpsDetails(testStats, testDpsDetails.total) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const originalHpsDetails = originalStats ? calculateHpsDetails(originalStats, originalDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const testHpsDetails = testStats ? calculateHpsDetails(testStats, testDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
 
     // Legacy aliases for backwards compatibility
     const originalDps = originalDpsDetails.total;

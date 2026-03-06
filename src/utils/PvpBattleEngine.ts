@@ -30,6 +30,11 @@ export interface PassiveStatConfig {
     value: number;
 }
 
+export interface SkinEntry {
+    dmg: number;  // e.g. 0.05 = +5%
+    hp: number;   // e.g. 0.05 = +5%
+}
+
 export interface EnemyConfig {
     weapon: any | null;
     skills: (EnemySkillConfig | null)[];
@@ -37,7 +42,18 @@ export interface EnemyConfig {
         power?: number;
         hp: number;
         damage: number;
+        skillPassiveHp?: number;
+        skinDmgMulti?: number;   // e.g. 0.10 = +10% skin damage
+        skinHpMulti?: number;    // e.g. 0.10 = +10% skin health
+        setDmgMulti?: number;    // e.g. 0.10 = +10% set damage
+        setHpMulti?: number;     // e.g. 0.10 = +10% set health
+        projectileSpeed?: number;
+        attackRange?: number;
+        weaponWindup?: number;
+        weaponAttackDuration?: number;
     };
+    skinEntries?: SkinEntry[];     // Individual skin pieces for UI
+    hasCompleteSet?: boolean;      // Toggle: set complete = +10% dmg/hp
     passiveStats: Record<string, PassiveStatConfig>;
     name: string;
     pets: (PetSlot | null)[];
@@ -367,34 +383,40 @@ export class PvpBattleEngine {
         this.processRegen(this.player1, dt);
         this.processRegen(this.player2, dt);
 
+        const p1Status = { isDead: this.player1.isDead };
+        const p2Status = { isDead: this.player2.isDead };
+
         // Skills for both players - Randomized Order
         if (Math.random() < 0.5) {
-            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true);
-            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false);
+            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true, p1Status);
+            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false, p2Status);
         } else {
-            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false);
-            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true);
+            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false, p2Status);
+            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true, p1Status);
         }
 
         // Active effects for both players - Randomized Order
         if (Math.random() < 0.5) {
-            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true);
-            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false);
+            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true, p1Status, p2Status);
+            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false, p2Status, p1Status);
         } else {
-            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false);
-            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true);
+            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false, p2Status, p1Status);
+            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true, p1Status, p2Status);
         }
 
         // Projectiles
         this.processProjectiles(dt);
 
+        // Calculate distance before any movement to prevent second-mover advantage
+        const startOfTickDistance = Math.abs(this.player1.position - this.player2.position);
+
         // Movement and combat for both players - Randomized Order
         if (Math.random() < 0.5) {
-            this.processMovementAndCombat(this.player1, this.player2, dt);
-            this.processMovementAndCombat(this.player2, this.player1, dt);
+            this.processMovementAndCombat(this.player1, this.player2, dt, startOfTickDistance, !p1Status.isDead);
+            this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
         } else {
-            this.processMovementAndCombat(this.player2, this.player1, dt);
-            this.processMovementAndCombat(this.player1, this.player2, dt);
+            this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
+            this.processMovementAndCombat(this.player1, this.player2, dt, startOfTickDistance, !p1Status.isDead);
         }
     }
 
@@ -415,8 +437,8 @@ export class PvpBattleEngine {
         }
     }
 
-    private processSkills(skills: SkillState[], caster: EntityState, _target: EntityState, dt: number, isPlayer1: boolean) {
-        if (caster.isDead) return;
+    private processSkills(skills: SkillState[], caster: EntityState, _target: EntityState, dt: number, isPlayer1: boolean, casterStatus: { isDead: boolean }) {
+        if (casterStatus.isDead) return;
 
         const activeEffects = isPlayer1 ? this.player1ActiveEffects : this.player2ActiveEffects;
         const activeBuffs = isPlayer1 ? this.player1ActiveBuffs : this.player2ActiveBuffs;
@@ -483,7 +505,9 @@ export class PvpBattleEngine {
         });
     }
 
-    private processActiveEffects(effects: ActiveSkillEffect[], caster: EntityState, target: EntityState, dt: number, isPlayer1: boolean) {
+    private processActiveEffects(effects: ActiveSkillEffect[], caster: EntityState, target: EntityState, dt: number, isPlayer1: boolean, casterStatus: { isDead: boolean }, targetStatus: { isDead: boolean }) {
+        if (casterStatus.isDead) return;
+
         // Process in reverse to allow removal
         for (let i = effects.length - 1; i >= 0; i--) {
             const effect = effects[i];
@@ -495,16 +519,9 @@ export class PvpBattleEngine {
                 if (effect.hitsRemaining > 0) {
                     // Handle Damage
                     if (effect.damage) {
-                        if (effect.isSingleTarget) {
-                            // Single Target: Target the other player
-                            if (!target.isDead) {
-                                this.dealDamage(caster, target, effect.damage, true, false, true);
-                            }
-                        } else {
-                            // AOE: Hit the other player (in PvP there's only one target)
-                            if (!target.isDead) {
-                                this.dealDamage(caster, target, effect.damage, isPlayer1, false, true);
-                            }
+                        // In PvP there's only one target. We check if target was already dead at start of tick
+                        if (!targetStatus.isDead) {
+                            this.dealDamage(caster, target, effect.damage, isPlayer1, false, true);
                         }
                     }
 
@@ -540,21 +557,17 @@ export class PvpBattleEngine {
                 : proj.currentX <= proj.toX;
 
             if (reached) {
-                // Find target and deal damage
-                const target = proj.isPlayer1Source
-                    ? (this.player2.isDead ? null : this.player2)
-                    : (this.player1.isDead ? null : this.player1);
+                // Projectiles always deal damage - don't check isDead (simultaneous combat)
+                const target = proj.isPlayer1Source ? this.player2 : this.player1;
 
-                if (target) {
-                    this.dealDamage(
-                        proj.isPlayer1Source ? this.player1 : this.player2,
-                        target,
-                        proj.damage,
-                        proj.isPlayer1Source,
-                        proj.isCrit,
-                        false
-                    );
-                }
+                this.dealDamage(
+                    proj.isPlayer1Source ? this.player1 : this.player2,
+                    target,
+                    proj.damage,
+                    proj.isPlayer1Source,
+                    proj.isCrit,
+                    false
+                );
                 this.projectiles.splice(i, 1);
             }
         }
@@ -606,10 +619,9 @@ export class PvpBattleEngine {
         this.log('BUFF_EXPIRED', `${entity.isPlayer1 ? 'Player1' : 'Player2'} ${skillId}: Buff removed`);
     }
 
-    private processMovementAndCombat(attacker: EntityState, target: EntityState, dt: number): void {
-        if (attacker.isDead || target.isDead) return;
+    private processMovementAndCombat(attacker: EntityState, target: EntityState, dt: number, distance: number, wasAliveAtStart: boolean): void {
+        if (!wasAliveAtStart) return;  // Only entities alive at start of tick can act this tick
 
-        const distance = Math.abs(attacker.position - target.position);
         const inRange = distance <= attacker.attackRange;
 
         if (!inRange) {
@@ -636,10 +648,9 @@ export class PvpBattleEngine {
         const windup = entity.baseWindupTime || 0.5;
         const duration = entity.attackDuration || 1.5;
 
-        // Scale both with speedMult
+        // WindupTime è compreso in AttackDuration, entrambi scalano con AttackSpeed
         const effectiveWindup = windup / speedMult;
-        const effectiveDuration = duration / speedMult;
-        const effectiveRecovery = Math.max(0.01, effectiveDuration - effectiveWindup);
+        const effectiveRecovery = Math.max(0.01, (duration - windup) / speedMult);
 
         // State Machine
         switch (entity.combatPhase) {
@@ -718,6 +729,7 @@ export class PvpBattleEngine {
             });
         } else {
             // Melee: instant damage
+            if (this.time < 5) console.log("FIRST MELEE HIT:", attacker.isPlayer1 ? "P1" : "P2", "At time:", this.time);
             this.dealDamage(attacker, target, dmg, attacker.isPlayer1, isCrit);
         }
     }
@@ -787,9 +799,16 @@ export class PvpBattleEngine {
         else {
             const p1HpLost = 1 - p1HpPercent;
             const p2HpLost = 1 - p2HpPercent;
-            if (p1HpLost < p2HpLost) winner = 'player1';
-            else if (p2HpLost < p1HpLost) winner = 'player2';
-            else winner = 'tie';
+
+            // Use a small epsilon for floating point comparison to ensure ties are possible
+            const EPSILON = 0.00001;
+            if (Math.abs(p1HpLost - p2HpLost) < EPSILON) {
+                winner = 'tie';
+            } else if (p1HpLost < p2HpLost) {
+                winner = 'player1';
+            } else {
+                winner = 'player2';
+            }
         }
 
         return {
@@ -1001,10 +1020,7 @@ export function enemyConfigToPvpStats(
         }
     }
 
-    // PvP Multipliers
-    const pvpHpBaseMulti = Math.max(2.0, pvpBaseConfig?.PvpHpBaseMultiplier ?? 2.0);
-    const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
-    const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
+
 
     // We assume enemyConfig.stats.hp is the derived Total Health from a profile or manual input
     // If it comes from a Profile import, it is the Final Total Health.
@@ -1088,17 +1104,33 @@ export function enemyConfigToPvpStats(
 
     // 2. Calculated Pet HP is `calculatedPetHp`
 
-    // 3. Derived Base HP
-    // Total = (Base + Pet) * Multi
-    // Base = (Total / Multi) - Pet
+    // 3. Derived Base HP (Base + Items)
+    // Total = (Base + Pet + SkillPassive) * Multi
+    // Base = (Total / Multi) - Pet - SkillPassive
+    // Account for Skin + Set multipliers in reverse engineering
     const inputTotalHp = enemyConfig.stats.hp || 10000;
-    let derivedBaseHp = (inputTotalHp / Math.max(1, effectiveHealthMulti)) - calculatedPetHp;
+    const skillPassiveHp = enemyConfig.stats.skillPassiveHp || 0;
+
+    // Compute skin/set from UI fields (skinEntries, hasCompleteSet) or fall back to stats
+    const computedSkinHp = enemyConfig.skinEntries?.reduce((sum: number, e: SkinEntry) => sum + (e.hp || 0), 0) ?? enemyConfig.stats.skinHpMulti ?? 0;
+    const computedSetHp = enemyConfig.hasCompleteSet !== undefined ? (enemyConfig.hasCompleteSet ? 0.10 : 0) : (enemyConfig.stats.setHpMulti ?? 0);
+    const skinHpFactor = 1 + computedSkinHp;
+    const setHpFactor = computedSetHp;
+    const globalSkinSetFactor = skinHpFactor + setHpFactor; // Same formula as StatEngine: * (skinFactor + setFactor)
+
+    let derivedBaseHp = (inputTotalHp / Math.max(1, effectiveHealthMulti) / Math.max(0.01, globalSkinSetFactor)) - calculatedPetHp - skillPassiveHp;
     derivedBaseHp = Math.max(0, derivedBaseHp);
 
     // 4. Apply PVP Multipliers
+    const pvpHpBaseMulti = 5//pvpBaseConfig?.PvpHpBaseMultiplier ?? 5.0;
+    const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
+    const pvpHpSkillMulti = pvpBaseConfig?.PvpHpSkillMultiplier ?? 0.5;
+    const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
+
     const pvpBaseHp = derivedBaseHp * pvpHpBaseMulti;
     const pvpPetHp = calculatedPetHp * pvpHpPetMulti;
-    const pvpCombinedHp = pvpBaseHp + pvpPetHp;
+    const pvpSkillHp = skillPassiveHp * pvpHpSkillMulti;
+    const pvpCombinedHp = pvpBaseHp + pvpPetHp + pvpSkillHp;
 
     const pvpMountHealthMulti = mountHealthMulti * pvpHpMountMulti;
 
@@ -1107,21 +1139,27 @@ export function enemyConfigToPvpStats(
 
 
 
+
     return {
-        hp: Math.max(1, pvpTotalHp), // Ensure at least 1 HP
+        hp: Math.round(Math.max(1, pvpTotalHp)),
         damage: enemyConfig.stats.damage,
         attackSpeed: 1.0 + attackSpeedBonus,
-        weaponInfo,
+        weaponInfo: weaponInfo ? {
+            ...weaponInfo,
+            AttackRange: enemyConfig.stats.attackRange || weaponInfo.AttackRange,
+            WindupTime: enemyConfig.stats.weaponWindup || weaponInfo.WindupTime,
+            AttackDuration: enemyConfig.stats.weaponAttackDuration || weaponInfo.AttackDuration,
+        } : undefined,
         isRanged: weaponInfo ? (weaponInfo.AttackRange ?? 0) > 1.0 : false,
-        projectileSpeed: 10,
+        projectileSpeed: enemyConfig.stats.projectileSpeed || 10,
         critChance,
         critMulti,
         blockChance,
         lifesteal,
         doubleDamage,
         healthRegen,
-        damageMulti,
-        healthMulti,
+        damageMulti: 0,  // Already baked into stats.damage
+        healthMulti: 0,  // Already baked into pvpTotalHp via reverse engineering
         skillDamageMulti,
         skillCooldownMulti,
         skills
@@ -1201,26 +1239,35 @@ export function aggregatedStatsToPvpStats(
 
     // 2. Sum Active Pet HP
     let totalPetHp = stats.petHealth || 0;
+    let skillPassiveHp = stats.skillPassiveHealth || 0;
 
-    // 3. Derived Base HP (Base + Items + Skill Passives)
+    // 3. Derived Base HP (Base + Items)
     // Avoid division by zero
     const effectiveMulti = Math.max(1, stats.healthMultiplier || 1);
     const inputTotalHp = stats.totalHealth || 10000;
-    let derivedBaseHp = (inputTotalHp / effectiveMulti) - totalPetHp;
+    // Account for Skin + Set multipliers in reverse engineering
+    const skinHpFactor = 1 + (stats.skinHealthMulti || 0);
+    const setHpFactor = stats.setHealthMulti || 0;
+    const globalSkinSetFactor = skinHpFactor + setHpFactor; // Same formula as StatEngine
+
+    let derivedBaseHp = (inputTotalHp / effectiveMulti / Math.max(0.01, globalSkinSetFactor)) - totalPetHp - skillPassiveHp;
     derivedBaseHp = Math.max(0, derivedBaseHp);
 
     // 4. Apply PVP Multipliers
-    const pvpHpBaseMulti = Math.max(2.0, pvpBaseConfig?.PvpHpBaseMultiplier ?? 2.0);
+    const pvpHpBaseMulti = 5//pvpBaseConfig?.PvpHpBaseMultiplier ?? 5.0;
     const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
+    const pvpHpSkillMulti = pvpBaseConfig?.PvpHpSkillMultiplier ?? 0.5;
     const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
 
     const pvpBaseHp = derivedBaseHp * pvpHpBaseMulti;
     const pvpPetHp = totalPetHp * pvpHpPetMulti;
-    const pvpCombinedHp = pvpBaseHp + pvpPetHp;
+    const pvpSkillHp = skillPassiveHp * pvpHpSkillMulti;
+    const pvpCombinedHp = pvpBaseHp + pvpPetHp + pvpSkillHp;
 
     const pvpMountHealthMulti = mountHealthPct * pvpHpMountMulti;
 
     const pvpTotalHp = pvpCombinedHp * (1 + pvpMountHealthMulti + secHealthMulti);
+
 
 
     // Determine Weapon Info
@@ -1276,8 +1323,8 @@ export function aggregatedStatsToPvpStats(
         lifesteal: stats.lifeSteal || 0,
         doubleDamage: stats.doubleDamageChance || 0,
         healthRegen: stats.healthRegen || 0,
-        damageMulti: 0,
-        healthMulti: 0,
+        damageMulti: 0,  // Already baked into stats.totalDamage
+        healthMulti: 0,  // Already baked into pvpTotalHp via reverse engineering
         skillDamageMulti: stats.skillDamageMultiplier || 1,
         skillCooldownMulti: stats.skillCooldownReduction || 0,
 
@@ -1371,10 +1418,65 @@ export function profileToEnemyConfig(profile: any, libs: any): EnemyConfig {
             };
         }),
         stats: {
-            hp: stats.totalHealth, // Use Total Health as the value (EnemyBuilder shows this)
+            hp: stats.totalHealth,
             damage: stats.totalDamage,
-            power: stats.power
+            power: stats.power,
+            skillPassiveHp: stats.skillPassiveHealth,
+            skinDmgMulti: stats.skinDamageMulti,
+            skinHpMulti: stats.skinHealthMulti,
+            setDmgMulti: stats.setDamageMulti,
+            setHpMulti: stats.setHealthMulti,
+            projectileSpeed: stats.projectileSpeed,
+            attackRange: stats.weaponAttackRange,
+            weaponWindup: stats.weaponWindupTime,
+            weaponAttackDuration: stats.weaponAttackDuration,
         },
+        // Build individual skinEntries from each item's skin data
+        skinEntries: (() => {
+            const entries: SkinEntry[] = [];
+            const itemSlots = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'] as const;
+            for (const slot of itemSlots) {
+                const item = profile.items[slot];
+                if (item?.skin?.stats) {
+                    const dmg = item.skin.stats['Damage'] || 0;
+                    const hp = item.skin.stats['Health'] || 0;
+                    if (dmg > 0 || hp > 0) {
+                        entries.push({ dmg, hp });
+                    }
+                }
+            }
+            return entries;
+        })(),
+        // Detect set completion from skin SetIds in libraries
+        hasCompleteSet: (() => {
+            if (!libs.skinsLibrary || !libs.setsLibrary) return false;
+            const slotToJsonType: Record<string, string> = {
+                'Weapon': 'Weapon', 'Helmet': 'Helmet', 'Body': 'Armour',
+                'Gloves': 'Gloves', 'Belt': 'Belt', 'Necklace': 'Necklace',
+                'Ring': 'Ring', 'Shoe': 'Shoes'
+            };
+            const equippedSetCounts: Record<string, number> = {};
+            const itemSlots = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'] as const;
+            for (const slot of itemSlots) {
+                const item = profile.items[slot];
+                if (!item?.skin) continue;
+                const lookupType = item.skin?.type || slotToJsonType[slot];
+                const skinEntry = Object.values(libs.skinsLibrary).find(
+                    (s: any) => s.SkinId?.Type === lookupType && s.SkinId?.Idx === item.skin?.idx
+                ) as any;
+                if (skinEntry?.SetId) {
+                    equippedSetCounts[skinEntry.SetId] = (equippedSetCounts[skinEntry.SetId] || 0) + 1;
+                }
+            }
+            for (const [setId, count] of Object.entries(equippedSetCounts)) {
+                const setEntry = libs.setsLibrary[setId];
+                if (!setEntry?.BonusTiers) continue;
+                for (const tier of setEntry.BonusTiers) {
+                    if (count >= tier.RequiredPieces) return true;
+                }
+            }
+            return false;
+        })(),
         passiveStats: initPassiveStats(),
         pets: pets,
         mount: (() => {
@@ -1483,15 +1585,11 @@ export function profileToEnemyConfig(profile: any, libs: any): EnemyConfig {
     setPassive('SkillCooldownMulti', getNetValue('SkillCooldownMulti', stats.skillCooldownReduction));
     setPassive('AttackSpeed', getNetValue('AttackSpeed', stats.attackSpeedMultiplier, true));
 
-    // Explicitly handle DamageMulti/HealthMulti if they exist in StatEngine as explicit fields?
-    // StatEngine puts them in `secondaryStats`. But `calculate()` returns `AggregatedStats` which doesn't expose `secondaryStats` object directly,
-    // but it merges them into `damageMultiplier`?
-    // `damageMultiplier` in AggregatedStats is the final combined one?
-    // Let's look at `finalizeCalculation` in `StatEngine`.
-    // It says: this.stats.damageMultiplier = (1 + this.secondaryStats.damageMulti) * ...
-    // So we can extract it if we want, or just assume the profile Import is for "Additional" stats.
-
-    // For now, I'll stick to the explicit fields I mapped.
+    // Explicitly handle DamageMulti/HealthMulti
+    // StatEngine: damageMultiplier = 1 + mountDamageMulti + secondaryDamageMulti
+    // We need the secondary part only (minus pet/mount contributions)
+    setPassive('DamageMulti', getNetValue('DamageMulti', stats.secondaryDamageMulti || 0));
+    setPassive('HealthMulti', getNetValue('HealthMulti', stats.secondaryHealthMulti || 0));
 
     return config;
 }

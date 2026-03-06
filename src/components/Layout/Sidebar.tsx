@@ -108,6 +108,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     const Icon = item.icon;
 
                                     if ('external' in item && item.external) {
+                                        const isCoffee = item.name.toLowerCase().includes('coffee');
                                         return (
                                             <a
                                                 key={item.path}
@@ -115,9 +116,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 onClick={() => window.innerWidth < 1024 && onClose()}
-                                                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-text-secondary hover:text-text-primary hover:bg-white/5"
+                                                className={cn(
+                                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                                                    isCoffee
+                                                        ? "bg-[#FFDD00]/10 text-[#FFDD00] hover:bg-[#FFDD00]/20 border border-[#FFDD00]/20 animate-pulse-subtle"
+                                                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
+                                                )}
                                             >
-                                                {Icon && <Icon size={18} />}
+                                                {Icon && <Icon size={18} className={isCoffee ? "fill-current" : ""} />}
                                                 {item.name}
                                             </a>
                                         );

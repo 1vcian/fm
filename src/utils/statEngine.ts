@@ -59,6 +59,10 @@ export interface AggregatedStats {
     secondaryHealthMulti: number;   // HealthMulti secondary stat
     mountDamageMulti: number;       // Mount Damage Multiplier
     mountHealthMulti: number;       // Mount Health Multiplier
+    skinDamageMulti: number;        // Skin Damage Multiplier (e.g. 0.10 = +10%)
+    skinHealthMulti: number;        // Skin Health Multiplier
+    setDamageMulti: number;         // Set Bonus Damage Multiplier
+    setHealthMulti: number;         // Set Bonus Health Multiplier
     meleeDamageMultiplier: number;  // MeleeDamageMulti secondary stat
     rangedDamageMultiplier: number; // RangedDamageMulti secondary stat
     attackSpeedMultiplier: number;
@@ -127,6 +131,10 @@ export const DEFAULT_STATS: AggregatedStats = {
     secondaryHealthMulti: 0,
     mountDamageMulti: 0,
     mountHealthMulti: 0,
+    skinDamageMulti: 0,
+    skinHealthMulti: 0,
+    setDamageMulti: 0,
+    setHealthMulti: 0,
     meleeDamageMultiplier: 0,
     rangedDamageMultiplier: 0,
     attackSpeedMultiplier: 1,
@@ -1121,6 +1129,10 @@ export class StatEngine {
         this.stats.secondaryHealthMulti = this.secondaryStats.healthMulti;
         this.stats.mountDamageMulti = this.mountDamageMulti;
         this.stats.mountHealthMulti = this.mountHealthMulti;
+        this.stats.skinDamageMulti = this.skinDamageMulti;
+        this.stats.skinHealthMulti = this.skinHealthMulti;
+        this.stats.setDamageMulti = this.setDamageMulti;
+        this.stats.setHealthMulti = this.setHealthMulti;
         this.stats.meleeDamageMultiplier = this.secondaryStats.meleeDamageMulti;
         this.stats.rangedDamageMultiplier = this.secondaryStats.rangedDamageMulti;
 
