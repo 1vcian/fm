@@ -254,6 +254,7 @@ export class PvpBattleEngine {
     private projectileIdCounter: number = 0;
     private totalPlayer1DamageDealt: number = 0;
     private totalPlayer2DamageDealt: number = 0;
+    private logs: BattleLogEntry[] = [];
 
     constructor(player1Stats: PvpPlayerStats, player2Stats: PvpPlayerStats) {
         this.player1 = this.createEntity(1, true, player1Stats, 2);
@@ -262,6 +263,11 @@ export class PvpBattleEngine {
         this.player2Skills = this.createSkillStates(player2Stats.skills, false);
         this.initializeRegen(this.player1, player1Stats);
         this.initializeRegen(this.player2, player2Stats);
+        this.addLog('BATTLE_START', `Battle started between ${player1Stats.skills.length} skills and ${player2Stats.skills.length} skills`);
+    }
+
+    private addLog(event: string, details: string) {
+        this.logs.push({ time: this.time, event, details });
     }
 
     private createEntity(id: number, isPlayer1: boolean, stats: PvpPlayerStats, position: number): EntityState {
@@ -544,12 +550,15 @@ export class PvpBattleEngine {
         }
     }
 
-    private performAttack(attacker: EntityState, target: EntityState, _suppressLog: boolean = false) {
+    private performAttack(attacker: EntityState, target: EntityState, suppressLog: boolean = false) {
         let dmg = attacker.damage;
         let isCrit = false;
         if (Math.random() < attacker.critChance) {
             dmg *= attacker.critMulti;
             isCrit = true;
+        }
+        if (!suppressLog) {
+            this.addLog(isCrit ? 'CRIT' : 'ATTACK', `${attacker.isPlayer1 ? 'Player 1' : 'Player 2'} attacks ${isCrit ? '(CRITICAL!)' : ''}`);
         }
         if (attacker.isRanged && attacker.projectileSpeed && attacker.projectileSpeed > 0) {
             this.projectiles.push({
@@ -566,7 +575,10 @@ export class PvpBattleEngine {
         let finalDamage = amount;
         if (target.shield > 0) finalDamage = Math.max(0, amount - target.shield);
         if (finalDamage <= 0) return;
-        if (Math.random() < target.blockChance) return;
+        if (Math.random() < target.blockChance) {
+            this.addLog('BLOCK', `${isPlayer1Source ? 'Player 2' : 'Player 1'} blocked the attack!`);
+            return;
+        }
         const damageDealt = Math.min(finalDamage, target.health);
         if (isPlayer1Source) this.totalPlayer1DamageDealt += damageDealt;
         else this.totalPlayer2DamageDealt += damageDealt;
@@ -580,6 +592,7 @@ export class PvpBattleEngine {
         if (target.health <= 0) {
             target.isDead = true;
             target.health = 0;
+            this.addLog('DEATH', `${isPlayer1Source ? 'Player 2' : 'Player 1'} died!`);
         }
     }
 
@@ -616,7 +629,8 @@ export class PvpBattleEngine {
             player2ActiveEffects: this.player2ActiveEffects.map(e => ({ ...e })),
             player1ActiveBuffs: this.player1ActiveBuffs.map(b => ({ ...b })),
             player2ActiveBuffs: this.player2ActiveBuffs.map(b => ({ ...b })),
-            projectiles: this.projectiles.map(p => ({ ...p }))
+            projectiles: this.projectiles.map(p => ({ ...p })),
+            logs: [...this.logs]
         };
     }
 }
