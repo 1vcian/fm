@@ -1,0 +1,32 @@
+{
+  "0": {
+    "LeagueId": 0,
+    "PromotionEnd": 90,
+    "DemotionStart": 0
+  },
+  "1": {
+    "LeagueId": 1,
+    "PromotionEnd": 80,
+    "DemotionStart": 0
+  },
+  "2": {
+    "LeagueId": 2,
+    "PromotionEnd": 50,
+    "DemotionStart": 90
+  },
+  "3": {
+    "LeagueId": 3,
+    "PromotionEnd": 20,
+    "DemotionStart": 80
+  },
+  "4": {
+    "LeagueId": 4,
+    "PromotionEnd": 10,
+    "DemotionStart": 70
+  },
+  "5": {
+    "LeagueId": 5,
+    "PromotionEnd": 0,
+    "DemotionStart": 60
+  }
+}
