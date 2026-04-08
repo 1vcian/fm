@@ -7,7 +7,7 @@ export default function FAQ() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/supporters.json')
+        fetch(`${import.meta.env.BASE_URL}supporters.json`)
             .then(res => res.json())
             .then(data => {
                 setSupporters(data);
