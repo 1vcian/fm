@@ -261,7 +261,12 @@ export default function GuildWar() {
                                             <div className="text-[10px] font-bold text-text-muted uppercase mb-1">War Points Gained</div>
                                             <div className="flex gap-2 justify-end">
                                             <span className="text-green-400 font-bold text-xs">+{tier.TierPointsOnWin} Win</span>
-                                            <span className="text-red-400 font-bold text-xs">-{tier.TierPointsOnLose} Lose</span>
+                                            <span className={cn(
+                                                "font-bold text-xs",
+                                                ['A', 'S'].includes(tier.Tier) ? "text-red-400" : "text-blue-400"
+                                            )}>
+                                                {['A', 'S'].includes(tier.Tier) ? '-' : '+'}{tier.TierPointsOnLose} Lose
+                                            </span>
                                             </div>
                                         </div>
                                     </div>
