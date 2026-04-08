@@ -5,7 +5,7 @@
 A comprehensive, **100% Fanmade** toolkit and encyclopedia for Forge Master players. This project provides real-time calculators, a persistent profile system, and an exhaustive database sourced directly from the game's official configuration files.
 
 ## 🚀 Project Links
-- **Live Tool**: [1vcian.me/fm](https://1vcian.me)
+- **Live Tool**: [1vcian.me/fm](https://1vcian.me/fm)
 - **GitHub Repository**: [1vcian/fm](https://github.com/1vcian/fm)
 - **Support the Project**: [Buy Me a Coffee](https://www.buymeacoffee.com/1vcian)
 

@@ -162,7 +162,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <a href="https://github.com/1vcian/fm" target="_blank" rel="noopener noreferrer" className="hover:text-accent-primary transition-colors">Source Code</a>
                     </div>
                     <div className="text-xs text-text-muted text-center">
-                        v1.0.0 • by <a href="https://1vcian.me" target="_blank" rel="noopener noreferrer" className="hover:text-accent-primary transition-colors">1vcian</a>
+                        v2.0.0 • by <a href="https://1vcian.me" target="_blank" rel="noopener noreferrer" className="hover:text-accent-primary transition-colors">1vcian</a>
                     </div>
                 </div>
             </aside>

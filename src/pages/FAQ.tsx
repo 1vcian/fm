@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
-import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle, Star, Quote } from 'lucide-react';
+import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle, Star, Quote, Users, Github } from 'lucide-react';
 
 export default function FAQ() {
     const [supporters, setSupporters] = useState<any[]>([]);
+    const [contributors, setContributors] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingContributors, setLoadingContributors] = useState(true);
 
     useEffect(() => {
         fetch(`${import.meta.env.BASE_URL}supporters.json`)
@@ -14,6 +16,16 @@ export default function FAQ() {
                 setLoading(false);
             })
             .catch(() => setLoading(false));
+
+        fetch('https://api.github.com/repos/1vcian/fm/contributors')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setContributors(data);
+                }
+                setLoadingContributors(false);
+            })
+            .catch(() => setLoadingContributors(false));
     }, []);
 
     return (
@@ -71,7 +83,7 @@ export default function FAQ() {
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-input border border-border hover:border-accent-primary transition-all text-xs font-bold text-text-muted hover:text-text-primary"
                                     >
-                                        <ExternalLink className="w-4 h-4" /> GITHUB REPO
+                                        <Github className="w-4 h-4" /> GITHUB REPO
                                     </a>
                                 </div>
                             </div>
@@ -103,6 +115,45 @@ export default function FAQ() {
                         </div>
                     </div>
                 </Card>
+
+                {/* Contributors Section */}
+                {!loadingContributors && contributors.length > 0 && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-2">
+                                <Users className="w-6 h-6 text-accent-primary" />
+                                GitHub Contributors
+                            </h2>
+                            <span className="text-[10px] font-bold bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full border border-accent-primary/20 uppercase tracking-widest">
+                                {contributors.length} Developers
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {contributors.map((c, idx) => (
+                                <a
+                                    key={idx}
+                                    href={c.html_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 rounded-2xl bg-bg-secondary/30 border border-border/50 hover:border-accent-primary hover:bg-accent-primary/5 transition-all group flex items-center gap-3"
+                                >
+                                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-border group-hover:border-accent-primary/50 transition-colors">
+                                        <img src={c.avatar_url} alt={c.login} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="font-bold text-xs truncate text-text-primary group-hover:text-accent-primary transition-colors">
+                                            {c.login}
+                                        </div>
+                                        <div className="text-[10px] text-text-muted">
+                                            {c.contributions} contribution{c.contributions !== 1 ? 's' : ''}
+                                        </div>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Supporters Section */}
                 <div className="space-y-4">
