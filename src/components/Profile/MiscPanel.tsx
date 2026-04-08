@@ -14,9 +14,11 @@ export function MiscPanel() {
     const { data: petConfig } = useGameData<any>('PetBaseConfig.json');
     const { data: forgeData } = useGameData<any>('ForgeUpgradeLibrary.json');
     const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
+    const { data: ascData } = useGameData<any>('AscensionConfigsLibrary.json');
 
     // Determine max forge level from config
-    const maxForgeLevel = forgeData ? Math.max(...Object.keys(forgeData).map(Number)) : 99;
+    // If there are 34 upgrade entries, it means we can reach Level 35
+    const maxForgeLevel = forgeData ? Math.max(...Object.keys(forgeData).map(Number)) + 1 : 99;
 
     // Fix for "off by one" error reported by user.
     // Updated usage: Hook now expects the Level Key directly.
@@ -120,7 +122,7 @@ export function MiscPanel() {
                         </label>
                     </div>
 
-                    {/* Upgrade Cost Display */}
+                    {/* Upgrade Cost / Ascension Display */}
                     {upgradeStats ? (
                         <div className="mt-3 space-y-2 text-[10px] font-mono">
                             {/* Costs */}
@@ -164,7 +166,39 @@ export function MiscPanel() {
                             </div>
                         </div>
                     ) : (
-                        <div className="mt-2 text-center text-xs text-text-muted">Max Level Reached</div>
+                        <div className="mt-4">
+                            {profile.misc.forgeLevel >= 35 ? (
+                                (() => {
+                                    const currentAsc = profile.misc.forgeAscensionLevel || 0;
+                                    const nextAscConfig = ascData?.Forge?.AscensionConfigPerLevel?.[currentAsc];
+
+                                    if (nextAscConfig) {
+                                        return (
+                                            <div className="bg-accent-primary/5 border border-accent-primary/20 rounded-lg p-3">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[10px] uppercase font-bold text-accent-primary">Ascension Available</span>
+                                                    <div className="flex items-center gap-1 text-[10px] font-bold text-yellow-400">
+                                                        <SpriteIcon name="Coin" size={12} />
+                                                        {new Intl.NumberFormat('en-US').format(nextAscConfig.Cost.Amount)}
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    {nextAscConfig.StatContributions.map((s: any, idx: number) => (
+                                                        <div key={idx} className="flex items-center justify-between text-[10px]">
+                                                            <span className="text-text-muted">{s.StatNode.UniqueStat.StatType} Bonus</span>
+                                                            <span className="text-green-400">+{s.Value}%</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                    return <div className="text-center text-xs text-text-muted py-2">Forge Maxed Out ✨</div>;
+                                })()
+                            ) : (
+                                <div className="text-center text-xs text-text-muted py-2">Max Level Reached</div>
+                            )}
+                        </div>
                     )}
                 </Card>
 

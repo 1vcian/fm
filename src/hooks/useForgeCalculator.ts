@@ -24,10 +24,9 @@ export function useForgeUpgradeStats(level: number) {
 
         // Cost Calculation
         // Use `level` directly as JSON Key N represents upgrade FROM N to N+1.
-        // Previously we did level + 1, effectively fetching the NEXT tier.
-        // We want the current tier's upgrade cost.
-        const nextLevelData = upgradeData[String(level)] || upgradeData[level] || {};
-        // Cost Calculation
+        const nextLevelData = upgradeData[String(level)] || upgradeData[level];
+        if (!nextLevelData) return null;
+
         const baseCost = nextLevelData.Cost || 0;
         const reduction = forgeCostReduction;
         const cost = Math.floor(baseCost * (1 - reduction));

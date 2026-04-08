@@ -33,6 +33,7 @@ import TreeCalculator from './pages/Calculators/TreeCalculator';
 import Verify from './pages/Verify';
 import ForgeWiki from './pages/ForgeWiki';
 import SkinsPage from './pages/Skins';
+import BaseDrops from './pages/BaseDrops';
 
 function App() {
     return (
@@ -71,6 +72,7 @@ function App() {
                                     <Route path="calculators/skills" element={<SkillCalculator />} />
                                     <Route path="calculators/tree" element={<TreeCalculator />} />
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
+                                    <Route path="wiki/base-drops" element={<BaseDrops />} />
                                     <Route path="skins" element={<SkinsPage />} />
                                     <Route path="*" element={<Home />} />
                                 </Route>

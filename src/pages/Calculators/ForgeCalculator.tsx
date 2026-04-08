@@ -157,7 +157,7 @@ export default function ForgeCalculator() {
     const maxForgeLevel = useMemo(() => {
         if (!forgeUpgradeData) return 100;
         const levels = Object.keys(forgeUpgradeData).map(Number);
-        return Math.max(...levels, 1);
+        return Math.max(...levels, 1) + 1;
     }, [forgeUpgradeData]);
 
     // Parse War Points from Config
