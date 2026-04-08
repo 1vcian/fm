@@ -199,7 +199,7 @@ export function PetPanel() {
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <div className="w-8 h-8 flex items-center justify-center">
                     <SpriteSheetIcon
-                        textureSrc="./Texture2D/Icons.png"
+                        textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
                         spriteWidth={256}
                         spriteHeight={256}
                         sheetWidth={2048}

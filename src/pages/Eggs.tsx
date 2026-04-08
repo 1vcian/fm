@@ -414,7 +414,7 @@ export default function Eggs() {
                                         <label className="text-sm font-bold text-text-secondary uppercase">Slots Available</label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <img src="./Texture2D/HatchBed.png" alt="Bed" className="w-6 h-6 object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" />
+                                                <img src={`${import.meta.env.BASE_URL}Texture2D/HatchBed.png`} alt="Bed" className="w-6 h-6 object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" />
                                             </div>
                                             <input
                                                 type="number"
@@ -574,7 +574,7 @@ export default function Eggs() {
                                                             {/* Slot Header */}
                                                             <div className="bg-black/20 p-3 border-b border-border/50 flex justify-between items-center">
                                                                 <div className="font-bold text-text-secondary flex items-center gap-2">
-                                                                    <img src="./Texture2D/HatchBed.png" alt="Bed" className="w-4 h-4 opacity-70" />
+                                                                    <img src={`${import.meta.env.BASE_URL}Texture2D/HatchBed.png`} alt="Bed" className="w-4 h-4 opacity-70" />
                                                                     Slot {slotIdx + 1}
                                                                 </div>
                                                                 <div className="flex flex-col items-end">

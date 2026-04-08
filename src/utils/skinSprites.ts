@@ -84,7 +84,7 @@ export const getSkinSpritePosition = (skin: { SkinId: SkinId }, mapping?: Record
 export const getSkinSpriteStyle = (skin: { SkinId: SkinId }, mapping?: Record<string, number>): React.CSSProperties => {
     const position = getSkinSpritePosition(skin, mapping);
     return {
-        backgroundImage: 'url(./Texture2D/SkinsUiIcons.png)',
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/SkinsUiIcons.png)`,
         backgroundSize: '800% 800%',
         backgroundPosition: position || 'center',
         imageRendering: 'pixelated' as const

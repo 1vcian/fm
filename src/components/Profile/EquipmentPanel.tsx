@@ -395,7 +395,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                    <img src="./Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
+                    <img src={`${import.meta.env.BASE_URL}Texture2D/IconDivineArmorPaladinarmor.png`} alt="Equipment" className="w-8 h-8 object-contain" />
                     {panelTitle}
                 </h2>
                 <div className="flex items-center gap-4">
@@ -459,7 +459,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                         {globalAscensionLevel > 0 && (
                                             <div className="flex gap-0.5">
                                                 {Array.from({ length: globalAscensionLevel }).map((_, i) => (
-                                                    <img key={i} src="./Texture2D/AscensionStar.png" alt="Star" className="w-2.5 h-2.5 object-contain drop-shadow-sm" />
+                                                    <img key={i} src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-2.5 h-2.5 object-contain drop-shadow-sm" />
                                                 ))}
                                             </div>
                                         )}

@@ -128,7 +128,7 @@ export default function TechTree() {
         const cssY = sheetH - y - height;
 
         return {
-            backgroundImage: `url(./Texture2D/TechTreeIcons.png)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: `${ICON_SIZE}px`,
@@ -403,7 +403,7 @@ export default function TechTree() {
                     <div className="inline-block shrink-0 drop-shadow-md" role="img" aria-label="Potion" style={{
                         width: '40px',
                         height: '40px',
-                        backgroundImage: 'url("./icons/game/Icons.png")',
+                        backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                         backgroundPosition: '0px -40px',
                         backgroundSize: '320px 320px',
                         backgroundRepeat: 'no-repeat',
@@ -419,7 +419,7 @@ export default function TechTree() {
                                     <div className="inline-block shrink-0" role="img" aria-label="Timer" style={{
                                         width: '16px',
                                         height: '16px',
-                                        backgroundImage: 'url("./icons/game/Icons.png")',
+                                        backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                         backgroundPosition: '-100px -60px',
                                         backgroundSize: '160px 160px',
                                         backgroundRepeat: 'no-repeat',
@@ -431,7 +431,7 @@ export default function TechTree() {
                                     <div className="inline-block shrink-0 drop-shadow-md" role="img" aria-label="Potion" style={{
                                         width: '16px',
                                         height: '16px',
-                                        backgroundImage: 'url("./icons/game/Icons.png")',
+                                        backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                         backgroundPosition: '0px -16px',
                                         backgroundSize: '128px 128px',
                                         backgroundRepeat: 'no-repeat',
@@ -445,7 +445,7 @@ export default function TechTree() {
                                     <div className="inline-block shrink-0" role="img" aria-label="Timer" style={{
                                         width: '16px',
                                         height: '16px',
-                                        backgroundImage: 'url("./icons/game/Icons.png")',
+                                        backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                         backgroundPosition: '-100px -60px',
                                         backgroundSize: '160px 160px',
                                         backgroundRepeat: 'no-repeat',
@@ -457,7 +457,7 @@ export default function TechTree() {
                                     <div className="inline-block shrink-0 drop-shadow-md" role="img" aria-label="Potion" style={{
                                         width: '16px',
                                         height: '16px',
-                                        backgroundImage: 'url("./icons/game/Icons.png")',
+                                        backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                         backgroundPosition: '0px -16px',
                                         backgroundSize: '128px 128px',
                                         backgroundRepeat: 'no-repeat',
@@ -652,7 +652,7 @@ export default function TechTree() {
                                                             <div className="inline-block shrink-0" role="img" aria-label="Timer" style={{
                                                                 width: '8px',
                                                                 height: '8px',
-                                                                backgroundImage: 'url("./icons/game/Icons.png")',
+                                                                backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                                                 backgroundPosition: '-50px -30px',
                                                                 backgroundSize: '80px 80px',
                                                                 backgroundRepeat: 'no-repeat',
@@ -721,7 +721,7 @@ export default function TechTree() {
                                                         <div className="inline-block shrink-0" role="img" aria-label="Timer" style={{
                                                             width: '20px',
                                                             height: '20px',
-                                                            backgroundImage: 'url("./icons/game/Icons.png")',
+                                                            backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                                             backgroundPosition: '-100px -60px',
                                                             backgroundSize: '160px 160px',
                                                             backgroundRepeat: 'no-repeat',
@@ -736,7 +736,7 @@ export default function TechTree() {
                                                         <div className="inline-block shrink-0" role="img" aria-label="Timer" style={{
                                                             width: '20px',
                                                             height: '20px',
-                                                            backgroundImage: 'url("./icons/game/Icons.png")',
+                                                            backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                                             backgroundPosition: '-100px -60px',
                                                             backgroundSize: '160px 160px',
                                                             backgroundRepeat: 'no-repeat',
@@ -751,7 +751,7 @@ export default function TechTree() {
                                                         <div className="inline-block shrink-0 drop-shadow-md" role="img" aria-label="Potion" style={{
                                                             width: '24px',
                                                             height: '24px',
-                                                            backgroundImage: 'url("./icons/game/Icons.png")',
+                                                            backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                                             backgroundPosition: '0px -24px',
                                                             backgroundSize: '192px 192px',
                                                             backgroundRepeat: 'no-repeat',
@@ -766,7 +766,7 @@ export default function TechTree() {
                                                         <div className="inline-block shrink-0 drop-shadow-md" role="img" aria-label="Potion" style={{
                                                             width: '24px',
                                                             height: '24px',
-                                                            backgroundImage: 'url("./icons/game/Icons.png")',
+                                                            backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                                                             backgroundPosition: '0px -24px',
                                                             backgroundSize: '192px 192px',
                                                             backgroundRepeat: 'no-repeat',

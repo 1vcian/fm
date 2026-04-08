@@ -114,10 +114,11 @@ export default function Mounts() {
     };
 
     const getAscMountSpriteUrl = () => {
-        if (ascensionLevel === 1) return './Texture2D/MegaMountIcons.png';
-        if (ascensionLevel === 2) return './Texture2D/UltraMountIcons.png';
-        if (ascensionLevel === 3) return './Texture2D/ApexMountIcons.png';
-        return './Texture2D/MountIcons.png';
+        const baseUrl = import.meta.env.BASE_URL;
+        if (ascensionLevel === 1) return `${baseUrl}Texture2D/MegaMountIcons.png`;
+        if (ascensionLevel === 2) return `${baseUrl}Texture2D/UltraMountIcons.png`;
+        if (ascensionLevel === 3) return `${baseUrl}Texture2D/ApexMountIcons.png`;
+        return `${baseUrl}Texture2D/MountIcons.png`;
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];

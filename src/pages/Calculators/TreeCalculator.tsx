@@ -121,7 +121,7 @@ export default function TreeCalculator() {
         const cssY = sheetH - y - height;
 
         return {
-            backgroundImage: `url(./Texture2D/TechTreeIcons.png)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             backgroundRepeat: 'no-repeat' as const,
@@ -139,7 +139,7 @@ export default function TreeCalculator() {
             {/* Header */}
             <div className="text-center space-y-2 mb-6">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                    <img src="./Texture2D/SkillTabIcon.png" alt="Tech Tree" className="w-10 h-10 object-contain" />
+                    <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Tech Tree" className="w-10 h-10 object-contain" />
                     Tree Calculator
                 </h1>
                 <p className="text-text-secondary">Maximize your Guild War points via optimal tech upgrades.</p>
@@ -446,7 +446,7 @@ export default function TreeCalculator() {
                     </CardContent>
 
                     <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
-                        <img src="./Texture2D/SkillTabIcon.png" alt="" className="w-64 h-64 object-contain grayscale" />
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="" className="w-64 h-64 object-contain grayscale" />
                     </div>
                 </Card>
             </div>

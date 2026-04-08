@@ -40,7 +40,7 @@ export function GameIcon({ name, size = 24, className, alt, ...props }: GameIcon
 
         const spriteStyle: React.CSSProperties = {
             ...style,
-            backgroundImage: `url(./Texture2D/${iconsMap.texture || 'Icons.png'})`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${iconsMap.texture || 'Icons.png'})`,
             backgroundPosition: `${posX}% ${posY}%`,
             backgroundSize: `${bgSizeX}% ${bgSizeY}%`,
             backgroundRepeat: 'no-repeat',
@@ -59,11 +59,11 @@ export function GameIcon({ name, size = 24, className, alt, ...props }: GameIcon
 
     // Fallback logic for legacy/static icons
     let src = '';
-    if (name === 'hammer') src = './Texture2D/Hammer.png';
-    else if (name === 'gem') src = './Texture2D/GemIcon.png';
-    else if (name === 'coin') src = './icons/coin.png';
+    if (name === 'hammer') src = `${import.meta.env.BASE_URL}Texture2D/Hammer.png`;
+    else if (name === 'gem') src = `${import.meta.env.BASE_URL}Texture2D/GemIcon.png`;
+    else if (name === 'coin') src = `${import.meta.env.BASE_URL}icons/coin.png`;
     else if (name.includes('/') || name.includes('.')) src = name; // Direct path
-    else src = `./Texture2D/${name}.png`; // Fallback
+    else src = `${import.meta.env.BASE_URL}Texture2D/${name}.png`; // Fallback
 
     return (
         <img

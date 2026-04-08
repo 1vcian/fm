@@ -202,7 +202,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
                             <SpriteSheetIcon
-                                textureSrc="./Texture2D/Icons.png"
+                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
                                 spriteWidth={256}
                                 spriteHeight={256}
                                 sheetWidth={2048}
@@ -718,7 +718,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                             }
                                             return (
                                                 <SpriteSheetIcon
-                                                    textureSrc="./Texture2D/Icons.png"
+                                                    textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
                                                     spriteWidth={256}
                                                     spriteHeight={256}
                                                     sheetWidth={2048}

@@ -148,10 +148,11 @@ export default function Pets() {
     };
 
     const getAscSpriteUrl = () => {
-        if (ascensionLevel === 1) return './Texture2D/MegaPets.png';
-        if (ascensionLevel === 2) return './Texture2D/UltraPets.png';
-        if (ascensionLevel === 3) return './Texture2D/ApexPets.png';
-        return './Texture2D/Pets.png';
+        const baseUrl = import.meta.env.BASE_URL;
+        if (ascensionLevel === 1) return `${baseUrl}Texture2D/MegaPets.png`;
+        if (ascensionLevel === 2) return `${baseUrl}Texture2D/UltraPets.png`;
+        if (ascensionLevel === 3) return `${baseUrl}Texture2D/ApexPets.png`;
+        return `${baseUrl}Texture2D/Pets.png`;
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];

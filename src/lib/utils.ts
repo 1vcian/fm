@@ -94,7 +94,7 @@ export function getAgeIconStyle(ageIndex: number, size: number = 32): React.CSSP
     const scale = size / spriteSize;
 
     return {
-        backgroundImage: `url(./Texture2D/AgeIcons.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/AgeIcons.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
         backgroundSize: `${sheetWidth * scale}px ${sheetHeight * scale}px`,
         width: `${size}px`,
@@ -137,7 +137,7 @@ export function getInventoryIconStyle(slotKey: string, size: number = 32): React
     const scale = size / spriteSize;
 
     return {
-        backgroundImage: `url(./Texture2D/InventoryTextures.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/InventoryTextures.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
         backgroundSize: `${sheetWidth * scale}px ${sheetHeight * scale}px`,
         width: `${size}px`,

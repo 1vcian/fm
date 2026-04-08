@@ -41,7 +41,7 @@ export function AscensionStars({ value, onChange, maxLevel = 3, className }: Asc
                             )}
                             title={`Ascension ${idx + 1}`}
                         >
-                            <img src="./Texture2D/AscensionStar.png" alt="Star" className="w-5 h-5 object-contain pointer-events-none drop-shadow-md" />
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-5 h-5 object-contain pointer-events-none drop-shadow-md" />
                         </button>
                     );
                 })}

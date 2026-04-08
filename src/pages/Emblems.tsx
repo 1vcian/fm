@@ -66,9 +66,9 @@ export default function Emblems() {
         shapesImg.onload = handleLoad;
         iconsImg.onload = handleLoad;
 
-        holderImg.src = './Texture2D/EmblemHolder.png';
-        shapesImg.src = './Texture2D/EmblemShapes.png';
-        iconsImg.src = './Texture2D/EmblemIcons.png';
+        holderImg.src = `${import.meta.env.BASE_URL}Texture2D/EmblemHolder.png`;
+        shapesImg.src = `${import.meta.env.BASE_URL}Texture2D/EmblemShapes.png`;
+        iconsImg.src = `${import.meta.env.BASE_URL}Texture2D/EmblemIcons.png`;
     }, []);
 
     // Initialize defaults
@@ -301,7 +301,7 @@ export default function Emblems() {
                                             >
                                                 <div className="w-full h-full opacity-60 group-hover:opacity-100 transition-opacity"
                                                     style={{
-                                                        backgroundImage: 'url(./Texture2D/EmblemShapes.png)',
+                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/EmblemShapes.png)`,
                                                         backgroundPosition: `${(i % 4) * (100 / 3)}% ${Math.floor(i / 4) * (100 / 3)}%`,
                                                         backgroundSize: '400% 400%',
                                                     }}
@@ -328,7 +328,7 @@ export default function Emblems() {
                                             >
                                                 <div className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
                                                     style={{
-                                                        backgroundImage: 'url(./Texture2D/EmblemIcons.png)',
+                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/EmblemIcons.png)`,
                                                         backgroundPosition: `${(i % 8) * (100 / 7)}% ${Math.floor(i / 8) * (100 / 7)}%`,
                                                         backgroundSize: '800% 800%'
                                                     }}

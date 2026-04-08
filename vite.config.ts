@@ -14,7 +14,7 @@ export default defineConfig({
         port: 3000,
         allowedHosts: true,
     },
-    base: './',
+    base: process.env.NODE_ENV === 'production' ? '/fm/' : '/',
     build: {
         rollupOptions: {
             output: {

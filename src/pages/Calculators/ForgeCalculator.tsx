@@ -76,7 +76,7 @@ function getTechTreeIconStyle(spriteIndex: number, size: number = 32): React.CSS
     const scale = size / spriteSize;
 
     return {
-        backgroundImage: `url(./Texture2D/TechTreeIcons.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
         backgroundSize: `${sheetSize * scale}px ${sheetSize * scale}px`,
         width: `${size}px`,
@@ -250,7 +250,7 @@ export default function ForgeCalculator() {
         const cssY = sheetH - y - height;
 
         return {
-            backgroundImage: `url(./Texture2D/TechTreeIcons.png)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: `${size}px`,
@@ -781,7 +781,7 @@ export default function ForgeCalculator() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent mb-2 flex items-center gap-3">
-                        <img src="./Texture2D/Anvil.png" alt="Forge" className="w-10 h-10 object-contain" />
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/Anvil.png`} alt="Forge" className="w-10 h-10 object-contain" />
                         Forge Calculator
                     </h1>
                     <p className="text-text-secondary">

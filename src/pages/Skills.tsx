@@ -118,10 +118,11 @@ export default function Skills() {
     };
 
     const getAscSkillSpriteUrl = () => {
-        if (ascensionLevel === 1) return './Texture2D/MegaSkillIcons.png';
-        if (ascensionLevel === 2) return './Texture2D/UltraSkillIcons.png';
-        if (ascensionLevel === 3) return './Texture2D/ApexSkillIcons.png';
-        return './Texture2D/SkillIcons.png';
+        const baseUrl = import.meta.env.BASE_URL;
+        if (ascensionLevel === 1) return `${baseUrl}Texture2D/MegaSkillIcons.png`;
+        if (ascensionLevel === 2) return `${baseUrl}Texture2D/UltraSkillIcons.png`;
+        if (ascensionLevel === 3) return `${baseUrl}Texture2D/ApexSkillIcons.png`;
+        return `${baseUrl}Texture2D/SkillIcons.png`;
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];

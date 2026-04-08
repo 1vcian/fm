@@ -150,11 +150,11 @@ export default function Skins() {
                                     {setIcon && (
                                         <div className="w-16 h-16 rounded-lg border-2 border-border shadow-md overflow-hidden bg-bg-secondary shrink-0 relative">
                                             <div className="absolute inset-0 bg-accent-primary/10"></div>
-                                            <img
-                                                src={`./Texture2D/${setIcon}`}
-                                                alt={setId}
-                                                className="w-full h-full object-contain pixelated relative z-10"
-                                            />
+                                                <img
+                                                    src={`${import.meta.env.BASE_URL}Texture2D/${setIcon}`}
+                                                    alt={setId}
+                                                    className="w-full h-full object-contain pixelated relative z-10"
+                                                />
                                         </div>
                                     )}
                                     <div>

@@ -2,7 +2,7 @@
 import { cn } from '../../lib/utils';
 
 // Sprite Sheet Configuration
-const SPRITE_SHEET_URL = '/Texture2D/Icons.png'; // Updated to have new icons as per user
+const SPRITE_SHEET_URL = `${import.meta.env.BASE_URL}Texture2D/Icons.png`;
 const TEXTURE_WIDTH = 2048;
 const TEXTURE_HEIGHT = 2048;
 const SPRITE_SIZE = 256; // Standard size of one sprite in the sheet

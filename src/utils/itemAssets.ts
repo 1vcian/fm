@@ -254,7 +254,7 @@ export const ITEM_ASSETS = [
     "IconDivineRingNazarring.png",
 ];
 
-export const getAssetPath = (filename: string) => `./Texture2D/${filename}`;
+export const getAssetPath = (filename: string) => `${import.meta.env.BASE_URL}Texture2D/${filename}`;
 
 /**
  * Weapon image order mapping per age (JSON Idx -> Image filename)
