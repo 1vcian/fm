@@ -1,0 +1,398 @@
+{
+  "1": {
+    "Level": 1,
+    "Shards": 2
+  },
+  "2": {
+    "Level": 2,
+    "Shards": 2
+  },
+  "3": {
+    "Level": 3,
+    "Shards": 2
+  },
+  "4": {
+    "Level": 4,
+    "Shards": 2
+  },
+  "5": {
+    "Level": 5,
+    "Shards": 2
+  },
+  "6": {
+    "Level": 6,
+    "Shards": 3
+  },
+  "7": {
+    "Level": 7,
+    "Shards": 3
+  },
+  "8": {
+    "Level": 8,
+    "Shards": 3
+  },
+  "9": {
+    "Level": 9,
+    "Shards": 3
+  },
+  "10": {
+    "Level": 10,
+    "Shards": 3
+  },
+  "11": {
+    "Level": 11,
+    "Shards": 4
+  },
+  "12": {
+    "Level": 12,
+    "Shards": 4
+  },
+  "13": {
+    "Level": 13,
+    "Shards": 4
+  },
+  "14": {
+    "Level": 14,
+    "Shards": 4
+  },
+  "15": {
+    "Level": 15,
+    "Shards": 5
+  },
+  "16": {
+    "Level": 16,
+    "Shards": 5
+  },
+  "17": {
+    "Level": 17,
+    "Shards": 5
+  },
+  "18": {
+    "Level": 18,
+    "Shards": 5
+  },
+  "19": {
+    "Level": 19,
+    "Shards": 5
+  },
+  "20": {
+    "Level": 20,
+    "Shards": 5
+  },
+  "21": {
+    "Level": 21,
+    "Shards": 5
+  },
+  "22": {
+    "Level": 22,
+    "Shards": 6
+  },
+  "23": {
+    "Level": 23,
+    "Shards": 6
+  },
+  "24": {
+    "Level": 24,
+    "Shards": 6
+  },
+  "25": {
+    "Level": 25,
+    "Shards": 6
+  },
+  "26": {
+    "Level": 26,
+    "Shards": 7
+  },
+  "27": {
+    "Level": 27,
+    "Shards": 7
+  },
+  "28": {
+    "Level": 28,
+    "Shards": 7
+  },
+  "29": {
+    "Level": 29,
+    "Shards": 7
+  },
+  "30": {
+    "Level": 30,
+    "Shards": 8
+  },
+  "31": {
+    "Level": 31,
+    "Shards": 8
+  },
+  "32": {
+    "Level": 32,
+    "Shards": 8
+  },
+  "33": {
+    "Level": 33,
+    "Shards": 8
+  },
+  "34": {
+    "Level": 34,
+    "Shards": 8
+  },
+  "35": {
+    "Level": 35,
+    "Shards": 8
+  },
+  "36": {
+    "Level": 36,
+    "Shards": 8
+  },
+  "37": {
+    "Level": 37,
+    "Shards": 8
+  },
+  "38": {
+    "Level": 38,
+    "Shards": 8
+  },
+  "39": {
+    "Level": 39,
+    "Shards": 8
+  },
+  "40": {
+    "Level": 40,
+    "Shards": 8
+  },
+  "41": {
+    "Level": 41,
+    "Shards": 8
+  },
+  "42": {
+    "Level": 42,
+    "Shards": 8
+  },
+  "43": {
+    "Level": 43,
+    "Shards": 8
+  },
+  "44": {
+    "Level": 44,
+    "Shards": 8
+  },
+  "45": {
+    "Level": 45,
+    "Shards": 8
+  },
+  "46": {
+    "Level": 46,
+    "Shards": 8
+  },
+  "47": {
+    "Level": 47,
+    "Shards": 8
+  },
+  "48": {
+    "Level": 48,
+    "Shards": 8
+  },
+  "49": {
+    "Level": 49,
+    "Shards": 8
+  },
+  "50": {
+    "Level": 50,
+    "Shards": 8
+  },
+  "51": {
+    "Level": 51,
+    "Shards": 8
+  },
+  "52": {
+    "Level": 52,
+    "Shards": 8
+  },
+  "53": {
+    "Level": 53,
+    "Shards": 8
+  },
+  "54": {
+    "Level": 54,
+    "Shards": 8
+  },
+  "55": {
+    "Level": 55,
+    "Shards": 8
+  },
+  "56": {
+    "Level": 56,
+    "Shards": 8
+  },
+  "57": {
+    "Level": 57,
+    "Shards": 8
+  },
+  "58": {
+    "Level": 58,
+    "Shards": 8
+  },
+  "59": {
+    "Level": 59,
+    "Shards": 8
+  },
+  "60": {
+    "Level": 60,
+    "Shards": 8
+  },
+  "61": {
+    "Level": 61,
+    "Shards": 8
+  },
+  "62": {
+    "Level": 62,
+    "Shards": 8
+  },
+  "63": {
+    "Level": 63,
+    "Shards": 8
+  },
+  "64": {
+    "Level": 64,
+    "Shards": 8
+  },
+  "65": {
+    "Level": 65,
+    "Shards": 8
+  },
+  "66": {
+    "Level": 66,
+    "Shards": 8
+  },
+  "67": {
+    "Level": 67,
+    "Shards": 8
+  },
+  "68": {
+    "Level": 68,
+    "Shards": 8
+  },
+  "69": {
+    "Level": 69,
+    "Shards": 8
+  },
+  "70": {
+    "Level": 70,
+    "Shards": 8
+  },
+  "71": {
+    "Level": 71,
+    "Shards": 8
+  },
+  "72": {
+    "Level": 72,
+    "Shards": 8
+  },
+  "73": {
+    "Level": 73,
+    "Shards": 8
+  },
+  "74": {
+    "Level": 74,
+    "Shards": 8
+  },
+  "75": {
+    "Level": 75,
+    "Shards": 8
+  },
+  "76": {
+    "Level": 76,
+    "Shards": 8
+  },
+  "77": {
+    "Level": 77,
+    "Shards": 8
+  },
+  "78": {
+    "Level": 78,
+    "Shards": 8
+  },
+  "79": {
+    "Level": 79,
+    "Shards": 8
+  },
+  "80": {
+    "Level": 80,
+    "Shards": 8
+  },
+  "81": {
+    "Level": 81,
+    "Shards": 8
+  },
+  "82": {
+    "Level": 82,
+    "Shards": 8
+  },
+  "83": {
+    "Level": 83,
+    "Shards": 8
+  },
+  "84": {
+    "Level": 84,
+    "Shards": 8
+  },
+  "85": {
+    "Level": 85,
+    "Shards": 8
+  },
+  "86": {
+    "Level": 86,
+    "Shards": 8
+  },
+  "87": {
+    "Level": 87,
+    "Shards": 8
+  },
+  "88": {
+    "Level": 88,
+    "Shards": 8
+  },
+  "89": {
+    "Level": 89,
+    "Shards": 8
+  },
+  "90": {
+    "Level": 90,
+    "Shards": 8
+  },
+  "91": {
+    "Level": 91,
+    "Shards": 8
+  },
+  "92": {
+    "Level": 92,
+    "Shards": 8
+  },
+  "93": {
+    "Level": 93,
+    "Shards": 8
+  },
+  "94": {
+    "Level": 94,
+    "Shards": 8
+  },
+  "95": {
+    "Level": 95,
+    "Shards": 8
+  },
+  "96": {
+    "Level": 96,
+    "Shards": 8
+  },
+  "97": {
+    "Level": 97,
+    "Shards": 8
+  },
+  "98": {
+    "Level": 98,
+    "Shards": 8
+  },
+  "99": {
+    "Level": 99,
+    "Shards": 8
+  }
+}

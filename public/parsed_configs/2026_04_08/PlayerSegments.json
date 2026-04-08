@@ -1,0 +1,17 @@
+{
+  "EggsSummonLevelMaxed": {
+    "SegmentId": "EggsSummonLevelMaxed",
+    "Description": "Egg summon level is maxed, does not include ascensions",
+    "DisplayName": "Egg summon level is maxed",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {},
+          "Min": [],
+          "Max": {}
+        }
+      ],
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  }
+}
