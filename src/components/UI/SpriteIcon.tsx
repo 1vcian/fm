@@ -2,7 +2,7 @@
 import { cn } from '../../lib/utils';
 
 // Sprite Sheet Configuration
-const SPRITE_SHEET_URL = './icons/game/Icons.png'; // Assuming it's here as per user
+const SPRITE_SHEET_URL = '/Texture2D/Icons.png'; // Updated to have new icons as per user
 const TEXTURE_WIDTH = 2048;
 const TEXTURE_HEIGHT = 2048;
 const SPRITE_SIZE = 256; // Standard size of one sprite in the sheet
@@ -36,6 +36,9 @@ const SPRITE_MAPPING: Record<string, { x: number; y: number }> = {
     'MountKey': { x: 1024, y: 768 },
     'Timer': { x: 1280, y: 768 },
     'WarTicket': { x: 1536, y: 768 },
+    'Lightning': { x: 1792, y: 768 },
+    'SteppingStone': { x: 0, y: 1024 },
+    'Eggshell': { x: 256, y: 1024 },
     // Fallback/Generic Icons
     'Sword': { x: 1024, y: 0 }, // Using Battle icon as placeholder
     'Bow': { x: 512, y: 0 },    // Using ArrowDown icon as placeholder

@@ -160,7 +160,8 @@ function MainBattleView({
     onDebug,
     getBattleCountForAge,
     debugConfig,
-    recalcTrigger
+    recalcTrigger,
+    maxAgeIdx
 }: {
     simulate: any;
     findMaxBeatable: any;
@@ -170,6 +171,7 @@ function MainBattleView({
     getBattleCountForAge: (age: number) => number;
     debugConfig?: DebugConfig;
     recalcTrigger?: number;
+    maxAgeIdx: number;
 }) {
     const [selectedAge, setSelectedAge] = useState(0);
     const [selectedLevel, setSelectedLevel] = useState(0);
@@ -258,7 +260,7 @@ function MainBattleView({
             // Generate all tasks first
             const tasks: { age: number; level: number; diff: number }[] = [];
 
-            for (let a = 0; a <= 10; a++) {
+            for (let a = 0; a <= maxAgeIdx; a++) {
                 const count = getBattleCountForAge(a);
                 for (let l = 0; l < count; l++) tasks.push({ age: a, level: l, diff: 0 });
                 for (let l = 0; l < count; l++) tasks.push({ age: a, level: l, diff: 1 });
@@ -488,7 +490,7 @@ function MainBattleView({
                         <span className="text-blue-400 font-bold tracking-widest text-xs uppercase">Normal Timeline</span>
                         <div className="h-[1px] bg-blue-500/50 flex-1"></div>
                     </div>
-                    {Array.from({ length: 11 }, (_, i) => renderAgeBlock(i, 0))}
+                    {Array.from({ length: maxAgeIdx + 1 }, (_, i) => renderAgeBlock(i, 0))}
 
                     {/* Hard Mode Blocks */}
                     <div className="sticky top-0 z-0 py-6 mb-2 flex items-center gap-4 opacity-50 pointer-events-none">
@@ -496,7 +498,7 @@ function MainBattleView({
                         <span className="text-orange-400 font-bold tracking-widest text-xs uppercase">Hard Timeline</span>
                         <div className="h-[1px] bg-orange-500/50 flex-1"></div>
                     </div>
-                    {Array.from({ length: 11 }, (_, i) => renderAgeBlock(i, 1))}
+                    {Array.from({ length: maxAgeIdx + 1 }, (_, i) => renderAgeBlock(i, 1))}
 
                     {/* End Padding */}
                     <div className="h-20 flex items-center justify-center text-gray-600 text-sm">
@@ -543,7 +545,8 @@ function DungeonView({
     isDebugMode,
     onDebug,
     debugConfig,
-    recalcTrigger
+    recalcTrigger,
+    maxDungeonLevel
 }: {
     dungeonType: 'hammer' | 'skill' | 'egg' | 'potion';
     simulateDungeon: any;
@@ -553,8 +556,10 @@ function DungeonView({
     onDebug?: (level: number) => void;
     debugConfig?: DebugConfig;
     recalcTrigger?: number;
+    maxDungeonLevel: number;
 }) {
-    const [selectedLevel, setSelectedLevel] = useState(0); // 0-99
+    const totalLevels = maxDungeonLevel + 1;
+    const [selectedLevel, setSelectedLevel] = useState(0); // 0 to maxDungeonLevel
     const [result, setResult] = useState<BattleResult | null>(null);
     const [maxLevel, setMaxLevel] = useState<number>(-1);
     const resultsCache = useRef<Map<string, BattleResult>>(new Map());
@@ -597,7 +602,7 @@ function DungeonView({
                 });
             };
 
-            for (let l = 0; l < 100; l++) {
+            for (let l = 0; l < totalLevels; l++) {
                 if (isCancelled) break;
 
                 // Early Stop Check
@@ -692,7 +697,7 @@ function DungeonView({
     }, [dungeonType, selectedLevel, simulateDungeon, playerStats, debugConfig, recalcTrigger]);
 
     const navigateLevel = (delta: number) => {
-        setSelectedLevel(prev => Math.max(0, Math.min(99, prev + delta)));
+        setSelectedLevel(prev => Math.max(0, Math.min(totalLevels - 1, prev + delta)));
     };
 
     const getLevelLabel = (lvl: number) => {
@@ -759,9 +764,8 @@ function DungeonView({
                     )}
                 </div>
 
-                {/* 10x10 Grid for 100 levels */}
-                <div className="space-y-2">
-                    {Array.from({ length: 10 }, (_, worldIdx) => (
+                <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                    {Array.from({ length: Math.ceil(totalLevels / 10) }, (_, worldIdx) => (
                         <div key={worldIdx} className="flex gap-2">
                             <div className="flex items-center justify-center w-8 text-xs font-bold text-text-tertiary">
                                 {worldIdx + 1}-
@@ -769,6 +773,7 @@ function DungeonView({
                             <div className="flex-1 grid grid-cols-10 gap-1">
                                 {Array.from({ length: 10 }, (_, stageIdx) => {
                                     const lvl = worldIdx * 10 + stageIdx;
+                                    if (lvl >= totalLevels) return <div key={lvl} />;
                                     const isSelected = selectedLevel === lvl;
                                     const isMax = maxLevel === lvl;
                                     const progress = levelStatuses.get(lvl);
@@ -800,7 +805,7 @@ function DungeonView({
                         <div className="text-3xl font-bold text-text-primary">{getLevelLabel(selectedLevel)}</div>
                         <div className="text-xs text-text-secondary">Stage</div>
                     </div>
-                    <button onClick={() => navigateLevel(1)} disabled={selectedLevel >= 99} className="p-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary disabled:opacity-30"><ChevronRight className="w-5 h-5" /></button>
+                    <button onClick={() => navigateLevel(1)} disabled={selectedLevel >= totalLevels - 1} className="p-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary disabled:opacity-30"><ChevronRight className="w-5 h-5" /></button>
                 </div>
             </div>
 
@@ -926,7 +931,7 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
 // import { Play } from 'lucide-react';
 
 export default function ProgressPrediction() {
-    const { simulate, simulateDungeon, findMaxBeatable, findMaxBeatableDungeon, playerStats, isLoading, libs, profile, getBattleCountForAge } = useBattleSimulation();
+    const { simulate, simulateDungeon, findMaxBeatable, findMaxBeatableDungeon, playerStats, isLoading, libs, profile, getBattleCountForAge, maxDungeonLevel, maxAgeIdx } = useBattleSimulation();
     const [activeTab, setActiveTab] = useState('main');
     const [isDebugMode, setIsDebugMode] = useState(false);
     const [visualizerOpen, setVisualizerOpen] = useState(false);
@@ -1167,6 +1172,7 @@ export default function ProgressPrediction() {
                     getBattleCountForAge={getBattleCountForAge}
                     debugConfig={debugConfig}
                     recalcTrigger={recalcVersion}
+                    maxAgeIdx={maxAgeIdx}
                 />
             ) : (
                 <DungeonView
@@ -1178,6 +1184,7 @@ export default function ProgressPrediction() {
                     onDebug={(lvl) => handleDebugRequest(0, lvl, 0, activeTab)}
                     debugConfig={debugConfig}
                     recalcTrigger={recalcVersion}
+                    maxDungeonLevel={maxDungeonLevel}
                 />
             )}
         </div>

@@ -1,0 +1,2322 @@
+{
+  "0_0_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "Skull",
+    "LocalizationId": 5028479430656,
+    "SpriteName": "IconPrimitiveHeadgearSkull",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "0_0_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "Beard",
+    "LocalizationId": 5028483624960,
+    "SpriteName": "IconPrimitiveHeadgearBeard",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "0_0_2": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 2,
+    "ItemName": "FacePaint",
+    "LocalizationId": 5028483624962,
+    "SpriteName": "IconPrimitiveHeadgearPaint",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "0_0_3": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 3,
+    "ItemName": "Mask",
+    "LocalizationId": 5028483625103,
+    "SpriteName": "IconPrimitiveHeadgearMask",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "0_1_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "Hide",
+    "LocalizationId": 5028483624970,
+    "SpriteName": "IconPrimitiveArmorHide",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "0_1_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "Bearskin",
+    "LocalizationId": 5028483624971,
+    "SpriteName": "IconPrimitiveArmorBearskin",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "0_2_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "BarkGloves",
+    "LocalizationId": 5028483624974,
+    "SpriteName": "IconPrimitiveGloveBark",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "0_2_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "BearPaw",
+    "LocalizationId": 5028483624975,
+    "SpriteName": "IconPrimitiveGloveBearpaw",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "0_3_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "ShamanTalisman",
+    "LocalizationId": 5028483624976,
+    "SpriteName": "IconPrimitiveNeckShamantalisman",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "0_3_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "ToothNecklace",
+    "LocalizationId": 5028483624977,
+    "SpriteName": "IconPrimitiveNeckToothnecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "0_4_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "Shardring",
+    "LocalizationId": 5028483624978,
+    "SpriteName": "IconPrimitiveRingShardring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "0_4_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "Skullring",
+    "LocalizationId": 5028483624979,
+    "SpriteName": "IconPrimitiveRingSkullring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "0_5_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "Axe",
+    "LocalizationId": 5028483624963,
+    "SpriteName": "IconPrimitiveWeaponAxe",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "0_5_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "Blowgun",
+    "LocalizationId": 5028483624964,
+    "SpriteName": "IconPrimitiveWeaponBlowgun",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "0_5_2": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 2,
+    "ItemName": "Branch",
+    "LocalizationId": 5028483624965,
+    "SpriteName": "IconPrimitiveWeaponBranch",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "0_5_3": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 3,
+    "ItemName": "Club",
+    "LocalizationId": 5028483624966,
+    "SpriteName": "IconPrimitiveWeaponClub",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "0_5_4": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 4,
+    "ItemName": "Rock",
+    "LocalizationId": 5028483624967,
+    "SpriteName": "IconPrimitiveWeaponRock",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "0_5_5": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 5,
+    "ItemName": "Slinger",
+    "LocalizationId": 5028483624968,
+    "SpriteName": "IconPrimitiveWeaponSlinger",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "0_5_6": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 6,
+    "ItemName": "Bone",
+    "LocalizationId": 5028483624969,
+    "SpriteName": "IconPrimitiveWeaponBone",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "0_6_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "FootWraps",
+    "LocalizationId": 5028483624980,
+    "SpriteName": "IconPrimitiveFootWraps",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "0_6_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "Ivoryshin",
+    "LocalizationId": 5028483624981,
+    "SpriteName": "IconPrimitiveFootIvoryshin",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "0_7_0": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 0,
+    "ItemName": "Boneskirt",
+    "LocalizationId": 5028483624972,
+    "SpriteName": "IconPrimitiveBeltBoneskirt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "0_7_1": {
+    "Age": 0,
+    "AgeName": "Primitive",
+    "Idx": 1,
+    "ItemName": "Waisttie",
+    "LocalizationId": 5028483624973,
+    "SpriteName": "IconPrimitiveBeltWaisttie",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "1_0_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "DeathHat",
+    "LocalizationId": 5028483624982,
+    "SpriteName": "IconMedievalHeadgearDeathshat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "1_0_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "RomanHelmet",
+    "LocalizationId": 5028483624983,
+    "SpriteName": "IconMedievalHeadgearRomanhelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "1_0_2": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 2,
+    "ItemName": "GreekHelmet",
+    "LocalizationId": 5028483624984,
+    "SpriteName": "IconMedievalHeadgearGreekhelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "1_0_3": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 3,
+    "ItemName": "SamuraiHelmet",
+    "LocalizationId": 5028483624985,
+    "SpriteName": "IconMedievalHeadgearSamuraihelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "1_0_4": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 4,
+    "ItemName": "KnightHelmet",
+    "LocalizationId": 5028483624986,
+    "SpriteName": "IconMedievalHeadgearKnighthelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "1_1_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "Cuirass",
+    "LocalizationId": 5028483624987,
+    "SpriteName": "IconMedievalArmorQuirass",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "1_1_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "IronPlates",
+    "LocalizationId": 5028483624988,
+    "SpriteName": "IconMedievalArmorIronplates",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "1_2_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "Gauntlet",
+    "LocalizationId": 5028483624991,
+    "SpriteName": "IconMedievalGloveGauntlet",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "1_2_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "Ironfist",
+    "LocalizationId": 5028483624992,
+    "SpriteName": "IconMedievalGloveIronfist",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "1_3_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "LuckyCharm",
+    "LocalizationId": 5028483624993,
+    "SpriteName": "IconMedievalNeckLuckycharm",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "1_3_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "ValorSigil",
+    "LocalizationId": 5028483624994,
+    "SpriteName": "IconMedievalNeckValorsigil",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "1_4_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "Blessedgem",
+    "LocalizationId": 5028483624995,
+    "SpriteName": "IconMedievalRingBlessedgem",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "1_4_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "Ironring",
+    "LocalizationId": 5028483624996,
+    "SpriteName": "IconMedievalRingIronring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "1_5_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "SwordShield",
+    "LocalizationId": 5028483624999,
+    "SpriteName": "IconMedievalWeaponSwordandshield",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "1_5_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "Spear&Shield",
+    "LocalizationId": 5028483625000,
+    "SpriteName": "IconMedievalWeaponSpearandshield",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "1_5_2": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 2,
+    "ItemName": "Scythe",
+    "LocalizationId": 5028483625001,
+    "SpriteName": "IconMedievalWeaponScythe",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "1_5_3": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 3,
+    "ItemName": "WarHammer",
+    "LocalizationId": 5028483625002,
+    "SpriteName": "IconMedievalWeaponWarhammer",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "1_5_4": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 4,
+    "ItemName": "Bow",
+    "LocalizationId": 5028483625003,
+    "SpriteName": "IconMedievalWeaponBow",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "1_5_5": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 5,
+    "ItemName": "Katana",
+    "LocalizationId": 5028483625004,
+    "SpriteName": "IconMedievalWeaponKatana",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "1_5_6": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 6,
+    "ItemName": "Tomahawk",
+    "LocalizationId": 5028483625005,
+    "SpriteName": "IconMedievalWeaponTomahawk",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "1_6_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "Sandals",
+    "LocalizationId": 5028483624997,
+    "SpriteName": "IconMedievalFootSandals",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "1_6_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "SpurredStomper",
+    "LocalizationId": 5028483624998,
+    "SpriteName": "IconMedievalFootSpurredstomper",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "1_7_0": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 0,
+    "ItemName": "BeltOfBaltazar",
+    "LocalizationId": 5028483624989,
+    "SpriteName": "IconMedievalBeltBeltofbaltazar",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "1_7_1": {
+    "Age": 1,
+    "AgeName": "Medieval",
+    "Idx": 1,
+    "ItemName": "Beltpouch",
+    "LocalizationId": 5028483624990,
+    "SpriteName": "IconMedievalBeltBeltpouch",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "2_0_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "BattleHelmet",
+    "LocalizationId": 5028483625006,
+    "SpriteName": "IconEarlymodernHeadgearBattlehelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "2_0_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "CaptainsHat",
+    "LocalizationId": 5028483625007,
+    "SpriteName": "IconEarlymodernHeadgearCaptainshat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "2_0_2": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 2,
+    "ItemName": "FeatherHat",
+    "LocalizationId": 5028483625008,
+    "SpriteName": "IconEarlymodernHeadgearFeatherhat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "2_0_3": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 3,
+    "ItemName": "SlavicHat",
+    "LocalizationId": 5028483625009,
+    "SpriteName": "IconEarlymodernHeadgearSlavichat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "2_0_4": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 4,
+    "ItemName": "TopHat",
+    "LocalizationId": 5028483625010,
+    "SpriteName": "IconEarlymodernHeadgearTophat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "2_1_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "ArmorSkirt",
+    "LocalizationId": 5028483625011,
+    "SpriteName": "IconEarlymodernArmorArmorskirt",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "2_1_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "Cardigan",
+    "LocalizationId": 5028483625012,
+    "SpriteName": "IconEarlymodernArmorCavalrycardigan",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "2_2_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "LeatherGloves",
+    "LocalizationId": 5028483625015,
+    "SpriteName": "IconEarlymodernGloveLeathergloves",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "2_2_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "Mitts",
+    "LocalizationId": 5028483625016,
+    "SpriteName": "IconEarlymodernGloveFencermitts",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "2_3_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "Clock",
+    "LocalizationId": 5028483625017,
+    "SpriteName": "IconEarlymodernNeckClock",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "2_3_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "TreasureKey",
+    "LocalizationId": 5028483625018,
+    "SpriteName": "IconEarlymodernNeckTreasurekey",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "2_4_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "Emerald",
+    "LocalizationId": 5028483625019,
+    "SpriteName": "IconEarlymodernRingEmeraldeye",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "2_4_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "Trinity",
+    "LocalizationId": 5028483625020,
+    "SpriteName": "IconEarlymodernRingTrinityband",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "2_5_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "Crossbow",
+    "LocalizationId": 5028483625023,
+    "SpriteName": "IconEarlymodernWeaponCrossbow",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "2_5_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "Musket",
+    "LocalizationId": 5028483625024,
+    "SpriteName": "IconEarlymodernWeaponMusket",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "2_5_2": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 2,
+    "ItemName": "Executioner",
+    "LocalizationId": 5028483625025,
+    "SpriteName": "IconEarlymodernWeaponExecutioner",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "2_5_3": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 3,
+    "ItemName": "DualPistols",
+    "LocalizationId": 5028483625026,
+    "SpriteName": "IconEarlymodernWeaponDualpistols",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "2_5_4": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 4,
+    "ItemName": "PirateSword",
+    "LocalizationId": 5028483625027,
+    "SpriteName": "IconEarlymodernWeaponPiratessword",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "2_5_5": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 5,
+    "ItemName": "Rapier",
+    "LocalizationId": 5028483625028,
+    "SpriteName": "IconEarlymodernWeaponRapier",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "2_6_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "LeatherBoots",
+    "LocalizationId": 5028483625021,
+    "SpriteName": "IconEarlymodernFootLeatherboots",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "2_6_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "RidingBoots",
+    "LocalizationId": 5028483625022,
+    "SpriteName": "IconEarlymodernlFootRidingboots",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "2_7_0": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 0,
+    "ItemName": "Harness",
+    "LocalizationId": 5028483625013,
+    "SpriteName": "IconEarlymodernBeltHaroldsharness",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "2_7_1": {
+    "Age": 2,
+    "AgeName": "Earlymodern",
+    "Idx": 1,
+    "ItemName": "LeatherBelt",
+    "LocalizationId": 5028483625014,
+    "SpriteName": "IconEarlymodernBeltLeatherbelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "3_0_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "FedoraHat",
+    "LocalizationId": 5028483625029,
+    "SpriteName": "IconModernHeadgearFedorahat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "3_0_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "KevlarHelmet",
+    "LocalizationId": 5028483625030,
+    "SpriteName": "IconModernHeadgearKevlarhelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "3_0_2": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 2,
+    "ItemName": "OfficerHat",
+    "LocalizationId": 5028483625031,
+    "SpriteName": "IconModernHeadgearOfficershat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "3_0_3": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 3,
+    "ItemName": "RiotHelmet",
+    "LocalizationId": 5028483625032,
+    "SpriteName": "IconModernHeadgearRiothelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "3_0_4": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 4,
+    "ItemName": "SergeantHat",
+    "LocalizationId": 5028483625033,
+    "SpriteName": "IconModernHeadgearSergeanthat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "3_0_5": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 5,
+    "ItemName": "SteelHelmet",
+    "LocalizationId": 5028483625034,
+    "SpriteName": "IconModernHeadgearSteelhelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "3_0_6": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 6,
+    "ItemName": "WinterHat",
+    "LocalizationId": 5028483625035,
+    "SpriteName": "IconModernHeadgearWinterhat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "3_1_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "Camouflage",
+    "LocalizationId": 5028483625036,
+    "SpriteName": "IconModernArmorCamouflage",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "3_1_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "Kevlar",
+    "LocalizationId": 5028483625037,
+    "SpriteName": "IconModernArmorKevlar",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "3_2_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "CombatGloves",
+    "LocalizationId": 5028483625040,
+    "SpriteName": "IconModernGloveCombatgloves",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "3_2_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "Halffingers",
+    "LocalizationId": 5028483625041,
+    "SpriteName": "IconModernGloveTacticalhalffingers",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "3_3_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "DogTags",
+    "LocalizationId": 5028483625042,
+    "SpriteName": "IconModernNeckDogtags",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "3_3_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "FortuneNecklace",
+    "LocalizationId": 5028483625043,
+    "SpriteName": "IconModernNeckFortunenecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "3_4_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "Bolt",
+    "LocalizationId": 5028483625044,
+    "SpriteName": "IconModernRingBolt",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "3_4_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "BrotherhoodRing",
+    "LocalizationId": 5028483625045,
+    "SpriteName": "IconModernRingBrotherhoodring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "3_5_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "AK",
+    "LocalizationId": 5028483625048,
+    "SpriteName": "IconModernWeaponAk",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_5_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "Baton",
+    "LocalizationId": 5028483625049,
+    "SpriteName": "IconModernWeaponBaton",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_5_2": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 2,
+    "ItemName": "KnuckleDusters",
+    "LocalizationId": 5028483625050,
+    "SpriteName": "IconModernWeaponKnuckledusters",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_5_3": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 3,
+    "ItemName": "M4",
+    "LocalizationId": 5028483625051,
+    "SpriteName": "IconModernWeaponM4",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_5_4": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 4,
+    "ItemName": "RiotShield",
+    "LocalizationId": 5028483625052,
+    "SpriteName": "IconModernWeaponRiotshield",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_5_5": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 5,
+    "ItemName": "Sniper",
+    "LocalizationId": 5028483625053,
+    "SpriteName": "IconModernWeaponSniper",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_5_6": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 6,
+    "ItemName": "Uzi",
+    "LocalizationId": 5028483625054,
+    "SpriteName": "IconModernWeaponUzi",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_5_7": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 7,
+    "ItemName": "Wrench",
+    "LocalizationId": 5028483625055,
+    "SpriteName": "IconModernWeaponWrench",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "3_6_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "CombatBoots",
+    "LocalizationId": 5028483625046,
+    "SpriteName": "IconModernlFootCombatboots",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "3_6_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "VeteranBoots",
+    "LocalizationId": 5028483625047,
+    "SpriteName": "IconModernFootVeteranboots",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "3_7_0": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 0,
+    "ItemName": "AmmoPouch",
+    "LocalizationId": 5028483625038,
+    "SpriteName": "IconModernBeltAmmopouch",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "3_7_1": {
+    "Age": 3,
+    "AgeName": "Modern",
+    "Idx": 1,
+    "ItemName": "TacticalBelt",
+    "LocalizationId": 5028483625039,
+    "SpriteName": "IconModernBeltTacticalbelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "4_0_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "BioHelmet",
+    "LocalizationId": 5028483625056,
+    "SpriteName": "IconSpaceHeadgearBiohelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "4_0_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "GasMask",
+    "LocalizationId": 5028483625057,
+    "SpriteName": "IconSpaceHeadgearGasmask",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "4_0_2": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 2,
+    "ItemName": "IronMech",
+    "LocalizationId": 5028483625058,
+    "SpriteName": "IconSpaceHeadgearIronmech",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "4_0_3": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 3,
+    "ItemName": "SpaceHelmet",
+    "LocalizationId": 5028483625059,
+    "SpriteName": "IconSpaceHeadgearSpacehelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "4_1_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "Exoskeleton",
+    "LocalizationId": 5028483625060,
+    "SpriteName": "IconSpaceArmorExoskeleton",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "4_1_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "SpaceSuit",
+    "LocalizationId": 5028483625061,
+    "SpriteName": "IconSpaceArmorSpacesuit",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "4_2_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "Remote",
+    "LocalizationId": 5028483625064,
+    "SpriteName": "IconSpaceGloveRemote",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "4_2_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "SpaceGloves",
+    "LocalizationId": 5028483625065,
+    "SpriteName": "IconSpaceGloveSpacegloves",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "4_3_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "KuiperNecklace",
+    "LocalizationId": 5028483625066,
+    "SpriteName": "IconSpaceNeckKuipernecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "4_3_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "Pendant",
+    "LocalizationId": 5028483625067,
+    "SpriteName": "IconSpaceNeckPulsarpendant",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "4_4_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "IcarusRing",
+    "LocalizationId": 5028483625068,
+    "SpriteName": "IconSpaceRingIcarusring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "4_4_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "SolariusRing",
+    "LocalizationId": 5028483625069,
+    "SpriteName": "IconSpaceRingSolariusring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "4_5_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "Blaster",
+    "LocalizationId": 5028483625072,
+    "SpriteName": "IconSpaceWeaponBlaster",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "4_5_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "RobotSword",
+    "LocalizationId": 5028483625073,
+    "SpriteName": "IconSpaceWeaponRobotsword",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "4_5_2": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 2,
+    "ItemName": "Saber",
+    "LocalizationId": 5028483625074,
+    "SpriteName": "IconSpaceWeaponSaber",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "4_5_3": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 3,
+    "ItemName": "SpaceGun",
+    "LocalizationId": 5028483625075,
+    "SpriteName": "IconSpaceWeaponSpacegun",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "4_5_4": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 4,
+    "ItemName": "SpacePistol",
+    "LocalizationId": 5028483625076,
+    "SpriteName": "IconSpaceWeaponSpacepistol",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "4_6_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "FeetThrusters",
+    "LocalizationId": 5028483625070,
+    "SpriteName": "IconSpaceFootFeetthrusters",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "4_6_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "SpaceBoots",
+    "LocalizationId": 5028483625071,
+    "SpriteName": "IconSpaceFootSpaceshoes",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "4_7_0": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 0,
+    "ItemName": "Corset",
+    "LocalizationId": 5028483625062,
+    "SpriteName": "IconSpaceBeltSupportcorset",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "4_7_1": {
+    "Age": 4,
+    "AgeName": "Space",
+    "Idx": 1,
+    "ItemName": "Straps",
+    "LocalizationId": 5028483625063,
+    "SpriteName": "IconSpaceBeltAnabiosisstraps",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "5_0_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "AdvancedMech",
+    "LocalizationId": 5028483625077,
+    "SpriteName": "IconInterstellarHeadgearAdvancedmech",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "5_0_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "AlienHead",
+    "LocalizationId": 5028483625078,
+    "SpriteName": "IconInterstellarHeadgearAlienhead",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "5_0_2": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 2,
+    "ItemName": "DestroyerMask",
+    "LocalizationId": 5028483625079,
+    "SpriteName": "IconInterstellarHeadgearDestroyermask",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "5_0_3": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 3,
+    "ItemName": "HeavyDuty",
+    "LocalizationId": 5028483625080,
+    "SpriteName": "IconInterstellarHeadgearHeavyduty",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "5_0_4": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 4,
+    "ItemName": "RoboHelm",
+    "LocalizationId": 5028483625081,
+    "SpriteName": "IconInterstellarHeadgearRobohelm",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "5_0_5": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 5,
+    "ItemName": "Stellarium",
+    "LocalizationId": 5028483625082,
+    "SpriteName": "IconInterstellarHeadgearStellariumhelm",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "5_1_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "Adamantium",
+    "LocalizationId": 5028483625083,
+    "SpriteName": "IconInterstellarArmorAdamantiumsuit",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "5_1_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "PlasmaSuit",
+    "LocalizationId": 5028483625084,
+    "SpriteName": "IconInterstellarArmorPlasmasuit",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "5_2_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "Impactors",
+    "LocalizationId": 5028483625087,
+    "SpriteName": "IconInterstellarGloveManualimpactors",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "5_2_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "Implants",
+    "LocalizationId": 5028483625088,
+    "SpriteName": "IconInterstellarGlovePalmimplants",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "5_3_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "GammaCollar",
+    "LocalizationId": 5028483625089,
+    "SpriteName": "IconInterstellarNeckGammaartifactscollar",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "5_3_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "PsiChoker",
+    "LocalizationId": 5028483625090,
+    "SpriteName": "IconInterstellarNeckPsichoker",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "5_4_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "EclipseRing",
+    "LocalizationId": 5028483625091,
+    "SpriteName": "IconInterstellarRingEclipsering",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "5_4_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "RariumRing",
+    "LocalizationId": 5028483625092,
+    "SpriteName": "IconInterstellarRingRariumring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "5_5_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "DoubleSaber",
+    "LocalizationId": 5028483625095,
+    "SpriteName": "IconInterstellarWeaponDualwieldmelee",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "5_5_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "IonicBlaster",
+    "LocalizationId": 5028483625096,
+    "SpriteName": "IconInterstellarWeaponIonicblaster",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "5_5_2": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 2,
+    "ItemName": "IsobaricCutter",
+    "LocalizationId": 5028483625097,
+    "SpriteName": "IconInterstellarWeaponIsobariccutter",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "5_5_3": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 3,
+    "ItemName": "Light&Shield",
+    "LocalizationId": 5028483625098,
+    "SpriteName": "IconInterstellarWeaponLightswordandshield",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "5_5_4": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 4,
+    "ItemName": "PlasmaRifle",
+    "LocalizationId": 5028483625099,
+    "SpriteName": "IconInterstellarWeaponPlasmarifle",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "5_5_5": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 5,
+    "ItemName": "RayGun",
+    "LocalizationId": 5028483625100,
+    "SpriteName": "IconInterstellarWeaponRaygun",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "5_6_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "HydraulicFeet",
+    "LocalizationId": 5028483625093,
+    "SpriteName": "IconInterstellarFootHydraulicfeet",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "5_6_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "RoboFeet",
+    "LocalizationId": 5028483625094,
+    "SpriteName": "IconInterstellarFootRobofeet",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "5_7_0": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 0,
+    "ItemName": "PelvicSynchronizer",
+    "LocalizationId": 5028483625085,
+    "SpriteName": "IconInterstellarBeltPelvicsynchronizer",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "5_7_1": {
+    "Age": 5,
+    "AgeName": "Interstellar",
+    "Idx": 1,
+    "ItemName": "SpinalStabilizer",
+    "LocalizationId": 5028483625086,
+    "SpriteName": "IconInterstellarBeltSpinalstabilizer",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "6_0_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "WarMask",
+    "LocalizationId": 5028483624961,
+    "SpriteName": "IconMultiverseHeadgearFirewallmask",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "6_0_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "Casquette",
+    "LocalizationId": 5028483625101,
+    "SpriteName": "IconMultiverseHeadgearSpeedrunnercasquette",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "6_0_2": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 2,
+    "ItemName": "IronHolo",
+    "LocalizationId": 5028483625102,
+    "SpriteName": "IconMultiverseHeadgearStalkerhelm",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "6_0_3": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 3,
+    "ItemName": "VirtualHelmet",
+    "LocalizationId": 5028483625104,
+    "SpriteName": "IconMultiverseHeadgearVirtualhelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "6_1_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "HoloArmor",
+    "LocalizationId": 5028483625105,
+    "SpriteName": "IconMultiverseArmorHoloarmor",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "6_1_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "SpectralPlates",
+    "LocalizationId": 5028483625106,
+    "SpriteName": "IconMultiverseArmorSpectralplates",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "6_2_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "Impulse",
+    "LocalizationId": 5028483625109,
+    "SpriteName": "IconMultiverseGloveImpulsecontroller",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "6_2_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "RainbowGloves",
+    "LocalizationId": 5028483625110,
+    "SpriteName": "IconMultiverseGloveRainbowgloves",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "6_3_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "CrystalAmulet",
+    "LocalizationId": 5028483625111,
+    "SpriteName": "IconMultiverseNeckCrystallamulet",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "6_3_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "GlitchNecklace",
+    "LocalizationId": 5028483625112,
+    "SpriteName": "IconMultiverseNeckGlitchnecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "6_4_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "ConnectionRing",
+    "LocalizationId": 5028483625113,
+    "SpriteName": "IconMultiverseRingConnectionring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "6_4_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "MobiusRing",
+    "LocalizationId": 5028483625114,
+    "SpriteName": "IconMultiverseRingMobeusring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "6_5_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "ProjectedCutlass",
+    "LocalizationId": 5028483625117,
+    "SpriteName": "IconMultiverseWeaponProjectedcutlass",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "6_5_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "Spearsh",
+    "LocalizationId": 5028483625118,
+    "SpriteName": "IconMultiverseWeaponMentalspear",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "6_5_2": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 2,
+    "ItemName": "Trident",
+    "LocalizationId": 5028483625119,
+    "SpriteName": "IconMultiverseWeaponHolographictrident",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "6_5_3": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 3,
+    "ItemName": "VirtualBow",
+    "LocalizationId": 5028483625120,
+    "SpriteName": "IconMultiverseWeaponSimulatedbow",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "6_5_4": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 4,
+    "ItemName": "VirtualGun",
+    "LocalizationId": 5028483625121,
+    "SpriteName": "IconMultiverseWeaponVirtualgun",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "6_5_5": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 5,
+    "ItemName": "VirtualSword",
+    "LocalizationId": 5028483625122,
+    "SpriteName": "IconMultiverseWeaponVirtualsword",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "6_6_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "EtherealSocks",
+    "LocalizationId": 5028483625115,
+    "SpriteName": "IconMultiverseFootEtherealsocks",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "6_6_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "FastTravellers",
+    "LocalizationId": 5028483625116,
+    "SpriteName": "IconMultiverseFootFasttravelshoes",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "6_7_0": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 0,
+    "ItemName": "OrbitBelt",
+    "LocalizationId": 5028483625107,
+    "SpriteName": "IconMultiverseBeltOrbitbelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "6_7_1": {
+    "Age": 6,
+    "AgeName": "Multiverse",
+    "Idx": 1,
+    "ItemName": "RealityBelt",
+    "LocalizationId": 5028483625108,
+    "SpriteName": "IconMultiverseBeltRealitybelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "7_0_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "EnergyHelmet",
+    "LocalizationId": 5028483625123,
+    "SpriteName": "IconQuantumHeadgearEnergyhelmet",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "7_0_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "HairBandana",
+    "LocalizationId": 5028483625124,
+    "SpriteName": "IconQuantumHeadgearHairbandana",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "7_0_2": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 2,
+    "ItemName": "HairTied",
+    "LocalizationId": 5028483625125,
+    "SpriteName": "IconQuantumHeadgearHairtied",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "7_0_3": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 3,
+    "ItemName": "QuantumHelm",
+    "LocalizationId": 5028483625126,
+    "SpriteName": "IconQuantumHeadgearEntanglementhelm",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "7_0_4": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 4,
+    "ItemName": "SubMask",
+    "LocalizationId": 5028483625127,
+    "SpriteName": "IconQuantumHeadgearSubfrequencymask",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "7_1_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "DeltaArmor",
+    "LocalizationId": 5028483625128,
+    "SpriteName": "IconQuantumArmorDeltaarmor",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "7_1_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "OrbiterSuit",
+    "LocalizationId": 5028483625129,
+    "SpriteName": "IconQuantumArmorOrbitersuit",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "7_2_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "GravityGloves",
+    "LocalizationId": 5028483625132,
+    "SpriteName": "IconQuantumGloveGravitygloves",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "7_2_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "NeutronFingerprints",
+    "LocalizationId": 5028483625133,
+    "SpriteName": "IconQuantumGloveNeutronfingerprints",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "7_3_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "HiggsCollar",
+    "LocalizationId": 5028483625134,
+    "SpriteName": "IconQuantumNeckHiggsnecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "7_3_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "VoidNecklace",
+    "LocalizationId": 5028483625135,
+    "SpriteName": "IconQuantumNeckVoidnecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "7_4_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "AuraRing",
+    "LocalizationId": 5028483625136,
+    "SpriteName": "IconQuantumRingAuraring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "7_4_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "ProbabilityRing",
+    "LocalizationId": 5028483625137,
+    "SpriteName": "IconQuantumRingProbabilityring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "7_5_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "BlackBow",
+    "LocalizationId": 5028483625140,
+    "SpriteName": "IconQuantumWeaponBlackbow",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "7_5_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "BlackGun",
+    "LocalizationId": 5028483625141,
+    "SpriteName": "IconQuantumWeaponBlackgun",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "7_5_2": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 2,
+    "ItemName": "BlackHammer",
+    "LocalizationId": 5028483625142,
+    "SpriteName": "IconQuantumWeaponBlackhammer",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "7_5_3": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 3,
+    "ItemName": "BlackSpear",
+    "LocalizationId": 5028483625143,
+    "SpriteName": "IconQuantumWeaponBlackspear",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "7_5_4": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 4,
+    "ItemName": "BlackStaff",
+    "LocalizationId": 5028483625144,
+    "SpriteName": "IconQuantumWeaponQuantumstaff",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "7_5_5": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 5,
+    "ItemName": "BlackSword&Shield",
+    "LocalizationId": 5028483625145,
+    "SpriteName": "IconQuantumWeaponBlackswordandshield",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "7_6_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "AntigravityBoots",
+    "LocalizationId": 5028483625138,
+    "SpriteName": "IconQuantumFootAntiravityboots",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "7_6_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "AntimatterFeet",
+    "LocalizationId": 5028483625139,
+    "SpriteName": "IconQuantumFootAntimatterfeet",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "7_7_0": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 0,
+    "ItemName": "BlackBelt",
+    "LocalizationId": 5028483625130,
+    "SpriteName": "IconQuantumBeltUncertaintybelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "7_7_1": {
+    "Age": 7,
+    "AgeName": "Quantum",
+    "Idx": 1,
+    "ItemName": "NeutrinoBelt",
+    "LocalizationId": 5028483625131,
+    "SpriteName": "IconQuantumBeltNeutrinobelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "8_0_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "SpiteCrown",
+    "LocalizationId": 28999036198445060,
+    "SpriteName": "IconUnderworldHeadgearSpiteCrown",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "8_0_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "RotfangVisor",
+    "LocalizationId": 28999036198445061,
+    "SpriteName": "IconUnderworldHeadgearRotfangVisor",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "8_0_2": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 2,
+    "ItemName": "HellforgedHelm",
+    "LocalizationId": 28999036198445062,
+    "SpriteName": "IconUnderworldHeadgearHellforgedHelm",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "8_0_3": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 3,
+    "ItemName": "VenomCrest",
+    "LocalizationId": 28999036198445063,
+    "SpriteName": "IconUnderworldHeadgearVenomCrest",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "8_1_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "Doomplate",
+    "LocalizationId": 28999036198445064,
+    "SpriteName": "IconUnderworldArmorDoomplate",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "8_1_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "Cape",
+    "LocalizationId": 36593350273392640,
+    "SpriteName": "IconUnderworldArmorCape",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "8_1_2": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 2,
+    "ItemName": "MoltenPlates",
+    "LocalizationId": 36593350285975552,
+    "SpriteName": "IconUnderworldArmorMoltenPlates",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "8_2_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "GripofTorment",
+    "LocalizationId": 28999036198445065,
+    "SpriteName": "IconUnderworldGloveGripofTorment",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "8_2_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "VoidClaw",
+    "LocalizationId": 28999036198445066,
+    "SpriteName": "IconUnderworldGloveVoidClaw",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "8_3_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "ThornNecklace",
+    "LocalizationId": 28999036198445071,
+    "SpriteName": "IconUnderworldNeckThornNecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "8_3_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "SpiteCollar",
+    "LocalizationId": 28999036198445072,
+    "SpriteName": "IconUnderworldNeckSpiteCollar",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "8_4_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "Skullbinder",
+    "LocalizationId": 28999036198445073,
+    "SpriteName": "IconUnderworldRingSkullbinder",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "8_4_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "PrismRing",
+    "LocalizationId": 28999036198445074,
+    "SpriteName": "IconUnderworldRingPrismRing",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "8_5_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "InfernalTrident",
+    "LocalizationId": 28999036190056448,
+    "SpriteName": "IconUnderworldWeaponInfernalTrident",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "8_5_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "AbyssalFork",
+    "LocalizationId": 28999036198445056,
+    "SpriteName": "IconUnderworldWeaponAbyssalFork",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "8_5_2": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 2,
+    "ItemName": "Soulpiercer",
+    "LocalizationId": 28999036198445057,
+    "SpriteName": "IconUnderworldWeaponSoulpiercer",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "8_5_3": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 3,
+    "ItemName": "DoomMace",
+    "LocalizationId": 28999036198445058,
+    "SpriteName": "IconUnderworldWeaponDoomMace",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "8_5_4": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 4,
+    "ItemName": "ShadowScimitar",
+    "LocalizationId": 28999036198445059,
+    "SpriteName": "IconUnderworldWeaponShadowScimitar",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "8_6_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "Dreadsteps",
+    "LocalizationId": 28999036198445067,
+    "SpriteName": "IconUnderworldFootDreadsteps",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "8_6_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "Greaves",
+    "LocalizationId": 28999036198445068,
+    "SpriteName": "IconUnderworldFootGreaves",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "8_7_0": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 0,
+    "ItemName": "CircleofPain",
+    "LocalizationId": 28999036198445069,
+    "SpriteName": "IconUnderworldBeltCircleofPain",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "8_7_1": {
+    "Age": 8,
+    "AgeName": "Underworld",
+    "Idx": 1,
+    "ItemName": "CrimsonBelt",
+    "LocalizationId": 28999036198445070,
+    "SpriteName": "IconUnderworldBeltCrimsonBelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "9_0_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "CelticOverhead",
+    "LocalizationId": 5028483625146,
+    "SpriteName": "IconDivineHeadgearCelticoverhead",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "9_0_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "ProtectiveHalo",
+    "LocalizationId": 5028483625147,
+    "SpriteName": "IconDivineHeadgearProtectivehalo",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "9_0_2": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 2,
+    "ItemName": "SerpentWreath",
+    "LocalizationId": 5028483625148,
+    "SpriteName": "IconDivineHeadgearSerpentwreath",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "9_0_3": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 3,
+    "ItemName": "WhiteHair",
+    "LocalizationId": 5028483625149,
+    "SpriteName": "IconDivineHeadgearWhitehair",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "9_0_4": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 4,
+    "ItemName": "WizardHat",
+    "LocalizationId": 5028483625150,
+    "SpriteName": "IconDivineHeadgearWizardshat",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "9_1_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "HolyGown",
+    "LocalizationId": 5028483625151,
+    "SpriteName": "IconDivineArmorHolygown",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "9_1_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "PaladinArmor",
+    "LocalizationId": 5028483625152,
+    "SpriteName": "IconDivineArmorPaladinarmor",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "9_2_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "EnchanterGloves",
+    "LocalizationId": 5028483625155,
+    "SpriteName": "IconDivineGloveEnchantergloves",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "9_2_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "WorshipperGloves",
+    "LocalizationId": 5028483625156,
+    "SpriteName": "IconDivineGloveWorshipergloves",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "9_3_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "TalonNecklace",
+    "LocalizationId": 5028483625157,
+    "SpriteName": "IconDivineNeckTalonnecklace",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "9_3_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "ThorAmulet",
+    "LocalizationId": 5028483625158,
+    "SpriteName": "IconDivineNeckThoramulet",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "9_4_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "DivinityRing",
+    "LocalizationId": 5028483625159,
+    "SpriteName": "IconDivineRingDivinityring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "9_4_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "NazarRing",
+    "LocalizationId": 5028483625160,
+    "SpriteName": "IconDivineRingNazarring",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "9_5_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "AngelicPitchfork",
+    "LocalizationId": 5028483625163,
+    "SpriteName": "IconDivineWeaponAngelicpitchfork",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "9_5_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "DragonDagger",
+    "LocalizationId": 5028483625164,
+    "SpriteName": "IconDivineWeaponDragondagger",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "9_5_2": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 2,
+    "ItemName": "SerpentSword",
+    "LocalizationId": 5028483625165,
+    "SpriteName": "IconDivineWeaponSerpentsword",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "9_5_3": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 3,
+    "ItemName": "SirenSong",
+    "LocalizationId": 5028483625166,
+    "SpriteName": "IconDivineWeaponSirenssong",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "9_5_4": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 4,
+    "ItemName": "Staff",
+    "LocalizationId": 5028483625167,
+    "SpriteName": "IconDivineWeaponStaff",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "9_5_5": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 5,
+    "ItemName": "StaffOfWisdom",
+    "LocalizationId": 5028483625168,
+    "SpriteName": "IconDivineWeaponStaffofwisdom",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "9_6_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "CelestialTreaders",
+    "LocalizationId": 5028483625161,
+    "SpriteName": "IconDivineFootCelestialtreaders",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "9_6_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "MercurySandals",
+    "LocalizationId": 5028483625162,
+    "SpriteName": "IconDivineFootMercurysandals",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "9_7_0": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 0,
+    "ItemName": "SanctityBelt",
+    "LocalizationId": 5028483625153,
+    "SpriteName": "IconDivineBeltSanctitybelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "9_7_1": {
+    "Age": 9,
+    "AgeName": "Divine",
+    "Idx": 1,
+    "ItemName": "SorcererBelt",
+    "LocalizationId": 5028483625154,
+    "SpriteName": "IconDivineBeltSorcererbelt",
+    "Type": 7,
+    "TypeName": "Belt"
+  }
+}

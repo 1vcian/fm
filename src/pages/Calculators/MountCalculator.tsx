@@ -11,7 +11,7 @@ export default function MountCalculator() {
         techBonuses,
         results,
         maxPossibleLevel,
-        mountSummonUpgradeLibrary,
+        levels,
         applyResultsToProfile
     } = useMountsCalculator();
 
@@ -118,7 +118,7 @@ export default function MountCalculator() {
                                         <Plus className="w-3 h-3 text-text-primary" />
                                     </button>
                                 </div>
-                                <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Next: {mountSummonUpgradeLibrary?.[currentLevel.toString()]?.Summons || '?'}</div>
+                                <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Next: {levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired || '?'}</div>
                             </div>
                         </div>
 

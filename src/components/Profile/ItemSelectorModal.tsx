@@ -100,7 +100,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
-    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json'); // New
+    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
+    const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
 
     const jsonType = SLOT_MAPPING[slot] || slot;
     const [unlockAll, setUnlockAll] = useState(false);
@@ -259,6 +260,42 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
         return info;
     }, [slot, weaponLibrary, projectilesLibrary, ageIdx, selectedItemIdx, selectedItemData]);
+
+    const skinWeaponInfo = useMemo(() => {
+        if (slot !== 'Weapon' || !weaponLibrary || skinIdx === null) return null;
+
+        // Determine if we should use 999 (Melee) or 1000 (Ranged)
+        // Usually, the skin matches the base weapon's "rangedness" in terms of stats used.
+        const baseIsRanged = weaponInfo?.isRanged ?? false;
+        const skinAge = baseIsRanged ? 1000 : 999;
+
+        const key = `{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${skinIdx}}`;
+        const skinData = weaponLibrary[key];
+        if (!skinData) return null;
+
+        const projId = skinData.ProjectileId;
+        const hasProjectile = typeof projId === 'number' && projId > 0;
+
+        const info = {
+            attackRange: skinData.AttackRange || 0,
+            windupTime: skinData.WindupTime || 0.5,
+            attackDuration: skinData.AttackDuration || 1,
+            projectileSpeed: 0,
+            projectileRadius: 0,
+            hasProjectile: false
+        };
+
+        if (hasProjectile && projectilesLibrary) {
+            const projData = projectilesLibrary[String(projId)];
+            if (projData) {
+                info.hasProjectile = true;
+                info.projectileSpeed = projData.Speed || 0;
+                info.projectileRadius = projData.CollisionRadius || 0;
+            }
+        }
+
+        return info;
+    }, [slot, weaponLibrary, projectilesLibrary, skinIdx, weaponInfo?.isRanged]);
 
     const baseStats = useMemo(() => {
         if (!selectedItemData) return { damage: 0, health: 0 };
@@ -499,7 +536,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             >
                                 <div
                                     className="w-full h-full"
-                                    style={getSkinSpriteStyle(skin)}
+                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
                                 />
                             </button>
                         );
@@ -614,35 +651,55 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                     <div className="text-xs font-bold text-text-muted">WEAPON INFO</div>
                     <div className="flex items-center justify-between">
                         <span className="text-sm">Type</span>
-                        <span className={cn(
-                            "font-bold px-2 py-0.5 rounded text-xs",
-                            weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
-                        )}>
-                            {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
-                        </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="flex items-center gap-1">
-                            <Target className="w-3 h-3 text-text-muted" />
-                            <span className="text-text-muted">Range:</span>
-                            <span className="font-mono">{weaponInfo.attackRange.toFixed(1)}</span>
+                        <div className="flex gap-2">
+                            <span className={cn(
+                                "font-bold px-2 py-0.5 rounded text-xs",
+                                weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
+                            )}>
+                                {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
+                            </span>
+                            {skinIdx !== null && (
+                                <span className="text-[10px] text-text-muted flex items-center">
+                                    (Skin Graphics)
+                                </span>
+                            )}
                         </div>
-                        <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-text-muted" />
-                            <span className="text-text-muted">Windup:</span>
-                            <span className="font-mono">{weaponInfo.windupTime.toFixed(2)}s</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 text-xs">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-text-muted" />
+                                <span className="text-text-muted">Windup:</span>
+                            </div>
+                            <div className="font-mono">
+                                {weaponInfo.windupTime.toFixed(2)}s
+                                {skinWeaponInfo && Math.abs(skinWeaponInfo.windupTime - weaponInfo.windupTime) > 0.01 && (
+                                    <span className="text-amber-400 ml-1">→ {skinWeaponInfo.windupTime.toFixed(2)}s</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                                <Target className="w-3 h-3 text-text-muted" />
+                                <span className="text-text-muted">Range:</span>
+                            </div>
+                            <div className="font-mono">{weaponInfo.attackRange.toFixed(1)}</div>
                         </div>
                         {weaponInfo.hasProjectile && (
                             <>
-                                <div className="flex items-center gap-1">
-                                    <Target className="w-3 h-3 text-text-muted" />
-                                    <span className="text-text-muted">Proj Speed:</span>
-                                    <span className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</span>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1">
+                                        <Target className="w-3 h-3 text-text-muted" />
+                                        <span className="text-text-muted">Proj Speed:</span>
+                                    </div>
+                                    <div className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <Target className="w-3 h-3 text-text-muted" />
-                                    <span className="text-text-muted">Proj Radius:</span>
-                                    <span className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</span>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1">
+                                        <Target className="w-3 h-3 text-text-muted" />
+                                        <span className="text-text-muted">Proj Radius:</span>
+                                    </div>
+                                    <div className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</div>
                                 </div>
                             </>
                         )}
@@ -1186,41 +1243,60 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             </div>
                         </div>
 
-                        {/* Weapon Info */}
                         {slot === 'Weapon' && weaponInfo && (
                             <div className="space-y-2 mb-4 p-3 bg-bg-input/30 rounded-lg border border-border">
                                 <div className="text-xs font-bold text-text-muted">WEAPON INFO</div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm">Type</span>
-                                    <span className={cn(
-                                        "font-bold px-2 py-0.5 rounded text-xs",
-                                        weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
-                                    )}>
-                                        {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div className="flex items-center gap-1">
-                                        <Target className="w-3 h-3 text-text-muted" />
-                                        <span className="text-text-muted">Range:</span>
-                                        <span className="font-mono">{weaponInfo.attackRange.toFixed(1)}</span>
+                                    <div className="flex gap-2">
+                                        <span className={cn(
+                                            "font-bold px-2 py-0.5 rounded text-xs",
+                                            weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
+                                        )}>
+                                            {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
+                                        </span>
+                                        {skinIdx !== null && (
+                                            <span className="text-[10px] text-text-muted flex items-center">
+                                                (Skin Graphics)
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3 text-text-muted" />
-                                        <span className="text-text-muted">Windup:</span>
-                                        <span className="font-mono">{weaponInfo.windupTime.toFixed(2)}s</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2 text-xs">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-3 h-3 text-text-muted" />
+                                            <span className="text-text-muted">Windup:</span>
+                                        </div>
+                                        <div className="font-mono">
+                                            {weaponInfo.windupTime.toFixed(2)}s
+                                            {skinWeaponInfo && Math.abs(skinWeaponInfo.windupTime - weaponInfo.windupTime) > 0.01 && (
+                                                <span className="text-amber-400 ml-1">→ {skinWeaponInfo.windupTime.toFixed(2)}s</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            <Target className="w-3 h-3 text-text-muted" />
+                                            <span className="text-text-muted">Range:</span>
+                                        </div>
+                                        <div className="font-mono">{weaponInfo.attackRange.toFixed(1)}</div>
                                     </div>
                                     {weaponInfo.hasProjectile && (
                                         <>
-                                            <div className="flex items-center gap-1">
-                                                <Target className="w-3 h-3 text-text-muted" />
-                                                <span className="text-text-muted">Proj Speed:</span>
-                                                <span className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</span>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1">
+                                                    <Target className="w-3 h-3 text-text-muted" />
+                                                    <span className="text-text-muted">Proj Speed:</span>
+                                                </div>
+                                                <div className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</div>
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <Target className="w-3 h-3 text-text-muted" />
-                                                <span className="text-text-muted">Proj Radius:</span>
-                                                <span className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</span>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1">
+                                                    <Target className="w-3 h-3 text-text-muted" />
+                                                    <span className="text-text-muted">Proj Radius:</span>
+                                                </div>
+                                                <div className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</div>
                                             </div>
                                         </>
                                     )}

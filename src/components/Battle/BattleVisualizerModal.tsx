@@ -121,8 +121,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                 // Apply full damage formula (matching SkillPanel.tsx and BattleSimulator.ts)
                 const skillFactor = (playerStats as any).skillDamageMultiplier || 1;
                 const globalFactor = (playerStats as any).damageMultiplier || 1;
-                const mountFactor = (playerStats as any).mountDamageMulti || 0;
-                const totalDamageMulti = skillFactor + (globalFactor - mountFactor) - 1;
+                const totalDamageMulti = skillFactor + globalFactor - 1;
                 damage = damage * totalDamageMulti;
 
                 let cooldown = skillConfig.Cooldown;
@@ -359,8 +358,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             // Use full damage formula (same as SkillPanel/BattleSimulator)
             const skillFactor = (playerStats as any).skillDamageMultiplier || 1;
             const globalFactor = (playerStats as any).damageMultiplier || 1;
-            const mountFactor = (playerStats as any).mountDamageMulti || 0;
-            const totalDamageMulti = skillFactor + (globalFactor - mountFactor) - 1;
+            const totalDamageMulti = skillFactor + globalFactor - 1;
 
             for (const skillSlot of profile.skills.equipped) {
                 if (['Morale', 'Meat', 'Berserk', 'Buff', 'HigherMorale'].includes(skillSlot.id)) {

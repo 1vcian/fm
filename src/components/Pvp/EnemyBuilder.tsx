@@ -72,6 +72,7 @@ export function EnemyBuilder() {
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
 
     // Consolidated libraries object for helper
     const allLibs = {
@@ -88,7 +89,8 @@ export function EnemyBuilder() {
         weaponLibrary,
         projectilesLibrary,
         skinsLibrary,
-        setsLibrary
+        setsLibrary,
+        ascensionConfigsLibrary
     };
 
     // UI State
@@ -117,7 +119,11 @@ export function EnemyBuilder() {
         passiveStats: initPassiveStats(),
         name: "Enemy Player",
         pets: [null, null, null],
-        mount: null
+        mount: null,
+        forgeAscensionLevel: 0,
+        skillAscensionLevel: 0,
+        mountAscensionLevel: 0,
+        petAscensionLevel: 0
     });
 
     // Save/Load Logic
@@ -311,7 +317,13 @@ export function EnemyBuilder() {
                     skillLibrary,
                     weaponLibrary,
                     profile.items.Weapon,
-                    pvpBaseConfig
+                    pvpBaseConfig,
+                    {
+                        pets: profile.misc?.petAscensionLevel || 0,
+                        skills: profile.misc?.skillAscensionLevel || 0,
+                        mounts: profile.misc?.mountAscensionLevel || 0
+                    },
+                    ascensionConfigsLibrary
                 );
 
                 // 2. Convert Player 2 (Enemy) Stats
@@ -321,7 +333,8 @@ export function EnemyBuilder() {
                     pvpBaseConfig,
                     mountUpgradeLibrary,
                     petLibrary,
-                    petBalancingLibrary
+                    petBalancingLibrary,
+                    ascensionConfigsLibrary
                 );
 
                 // 3. Run Simulation
@@ -357,7 +370,13 @@ export function EnemyBuilder() {
                 skillLibrary,
                 weaponLibrary,
                 profile.items.Weapon,
-                pvpBaseConfig
+                pvpBaseConfig,
+                {
+                    pets: profile.misc?.petAscensionLevel || 0,
+                    skills: profile.misc?.skillAscensionLevel || 0,
+                    mounts: profile.misc?.mountAscensionLevel || 0
+                },
+                ascensionConfigsLibrary
             );
             const p2 = enemyConfigToPvpStats(
                 enemy,
@@ -586,24 +605,41 @@ export function EnemyBuilder() {
                 </div>
             </div>
 
-            {/* Power (Optional) */}
-            <div className="flex items-center gap-4 bg-bg-input/30 p-3 rounded-lg border border-border/30">
-                <Crown className="w-5 h-5 text-yellow-500" />
-                <div className="flex-1">
-                    <span className="text-xs text-text-muted uppercase font-bold">Power (Optional)</span>
+            {/* Power & Forge Ascension */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-4 bg-bg-input/30 p-3 rounded-lg border border-border/30">
+                    <Crown className="w-5 h-5 text-yellow-500" />
+                    <div className="flex-1">
+                        <span className="text-xs text-text-muted uppercase font-bold">Power (Optional)</span>
+                    </div>
+                    <div className="relative">
+                        {renderPreview(enemy.stats.power)}
+                        <Input
+                            type="number"
+                            value={enemy.stats.power ?? ''}
+                            onChange={(e) => setEnemy(prev => ({
+                                ...prev,
+                                stats: { ...prev.stats, power: e.target.value ? parseFloat(e.target.value) : undefined }
+                            }))}
+                            placeholder="—"
+                            className="w-32 h-8 text-sm font-mono font-bold text-right"
+                        />
+                    </div>
                 </div>
-                <div className="relative">
-                    {renderPreview(enemy.stats.power)}
-                    <Input
-                        type="number"
-                        value={enemy.stats.power ?? ''}
-                        onChange={(e) => setEnemy(prev => ({
-                            ...prev,
-                            stats: { ...prev.stats, power: e.target.value ? parseFloat(e.target.value) : undefined }
-                        }))}
-                        placeholder="—"
-                        className="w-32 h-8 text-sm font-mono font-bold text-right"
-                    />
+
+                <div className="flex items-center gap-4 bg-bg-input/30 p-3 rounded-lg border border-border/30">
+                    <Zap className="w-5 h-5 text-cyan-400" />
+                    <div className="flex-1">
+                        <span className="text-xs text-text-muted uppercase font-bold text-nowrap">Enemy Level</span>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2">
+                         <Input
+                            type="number"
+                            value={enemy.level || 1}
+                            onChange={(e) => setEnemy(prev => ({ ...prev, level: parseInt(e.target.value) || 1 }))}
+                            className="w-16 h-8 text-sm font-mono font-bold text-right"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -652,10 +688,11 @@ export function EnemyBuilder() {
                     )}
                 </div>
 
-                {/* Skills Selection */}
                 <div className="space-y-3">
-                    <h3 className="text-sm font-bold uppercase text-text-muted flex items-center gap-2">
-                        <Zap className="w-4 h-4" /> Active Skills (3 max)
+                    <h3 className="text-sm font-bold uppercase text-text-muted flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Zap className="w-4 h-4" /> Active Skills (3 max)
+                        </div>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {renderSkillSlot(0)}
@@ -818,8 +855,10 @@ export function EnemyBuilder() {
 
             {/* Pet & Mount Stats for PvP */}
             <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase text-text-muted flex items-center gap-2 border-t border-border pt-4">
-                    <Heart className="w-4 h-4" /> Pet & Mount (PvP)
+                <h3 className="text-sm font-bold uppercase text-text-muted flex items-center justify-between border-t border-border pt-4">
+                    <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4" /> Pet & Mount (PvP)
+                    </div>
                 </h3>
                 <p className="text-xs text-text-muted/70 -mt-2">
                     Select up to 3 active Pets and a Mount to apply their stats.
@@ -923,8 +962,9 @@ export function EnemyBuilder() {
                                             <div className={cn("text-[10px] font-bold", `text-rarity-${enemy.mount.rarity.toLowerCase()}`)}>
                                                 {enemy.mount.rarity}
                                             </div>
-                                            <div className="flex items-center gap-1 justify-center mt-1">
-                                                <span className="text-[10px] text-text-muted font-bold">HP%</span>
+                                            <div className="flex items-center gap-1 justify-center mt-2 border-t border-border/20 pt-2">
+                                                <span className="text-[10px] text-green-400 font-bold">HP</span>
+                                                {renderPreview(enemy.mount.hp)}
                                                 <Input
                                                     type="number"
                                                     value={enemy.mount.hp || ''}
@@ -933,8 +973,8 @@ export function EnemyBuilder() {
                                                         setEnemy(prev => prev.mount ? { ...prev, mount: { ...prev.mount, hp: val } } : prev);
                                                     }}
                                                     onClick={(e) => e.stopPropagation()}
-                                                    className="h-5 w-12 bg-transparent border-0 border-b border-border rounded-none px-0 text-center font-mono font-bold focus:ring-0 text-[10px]"
-                                                    placeholder="%"
+                                                    className="h-6 w-20 bg-transparent border-0 border-b border-border rounded-none px-0 text-center font-mono font-bold focus:ring-0 text-[10px]"
+                                                    placeholder="Mount HP"
                                                 />
                                             </div>
                                         </div>

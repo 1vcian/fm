@@ -114,21 +114,6 @@ export function simulateBattle(
             // Total = 1 + SkillMulti + GlobalMulti = skillDamageMultiplier + damageMultiplier - 1
             const skillFactor = playerStats.skillDamageMultiplier || 1;
             const globalFactor = playerStats.damageMultiplier || 1;
-
-            // For Healing, we use healthMultiplier instead of damageMultiplier if apply? 
-            // Usually valid for Damage. For Health skills (Healing), does DamageMulti apply?
-            // "DamageMulti" applies to Damage. "SkillDamageMulti" applies to Damage AND Healing.
-            // "SkillHealing" or "HealthMulti"? 
-            // In StatEngine, Mount gives "Damage" and "Health". "Health" multiplies Player HP. 
-            // Does Mount "Health" multiply Skill Healing?
-            // User analysis says: "SkillDamageMulti multiplies both damage and health for active skills".
-            // "DamageMulti also multiplies damage...". 
-            // Let's assume for Healing: Base * (SkillFactor + HealthFactor - 1)? 
-            // Or just SkillFactor?
-            // User said: "SkillDamageMulti (56.5%) + DamageMulti (11.3%) ...".
-            // For now, let's stick to Damage Logic for Damage, and for Healing use SkillFactor. 
-            // Validating Worm (Damage) is priority.
-
             const totalDamageMulti = skillFactor + globalFactor - 1;
 
             // Buffed values
@@ -373,10 +358,8 @@ export function simulateDungeonBattle(
             // Apply Skill Damage Multiplier + Global Damage Multiplier
             const skillFactor = playerStats.skillDamageMultiplier || 1;
             const globalFactor = playerStats.damageMultiplier || 1;
-            const mountFactor = playerStats.mountDamageMulti || 0;
-
-            // SKILL DAMAGE FIX: Exclude Mount Damage
-            const totalDamageMulti = skillFactor + (globalFactor - mountFactor) - 1;
+            // SKILL DAMAGE FIX: Mount Damage is now flat and added separately, so it doesn't need to be subtracted from multipliers
+            const totalDamageMulti = skillFactor + globalFactor - 1;
 
             const buffedDamage = baseDamage * totalDamageMulti;
             // Healing uses same formula as Damage (includes Secondary Stats, excludes Innate Mount)
@@ -770,16 +753,19 @@ export function findMaxBeatableStage(
     // Given the complexity, iterating backwards is safe but slow.
     // Let's reduce search space?
 
-    for (let age = 10; age >= 0; age--) {
-        const maxBattle = age === 0 ? 9 : 19;
+    const stages = Object.keys(libs.mainBattleLibrary).map(key => {
+        const ageMatch = key.match(/'AgeIdx': (\d+)/);
+        const battleMatch = key.match(/'BattleIdx': (\d+)/);
+        return {
+            ageIdx: ageMatch ? parseInt(ageMatch[1]) : 0,
+            battleIdx: battleMatch ? parseInt(battleMatch[1]) : 0
+        };
+    }).sort((a, b) => b.ageIdx !== a.ageIdx ? b.ageIdx - a.ageIdx : b.battleIdx - a.battleIdx);
 
-        for (let battle = maxBattle; battle >= 0; battle--) {
-            // Use single run for speed in search
-            const result = simulateBattle(playerStats, null, age, battle, difficultyMode, libs);
-            if (result && result.victory) {
-                // Confirm with multi if close?
-                return { ageIdx: age, battleIdx: battle };
-            }
+    for (const stage of stages) {
+        const result = simulateBattle(playerStats, null, stage.ageIdx, stage.battleIdx, difficultyMode, libs);
+        if (result && result.victory) {
+            return stage;
         }
     }
     return null;
@@ -791,7 +777,18 @@ export function findMaxBeatableDungeonStage(
     libs: LibraryData,
     dungeonType: 'hammer' | 'skill' | 'egg' | 'potion'
 ): number {
-    for (let lvl = 99; lvl >= 0; lvl--) {
+    let library: Record<string, DungeonLevelConfig> | undefined;
+    switch (dungeonType) {
+        case 'hammer': library = libs.hammerThiefDungeonBattleLibrary; break;
+        case 'skill': library = libs.skillDungeonBattleLibrary; break;
+        case 'egg': library = libs.eggDungeonBattleLibrary; break;
+        case 'potion': library = libs.potionDungeonBattleLibrary; break;
+    }
+    if (!library) return -1;
+
+    const levels = Object.keys(library).map(k => parseInt(k)).sort((a, b) => b - a);
+
+    for (const lvl of levels) {
         // Use single run for speed
         const result = simulateDungeonBattle(playerStats, profile, dungeonType, lvl, libs);
         if (result && result.victory) {

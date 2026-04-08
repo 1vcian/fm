@@ -8,6 +8,8 @@ import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
 import { MountSelectorModal } from './MountSelectorModal';
 import { InputModal } from '../UI/InputModal';
+import { AscensionStars } from '../UI/AscensionStars';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getInventoryIconStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
@@ -97,7 +99,12 @@ interface EquipmentPanelProps {
 
 export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems, compareMount }: EquipmentPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
-    const { isComparing, originalItems, testItems, updateOriginalItem, updateTestItem, enterCompareMode } = useComparison();
+    const { isComparing, originalItems, testItems,
+        originalForgeAscension,
+        testForgeAscension,
+        updateOriginalForgeAscension,
+        updateTestForgeAscension,
+        updateOriginalItem, updateTestItem, enterCompareMode } = useComparison();
     const [selectedSlot, setSelectedSlot] = useState<keyof UserProfile['items'] | null>(null);
     const [itemToSave, setItemToSave] = useState<{ slot: keyof UserProfile['items']; item: ItemSlot } | null>(null);
 
@@ -157,7 +164,9 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
+    const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     useGameData<any>('SkinsLibrary.json');
+    const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
 
     // Helper to calculate item perfection (avg of secondary stats vs max)
     const getPerfection = (item: ItemSlot): number | null => {
@@ -201,6 +210,41 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const levelScaling = itemBalancingConfig?.LevelScalingBase || 1.01;
     const meleeBaseMulti = itemBalancingConfig?.PlayerMeleeDamageMultiplier || 1.6;
 
+    // Ascension Multiplier calculation
+    const forgeAscensionMulti = useMemo(() => {
+        let total = 0;
+        let ascLevel = profile.misc.forgeAscensionLevel || 0;
+
+        // Use comparison levels if in comparison mode
+        if (isComparing) {
+            if (variant === 'original' && originalForgeAscension !== null) ascLevel = originalForgeAscension;
+            else if (variant === 'test' && testForgeAscension !== null) ascLevel = testForgeAscension;
+        }
+
+        if (ascLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
+            const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
+            for (let i = 0; i < ascLevel && i < configs.length; i++) {
+                const contributions = configs[i].StatContributions || [];
+                for (const stat of contributions) {
+                    // For now we assume they are Damage or Health which share the same value context
+                    // and apply to the card's display. We take the max of available contributions 
+                    // because Forge Ascension usually applies the same % to both.
+                    total += stat.Value;
+                    break; // Keep the same result as before for now but more robust structure
+                }
+            }
+        }
+        return total;
+    }, [profile.misc.forgeAscensionLevel, ascensionConfigs, isComparing, variant, originalForgeAscension, testForgeAscension]);
+
+    const globalAscensionLevel = useMemo(() => {
+        if (isComparing) {
+            if (variant === 'original' && originalForgeAscension !== null) return originalForgeAscension;
+            if (variant === 'test' && testForgeAscension !== null) return testForgeAscension;
+        }
+        return profile.misc.forgeAscensionLevel || 0;
+    }, [isComparing, variant, originalForgeAscension, testForgeAscension, profile.misc.forgeAscensionLevel]);
+
     // Calculate item stats with tech tree bonus
     // For weapons: includes melee base multiplier (1.6x) to match in-game display
     const getItemStats = (item: ItemSlot | null, slotKey: string) => {
@@ -240,6 +284,9 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
 
             // Tech tree bonus
             value = value * (1 + bonus);
+
+            // Forge Ascension bonus
+            value = value * (1 + forgeAscensionMulti);
 
             if (statType === 'Damage') damage += value;
             if (statType === 'Health') health += value;
@@ -351,17 +398,38 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                     <img src="./Texture2D/IconDivineArmorPaladinarmor.png" alt="Equipment" className="w-8 h-8 object-contain" />
                     {panelTitle}
                 </h2>
-                {showCompareButton && !isComparing && variant === 'default' && (
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={enterCompareMode}
-                        className="shadow-lg shadow-accent-primary/20 animate-pulse-subtle"
-                    >
-                        <GitCompare className="w-4 h-4 mr-2" />
-                        Compare Build
-                    </Button>
-                )}
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-bg-input/50 px-3 py-1.5 rounded-lg border border-border/50">
+                        <AscensionStars
+                            value={globalAscensionLevel}
+                            onChange={(val) => {
+                                if (isComparing) {
+                                    if (variant === 'original') updateOriginalForgeAscension(val);
+                                    else if (variant === 'test') updateTestForgeAscension(val);
+                                } else {
+                                    updateNestedProfile('misc', { forgeAscensionLevel: val });
+                                }
+                            }}
+                            className="scale-90 origin-right"
+                        />
+                        {forgeAscensionMulti > 0 && (
+                            <div className="hidden sm:block text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+                                +{(forgeAscensionMulti * 100).toLocaleString()}%
+                            </div>
+                        )}
+                    </div>
+                    {showCompareButton && !isComparing && variant === 'default' && (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={enterCompareMode}
+                            className="shadow-lg shadow-accent-primary/20 animate-pulse-subtle"
+                        >
+                            <GitCompare className="w-4 h-4 mr-2" />
+                            Compare Build
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -384,10 +452,17 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                             {equipped ? (
                                 <>
                                     {/* Top Row: Level (Left) and Unequip (Right) */}
-                                    <div className="absolute top-1 left-1 z-10">
+                                    <div className="absolute top-1 left-1 z-10 flex flex-col gap-0.5">
                                         <span className="bg-black/60 text-white text-[11px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
                                             Lv{equipped.level}
                                         </span>
+                                        {globalAscensionLevel > 0 && (
+                                            <div className="flex gap-0.5">
+                                                {Array.from({ length: globalAscensionLevel }).map((_, i) => (
+                                                    <img key={i} src="./Texture2D/AscensionStar.png" alt="Star" className="w-2.5 h-2.5 object-contain drop-shadow-sm" />
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <button
@@ -460,7 +535,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                                                         Idx: equipped.skin!.idx,
                                                                         Type: equipped.skin!.type || SLOT_TO_JSON_TYPE[slot.key] || slot.key
                                                                     }
-                                                                })}
+                                                                }, spriteMapping?.skins?.mapping)}
                                                             />
                                                         </div>
                                                     );
@@ -616,10 +691,22 @@ interface MountSlotWidgetProps {
 
 function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetProps) {
     const { profile, updateNestedProfile } = useProfile();
-    const { originalMount, testMount, updateOriginalMount, updateTestMount } = useComparison();
+    const { 
+        isComparing,
+        originalMount, 
+        testMount, 
+        originalMountAscension,
+        testMountAscension,
+        updateOriginalMount, 
+        updateTestMount,
+        updateOriginalMountAscension,
+        updateTestMountAscension
+    } = useComparison();
+    // Use the mapping from parent scope or load it again (hook is cached)
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
@@ -732,7 +819,8 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
     const handleLevelChange = (delta: number, e: React.MouseEvent) => {
         e.stopPropagation();
         if (!mount) return;
-        const newLevel = Math.max(1, Math.min(100, mount.level + delta));
+        const maxLevel = mountUpgradeLibrary?.[mount.rarity]?.LevelInfo?.length || 100;
+        const newLevel = Math.max(1, Math.min(maxLevel, mount.level + delta));
         const updatedMount = { ...mount, level: newLevel };
         if (variant === 'original') {
             updateOriginalMount(updatedMount);
@@ -777,14 +865,42 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
         }
 
         // Apply tech tree bonuses
-        const finalDamage = damage * (1 + mountDamageBonus);
-        const finalHealth = health * (1 + mountHealthBonus);
+        const mountDmgMulti = mountDamageBonus || 0;
+        const mountHpMulti = mountHealthBonus || 0;
+
+        // Apply ascension bonuses
+        let ascensionDmgMulti = 0;
+        let ascensionHpMulti = 0;
+        let mountAscensionLevel = profile.misc.mountAscensionLevel || 0;
+
+        if (isComparing) {
+            if (variant === 'original' && originalMountAscension !== null) mountAscensionLevel = originalMountAscension;
+            else if (variant === 'test' && testMountAscension !== null) mountAscensionLevel = testMountAscension;
+        }
+
+        if (mountAscensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
+            for (let i = 0; i < mountAscensionLevel && i < ascConfigs.length; i++) {
+                const contributions = ascConfigs[i].StatContributions || [];
+                for (const s of contributions) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sVal = s.Value;
+                    if (sType === 'Damage') ascensionDmgMulti += sVal;
+                    if (sType === 'Health') ascensionHpMulti += sVal;
+                }
+            }
+        }
+
+        const finalDamage = damage * (1 + mountDmgMulti) * (1 + ascensionDmgMulti);
+        const finalHealth = health * (1 + mountHpMulti) * (1 + ascensionHpMulti);
 
         return {
             damage: finalDamage,
             health: finalHealth,
-            damageBonus: mountDamageBonus,
-            healthBonus: mountHealthBonus
+            damageBonus: mountDmgMulti,
+            healthBonus: mountHpMulti,
+            ascensionDmgMulti,
+            ascensionHpMulti
         };
     };
 
@@ -873,7 +989,7 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
                             >
                                 {spriteInfo ? (
                                     <SpriteSheetIcon
-                                        textureSrc="./icons/game/MountIcons.png"
+                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
                                         spriteWidth={spriteInfo.config.sprite_size.width}
                                         spriteHeight={spriteInfo.config.sprite_size.height}
                                         sheetWidth={spriteInfo.config.texture_size.width}
@@ -900,32 +1016,56 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
                             >+</button>
                         </div>
 
-                        {/* Name - Centered */}
-                        {/* Name - Centered */}
-                        <div className={cn(
-                            "font-bold leading-tight text-center break-words whitespace-normal w-full px-2 transition-[font-size]",
-                            `text-rarity-${mount.rarity.toLowerCase()}`,
-                            (spriteInfo?.name || "").length > 20 ? "text-xs" : "text-sm"
-                        )}>
-                            {spriteInfo?.name || `${mount.rarity} Mount #${mount.id}`}
+                        {/* Name and Stars - Centered */}
+                        <div className="flex flex-col items-center gap-1 w-full">
+                            <div className={cn(
+                                "font-bold leading-tight text-center break-words whitespace-normal px-2 transition-[font-size]",
+                                `text-rarity-${mount.rarity.toLowerCase()}`,
+                                (spriteInfo?.name || "").length > 20 ? "text-xs" : "text-sm"
+                            )}>
+                                {spriteInfo?.name || `${mount.rarity} Mount #${mount.id}`}
+                            </div>
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <AscensionStars 
+                                    value={(() => {
+                                        if (isComparing) {
+                                            if (variant === 'original' && originalMountAscension !== null) return originalMountAscension;
+                                            if (variant === 'test' && testMountAscension !== null) return testMountAscension;
+                                        }
+                                        return profile.misc.mountAscensionLevel || 0;
+                                    })()}
+                                    onChange={(val: number) => {
+                                        if (isComparing) {
+                                            if (variant === 'original') updateOriginalMountAscension(val);
+                                            else if (variant === 'test') updateTestMountAscension(val);
+                                        } else {
+                                            updateNestedProfile('misc', { mountAscensionLevel: val });
+                                        }
+                                    }}
+                                />
+                            </div>
                         </div>
 
                         {/* Base Stats (DMG/HP) - Side by side on larger screens */}
                         {mountStats && (mountStats.damage > 0 || mountStats.health > 0) && (
-                            <div className="w-full bg-bg-input/30 rounded p-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 max-w-[95%] font-mono text-xs">
+                            <div className="w-full bg-bg-input/30 rounded p-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 max-w-[95%] font-mono text-[11px]">
                                 {mountStats.damage > 0 && (
                                     <div className="text-red-400 flex flex-col items-center">
-                                        <span>DMG +{(mountStats.damage * 100).toFixed(2)}%</span>
-                                        {mountStats.damageBonus > 0 && (
-                                            <span className="text-green-400 text-[11px]">(+{(mountStats.damageBonus * 100).toFixed(0)}%)</span>
+                                        <span>DMG +{mountStats.damage >= 1000000 ? (mountStats.damage / 1000000).toFixed(2) + 'M' : mountStats.damage.toLocaleString()}</span>
+                                        {(mountStats.damageBonus > 0 || (mountStats.ascensionDmgMulti || 0) > 0) && (
+                                            <span className="text-green-400 text-[10px]">
+                                                (+{((mountStats.damageBonus + (mountStats.ascensionDmgMulti || 0)) * 100).toFixed(0)}%)
+                                            </span>
                                         )}
                                     </div>
                                 )}
                                 {mountStats.health > 0 && (
                                     <div className="text-green-400 flex flex-col items-center">
-                                        <span>HP +{(mountStats.health * 100).toFixed(2)}%</span>
-                                        {mountStats.healthBonus > 0 && (
-                                            <span className="text-green-400 text-[11px]">(+{(mountStats.healthBonus * 100).toFixed(0)}%)</span>
+                                        <span>HP +{mountStats.health >= 1000000 ? (mountStats.health / 1000000).toFixed(2) + 'M' : mountStats.health.toLocaleString()}</span>
+                                        {(mountStats.healthBonus > 0 || (mountStats.ascensionHpMulti || 0) > 0) && (
+                                            <span className="text-green-400 text-[10px]">
+                                                (+{((mountStats.healthBonus + (mountStats.ascensionHpMulti || 0)) * 100).toFixed(0)}%)
+                                            </span>
                                         )}
                                     </div>
                                 )}

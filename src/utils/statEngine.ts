@@ -44,6 +44,8 @@ export interface AggregatedStats {
     petHealth: number;     // Pet flat health
     skillPassiveDamage: number;  // Skill passive flat damage
     skillPassiveHealth: number;  // Skill passive flat health
+    mountDamage: number;         // Mount flat damage
+    mountHealth: number;         // Mount flat health
 
     totalDamage: number;
     totalHealth: number;
@@ -57,8 +59,8 @@ export interface AggregatedStats {
     // Secondary stats (from items/pets/mount - for display)
     secondaryDamageMulti: number;   // DamageMulti secondary stat
     secondaryHealthMulti: number;   // HealthMulti secondary stat
-    mountDamageMulti: number;       // Mount Damage Multiplier
-    mountHealthMulti: number;       // Mount Health Multiplier
+    mountedDamage: number;  // For display in UI if needed
+    mountedHealth: number;  // For display in UI if needed
     skinDamageMulti: number;        // Skin Damage Multiplier (e.g. 0.10 = +10%)
     skinHealthMulti: number;        // Skin Health Multiplier
     setDamageMulti: number;         // Set Bonus Damage Multiplier
@@ -78,6 +80,7 @@ export interface AggregatedStats {
     lifeSteal: number;
 
     skillDamageMultiplier: number;
+    skillHealthMultiplier: number;
     skillCooldownReduction: number;
 
     experienceMultiplier: number;
@@ -121,6 +124,8 @@ export const DEFAULT_STATS: AggregatedStats = {
     petHealth: 0,
     skillPassiveDamage: 0,
     skillPassiveHealth: 0,
+    mountDamage: 0,
+    mountHealth: 0,
     totalDamage: 10,
     totalHealth: 80,
     meleeDamage: 16,
@@ -129,8 +134,8 @@ export const DEFAULT_STATS: AggregatedStats = {
     healthMultiplier: 1,
     secondaryDamageMulti: 0,
     secondaryHealthMulti: 0,
-    mountDamageMulti: 0,
-    mountHealthMulti: 0,
+    mountedDamage: 0,
+    mountedHealth: 0,
     skinDamageMulti: 0,
     skinHealthMulti: 0,
     setDamageMulti: 0,
@@ -146,6 +151,7 @@ export const DEFAULT_STATS: AggregatedStats = {
     healthRegen: 0,
     lifeSteal: 0,
     skillDamageMultiplier: 1,
+    skillHealthMultiplier: 1,
     skillCooldownReduction: 0,
     experienceMultiplier: 1,
     sellPriceMultiplier: 1,
@@ -193,6 +199,7 @@ export interface LibraryData {
     secondaryStatLibrary?: any;
     skinsLibrary?: any;
     setsLibrary?: any;
+    ascensionConfigsLibrary?: any;
 }
 
 export class StatEngine {
@@ -238,9 +245,9 @@ export class StatEngine {
         moveSpeed: 0,
     };
 
-    // Mount multipliers (NOT additive flat stats!)
-    private mountDamageMulti = 0;
-    private mountHealthMulti = 0;
+    // Mount flat stats
+    private mountDamage = 0;
+    private mountHealth = 0;
 
     // Skin multipliers (accumulated per-item in collectItemStats)
     private skinDamageMulti = 0;
@@ -249,6 +256,10 @@ export class StatEngine {
     // Set bonuses (from SetsLibrary.json)
     private setDamageMulti = 0;
     private setHealthMulti = 0;
+
+    // Forge Ascension multipliers
+    private forgeAscensionDamageMulti = 0;
+    private forgeAscensionHealthMulti = 0;
 
     // Item Max Level Bonuses per slot
     private maxLevelBonuses: Record<string, number> = {
@@ -387,16 +398,19 @@ export class StatEngine {
             moveSpeed: 0,
         };
 
-        // Reset mount multipliers
-        this.mountDamageMulti = 0;
-        this.mountHealthMulti = 0;
-        this.stats.mountDamageMulti = 0;
+        // Reset mount flat stats
+        this.mountDamage = 0;
+        this.mountHealth = 0;
+        this.stats.mountedDamage = 0;
+        this.stats.mountedHealth = 0;
 
         // Reset skin/set multipliers
         this.skinDamageMulti = 0;
         this.skinHealthMulti = 0;
         this.setDamageMulti = 0;
         this.setHealthMulti = 0;
+        this.forgeAscensionDamageMulti = 0;
+        this.forgeAscensionHealthMulti = 0;
 
         // Reset max levels
         this.maxLevelBonuses = { 'Weapon': 0, 'Helmet': 0, 'Body': 0, 'Gloves': 0, 'Belt': 0, 'Necklace': 0, 'Ring': 0, 'Shoe': 0 };
@@ -489,6 +503,22 @@ export class StatEngine {
                 const key = node.Type;
                 this.techModifiers[key] = (this.techModifiers[key] || 0) + totalVal;
             }
+        }
+
+        // Apply Forge Ascension
+        const forgeAscensionLevel = this.profile.misc.forgeAscensionLevel || 0;
+        if (forgeAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Forge?.AscensionConfigPerLevel) {
+            const ascConfigs = this.libs.ascensionConfigsLibrary.Forge.AscensionConfigPerLevel;
+            for (let i = 0; i < forgeAscensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const stat of stats) {
+                    const statType = stat.StatNode?.UniqueStat?.StatType;
+                    const value = stat.Value;
+                    if (statType === 'Damage') this.forgeAscensionDamageMulti += value;
+                    if (statType === 'Health') this.forgeAscensionHealthMulti += value;
+                }
+            }
+            this.debugLogs.push(`Forge Ascension L${forgeAscensionLevel}: Damage=+${(this.forgeAscensionDamageMulti * 100).toFixed(0)}%, Health=+${(this.forgeAscensionHealthMulti * 100).toFixed(0)}%`);
         }
 
         this.debugLogs.push(`Tech Modifiers: ${JSON.stringify(this.techModifiers)}`);
@@ -585,6 +615,18 @@ export class StatEngine {
                             this.stats.projectileRadius = projData.CollisionRadius || 0;
                         }
                     }
+
+                    // skin combat stats override (Age 999 for Melee, 1000 for Ranged)
+                    if (item.skin?.idx !== undefined && this.libs.weaponLibrary) {
+                        const skinAge = this.stats.isRangedWeapon ? 1000 : 999;
+                        const skinKey = `{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${item.skin.idx}}`;
+                        const skinWeaponData = this.libs.weaponLibrary[skinKey];
+
+                        if (skinWeaponData) {
+                            // Only override windupTime as requested
+                            this.stats.weaponWindupTime = skinWeaponData.WindupTime ?? this.stats.weaponWindupTime;
+                        }
+                    }
                 }
             }
 
@@ -672,6 +714,22 @@ export class StatEngine {
             const petType = petData?.Type || 'Balanced';
             const typeMulti = this.libs.petBalancingLibrary?.[petType] || { DamageMultiplier: 1, HealthMultiplier: 1 };
 
+            let ascensionDmgMulti = 0;
+            let ascensionHpMulti = 0;
+            const petAscensionLevel = this.profile.misc.petAscensionLevel || 0;
+            if (petAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Pets?.AscensionConfigPerLevel) {
+                const ascConfigs = this.libs.ascensionConfigsLibrary.Pets.AscensionConfigPerLevel;
+                for (let i = 0; i < petAscensionLevel && i < ascConfigs.length; i++) {
+                    const stats = ascConfigs[i].StatContributions || [];
+                    for (const s of stats) {
+                        const sType = s.StatNode?.UniqueStat?.StatType;
+                        const sVal = s.Value;
+                        if (sType === 'Damage') ascensionDmgMulti += sVal;
+                        if (sType === 'Health') ascensionHpMulti += sVal;
+                    }
+                }
+            }
+
             let dmg = 0, hp = 0;
             for (const stat of levelInfo.PetStats.Stats) {
                 const statType = stat.StatNode?.UniqueStat?.StatType;
@@ -679,19 +737,19 @@ export class StatEngine {
 
                 if (statType === 'Damage') {
                     value *= typeMulti.DamageMultiplier;
-                    value *= (1 + petDamageBonus);
+                    value *= (1 + petDamageBonus + ascensionDmgMulti);
                     dmg += value;
                 }
                 if (statType === 'Health') {
                     value *= typeMulti.HealthMultiplier;
-                    value *= (1 + petHealthBonus);
+                    value *= (1 + petHealthBonus + ascensionHpMulti);
                     hp += value;
                 }
             }
 
             this.stats.petDamage += dmg;
             this.stats.petHealth += hp;
-            this.debugLogs.push(`Pet ${pet.rarity} ${pet.id} (${petType}) L${pet.level}: Damage=${dmg.toFixed(0)}, Health=${hp.toFixed(0)}`);
+            this.debugLogs.push(`Pet ${pet.rarity} ${pet.id} (${petType}) L${pet.level} Asc${petAscensionLevel}: Damage=${dmg.toFixed(0)}, Health=${hp.toFixed(0)}`);
         }
     }
 
@@ -715,22 +773,39 @@ export class StatEngine {
                 const statType = stat.StatNode?.UniqueStat?.StatType;
                 const value = stat.Value || 0;
 
-                // Mount stats are MULTIPLIERS (e.g., 0.70 = +70%)
-                if (statType === 'Damage') this.mountDamageMulti += value;
-                if (statType === 'Health') this.mountHealthMulti += value;
+                // Mount stats are FLAT absolute values
+                if (statType === 'Damage') this.mountDamage += value;
+                if (statType === 'Health') this.mountHealth += value;
             }
         }
 
         // Apply tech tree bonuses MULTIPLICATIVELY (same as Verify.tsx)
-        const mountDmgBonus = this.techModifiers['MountDamage'] || 0;
-        const mountHpBonus = this.techModifiers['MountHealth'] || 0;
+        const mountDmgMulti = this.techModifiers['MountDamage'] || 0;
+        const mountHpMulti = this.techModifiers['MountHealth'] || 0;
 
-        this.debugLogs.push(`Mount base: Damage=${(this.mountDamageMulti * 100).toFixed(1)}%, Health=${(this.mountHealthMulti * 100).toFixed(1)}%`);
+        let ascensionDmgMulti = 0;
+        let ascensionHpMulti = 0;
+        const mountAscensionLevel = this.profile.misc.mountAscensionLevel || 0;
+        if (mountAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+            const ascConfigs = this.libs.ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
+            for (let i = 0; i < mountAscensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const s of stats) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sVal = s.Value;
+                    if (sType === 'Damage') ascensionDmgMulti += sVal;
+                    if (sType === 'Health') ascensionHpMulti += sVal;
+                }
+            }
+        }
 
-        this.mountDamageMulti *= (1 + mountDmgBonus);
-        this.mountHealthMulti *= (1 + mountHpBonus);
+        this.debugLogs.push(`Mount base absolute: Damage=${this.mountDamage.toFixed(0)}, Health=${this.mountHealth.toFixed(0)}`);
 
-        this.debugLogs.push(`Mount final: Damage=${(this.mountDamageMulti * 100).toFixed(1)}%, Health=${(this.mountHealthMulti * 100).toFixed(1)}%`);
+        // Ascension and tech tree bonuses are additive within the final multiplier
+        this.mountDamage *= (1 + mountDmgMulti + ascensionDmgMulti);
+        this.mountHealth *= (1 + mountHpMulti + ascensionHpMulti);
+
+        this.debugLogs.push(`Mount final absolute: Damage=${this.mountDamage.toFixed(0)}, Health=${this.mountHealth.toFixed(0)}`);
     }
 
     private incrementStatCount(statId: string) {
@@ -837,6 +912,37 @@ export class StatEngine {
             const levelInfo = passiveData.LevelStats[levelIdx];
             if (!levelInfo?.Stats) continue;
 
+            const skillAscensionLevel = this.profile.misc.skillAscensionLevel || 0;
+
+            let ascensionDmgMulti = 0;
+            let ascensionHpMulti = 0;
+            let ascensionActiveSkillDmgMulti = 0;
+            let ascensionActiveSkillHpMulti = 0;
+
+            if (skillAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
+                const ascConfigs = this.libs.ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
+                for (let i = 0; i < skillAscensionLevel && i < ascConfigs.length; i++) {
+                    const stats = ascConfigs[i].StatContributions || [];
+                    for (const s of stats) {
+                        const sType = s.StatNode?.UniqueStat?.StatType;
+                        const sTarget = s.StatNode?.StatTarget?.$type;
+                        const sVal = s.Value;
+
+                        if (sTarget === 'PassiveSkillStatTarget') {
+                            if (sType === 'Damage') ascensionDmgMulti += sVal;
+                            if (sType === 'Health') ascensionHpMulti += sVal;
+                        } else if (sTarget === 'ActiveSkillStatTarget') {
+                            if (sType === 'Damage') ascensionActiveSkillDmgMulti += sVal;
+                            if (sType === 'Health') ascensionActiveSkillHpMulti += sVal;
+                        }
+                    }
+                }
+            }
+
+            // Apply active skill ascension multiplier to total skill damage/health multiplier layer (Reset first to avoid loop pollution)
+            this.stats.skillDamageMultiplier = 1 + (this.techModifiers['ActiveSkillDamage'] || 0) + (this.secondaryStats.skillDamageMulti || 0) + ascensionActiveSkillDmgMulti;
+            this.stats.skillHealthMultiplier = 1 + (this.techModifiers['ActiveSkillHealth'] || 0) + ascensionActiveSkillHpMulti;
+
             let skillBaseDmg = 0;
             let skillBaseHp = 0;
 
@@ -848,11 +954,11 @@ export class StatEngine {
                 if (statType === 'Health') skillBaseHp += baseValue;
             }
 
-            // Apply tech tree bonus and ROUND to integer for EACH skill (as the game does)
-            const withBonusDmg = skillBaseDmg * (1 + skillPassiveDamageBonus);
+            // Apply tech tree bonus, ascension, and ROUND to integer for EACH skill (as the game does)
+            const withBonusDmg = skillBaseDmg * (1 + skillPassiveDamageBonus + ascensionDmgMulti);
             totalPassiveDmg += Math.floor(withBonusDmg);
 
-            const withBonusHp = skillBaseHp * (1 + skillPassiveHealthBonus);
+            const withBonusHp = skillBaseHp * (1 + skillPassiveHealthBonus + ascensionHpMulti);
             totalPassiveHp += Math.floor(withBonusHp);
         }
 
@@ -962,7 +1068,7 @@ export class StatEngine {
                 break;
             case 'Health':
                 if (target === 'ActiveSkillStatTarget') {
-                    // Skill Health Multiplier (Healing?)
+                    this.stats.skillHealthMultiplier = this.combine(this.stats.skillHealthMultiplier, value, statNature);
                 } else if (statNature !== 'Additive') {
                     this.stats.healthMultiplier = this.combine(this.stats.healthMultiplier, value, statNature);
                 }
@@ -1075,40 +1181,47 @@ export class StatEngine {
         // 2. Other item damage (armor, helmet, etc.) - NO melee base
         const otherItemDamage = this.stats.itemDamage - this.stats.weaponDamage;
 
-        // 3. Flat totals (including skill passive bonuses)
-        const flatDamageWithMelee = this.stats.basePlayerDamage + weaponWithMelee + otherItemDamage + this.stats.petDamage + this.stats.skillPassiveDamage;
-        const flatHealth = this.stats.basePlayerHealth + this.stats.itemHealth + this.stats.petHealth + this.stats.skillPassiveHealth;
+        // 3. Flat totals (including skill passive bonuses and mount)
+        const flatDamageWithMelee = this.stats.basePlayerDamage + weaponWithMelee + otherItemDamage + this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage;
+        const flatHealth = this.stats.basePlayerHealth + this.stats.itemHealth + this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth;
 
-        this.debugLogs.push(`Flat Stats: Damage=${flatDamageWithMelee.toFixed(0)} (skillPassive: ${this.stats.skillPassiveDamage.toFixed(0)}), Health=${flatHealth.toFixed(0)} (skillPassive: ${this.stats.skillPassiveHealth.toFixed(0)})`);
+        this.debugLogs.push(`Flat Stats: Damage=${flatDamageWithMelee.toFixed(0)} (skillPassive: ${this.stats.skillPassiveDamage.toFixed(0)}, mount: ${this.mountDamage.toFixed(0)}), Health=${flatHealth.toFixed(0)} (skillPassive: ${this.stats.skillPassiveHealth.toFixed(0)}, mount: ${this.mountHealth.toFixed(0)})`);
 
-        // 4. Additive Multipliers: Mount + Secondary (Tech Tree/Items)
-        const damageAdditiveMulti = 1 + this.mountDamageMulti + this.secondaryStats.damageMulti;
-        const healthAdditiveMulti = 1 + this.mountHealthMulti + this.secondaryStats.healthMulti;
+        // 4. Multiplier Layers
+        // - Global Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
+        const commonDamageMulti = 1 + this.secondaryStats.damageMulti;
+        const commonHealthMulti = 1 + this.secondaryStats.healthMulti;
 
-        this.debugLogs.push(`Additive Multipliers: Damage=${damageAdditiveMulti.toFixed(3)} (1 + ${this.mountDamageMulti.toFixed(3)} + ${this.secondaryStats.damageMulti.toFixed(3)})`);
-        this.debugLogs.push(`Additive Multipliers: Health=${healthAdditiveMulti.toFixed(3)} (1 + ${this.mountHealthMulti.toFixed(3)} + ${this.secondaryStats.healthMulti.toFixed(3)})`);
+        // - Equipment-Only Layer: Forge Ascension
+        const equipDamageMulti = commonDamageMulti + this.forgeAscensionDamageMulti;
+        const equipHealthMulti = commonHealthMulti + this.forgeAscensionHealthMulti;
 
-        // 5. Distinct Multipliers: Skin and Sets
-        // These are applied fully multiplicatively to the result to avoid dilution
+        this.debugLogs.push(`Calculation Layers: CommonDmg=${commonDamageMulti.toFixed(3)}, EquipDmg=${equipDamageMulti.toFixed(3)} (Forge: +${this.forgeAscensionDamageMulti.toFixed(3)})`);
+
+        // 5. Final Calculation by Buckets
+        //    (Equipment) * EquipMulti + (Systems) * CommonMulti
+        const equipContributionDmg = (this.stats.basePlayerDamage + weaponWithMelee + otherItemDamage) * equipDamageMulti;
+        const equipContributionHp = (this.stats.basePlayerHealth + this.stats.itemHealth) * equipHealthMulti;
+
+        const systemContributionDmg = (this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMulti;
+        const systemContributionHp = (this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMulti;
+
+        let totalDmgBeforeGlobal = equipContributionDmg + systemContributionDmg;
+        let totalHpBeforeGlobal = equipContributionHp + systemContributionHp;
+
+        // 6. Distinct Multipliers: Skin and Sets (Multiplied to everything)
         const skinDmgFactor = 1 + this.skinDamageMulti;
         const skinHpFactor = 1 + this.skinHealthMulti;
-
         const setDmgFactor = this.setDamageMulti;
         const setHpFactor = this.setHealthMulti;
 
-        this.debugLogs.push(`Skin Factor: Dmg=${skinDmgFactor.toFixed(3)}, Hp=${skinHpFactor.toFixed(3)}`);
-        this.debugLogs.push(`Set Factor: Dmg=${setDmgFactor.toFixed(3)}, Hp=${setHpFactor.toFixed(3)}`);
+        const globalFactorDmg = (skinDmgFactor + setDmgFactor);
+        const globalFactorHp = (skinHpFactor + setHpFactor);
 
-        console.log(`[StatEngine DEBUG] flatDmg=${flatDamageWithMelee.toFixed(2)}, flatHp=${flatHealth.toFixed(2)}`);
-        console.log(`[StatEngine DEBUG] additiveDmg=${damageAdditiveMulti.toFixed(4)}, additiveHp=${healthAdditiveMulti.toFixed(4)}`);
-        console.log(`[StatEngine DEBUG] skinDmg=${skinDmgFactor.toFixed(4)}, skinHp=${skinHpFactor.toFixed(4)}`);
-        console.log(`[StatEngine DEBUG] setDmg=${setDmgFactor.toFixed(4)}, setHp=${setHpFactor.toFixed(4)}`);
-        console.log(`[StatEngine DEBUG] totalDmg=${(flatDamageWithMelee * damageAdditiveMulti * (skinDmgFactor + setDmgFactor)).toFixed(2)}, totalHp=${(flatHealth * healthAdditiveMulti * (skinHpFactor + setHpFactor)).toFixed(2)}`);
+        const damageAfterGlobalMultis = totalDmgBeforeGlobal * globalFactorDmg;
+        const healthAfterGlobalMultis = totalHpBeforeGlobal * globalFactorHp;
 
-        const damageAfterGlobalMultis = flatDamageWithMelee * damageAdditiveMulti * (skinDmgFactor + setDmgFactor);
-        const healthAfterGlobalMultis = flatHealth * healthAdditiveMulti * (skinHpFactor + setHpFactor);
-
-        // 6. Melee/Ranged Specific Multipliers (Multiplicative)
+        // 7. Melee/Ranged Specific Multipliers (Applied to everything at the end)
         const specificDamageMulti = isWeaponMelee
             ? (1 + this.secondaryStats.meleeDamageMulti)
             : (1 + this.secondaryStats.rangedDamageMulti);
@@ -1117,18 +1230,21 @@ export class StatEngine {
 
         this.debugLogs.push(`After SpecificMulti (×${specificDamageMulti.toFixed(3)}): Damage=${finalDamage.toFixed(0)}`);
 
-        // 7. Final stats
+        // 8. Final stats
         this.stats.totalDamage = finalDamage;
         this.stats.totalHealth = healthAfterGlobalMultis;
 
-        // Store multipliers for display
-        // We report the 'base' keys as just the additive parts correctly.
+        // Store multipliers for display (We use the equip layer as the 'official' additive multiplier)
+        const damageAdditiveMulti = equipDamageMulti;
+        const healthAdditiveMulti = equipHealthMulti;
         this.stats.damageMultiplier = damageAdditiveMulti;
         this.stats.healthMultiplier = healthAdditiveMulti;
         this.stats.secondaryDamageMulti = this.secondaryStats.damageMulti;
         this.stats.secondaryHealthMulti = this.secondaryStats.healthMulti;
-        this.stats.mountDamageMulti = this.mountDamageMulti;
-        this.stats.mountHealthMulti = this.mountHealthMulti;
+        this.stats.mountDamage = this.mountDamage;
+        this.stats.mountHealth = this.mountHealth;
+        this.stats.mountedDamage = this.mountDamage;
+        this.stats.mountedHealth = this.mountHealth;
         this.stats.skinDamageMulti = this.skinDamageMulti;
         this.stats.skinHealthMulti = this.skinHealthMulti;
         this.stats.setDamageMulti = this.setDamageMulti;
@@ -1209,19 +1325,9 @@ export class StatEngine {
                     // Why substract Mount? Because "GlobalMulti" (damageMultiplier) includes Mount, 
                     // but in-game analysis shows Mount Damage does NOT apply to Active Skills.
                     const globalDamageMulti = this.stats.damageMultiplier;
-                    const mountMulti = this.stats.mountDamageMulti;
                     const skillMulti = this.stats.skillDamageMultiplier; // Already includes "SkillDamageMulti" from Ring/Pet
 
-                    // Note: 'skillMulti' logic in statEngine might be slightly different from BattleSimulator
-                    // BattleSimulator uses: total = skillFactor + globalFactor - 1
-                    // Here we reconstruct it:
-                    // statEngine.skillDamageMultiplier = 1 + skillBonus
-                    // statEngine.damageMultiplier = 1 + mount + damageBonus
-                    // Desired Total = 1 + skillBonus + damageBonus (No Mount)
-                    // = (1 + skillBonus) + (1 + mount + damageBonus) - 1 - mount
-                    // = skillMulti + globalDamageMulti - 1 - mountMulti
-
-                    const effectiveMultiplier = skillMulti + globalDamageMulti - 1 - mountMulti;
+                    const effectiveMultiplier = skillMulti + globalDamageMulti - 1;
 
                     // Apply Skin and Set Multipliers to Skills as well
                     const skinFactor = 1 + this.skinDamageMulti;
@@ -1231,11 +1337,13 @@ export class StatEngine {
                     this.stats.skillDps += dmgPerHit / finalCd;
                 }
                 if (baseSkillHeal > 0) {
-                    // SKILL HEALING FIX: Treated as FLAT Healing
+                    // SKILL HEALING
                     const flatSkillHeal = baseSkillHeal;
-                    const healPerHit = flatSkillHeal;
+                    const skillMulti = this.stats.skillHealthMultiplier;
+                    const effectiveMultiplier = skillMulti; // Healing usually doesn't benefit from global Damage Multi
+                    
+                    const healPerHit = flatSkillHeal * effectiveMultiplier;
                     this.stats.skillHps += healPerHit / finalCd;
-
                 }
             }
         }

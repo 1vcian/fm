@@ -7,10 +7,8 @@ export function useMountsCalculator() {
     const { profile, updateProfile } = useProfile();
     const { treeMode } = useTreeMode();
 
-    // 1. Data Loading
+    // 1. Data Loading — use unified MountSummonConfig.json (has Levels with SummonsRequired + probabilities)
     const { data: mountSummonConfig } = useGameData<any>('MountSummonConfig.json');
-    const { data: mountSummonUpgradeLibrary } = useGameData<any>('MountSummonUpgradeLibrary.json');
-    const { data: mountSummonDropChancesLibrary } = useGameData<any>('MountSummonDropChancesLibrary.json');
     const { data: guildWarDayConfigLibrary } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
     const { data: techTreeMapping } = useGameData<any>('TechTreeMapping.json');
@@ -32,7 +30,7 @@ export function useMountsCalculator() {
         });
     }, [level, progress, windersCount]);
 
-    // 3. Tech Bonuses (Re-using logic from Skill Calculator for consistency)
+    // 3. Tech Bonuses
     const techBonuses = useMemo(() => {
         if (!techTreeLibrary || !techTreeMapping) {
             return { costReduction: 0, extraChance: 0 };
@@ -76,14 +74,16 @@ export function useMountsCalculator() {
         };
     }, [techTreeLibrary, techTreeMapping, treeMode, profile]);
 
-    // 4. Constants from config
-    const BASE_COST = mountSummonConfig?.SummonCost || 50;
+    // 4. Constants from config — read from unified Levels array
+    const BASE_COST = mountSummonConfig?.SingleSummonCost?.Amount || 50;
     const MOUNTS_PER_SUMMON = 1 + techBonuses.extraChance;
     const finalCostPerSummon = Math.ceil(BASE_COST * (1 - techBonuses.costReduction));
+    const levels: any[] = mountSummonConfig?.Levels || [];
+    const currency = mountSummonConfig?.SingleSummonCost?.Currency || 'ClockWinders';
 
     // 5. Simulation Results
     const results = useMemo(() => {
-        if (!mountSummonUpgradeLibrary || !mountSummonDropChancesLibrary || !guildWarDayConfigLibrary) {
+        if (!levels.length || !guildWarDayConfigLibrary) {
             return null;
         }
 
@@ -120,31 +120,33 @@ export function useMountsCalculator() {
 
         // Perform simulation summons one by one to track level progression
         for (let i = 0; i < totalPaidSummons; i++) {
-            const probabilities = mountSummonDropChancesLibrary[(currentLevel - 1).toString()];
-            if (probabilities) {
-                Object.entries(probabilities).forEach(([rarity, chance]) => {
-                    if (typeof chance !== 'number' || rarity === 'Level') return;
+            // Level index is 0-based, our level is 1-based
+            const levelIdx = Math.min(currentLevel - 1, levels.length - 1);
+            const probabilities = levels[levelIdx];
 
+            if (probabilities) {
+                ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].forEach(rarity => {
+                    const chance = probabilities[rarity] || 0;
                     const expectedCount = chance * MOUNTS_PER_SUMMON;
                     const sPts = expectedCount * (pointsBreakdown[rarity]?.summon || 0);
                     const mPts = expectedCount * (pointsBreakdown[rarity]?.merge || 0);
 
-                    if (breakdown[rarity]) {
-                        breakdown[rarity].count += expectedCount;
-                        breakdown[rarity].summonPoints += sPts;
-                        breakdown[rarity].mergePoints += mPts;
-                        totalSummonPoints += sPts;
-                        totalMergePoints += mPts;
-                    }
+                    breakdown[rarity].count += expectedCount;
+                    breakdown[rarity].summonPoints += sPts;
+                    breakdown[rarity].mergePoints += mPts;
+                    totalSummonPoints += sPts;
+                    totalMergePoints += mPts;
                 });
             }
 
-            // Progress Level
-            currentProgress++;
-            const threshold = mountSummonUpgradeLibrary[currentLevel.toString()]?.Summons;
-            if (threshold && currentProgress >= threshold) {
+            // Progress Level - each summon produces MOUNTS_PER_SUMMON mounts
+            currentProgress += MOUNTS_PER_SUMMON;
+            // Check for level ups (may level up multiple times if MOUNTS_PER_SUMMON is high)
+            let threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
+            while (threshold && currentProgress >= threshold) {
+                currentProgress -= threshold;
                 currentLevel++;
-                currentProgress = 0;
+                threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
             }
         }
 
@@ -159,7 +161,7 @@ export function useMountsCalculator() {
                 .map(([rarity, data]) => ({
                     rarity,
                     ...data,
-                    percentage: (probabilitiesForCurrentLevel(currentLevel)[rarity] || 0) * 100,
+                    percentage: (getCurrentProbs(currentLevel)[rarity] || 0) * 100,
                     pointsPerUnit: pointsBreakdown[rarity]
                 }))
                 .filter(b => b.count > 0 || b.percentage > 0),
@@ -168,26 +170,21 @@ export function useMountsCalculator() {
             costReduction: techBonuses.costReduction
         };
 
-        function probabilitiesForCurrentLevel(lvl: number) {
-            return mountSummonDropChancesLibrary[(lvl - 1).toString()] || {};
+        function getCurrentProbs(lvl: number) {
+            const idx = Math.min(lvl - 1, levels.length - 1);
+            return levels[idx] || {};
         }
 
-    }, [windersCount, level, progress, mountSummonUpgradeLibrary, mountSummonDropChancesLibrary, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, MOUNTS_PER_SUMMON]);
+    }, [windersCount, level, progress, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, MOUNTS_PER_SUMMON]);
 
     // Max Level Helper
-    const maxPossibleLevel = useMemo(() => {
-        if (!mountSummonDropChancesLibrary) return 50;
-        const keys = Object.keys(mountSummonDropChancesLibrary).map(Number);
-        return Math.max(...keys) + 1; // 0-49 indices => 1-50 levels
-    }, [mountSummonDropChancesLibrary]);
+    const maxPossibleLevel = levels.length || 100;
 
     // Action to apply results to profile
     const applyResultsToProfile = () => {
         if (!results) return;
         setLevel(results.endLevel);
         setProgress(results.endProgress);
-        // We don't deduct winders automatically, user might want to check again.
-        // But we update the level/progress which is what the user asked.
     };
 
     return {
@@ -197,7 +194,11 @@ export function useMountsCalculator() {
         techBonuses,
         results,
         maxPossibleLevel,
-        mountSummonUpgradeLibrary,
-        applyResultsToProfile
+        levels,
+        applyResultsToProfile,
+        currency,
+        baseCost: BASE_COST,
+        finalCostPerSummon,
+        mountsPerSummon: MOUNTS_PER_SUMMON
     };
 }

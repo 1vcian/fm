@@ -6,6 +6,8 @@ import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { Plus, Minus } from 'lucide-react';
+import { AscensionStars } from '../UI/AscensionStars';
+import { getAnvilTexturePath } from '../../utils/ascensionUtils';
 
 export function MiscPanel() {
     const { profile, updateNestedProfile } = useProfile();
@@ -57,12 +59,16 @@ export function MiscPanel() {
                 <Card className="p-4 bg-bg-secondary/40 border-border/50">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1">
-                            <img src="./Texture2D/Anvil.png" alt="Forge" className="w-full h-full object-contain" />
+                            <img src={getAnvilTexturePath(profile.misc.forgeAscensionLevel || 0)} alt="Forge" className="w-full h-full object-contain" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <div className="font-bold">Forge Level</div>
                             <div className="text-xs text-text-muted">Affects enhancement costs</div>
                         </div>
+                        <AscensionStars 
+                            value={profile.misc.forgeAscensionLevel || 0}
+                            onChange={(val) => updateMisc('forgeAscensionLevel', val)}
+                        />
                     </div>
                     <div className="flex items-center justify-between bg-bg-input p-2 rounded-lg border border-border">
                         <Button

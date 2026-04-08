@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useEggsCalculator } from '../hooks/useEggsCalculator';
+import { useEggSummonCalculator } from '../hooks/useEggSummonCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/UI/Card';
 import { cn } from '../lib/utils';
-import { Calculator, Percent, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
+import { Calculator, Plus, Egg, Info, Minus, RefreshCcw } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
+import { getAscensionTexturePath } from '../utils/ascensionUtils';
 
-// Updated to correct path
-const EGG_SPRITE_SHEET = './Texture2D/Eggs.png';
-
-function EggIcon({ rarity, size = 48, className }: { rarity: string; size?: number; className?: string }) {
+function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity: string; size?: number; className?: string; ascensionLevel?: number }) {
     const rarityIndex: Record<string, number> = {
         'Common': 0, 'Rare': 1, 'Epic': 2,
         'Legendary': 3, 'Ultimate': 4, 'Mythic': 5
@@ -23,13 +22,15 @@ function EggIcon({ rarity, size = 48, className }: { rarity: string; size?: numb
     const xPos = (col / 3) * 100;
     const yPos = (row / 3) * 100;
 
+    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel);
+
     return (
         <div
             className={cn("inline-block shrink-0", className)}
             style={{
                 width: size,
                 height: size,
-                backgroundImage: `url(${EGG_SPRITE_SHEET})`,
+                backgroundImage: `url(${texturePath})`,
                 backgroundPosition: `${xPos}% ${yPos}%`,
                 backgroundSize: '400% 400%', // 4x4 grid means the background image is 400% of the container size
                 backgroundRepeat: 'no-repeat',
@@ -48,22 +49,15 @@ export default function Eggs() {
         availableSlots, setAvailableSlots, maxSlots,
         optimization,
         hatchValues,
-        selectedStage, setSelectedStage,
-        dungeonKeys, setDungeonKeys,
-        stageDropRates,
-        todayTotalDrops,
-        hatchingTimes,
         warPoints
     } = useEggsCalculator();
 
-    // Helpers
-    const getStageLabel = (lvl: number) => {
-        const world = Math.floor((lvl - 1) / 10) + 1;
-        const stage = ((lvl - 1) % 10) + 1;
-        return `${world}-${stage}`;
-    };
+    const eggSummon = useEggSummonCalculator();
 
-    const [activeTab, setActiveTab] = useState<'calculator' | 'info'>('calculator');
+
+
+    // Helpers
+    const [activeTab, setActiveTab] = useState<'summon' | 'calculator'>(eggSummon.available ? 'summon' : 'calculator');
 
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
@@ -106,18 +100,34 @@ export default function Eggs() {
             {/* Header */}
             <div className="text-center space-y-2 mb-6">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                    <SpriteIcon name="Egg" size={40} />
+                    <SpriteIcon name="Eggshell" size={40} />
                     Egg Calculator
                 </h1>
                 <p className="text-text-secondary">Optimize your egg hatching for Guild Wars</p>
             </div>
 
             {/* Tabs */}
-            <div className="flex justify-center gap-4 mb-6">
+            <div className="flex justify-center gap-2 sm:gap-4 mb-6 flex-wrap">
+                {eggSummon.available && (
+                    <button
+                        onClick={() => setActiveTab('summon')}
+                        className={cn(
+                            "px-5 py-2 rounded-lg font-bold transition-all",
+                            activeTab === 'summon'
+                                ? "bg-accent-primary text-bg-primary shadow-lg scale-105"
+                                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                        )}
+                    >
+                        <div className="flex items-center gap-2">
+                            <Egg className="w-4 h-4" />
+                            Summon
+                        </div>
+                    </button>
+                )}
                 <button
                     onClick={() => setActiveTab('calculator')}
                     className={cn(
-                        "px-6 py-2 rounded-lg font-bold transition-all",
+                        "px-5 py-2 rounded-lg font-bold transition-all",
                         activeTab === 'calculator'
                             ? "bg-accent-primary text-bg-primary shadow-lg scale-105"
                             : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
@@ -125,24 +135,219 @@ export default function Eggs() {
                 >
                     <div className="flex items-center gap-2">
                         <Calculator className="w-4 h-4" />
-                        Calculator
-                    </div>
-                </button>
-                <button
-                    onClick={() => setActiveTab('info')}
-                    className={cn(
-                        "px-6 py-2 rounded-lg font-bold transition-all",
-                        activeTab === 'info'
-                            ? "bg-accent-primary text-bg-primary shadow-lg scale-105"
-                            : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-                    )}
-                >
-                    <div className="flex items-center gap-2">
-                        <Percent className="w-4 h-4" />
-                        Drop Rates & Info
+                        Hatch Optimizer
                     </div>
                 </button>
             </div>
+
+            {/* Eggshell Summon Calculator */}
+            {activeTab === 'summon' && eggSummon.available && (
+                <div className="space-y-6">
+                    {/* Tech Status Tag (Consistent with Mount Calculator) */}
+                    <div className="flex justify-center gap-3 text-xs -mt-2 mb-4">
+                        {eggSummon.techBonuses.costReduction > 0 && (
+                            <div className="flex items-center gap-2 bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5 font-mono">
+                                <span className="text-text-muted uppercase font-bold">Cost Red.:</span>
+                                <span className="text-accent-primary font-bold">-{Math.round(eggSummon.techBonuses.costReduction * 100)}%</span>
+                            </div>
+                        )}
+                        {eggSummon.techBonuses.extraChance > 0 && (
+                            <div className="flex items-center gap-2 bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5 font-mono">
+                                <span className="text-text-muted uppercase font-bold">Extra Eggs:</span>
+                                <span className="text-accent-secondary font-bold">x{(1 + eggSummon.techBonuses.extraChance).toFixed(2)}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* CONFIGURATION */}
+                        <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <SpriteIcon name="Timer" size={20} className="text-text-tertiary" />
+                                    Configuration
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Level & Progress */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-3 bg-bg-primary/30 p-4 rounded-xl border border-white/5">
+                                        <label className="text-[10px] font-bold text-text-secondary uppercase">Current Level</label>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <button
+                                                onClick={() => eggSummon.setLevel(Math.max(1, eggSummon.level - 1))}
+                                                className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
+                                                disabled={eggSummon.level <= 1}
+                                            >
+                                                <Minus className="w-3 h-3 text-text-primary" />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max={eggSummon.maxPossibleLevel}
+                                                value={eggSummon.level}
+                                                onChange={(e) => eggSummon.setLevel(Math.max(1, Math.min(eggSummon.maxPossibleLevel, Number(e.target.value))))}
+                                                className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
+                                            />
+                                            <button
+                                                onClick={() => eggSummon.setLevel(Math.min(eggSummon.maxPossibleLevel, eggSummon.level + 1))}
+                                                className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
+                                                disabled={eggSummon.level >= eggSummon.maxPossibleLevel}
+                                            >
+                                                <Plus className="w-3 h-3 text-text-primary" />
+                                            </button>
+                                        </div>
+                                        <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Max: {eggSummon.maxPossibleLevel}</div>
+                                    </div>
+                                    <div className="space-y-3 bg-bg-primary/30 p-4 rounded-xl border border-white/5">
+                                        <label className="text-[10px] font-bold text-text-secondary uppercase">Current Progress</label>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <button
+                                                onClick={() => eggSummon.setProgress(Math.max(0, eggSummon.progress - 1))}
+                                                className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
+                                                disabled={eggSummon.progress <= 0}
+                                            >
+                                                <Minus className="w-3 h-3 text-text-primary" />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={eggSummon.progress}
+                                                onChange={(e) => eggSummon.setProgress(Number(e.target.value))}
+                                                className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
+                                            />
+                                            <button
+                                                onClick={() => eggSummon.setProgress(eggSummon.progress + 1)}
+                                                className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors flex items-center justify-center shrink-0 w-8 h-8"
+                                            >
+                                                <Plus className="w-3 h-3 text-text-primary" />
+                                            </button>
+                                        </div>
+                                        <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Next: {eggSummon.levels[Math.min(eggSummon.level - 1, eggSummon.levels.length - 1)]?.SummonsRequired || '?'}</div>
+                                    </div>
+                                </div>
+
+                                {/* Currency Input */}
+                                <div className="space-y-2 pt-2 pb-2">
+                                    <label className="text-xs font-bold text-text-secondary uppercase flex items-center gap-2">
+                                        <SpriteIcon name="Eggshell" size={16} />
+                                        Available {eggSummon.currency}
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors">
+                                            <SpriteIcon name="Eggshell" size={20} />
+                                        </div>
+                                        <input
+                                            type="number"
+                                            value={eggSummon.eggshellCount}
+                                            onChange={(e) => eggSummon.setEggshellCount(Number(e.target.value))}
+                                            className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div className="text-[10px] text-text-muted px-1">
+                                        Estimated cost per summon: <span className="text-accent-primary font-bold">{eggSummon.finalCostPerSummon}</span> 🥚
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* RESULTS */}
+                        <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-accent-primary">
+                                    <RefreshCcw className="w-5 h-5" />
+                                    Simulation Results
+                                </CardTitle>
+                            </CardHeader>
+
+                            <CardContent className="space-y-6 relative z-10">
+                                {eggSummon.results && eggSummon.results.totalSummons > 0 ? (
+                                    <>
+
+
+                                        {/* Summons Info Grid */}
+                                        <div className="grid grid-cols-3 gap-3 pb-2 border-b border-white/5">
+                                            <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
+                                                <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">Summons</div>
+                                                <div className="text-lg font-mono font-bold text-white">
+                                                    {eggSummon.results.totalSummons.toLocaleString()}
+                                                </div>
+                                            </div>
+                                            <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
+                                                <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">End Level</div>
+                                                <div className="text-lg font-mono font-bold text-accent-primary flex items-center gap-1">
+                                                    <span className="text-xs opacity-50 font-normal">Lv.{eggSummon.level} ➔</span>
+                                                    Lv.{eggSummon.results.endLevel}
+                                                </div>
+                                            </div>
+                                            <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
+                                                <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">Price</div>
+                                                <div className="text-lg font-mono font-bold text-green-400 flex items-baseline gap-1">
+                                                    {eggSummon.results.finalCost}
+                                                    {eggSummon.results.costReduction > 0 && (
+                                                        <span className="text-[10px] text-text-muted line-through font-normal decoration-white/30">
+                                                            {eggSummon.results.baseCost}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Rarity Breakdown */}
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between text-xs font-bold text-text-secondary uppercase border-b border-white/5 pb-2">
+                                                <span>Rarity</span>
+                                                <span>Expected Eggs</span>
+                                            </div>
+                                            <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                                {eggSummon.results.breakdown.map((item) => (
+                                                    <div key={item.rarity} className="flex justify-between items-center p-2 rounded bg-bg-tertiary/50 border border-white/5 hover:bg-bg-tertiary transition-colors">
+                                                        <div className="flex items-center gap-2">
+                                                            <EggIcon
+                                                                rarity={item.rarity}
+                                                                size={24}
+                                                                ascensionLevel={profile.misc.petAscensionLevel || 0}
+                                                                className="shrink-0"
+                                                            />
+                                                            <span className="text-sm font-medium text-white">{item.rarity}</span>
+                                                            <span className="text-xs text-text-muted">({item.percentage.toFixed(2)}%)</span>
+                                                        </div>
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <span className="font-mono font-bold text-accent-primary leading-none">
+                                                                {Math.floor(item.count).toLocaleString()}
+                                                            </span>
+
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => eggSummon.applyResultsToProfile()}
+                                            className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
+                                        >
+                                            <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                            Update Level & Progress to Lv.{eggSummon.results.endLevel}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">
+                                        <Info className="w-8 h-8 opacity-50" />
+                                        <p>Enter eggshells to see results</p>
+                                    </div>
+                                )}
+                            </CardContent>
+
+                            <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+                                <SpriteIcon name="Eggshell" size={256} className="text-accent-primary" />
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            )}
 
             {activeTab === 'calculator' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -272,7 +477,7 @@ export default function Eggs() {
                         <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    <SpriteIcon name="Egg" size={20} />
+                                    <SpriteIcon name="Eggshell" size={20} />
                                     Inventory
                                 </CardTitle>
                             </CardHeader>
@@ -287,7 +492,7 @@ export default function Eggs() {
                                                     <span>M:<span className="text-text-primary ml-0.5">{warPoints[rarity].merge}</span></span>
                                                 </div>
                                             )}
-                                            <EggIcon rarity={rarity} size={48} />
+                                            <EggIcon rarity={rarity} size={48} ascensionLevel={profile.misc.petAscensionLevel || 0} />
                                             <span className={cn("text-xs font-bold uppercase", `text-rarity-${rarity}`)}>
                                                 {rarity}
                                             </span>
@@ -418,7 +623,7 @@ export default function Eggs() {
                                                                                     {isChecked && <Plus className="w-3 h-3 rotate-45" />}
                                                                                 </div>
 
-                                                                                <EggIcon rarity={event.rarity} size={32} />
+                                                                                <EggIcon rarity={event.rarity} size={32} ascensionLevel={profile.misc.petAscensionLevel || 0} />
 
                                                                                 <div className="flex-1 min-w-0 grid grid-cols-1 gap-1">
                                                                                     <div className={cn("font-bold text-sm leading-tight break-words", isChecked ? "text-text-muted line-through" : `text-rarity-${event.rarity}`)}>
@@ -473,171 +678,10 @@ export default function Eggs() {
             {/* Timeline Visualizer (REMOVED as per request) */}
 
 
-            {activeTab === 'info' && (
-                <div className="space-y-6">
-                    {/* Stage Selector (Central Control) */}
-                    <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <SpriteIcon name="PetKey" size={20} className="text-accent-tertiary" />
-                                Select Stage
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4 pt-2">
-                                <div className="flex items-center justify-between bg-bg-primary/50 p-4 rounded-xl border border-white/5">
-                                    <div>
-                                        <div className="text-xs font-bold text-text-secondary uppercase">Exploration Area</div>
-                                        <div className="text-3xl font-black text-white flex items-center gap-3">
-                                            Stage {getStageLabel(selectedStage)}
-                                            <span className="text-sm font-bold text-accent-primary bg-accent-primary/10 px-2 py-0.5 rounded border border-accent-primary/20">
-                                                Level {selectedStage}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-4">
-                                        <button
-                                            onClick={() => setSelectedStage(Math.max(1, selectedStage - 1))}
-                                            disabled={selectedStage <= 1}
-                                            className="p-3 bg-bg-input rounded-xl hover:bg-bg-tertiary disabled:opacity-30 border border-white/5 transition-all active:scale-95"
-                                        >
-                                            <ChevronLeft className="w-6 h-6" />
-                                        </button>
-
-                                        <button
-                                            onClick={() => setSelectedStage(Math.min(100, selectedStage + 1))}
-                                            className="p-3 bg-bg-input rounded-xl hover:bg-bg-tertiary disabled:opacity-30 border border-white/5 transition-all active:scale-95"
-                                        >
-                                            <ChevronRight className="w-6 h-6" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="100" // Adjust based on data? Usually 100 levels.
-                                    value={selectedStage}
-                                    onChange={(e) => setSelectedStage(parseInt(e.target.value))}
-                                    className="w-full h-4 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
-                                />
-                                <div className="flex justify-between text-[10px] text-text-secondary font-mono px-1">
-                                    <span>World 1</span>
-                                    <span>World 5</span>
-                                    <span>World 10</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Drop Rates Display */}
-                    <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="flex items-center gap-2">
-                                    <SpriteIcon name="Timer" size={20} className="text-accent-tertiary" />
-                                    Drop Rates & Prediction
-                                </div>
-                                <div className="flex items-center gap-4 text-sm font-normal">
-                                    <div className="flex items-center gap-2 bg-black/20 px-2 py-1 rounded-lg border border-white/5">
-                                        <SpriteIcon name="PetKey" size={16} />
-
-                                        <button
-                                            onClick={() => setDungeonKeys(Math.max(1, dungeonKeys - 1))}
-                                            className="p-1 hover:bg-white/10 rounded transition-colors text-text-secondary hover:text-white"
-                                        >
-                                            <Minus className="w-3 h-3" />
-                                        </button>
-
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            value={dungeonKeys}
-                                            onChange={(e) => setDungeonKeys(Math.max(1, parseInt(e.target.value) || 0))}
-                                            className="w-10 bg-transparent text-center font-bold outline-none text-white border-b border-transparent focus:border-accent-primary transition-colors appearance-none"
-                                        />
-
-                                        <button
-                                            onClick={() => setDungeonKeys(dungeonKeys + 1)}
-                                            className="p-1 hover:bg-white/10 rounded transition-colors text-text-secondary hover:text-white"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center gap-2 bg-accent-primary/10 px-3 py-1.5 rounded-lg border border-accent-primary/20">
-                                        <SpriteIcon name="Egg" size={16} />
-                                        <span className="font-bold text-accent-primary text-base">{(todayTotalDrops || 0).toFixed(2)}</span>
-                                        <span className="text-text-secondary">Expected</span>
-                                    </div>
-                                </div>
-                            </CardTitle>
-                        </CardHeader>
-
-                        <CardContent>
-                            {stageDropRates.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {stageDropRates.map((item) => (
-                                        <div
-                                            key={item.tier}
-                                            className={cn(
-                                                "relative flex items-center gap-4 p-4 rounded-xl border transition-all hover:scale-[1.02]",
-                                                `bg-rarity-${item.tier}/5 border-rarity-${item.tier}/20 hover:border-rarity-${item.tier}/50`
-                                            )}
-                                        >
-                                            {/* Icon */}
-                                            <div className="shrink-0">
-                                                <EggIcon rarity={item.tier} size={56} className="drop-shadow-lg" />
-                                            </div>
-
-                                            {/* Details */}
-                                            <div className="flex-1 space-y-1">
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <div className={cn("text-lg font-black uppercase tracking-wide", `text-rarity-${item.tier}`)}>
-                                                        {item.tier}
-                                                    </div>
-                                                    <div className="text-xs font-bold bg-black/40 px-2 py-0.5 rounded text-white/90 border border-white/5">
-                                                        ~ {(todayTotalDrops * item.probability).toFixed(2)}
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] text-text-tertiary uppercase font-bold">Chance</span>
-                                                        <span className="text-sm font-bold text-white">
-                                                            {(item.probability * 100).toFixed(2)}%
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="flex flex-col items-end">
-                                                        <span className="text-[10px] text-text-tertiary uppercase font-bold">Hatch Time</span>
-                                                        <div className="flex items-center gap-1.5 text-sm font-mono text-accent-secondary">
-                                                            <SpriteIcon name="Timer" size={14} />
-                                                            {formatTime(hatchingTimes?.[item.tier] || 0)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Background Decoration */}
-                                            <div className={cn("absolute inset-0 rounded-xl opacity-5 pointer-events-none", `bg-rarity-${item.tier}`)} />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-text-muted bg-black/20 rounded-xl border border-white/5">
-                                    <p>No drop data found for Stage {getStageLabel(selectedStage)}</p>
-                                    <p className="text-xs mt-2 text-text-tertiary">Try selecting a different level</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
 
             {/* Background Decoration */}
             <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none overflow-hidden">
-                <SpriteIcon name="Egg" size={256} className="grayscale" />
+                <SpriteIcon name="Eggshell" size={256} className="grayscale" />
             </div>
         </div>
     );

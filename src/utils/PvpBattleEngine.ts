@@ -8,7 +8,33 @@
 import type { WeaponInfo } from './BattleHelper';
 import { SKILL_MECHANICS } from './constants';
 import { StatEngine } from './statEngine';
-import { PetSlot, MountSlot } from '../types/Profile';
+import { PetSlot, MountSlot, UserProfile } from '../types/Profile';
+
+// --- Shared Helpers ---
+
+const getAscMulti = (category: string, level: number, target: string = 'Damage', ascensionConfigsLibrary: any = null) => {
+    let multi = 0;
+    if (level > 0 && ascensionConfigsLibrary?.[category]?.AscensionConfigPerLevel) {
+        const configs = ascensionConfigsLibrary[category].AscensionConfigPerLevel;
+        for (let i = 0; i < level && i < configs.length; i++) {
+            const contributions = configs[i].StatContributions || [];
+            for (const s of contributions) {
+                const sType = s.StatNode?.UniqueStat?.StatType;
+                const sTarget = s.StatNode?.StatTarget?.$type;
+                if (sType === target) {
+                    if (category === 'Skills') {
+                        const isActive = sTarget === 'ActiveSkillStatTarget';
+                        if (target === 'Damage' && isActive) multi += s.Value;
+                        if (target === 'Health' && isActive) multi += s.Value;
+                    } else {
+                        multi += s.Value;
+                    }
+                }
+            }
+        }
+    }
+    return multi;
+};
 
 // --- Types ---
 
@@ -23,6 +49,8 @@ export interface EnemySkillConfig {
     duration: number;
     hasDamage: boolean;
     hasHealth: boolean;
+    level?: number;
+    ascensionLevel?: number;
 }
 
 export interface PassiveStatConfig {
@@ -37,30 +65,35 @@ export interface SkinEntry {
 
 export interface EnemyConfig {
     weapon: any | null;
+    weaponId?: number;
     skills: (EnemySkillConfig | null)[];
     stats: {
         power?: number;
         hp: number;
         damage: number;
-        skillPassiveHp?: number;
-        skinDmgMulti?: number;   // e.g. 0.10 = +10% skin damage
-        skinHpMulti?: number;    // e.g. 0.10 = +10% skin health
-        setDmgMulti?: number;    // e.g. 0.10 = +10% set damage
-        setHpMulti?: number;     // e.g. 0.10 = +10% set health
+        skinDmgMulti?: number;
+        skinHpMulti?: number;
+        setDmgMulti?: number;
+        setHpMulti?: number;
         projectileSpeed?: number;
         attackRange?: number;
         weaponWindup?: number;
         weaponAttackDuration?: number;
     };
-    skinEntries?: SkinEntry[];     // Individual skin pieces for UI
-    hasCompleteSet?: boolean;      // Toggle: set complete = +10% dmg/hp
+    skillPassiveHp?: number;
+    skinEntries?: SkinEntry[];
+    hasCompleteSet?: boolean;
     passiveStats: Record<string, PassiveStatConfig>;
     name: string;
+    level?: number;
     pets: (PetSlot | null)[];
     mount: MountSlot | null;
+    forgeAscensionLevel?: number;
+    skillAscensionLevel?: number;
+    mountAscensionLevel?: number;
+    petAscensionLevel?: number;
 }
 
-// Initialize passives given a list of keys (from JSON)
 export const initPassiveStats = (keys: string[] = []): Record<string, PassiveStatConfig> => {
     const stats: Record<string, PassiveStatConfig> = {};
     keys.forEach(key => {
@@ -101,7 +134,6 @@ export interface PvpSkillConfig {
     damageIsPerHit: boolean;
 }
 
-// Reuse types from BattleEngine
 export interface SkillState {
     id: string;
     activeDuration: number;
@@ -114,7 +146,6 @@ export interface SkillState {
     bonusDamage?: number;
     bonusMaxHealth?: number;
     count?: number;
-    hitsRemaining?: number;
     interval?: number;
     delay?: number;
     isSingleTarget?: boolean;
@@ -160,14 +191,13 @@ export interface EntityState {
     position: number;
     combatState: 'MOVING' | 'FIGHTING';
     isDead: boolean;
-    // Stats for combat
     critChance: number;
     critMulti: number;
     blockChance: number;
     lifesteal: number;
     doubleDamage: number;
     healthRegen: number;
-    initialHealth: number; // For regen calculation
+    initialHealth: number;
     currentRegenRate: number;
     regenSnapshotTimer: number;
 }
@@ -220,29 +250,18 @@ export class PvpBattleEngine {
     private player2ActiveEffects: ActiveSkillEffect[] = [];
     private player1ActiveBuffs: ActiveBuff[] = [];
     private player2ActiveBuffs: ActiveBuff[] = [];
-    private logs: BattleLogEntry[] = [];
     private projectiles: Projectile[] = [];
     private projectileIdCounter: number = 0;
-
-    // Stats tracking
     private totalPlayer1DamageDealt: number = 0;
     private totalPlayer2DamageDealt: number = 0;
 
     constructor(player1Stats: PvpPlayerStats, player2Stats: PvpPlayerStats) {
         this.player1 = this.createEntity(1, true, player1Stats, 2);
-        this.player2 = this.createEntity(2, false, player2Stats, 23); // Distance 21 (same as BattleEngine)
+        this.player2 = this.createEntity(2, false, player2Stats, 23);
         this.player1Skills = this.createSkillStates(player1Stats.skills, true);
         this.player2Skills = this.createSkillStates(player2Stats.skills, false);
         this.initializeRegen(this.player1, player1Stats);
         this.initializeRegen(this.player2, player2Stats);
-    }
-
-    private log(event: string, details: string) {
-        this.logs.push({
-            time: this.time,
-            event,
-            details
-        });
     }
 
     private createEntity(id: number, isPlayer1: boolean, stats: PvpPlayerStats, position: number): EntityState {
@@ -251,40 +270,18 @@ export class PvpBattleEngine {
         const attackDuration = weapon?.AttackDuration ?? 1.5;
         const attackRange = weapon?.AttackRange ?? 0.3;
         const isRanged = (attackRange ?? 0) > 1.0;
-
         const baseHp = stats.hp * (1 + stats.healthMulti);
         const baseDmg = stats.damage * (1 + stats.damageMulti);
 
         return {
-            id,
-            isPlayer1,
-            health: baseHp,
-            maxHealth: baseHp,
-            damage: baseDmg,
-            shield: 0,
-            attackSpeed: stats.attackSpeed,
-            baseWindupTime: windupTime,
-            attackDuration: attackDuration,
-            windupTimer: 0,
-            recoveryTimer: 0,
-            isWindingUp: false,
-            combatPhase: 'IDLE',
-            pendingDoubleHit: false,
-            isRanged,
-            projectileSpeed: stats.projectileSpeed ?? 10,
-            attackRange,
-            position,
-            combatState: 'MOVING',
-            isDead: false,
-            critChance: stats.critChance,
-            critMulti: stats.critMulti,
-            blockChance: stats.blockChance,
-            lifesteal: stats.lifesteal,
-            doubleDamage: stats.doubleDamage,
-            healthRegen: stats.healthRegen,
-            initialHealth: baseHp,
-            currentRegenRate: 0,
-            regenSnapshotTimer: 0
+            id, isPlayer1, health: baseHp, maxHealth: baseHp, damage: baseDmg, shield: 0,
+            attackSpeed: stats.attackSpeed, baseWindupTime: windupTime, attackDuration: attackDuration,
+            windupTimer: 0, recoveryTimer: 0, isWindingUp: false, combatPhase: 'IDLE',
+            pendingDoubleHit: false, isRanged, projectileSpeed: stats.projectileSpeed ?? 10,
+            attackRange, position, combatState: 'MOVING', isDead: false,
+            critChance: stats.critChance, critMulti: stats.critMulti, blockChance: stats.blockChance,
+            lifesteal: stats.lifesteal, doubleDamage: stats.doubleDamage, healthRegen: stats.healthRegen,
+            initialHealth: baseHp, currentRegenRate: 0, regenSnapshotTimer: 0
         };
     }
 
@@ -299,71 +296,38 @@ export class PvpBattleEngine {
         return skills.map(skill => {
             const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
             const count = Math.max(1, skill.count || mechanics.count || 1);
-
-            // Process damage value - the value from enemy config is the description value
-            // The description value can be per-hit or total depending on what the description says
             let damagePerHit = 0;
             if (skill.damage && skill.damage > 0) {
-                // If description says per-hit, the value is already per hit
                 if (mechanics.descriptionIsPerHit) {
                     damagePerHit = skill.damage;
+                } else if (mechanics.damageIsPerHit) {
+                    damagePerHit = skill.damage;
                 } else {
-                    // Description says total, but check if damageIsPerHit (library has per-hit)
-                    if (mechanics.damageIsPerHit) {
-                        // Library has per-hit, but description says total
-                        // This means the value entered is total, but each hit does that full value
-                        damagePerHit = skill.damage;
-                    } else {
-                        // Description says total, library has total, divide by count
-                        damagePerHit = skill.damage / count;
-                    }
+                    damagePerHit = skill.damage / count;
                 }
             }
-
-            // Process health value - health is always total in descriptions, divide by count
             let healthPerHit = 0;
             if (skill.health && skill.health > 0) {
                 healthPerHit = skill.health / count;
             }
-
-            // Determine if buff skill
             const isBuffSkill = BUFF_SKILLS.includes(skill.id) && skill.duration > 0;
-
             let bonusDamage = 0;
             let bonusMaxHealth = 0;
             let activeDamage = 0;
             let activeHeal = 0;
-
             if (isBuffSkill) {
-                // Buff skills: add to stats for duration
-                if (damagePerHit > 0) {
-                    bonusDamage = damagePerHit * count; // Total buff value
-                }
-                if (healthPerHit > 0) {
-                    bonusMaxHealth = healthPerHit * count; // Total buff value
-                }
+                if (damagePerHit > 0) bonusDamage = damagePerHit * count;
+                if (healthPerHit > 0) bonusMaxHealth = healthPerHit * count;
             } else {
-                // Damage/Instant skills: deal damage per hit
                 activeDamage = damagePerHit;
                 activeHeal = healthPerHit;
             }
-
             return {
-                id: skill.id,
-                activeDuration: skill.duration,
-                cooldown: skill.cooldown,
-                state: 'Startup',
-                timer: SKILL_STARTUP_TIME,
-                damage: activeDamage,
-                healAmount: activeHeal,
-                isBuff: isBuffSkill,
-                bonusDamage: bonusDamage,
-                bonusMaxHealth: bonusMaxHealth,
-                count: count,
-                interval: mechanics.interval || 0.1,
-                delay: mechanics.delay || 0,
-                isSingleTarget: mechanics.isSingleTarget,
-                isAOE: mechanics.isAOE
+                id: skill.id, activeDuration: skill.duration, cooldown: skill.cooldown,
+                state: 'Startup', timer: SKILL_STARTUP_TIME, damage: activeDamage, healAmount: activeHeal,
+                isBuff: isBuffSkill, bonusDamage: bonusDamage, bonusMaxHealth: bonusMaxHealth,
+                count: count, interval: mechanics.interval || 0.1, delay: mechanics.delay || 0,
+                isSingleTarget: mechanics.isSingleTarget, isAOE: mechanics.isAOE
             };
         });
     }
@@ -378,15 +342,10 @@ export class PvpBattleEngine {
 
     private tick(dt: number): void {
         this.time += dt;
-
-        // Health regen for both players (Order doesn't matter much here, but let's be consistent)
         this.processRegen(this.player1, dt);
         this.processRegen(this.player2, dt);
-
         const p1Status = { isDead: this.player1.isDead };
         const p2Status = { isDead: this.player2.isDead };
-
-        // Skills for both players - Randomized Order
         if (Math.random() < 0.5) {
             this.processSkills(this.player1Skills, this.player1, this.player2, dt, true, p1Status);
             this.processSkills(this.player2Skills, this.player2, this.player1, dt, false, p2Status);
@@ -394,8 +353,6 @@ export class PvpBattleEngine {
             this.processSkills(this.player2Skills, this.player2, this.player1, dt, false, p2Status);
             this.processSkills(this.player1Skills, this.player1, this.player2, dt, true, p1Status);
         }
-
-        // Active effects for both players - Randomized Order
         if (Math.random() < 0.5) {
             this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true, p1Status, p2Status);
             this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false, p2Status, p1Status);
@@ -403,32 +360,23 @@ export class PvpBattleEngine {
             this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false, p2Status, p1Status);
             this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true, p1Status, p2Status);
         }
-
-        // Projectiles
         this.processProjectiles(dt);
-
-        // Calculate distance before any movement to prevent second-mover advantage
         const startOfTickDistance = Math.abs(this.player1.position - this.player2.position);
-
-        // Movement and combat for both players - Randomized Order
         if (Math.random() < 0.5) {
             this.processMovementAndCombat(this.player1, this.player2, dt, startOfTickDistance, !p1Status.isDead);
             this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
         } else {
             this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
-            this.processMovementAndCombat(this.player1, this.player2, dt, startOfTickDistance, !p1Status.isDead);
+            this.processMovementAndCombat(this.player1, this.player1, dt, startOfTickDistance, !p1Status.isDead);
         }
     }
 
     private processRegen(entity: EntityState, dt: number) {
         if (entity.isDead || entity.healthRegen <= 0) return;
-
         entity.regenSnapshotTimer += dt;
         const healingStep = entity.currentRegenRate * dt;
-        if (healingStep > 0) {
-            if (entity.health < entity.maxHealth) {
-                entity.health = Math.min(entity.maxHealth, entity.health + healingStep);
-            }
+        if (healingStep > 0 && entity.health < entity.maxHealth) {
+            entity.health = Math.min(entity.maxHealth, entity.health + healingStep);
         }
         if (entity.regenSnapshotTimer >= 1.0) {
             entity.regenSnapshotTimer -= 1.0;
@@ -439,10 +387,8 @@ export class PvpBattleEngine {
 
     private processSkills(skills: SkillState[], caster: EntityState, _target: EntityState, dt: number, isPlayer1: boolean, casterStatus: { isDead: boolean }) {
         if (casterStatus.isDead) return;
-
         const activeEffects = isPlayer1 ? this.player1ActiveEffects : this.player2ActiveEffects;
         const activeBuffs = isPlayer1 ? this.player1ActiveBuffs : this.player2ActiveBuffs;
-
         skills.forEach(skill => {
             if (skill.state === 'Startup') {
                 skill.timer -= dt;
@@ -451,48 +397,28 @@ export class PvpBattleEngine {
                     skill.timer = 0;
                 }
             } else if (skill.state === 'Ready') {
-                // Activate Immediately
                 const count = skill.count || 1;
                 const interval = skill.interval || 0.1;
-
-                // Only create active effect if there's damage or healing to do
                 if (count > 0 && (skill.damage || skill.healAmount)) {
                     activeEffects.push({
-                        id: skill.id,
-                        damage: skill.damage,
-                        healAmount: skill.healAmount,
-                        count: count,
-                        hitsRemaining: count,
-                        interval: interval,
-                        timer: skill.delay || 0,
-                        isSingleTarget: skill.isSingleTarget,
-                        isAOE: skill.isAOE
+                        id: skill.id, damage: skill.damage, healAmount: skill.healAmount,
+                        count: count, hitsRemaining: count, interval: interval,
+                        timer: skill.delay || 0, isSingleTarget: skill.isSingleTarget, isAOE: skill.isAOE
                     });
                 }
-
-                // Handle State Transition
                 if (skill.activeDuration && skill.activeDuration > 0) {
-                    // Duration Skill: Active -> Cooldown
                     skill.state = 'Active';
                     skill.timer = skill.activeDuration;
-                    this.log('SKILL', `${caster.isPlayer1 ? 'Player1' : 'Player2'} ${skill.id} Active (${skill.activeDuration}s)`);
-
-                    // Apply Buffs if any
                     this.applySkillBuff(skill, caster, activeBuffs);
                 } else {
-                    // Instant Skill: Cooldown Immediately
                     skill.state = 'Cooldown';
                     skill.timer = skill.cooldown;
-                    this.log('SKILL', `${caster.isPlayer1 ? 'Player1' : 'Player2'} ${skill.id} Used`);
                 }
             } else if (skill.state === 'Active') {
-                // Duration Countdown (Buffs etc.)
                 skill.timer -= dt;
                 if (skill.timer <= 0) {
                     skill.state = 'Cooldown';
                     skill.timer = skill.cooldown;
-
-                    // Remove Buffs
                     this.removeSkillBuff(skill.id, caster, activeBuffs);
                 }
             } else if (skill.state === 'Cooldown') {
@@ -507,40 +433,20 @@ export class PvpBattleEngine {
 
     private processActiveEffects(effects: ActiveSkillEffect[], caster: EntityState, target: EntityState, dt: number, isPlayer1: boolean, casterStatus: { isDead: boolean }, targetStatus: { isDead: boolean }) {
         if (casterStatus.isDead) return;
-
-        // Process in reverse to allow removal
         for (let i = effects.length - 1; i >= 0; i--) {
             const effect = effects[i];
-
             if (effect.timer > 0) {
                 effect.timer -= dt;
             } else {
-                // Trigger Hit
                 if (effect.hitsRemaining > 0) {
-                    // Handle Damage
-                    if (effect.damage) {
-                        // In PvP there's only one target. We check if target was already dead at start of tick
-                        if (!targetStatus.isDead) {
-                            this.dealDamage(caster, target, effect.damage, isPlayer1, false, true);
-                        }
+                    if (effect.damage && !targetStatus.isDead) {
+                        this.dealDamage(caster, target, effect.damage, isPlayer1, false, true);
                     }
-
-                    // Handle Healing
-                    if (effect.healAmount) {
-                        caster.health = Math.min(caster.maxHealth, caster.health + effect.healAmount);
-                    }
-
+                    if (effect.healAmount) caster.health = Math.min(caster.maxHealth, caster.health + effect.healAmount);
                     effect.hitsRemaining--;
-
-                    if (effect.hitsRemaining > 0) {
-                        effect.timer = effect.interval;
-                    } else {
-                        // Done
-                        effects.splice(i, 1);
-                    }
-                } else {
-                    effects.splice(i, 1);
-                }
+                    if (effect.hitsRemaining > 0) effect.timer = effect.interval;
+                    else effects.splice(i, 1);
+                } else effects.splice(i, 1);
             }
         }
     }
@@ -550,24 +456,10 @@ export class PvpBattleEngine {
             const proj = this.projectiles[i];
             const direction = proj.isPlayer1Source ? 1 : -1;
             proj.currentX += proj.speed * dt * direction;
-
-            // Check if projectile reached target
-            const reached = proj.isPlayer1Source
-                ? proj.currentX >= proj.toX
-                : proj.currentX <= proj.toX;
-
+            const reached = proj.isPlayer1Source ? proj.currentX >= proj.toX : proj.currentX <= proj.toX;
             if (reached) {
-                // Projectiles always deal damage - don't check isDead (simultaneous combat)
                 const target = proj.isPlayer1Source ? this.player2 : this.player1;
-
-                this.dealDamage(
-                    proj.isPlayer1Source ? this.player1 : this.player2,
-                    target,
-                    proj.damage,
-                    proj.isPlayer1Source,
-                    proj.isCrit,
-                    false
-                );
+                this.dealDamage(proj.isPlayer1Source ? this.player1 : this.player2, target, proj.damage, proj.isPlayer1Source, proj.isCrit, false);
                 this.projectiles.splice(i, 1);
             }
         }
@@ -576,121 +468,72 @@ export class PvpBattleEngine {
     private applySkillBuff(skill: SkillState, entity: EntityState, activeBuffs: ActiveBuff[]) {
         const bonusDmg = skill.bonusDamage || 0;
         const bonusHP = skill.bonusMaxHealth || 0;
-
         if (bonusDmg === 0 && bonusHP === 0) return;
-
-        activeBuffs.push({
-            skillId: skill.id,
-            bonusDamage: bonusDmg,
-            bonusMaxHealth: bonusHP
-        });
-
-        // Update entity stats
+        activeBuffs.push({ skillId: skill.id, bonusDamage: bonusDmg, bonusMaxHealth: bonusHP });
         entity.damage += bonusDmg;
-
-        // Health Buffs increase Max Health and heal for that amount
         if (bonusHP > 0) {
             entity.maxHealth += bonusHP;
             entity.health += bonusHP;
         }
-
-        this.log('BUFF_APPLIED', `${entity.isPlayer1 ? 'Player1' : 'Player2'} ${skill.id}: +${bonusDmg.toFixed(0)} Dmg, +${bonusHP.toFixed(0)} MaxHP`);
     }
 
     private removeSkillBuff(skillId: string, entity: EntityState, activeBuffs: ActiveBuff[]) {
         const buffIndex = activeBuffs.findIndex(b => b.skillId === skillId);
         if (buffIndex === -1) return;
-
         const buff = activeBuffs[buffIndex];
         activeBuffs.splice(buffIndex, 1);
-
-        // Update entity stats
         entity.damage -= buff.bonusDamage;
-
-        // Remove Max Health bonus
         if (buff.bonusMaxHealth > 0) {
             entity.maxHealth -= buff.bonusMaxHealth;
-            // Clamp Health if it exceeds new Max
-            if (entity.health > entity.maxHealth) {
-                entity.health = entity.maxHealth;
-            }
+            if (entity.health > entity.maxHealth) entity.health = entity.maxHealth;
         }
-
-        this.log('BUFF_EXPIRED', `${entity.isPlayer1 ? 'Player1' : 'Player2'} ${skillId}: Buff removed`);
     }
 
     private processMovementAndCombat(attacker: EntityState, target: EntityState, dt: number, distance: number, wasAliveAtStart: boolean): void {
-        if (!wasAliveAtStart) return;  // Only entities alive at start of tick can act this tick
-
+        if (!wasAliveAtStart) return;
         const inRange = distance <= attacker.attackRange;
-
         if (!inRange) {
-            // MOVING
             attacker.combatState = 'MOVING';
-            if (attacker.isPlayer1) {
-                attacker.position += PLAYER_SPEED * dt;
-            } else {
-                attacker.position -= PLAYER_SPEED * dt;
-            }
+            if (attacker.isPlayer1) attacker.position += PLAYER_SPEED * dt;
+            else attacker.position -= PLAYER_SPEED * dt;
             attacker.combatPhase = 'IDLE';
         } else {
-            // FIGHTING
             attacker.combatState = 'FIGHTING';
             this.processEntityCombat(attacker, target, dt);
         }
     }
 
     private processEntityCombat(entity: EntityState, target: EntityState, dt: number) {
-        // Speed Multiplier (applies to the entire attack cycle)
         const speedMult = Math.max(0.1, entity.attackSpeed);
-
-        // Calculate Effective Times
         const windup = entity.baseWindupTime || 0.5;
         const duration = entity.attackDuration || 1.5;
-
-        // WindupTime è compreso in AttackDuration, entrambi scalano con AttackSpeed
         const effectiveWindup = windup / speedMult;
         const effectiveRecovery = Math.max(0.01, (duration - windup) / speedMult);
-
-        // State Machine
         switch (entity.combatPhase) {
             case 'IDLE':
                 entity.combatPhase = 'CHARGING';
                 entity.isWindingUp = true;
                 entity.windupTimer = effectiveWindup;
                 break;
-
             case 'CHARGING':
                 entity.windupTimer -= dt;
                 if (entity.windupTimer <= 0) {
                     const distance = Math.abs(entity.position - target.position);
-
                     if (distance <= entity.attackRange + 0.1) {
                         this.performAttack(entity, target);
-
-                        // Double Damage Check
-                        if (!entity.pendingDoubleHit &&
-                            Math.random() < entity.doubleDamage) {
-                            if (!target.isDead) {
-                                this.log('DOUBLE_DAMAGE', `${entity.isPlayer1 ? 'Player1' : 'Player2'} Double Damage Proc!`);
-                                this.performAttack(entity, target, true);
-                                this.log('DOUBLE_HIT', `${entity.isPlayer1 ? 'Player1' : 'Player2'} Second Strike!`);
-                            }
+                        if (!entity.pendingDoubleHit && Math.random() < entity.doubleDamage) {
+                            if (!target.isDead) this.performAttack(entity, target, true);
                         }
-
-                        // Transition to Recovery
                         entity.combatPhase = 'RECOVERING';
                         entity.isWindingUp = false;
                         entity.windupTimer = 0;
                         entity.recoveryTimer = effectiveRecovery;
                     } else {
-                        // Out of Range: Hold Charge
                         entity.windupTimer = 0;
                         entity.isWindingUp = true;
                     }
                 }
                 break;
-
             case 'RECOVERING':
                 entity.recoveryTimer -= dt;
                 if (entity.recoveryTimer <= 0) {
@@ -701,86 +544,39 @@ export class PvpBattleEngine {
         }
     }
 
-    private performAttack(attacker: EntityState, target: EntityState, suppressLog: boolean = false) {
+    private performAttack(attacker: EntityState, target: EntityState, _suppressLog: boolean = false) {
         let dmg = attacker.damage;
         let isCrit = false;
-
         if (Math.random() < attacker.critChance) {
             dmg *= attacker.critMulti;
             isCrit = true;
         }
-
-        if (!suppressLog) {
-            this.log(isCrit ? 'CRIT' : 'ATTACK', `${attacker.isPlayer1 ? 'Player1' : 'Player2'} Attack ${isCrit ? '(CRITICAL!)' : ''}`);
-        }
-
-        // For ranged units, create a projectile instead of instant damage
         if (attacker.isRanged && attacker.projectileSpeed && attacker.projectileSpeed > 0) {
             this.projectiles.push({
-                id: this.projectileIdCounter++,
-                fromX: attacker.position,
-                toX: target.position,
-                currentX: attacker.position,
-                speed: attacker.projectileSpeed,
-                isPlayer1Source: attacker.isPlayer1,
-                damage: dmg,
-                targetId: target.id,
-                isCrit: isCrit
+                id: this.projectileIdCounter++, fromX: attacker.position, toX: target.position,
+                currentX: attacker.position, speed: attacker.projectileSpeed, isPlayer1Source: attacker.isPlayer1,
+                damage: dmg, targetId: target.id, isCrit: isCrit
             });
         } else {
-            // Melee: instant damage
-            if (this.time < 5) console.log("FIRST MELEE HIT:", attacker.isPlayer1 ? "P1" : "P2", "At time:", this.time);
             this.dealDamage(attacker, target, dmg, attacker.isPlayer1, isCrit);
         }
     }
 
     private dealDamage(attacker: EntityState, target: EntityState, amount: number, isPlayer1Source: boolean, _isCrit: boolean, isSkillDamage: boolean = false) {
-        // Apply Shield / Flat Damage Reduction
         let finalDamage = amount;
-        if (target.shield > 0) {
-            finalDamage = Math.max(0, amount - target.shield);
-        }
-
-        if (finalDamage <= 0) {
-            return;
-        }
-
-        // Block Logic
-        if (Math.random() < target.blockChance) {
-            // Blocked!
-            this.log('BLOCKED', `${target.isPlayer1 ? 'Player1' : 'Player2'} blocked damage!`);
-            return;
-        }
-
-        // Calculate actual damage dealt (capped by remaining health)
+        if (target.shield > 0) finalDamage = Math.max(0, amount - target.shield);
+        if (finalDamage <= 0) return;
+        if (Math.random() < target.blockChance) return;
         const damageDealt = Math.min(finalDamage, target.health);
-
-        if (isPlayer1Source) {
-            this.totalPlayer1DamageDealt += damageDealt;
-        } else {
-            this.totalPlayer2DamageDealt += damageDealt;
-        }
-
+        if (isPlayer1Source) this.totalPlayer1DamageDealt += damageDealt;
+        else this.totalPlayer2DamageDealt += damageDealt;
         target.health -= finalDamage;
-
-        // Log Damage
-        this.log(target.isPlayer1 ? 'DMG_TAKEN' : 'DMG_DEALT', `${finalDamage.toFixed(0)} damage to ${target.isPlayer1 ? 'Player1' : 'Player2'}`);
-
-        // Lifesteal
         if (!isSkillDamage) {
             const lifesteal = attacker.lifesteal * finalDamage;
-
             if (lifesteal > 0) {
-                const prevHp = attacker.health;
                 attacker.health = Math.min(attacker.maxHealth, attacker.health + lifesteal);
-                const actualHeal = attacker.health - prevHp;
-
-                if (actualHeal > 0) {
-                    this.log('LIFESTEAL', `${attacker.isPlayer1 ? 'Player1' : 'Player2'} +${actualHeal.toFixed(0)} HP (${(attacker.lifesteal * 100).toFixed(1)}% of ${finalDamage.toFixed(0)})`);
-                }
             }
         }
-
         if (target.health <= 0) {
             target.isDead = true;
             target.health = 0;
@@ -792,130 +588,87 @@ export class PvpBattleEngine {
         const p1HpPercent = this.player1.health / this.player1.maxHealth;
         const p2HpPercent = this.player2.health / this.player2.maxHealth;
         let winner: 'player1' | 'player2' | 'tie';
-
         if (this.player1.isDead && this.player2.isDead) winner = 'tie';
         else if (this.player1.isDead) winner = 'player2';
         else if (this.player2.isDead) winner = 'player1';
         else {
             const p1HpLost = 1 - p1HpPercent;
             const p2HpLost = 1 - p2HpPercent;
-
-            // Use a small epsilon for floating point comparison to ensure ties are possible
             const EPSILON = 0.00001;
-            if (Math.abs(p1HpLost - p2HpLost) < EPSILON) {
-                winner = 'tie';
-            } else if (p1HpLost < p2HpLost) {
-                winner = 'player1';
-            } else {
-                winner = 'player2';
-            }
+            if (Math.abs(p1HpLost - p2HpLost) < EPSILON) winner = 'tie';
+            else if (p1HpLost < p2HpLost) winner = 'player1';
+            else winner = 'player2';
         }
-
         return {
-            winner,
-            player1Hp: this.player1.health,
-            player1MaxHp: this.player1.maxHealth,
-            player1HpPercent: p1HpPercent * 100,
-            player2Hp: this.player2.health,
-            player2MaxHp: this.player2.maxHealth,
-            player2HpPercent: p2HpPercent * 100,
-            time: this.time,
-            timeout: isTimeout
+            winner, player1Hp: this.player1.health, player1MaxHp: this.player1.maxHealth,
+            player1HpPercent: p1HpPercent * 100, player2Hp: this.player2.health,
+            player2MaxHp: this.player2.maxHealth, player2HpPercent: p2HpPercent * 100,
+            time: this.time, timeout: isTimeout
         };
     }
 
     public getSnapshot() {
         return {
-            time: this.time,
-            player1: { ...this.player1 },
-            player2: { ...this.player2 },
+            time: this.time, player1: { ...this.player1 }, player2: { ...this.player2 },
             player1Skills: this.player1Skills.map(s => ({ ...s })),
             player2Skills: this.player2Skills.map(s => ({ ...s })),
             player1ActiveEffects: this.player1ActiveEffects.map(e => ({ ...e })),
             player2ActiveEffects: this.player2ActiveEffects.map(e => ({ ...e })),
             player1ActiveBuffs: this.player1ActiveBuffs.map(b => ({ ...b })),
             player2ActiveBuffs: this.player2ActiveBuffs.map(b => ({ ...b })),
-            projectiles: this.projectiles.map(p => ({ ...p })),
-            logs: [...this.logs]
+            projectiles: this.projectiles.map(p => ({ ...p }))
         };
     }
 }
 
-export function simulatePvpBattleMulti(
-    player1Stats: PvpPlayerStats,
-    player2Stats: PvpPlayerStats,
-    runs: number = 1000
-): {
-    player1WinRate: number;
-    player2WinRate: number;
-    tieRate: number;
-    avgTime: number;
-    timeoutRate: number;
-    results: PvpBattleResult[];
-} {
+export function simulatePvpBattleMulti(player1Stats: PvpPlayerStats, player2Stats: PvpPlayerStats, runs: number = 1000) {
     const results: PvpBattleResult[] = [];
-    let player1Wins = 0;
-    let player2Wins = 0;
-    let ties = 0;
-    let totalTime = 0;
-    let timeouts = 0;
-
+    let p1Wins = 0, p2Wins = 0, ties = 0, totalTime = 0, timeouts = 0;
     for (let i = 0; i < runs; i++) {
         const engine = new PvpBattleEngine(player1Stats, player2Stats);
         const result = engine.simulate();
         results.push(result);
-
-        if (result.winner === 'player1') player1Wins++;
-        else if (result.winner === 'player2') player2Wins++;
+        if (result.winner === 'player1') p1Wins++;
+        else if (result.winner === 'player2') p2Wins++;
         else ties++;
-
         totalTime += result.time;
         if (result.timeout) timeouts++;
     }
-
     return {
-        player1WinRate: (player1Wins / runs) * 100,
-        player2WinRate: (player2Wins / runs) * 100,
-        tieRate: (ties / runs) * 100,
-        avgTime: totalTime / runs,
-        timeoutRate: (timeouts / runs) * 100,
-        results
+        player1WinRate: (p1Wins / runs) * 100, player2WinRate: (p2Wins / runs) * 100,
+        tieRate: (ties / runs) * 100, avgTime: totalTime / runs,
+        timeoutRate: (timeouts / runs) * 100, results
     };
 }
 
 export function enemyConfigToPvpStats(
-    enemyConfig: any,
-    weaponLibrary?: any,
-    pvpBaseConfig?: any,
-    mountUpgradeLibrary?: any,
-    petLibrary?: any,
-    petBalancingLibrary?: any
+    enemyConfig: any, weaponLibrary?: any, pvpBaseConfig?: any,
+    _mountUpgradeLibrary?: any, petLibrary?: any, petBalancingLibrary?: any,
+    _ascensionConfigsLibrary?: any
 ): PvpPlayerStats {
     let weaponInfo: WeaponInfo | undefined;
-    if (enemyConfig.weapon && weaponLibrary) {
-        const weaponKey = `{'Age': ${enemyConfig.weapon.age}, 'Type': 'Weapon', 'Idx': ${enemyConfig.weapon.idx}}`;
-        weaponInfo = weaponLibrary[weaponKey];
+    if (enemyConfig.weaponId && weaponLibrary) {
+        weaponInfo = Object.values(weaponLibrary).find((w: any) => w.ItemId?.Idx === enemyConfig.weaponId) as WeaponInfo;
+    } else if (enemyConfig.weapon && weaponLibrary) {
+        const key = `{'Age': ${enemyConfig.weapon.age}, 'Type': 'Weapon', 'Idx': ${enemyConfig.weapon.idx}}`;
+        weaponInfo = weaponLibrary[key];
     }
 
     const passives = enemyConfig.passiveStats || {};
-    // Base multipliers from passives
     let attackSpeedBonus = passives.AttackSpeed?.enabled ? passives.AttackSpeed.value / 100 : 0;
     let critChance = passives.CriticalChance?.enabled ? passives.CriticalChance.value / 100 : 0;
     let critMulti = passives.CriticalMulti?.enabled ? 1 + (passives.CriticalMulti.value / 100) : 1.5;
     let blockChance = passives.BlockChance?.enabled ? passives.BlockChance.value / 100 : 0;
     let lifesteal = passives.LifeSteal?.enabled ? passives.LifeSteal.value / 100 : 0;
-    let doubleDamage = passives.DoubleDamageChance?.enabled ? passives.DoubleDamageChance.value / 100 : 0;
+    let doubleDamage = passives.DoubleDamageChance?.enabled ? passives.DoubleDamageChance.value / 100 : 1.0;
     let healthRegen = passives.HealthRegen?.enabled ? passives.HealthRegen.value / 100 : 0;
     let damageMulti = passives.DamageMulti?.enabled ? passives.DamageMulti.value / 100 : 0;
     let healthMulti = passives.HealthMulti?.enabled ? passives.HealthMulti.value / 100 : 0;
     let skillDamageMulti = passives.SkillDamageMulti?.enabled ? passives.SkillDamageMulti.value / 100 : 0;
     let skillCooldownMulti = passives.SkillCooldownMulti?.enabled ? passives.SkillCooldownMulti.value / 100 : 0;
 
-    // Collect secondary stats from Pets (all slots) and Mount
     const collectSecondary = (statId: string, value: number) => {
-        // Values from Pet/Mount are typically in percentage points (e.g. 10.5) or 0-1 depending on source
         const val = value / 100;
-
         switch (statId) {
             case 'DamageMulti': damageMulti += val; break;
             case 'HealthMulti': healthMulti += val; break;
@@ -932,61 +685,38 @@ export function enemyConfigToPvpStats(
     };
 
     if (enemyConfig.pets) {
-        enemyConfig.pets.forEach((pet: PetSlot | null) => {
-            if (pet && pet.secondaryStats) {
-                pet.secondaryStats.forEach((s: any) => collectSecondary(s.statId, s.value));
-            }
+        enemyConfig.pets.forEach((pet: any) => {
+            if (pet?.secondaryStats) pet.secondaryStats.forEach((s: any) => collectSecondary(s.statId, s.value));
         });
     }
-
-    if (enemyConfig.mount && enemyConfig.mount.secondaryStats) {
-        // Mount stats might need normalization check, but assuming consistent with Profile now
+    if (enemyConfig.mount?.secondaryStats) {
         enemyConfig.mount.secondaryStats.forEach((s: any) => collectSecondary(s.statId, s.value));
     }
 
-    // Process skills
     const skills: PvpSkillConfig[] = (enemyConfig.skills || [])
         .filter((s: any) => s !== null)
         .map((s: any) => {
             const mechanics = SKILL_MECHANICS[s.id] || { count: 1 };
-
-            // The damage/health values from enemy config are the description values
-            // The description value can be per-hit or total depending on what the description says
-            // We use descriptionIsPerHit to determine if the entered value is per-hit or total
-            const damageIsPerHit = mechanics.descriptionIsPerHit || false;
-
             return {
-                id: s.id,
-                damage: s.damage,
-                health: s.health,
-                cooldown: s.cooldown,
-                duration: s.duration,
-                hasDamage: s.hasDamage,
-                hasHealth: s.hasHealth,
-                count: mechanics.count || 1,
-                damageIsPerHit: damageIsPerHit
+                id: s.id, damage: s.damage, health: s.health, cooldown: s.cooldown,
+                duration: s.duration, hasDamage: s.hasDamage, hasHealth: s.hasHealth,
+                count: mechanics.count || 1, damageIsPerHit: mechanics.descriptionIsPerHit || false
             };
         });
 
-    // Calculate Pet HP (Sum of all active pets)
     let calculatedPetHp = 0;
-    if (enemyConfig.pets && petLibrary && petBalancingLibrary) {
-        enemyConfig.pets.forEach((pet: PetSlot | null) => {
+    if (enemyConfig.pets) {
+        enemyConfig.pets.forEach((pet: any) => {
             if (pet) {
-                if (pet.hp && pet.hp > 0) {
-                    calculatedPetHp += pet.hp;
-                } else if (pet.id !== undefined && petLibrary && petBalancingLibrary) {
-                    // Fix: PetLibrary keys are complex stringified JSON
+                if (pet.hp && pet.hp > 0) calculatedPetHp += pet.hp;
+                else if (pet.id !== undefined && petLibrary && petBalancingLibrary) {
                     const key = `{'Rarity': '${pet.rarity}', 'Id': ${pet.id}}`;
                     const petData = petLibrary[key];
-
                     if (petData) {
-                        const petBalancingData = petBalancingLibrary[petData.Type];
-                        if (petBalancingData) {
+                        const bal = petBalancingLibrary[petData.Type];
+                        if (bal) {
                             const levelIdx = Math.max(0, pet.level - 1);
-                            const baseHp = petBalancingData.BaseHealthPerLevel?.[levelIdx] || 0;
-                            const hpPerRarity = petBalancingData.HealthPerRarity?.[petData.Rarity] || 0;
-                            calculatedPetHp += (baseHp + hpPerRarity);
+                            calculatedPetHp += (bal.BaseHealthPerLevel?.[levelIdx] || 0) + (bal.HealthPerRarity?.[petData.Rarity] || 0);
                         }
                     }
                 }
@@ -994,155 +724,34 @@ export function enemyConfigToPvpStats(
         });
     }
 
-    // Recalculate Mount Multipliers from scratch if Mount is selected
-    let mountHealthMulti = 0;
-    let mountDamageMulti = 0; // Not used for HP but good to know
+    const skinHpFactor = 1 + (enemyConfig.stats.skinHpMulti || 0);
+    const setHpFactor = enemyConfig.hasCompleteSet ? 0.10 : (enemyConfig.stats.setHpMulti || 0);
+    const globalSkinSetFactor = skinHpFactor + setHpFactor;
 
-    if (enemyConfig.mount) {
-        // If manual HP % is provided (user input), use it directly
-        if (enemyConfig.mount.hp && enemyConfig.mount.hp > 0) {
-            mountHealthMulti = enemyConfig.mount.hp / 100;
-        } else if (mountUpgradeLibrary) {
-            // Fallback to Library calculation based on Level
-            const upgradeData = mountUpgradeLibrary[enemyConfig.mount.rarity];
-            if (upgradeData?.LevelInfo) {
-                const levelIdx = Math.max(0, enemyConfig.mount.level - 1);
-                const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === levelIdx) || upgradeData.LevelInfo[0];
-                if (levelInfo?.MountStats?.Stats) {
-                    for (const stat of levelInfo.MountStats.Stats) {
-                        const statType = stat.StatNode?.UniqueStat?.StatType;
-                        const value = stat.Value || 0;
-                        if (statType === 'Health') mountHealthMulti += value;
-                        if (statType === 'Damage') mountDamageMulti += value;
-                    }
-                }
-            }
-        }
-    }
+    // Perfect Reverse: Values provided by user (Total HP, Pet HP, etc.) are already scaled by ASC/Tech in-game.
+    const petHpInGame = calculatedPetHp;
+    const skillPassiveHpInGame = enemyConfig.skillPassiveHp || 0;
+    const mountHpInGame = enemyConfig.mount?.hp || 0;
+    const totalSystemHpInGame = petHpInGame + skillPassiveHpInGame + mountHpInGame;
 
+    const totalHpBeforeGlobal = (enemyConfig.stats.hp || 10000) / Math.max(0.01, globalSkinSetFactor);
+    let derivedEquipHpWithMulti = totalHpBeforeGlobal - totalSystemHpInGame;
+    derivedEquipHpWithMulti = Math.max(0, derivedEquipHpWithMulti);
 
-
-    // We assume enemyConfig.stats.hp is the derived Total Health from a profile or manual input
-    // If it comes from a Profile import, it is the Final Total Health.
-    // If manual, it's just a number.
-    // We need to reverse-engineer components to apply PvP multipliers correctly.
-    // We assume the user creates a "valid" snapshot.
-
-    // Reverse Engineering:
-    // TotalHP = (Base + Pet) * (1 + MountMulti + HealthMulti)
-    // Note: HealthMulti from secondary stats is additive to MountMulti in the formula usually?
-    // In StatEngine: (Base + Pet) * (1 + MountMulti + SecondaryHealthMulti) NO, separate?
-    // Verify.tsx formula: totalHealth = (base + items + pet + skillPassive) * (1 + mountHealthMulti + secondaryHealthMulti)
-
-    // So:
-    // PvpTotal = (Base * PvpBaseMulti + Pet * PvpPetMulti) * (1 + MountMulti * PvpMountMulti + SecondaryHealthMulti)
-
-    // We have `enemyConfig.stats.hp` (Original Total).
-    // We have `mountHealthMulti` and `healthMulti` (Secondary).
-    // We need `PetHP` (Flat).
-    // If we have `petLibrary`, we can calculate PetHP. If not, we fall back to 0 or estimates.
-
-    // PROBLEM: I didn't add petUpgradeLibrary to signature.
-    // I can't calculate Pet HP accurately without it.
-    // I will assume `enemyConfig.stats.hp` is broken down if we want full accuracy,
-    // but here we only have the Total.
-
-    // Update: I will just use `enemyConfig.stats.hp` as the "Base + Items + Pet" block if I can't separate them?
-    // OR I treat `enemyConfig.stats.hp` as "Base + Items" and I add Pet on top if Pet is selected?
-    // In `EnemyBuilder`, the input says "Total Health".
-    // If I select a Pet, does "Total Health" update?
-    // Typically "Total Health" in builder is a manual override or result of import.
-    // If I import, I have the breakdown.
-
-    // Let's look at `profileToEnemyConfig` which I will modify next.
-    // I can store `baseHealth` (Base+Items) and `petHealth` separately in `EnemyConfig`?
-    // The current `EnemyConfig.stats` has `hp`.
-    // I will use `enemyConfig.stats.hp` as "Base Player + Items Health" (User Input).
-    // And I will Calculate Pet HP from the selected Pet and ADD it.
-    // This separates them clearly.
-
-    // But `profileToEnemyConfig` currently sets `stats.hp` to `totalHealth`.
-    // I should change `profileToEnemyConfig` to set `stats.hp` to `totalHealth - petHealth`?
-    // Or add a new field `baseHp`.
-    // Let's stick to `stats.hp` = "Base + Items".
-
-    // So for Pet HP calculation:
-    // I need `petUpgradeLibrary`. I will ADD it to signature in a separate edit if needed,
-    // or just assume `petLibrary` contains what I need (it doesn't, it has Type).
-    // Actually, I can allow `enemyConfigToPvpStats` to take an extra arg `petUpgradeLibrary`.
-
-    // For this step, I will use `any` for extra libs and assume they are passed.
-
-    // Recalculate Pet HP
-    // We need petUpgradeLibrary to be passed in... I'll check if I can add it to signature.
-    // The signature change is what I am doing now.
-
-    // Let's assume petUpgradeLibrary IS passed as the last arg (I'll add it).
-
-    // The `enemyConfig.stats.hp` is the total HP from the enemy config.
-    // We need to deconstruct it to apply PvP multipliers correctly.
-    // Original formula: totalHealth = (basePlayerHealth + itemHealth + petHealth + skillPassiveHealth) * (1 + mountHealthMulti + secondaryHealthMulti)
-    // We have `enemyConfig.stats.hp` as the `totalHealth`.
-    // We have `calculatedPetHp` (from pet object) and `mountHealthMulti` (from mount object).
-    // We also have `healthMulti` from secondary stats.
-
-    // Let's assume `enemyConfig.stats.hp` is the total HP *before* applying the mount health multiplier and secondary health multiplier.
-    // This means `enemyConfig.stats.hp` = (basePlayerHealth + itemHealth + petHealth + skillPassiveHealth)
-    // This is a change from the previous interpretation where `enemyConfig.stats.hp` was the full total.
-    // This makes more sense for the EnemyBuilder where the user inputs a "Base HP" and then selects pet/mount.
-
-    // So, `baseAndPetHp` = `enemyConfig.stats.hp` (which is base + items + skillPassive) + `calculatedPetHp`
-    // calculatedPetHp gets its own multiplier.
-    // Reverse-Engineer Base HP (Player + Items + SkillPassives)
-    // The UI input 'enemyConfig.stats.hp' is treated as Total Health (Base + Pets) * (1 + Mount + Secondary)
-    // We need to strip it down to Base HP to apply PVP multipliers correctly.
-
-    // 1. Calculate Effective Health Multiplier
-    // Note: HealthMulti from secondary stats is already summed in `healthMulti` variable above
-    // Mount Health Multiplier is `mountHealthMulti`
-    const effectiveHealthMulti = 1 + mountHealthMulti + healthMulti;
-
-    // 2. Calculated Pet HP is `calculatedPetHp`
-
-    // 3. Derived Base HP (Base + Items)
-    // Total = (Base + Pet + SkillPassive) * Multi
-    // Base = (Total / Multi) - Pet - SkillPassive
-    // Account for Skin + Set multipliers in reverse engineering
-    const inputTotalHp = enemyConfig.stats.hp || 10000;
-    const skillPassiveHp = enemyConfig.stats.skillPassiveHp || 0;
-
-    // Compute skin/set from UI fields (skinEntries, hasCompleteSet) or fall back to stats
-    const computedSkinHp = enemyConfig.skinEntries?.reduce((sum: number, e: SkinEntry) => sum + (e.hp || 0), 0) ?? enemyConfig.stats.skinHpMulti ?? 0;
-    const computedSetHp = enemyConfig.hasCompleteSet !== undefined ? (enemyConfig.hasCompleteSet ? 0.10 : 0) : (enemyConfig.stats.setHpMulti ?? 0);
-    const skinHpFactor = 1 + computedSkinHp;
-    const setHpFactor = computedSetHp;
-    const globalSkinSetFactor = skinHpFactor + setHpFactor; // Same formula as StatEngine: * (skinFactor + setFactor)
-
-    let derivedBaseHp = (inputTotalHp / Math.max(1, effectiveHealthMulti) / Math.max(0.01, globalSkinSetFactor)) - calculatedPetHp - skillPassiveHp;
-    derivedBaseHp = Math.max(0, derivedBaseHp);
-
-    // 4. Apply PVP Multipliers
-    const pvpHpBaseMulti = 5//pvpBaseConfig?.PvpHpBaseMultiplier ?? 5.0;
+    const pvpHpBaseMulti = pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0;
     const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
     const pvpHpSkillMulti = pvpBaseConfig?.PvpHpSkillMultiplier ?? 0.5;
     const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
 
-    const pvpBaseHp = derivedBaseHp * pvpHpBaseMulti;
-    const pvpPetHp = calculatedPetHp * pvpHpPetMulti;
-    const pvpSkillHp = skillPassiveHp * pvpHpSkillMulti;
-    const pvpCombinedHp = pvpBaseHp + pvpPetHp + pvpSkillHp;
+    const pvpEquipHp = derivedEquipHpWithMulti * pvpHpBaseMulti;
+    const pvpPetHp = petHpInGame * pvpHpPetMulti;
+    const pvpSkillHp = skillPassiveHpInGame * pvpHpSkillMulti;
+    const pvpMountHp = mountHpInGame * pvpHpMountMulti;
 
-    const pvpMountHealthMulti = mountHealthMulti * pvpHpMountMulti;
-
-    // Final PvP HP = (pvpCombinedHp) * (1 + pvpMountHealthMulti + healthMulti)
-    const pvpTotalHp = pvpCombinedHp * (1 + pvpMountHealthMulti + healthMulti);
-
-
-
+    const pvpTotalHp = (pvpEquipHp + pvpPetHp + pvpSkillHp + pvpMountHp) * globalSkinSetFactor;
 
     return {
-        hp: Math.round(Math.max(1, pvpTotalHp)),
-        damage: enemyConfig.stats.damage,
+        hp: Math.round(Math.max(1, pvpTotalHp)), damage: enemyConfig.stats.damage,
         attackSpeed: 1.0 + attackSpeedBonus,
         weaponInfo: weaponInfo ? {
             ...weaponInfo,
@@ -1152,276 +761,117 @@ export function enemyConfigToPvpStats(
         } : undefined,
         isRanged: weaponInfo ? (weaponInfo.AttackRange ?? 0) > 1.0 : false,
         projectileSpeed: enemyConfig.stats.projectileSpeed || 10,
-        critChance,
-        critMulti,
-        blockChance,
-        lifesteal,
-        doubleDamage,
-        healthRegen,
-        damageMulti: 0,  // Already baked into stats.damage
-        healthMulti: 0,  // Already baked into pvpTotalHp via reverse engineering
-        skillDamageMulti,
-        skillCooldownMulti,
-        skills
+        critChance, critMulti, blockChance, lifesteal, doubleDamage, healthRegen,
+        damageMulti: 0, healthMulti: 0, skillDamageMulti, skillCooldownMulti, skills
     };
 }
 
 export function aggregatedStatsToPvpStats(
-    stats: any,
-    equippedSkills: any[],
-    skillLibrary: any,
-    weaponLibrary?: any,
-    weaponSlot?: any,
-    pvpBaseConfig?: any
+    stats: any, equippedSkills: any[], skillLibrary: any,
+    weaponLibrary?: any, weaponSlot?: any, pvpBaseConfig?: any,
+    ascensionLevels: Record<string, number> = {}, ascensionConfigsLibrary: any = null
 ): PvpPlayerStats {
     const skills: PvpSkillConfig[] = equippedSkills.map(skill => {
         const skillData = skillLibrary?.[skill.id];
         const levelIdx = Math.max(0, skill.level - 1);
-
-        let baseDamage = skillData?.DamagePerLevel?.[levelIdx] || 0;
-        let baseHealth = skillData?.HealthPerLevel?.[levelIdx] || 0;
-
-        const skillFactor = stats.skillDamageMultiplier || 1;
-        const globalFactor = stats.damageMultiplier || 1;
-        const mountFactor = stats.mountDamageMulti || 0;
-        const totalDamageMulti = skillFactor + (globalFactor - mountFactor) - 1;
-
+        const baseDamage = skillData?.DamagePerLevel?.[levelIdx] || 0;
+        const totalDamageMulti = (stats.skillDamageMultiplier || 1) + (stats.damageMultiplier || 1) - 1;
         let damage = baseDamage * totalDamageMulti;
-        const health = baseHealth * totalDamageMulti;
-
+        const health = (skillData?.HealthPerLevel?.[levelIdx] || 0) * totalDamageMulti;
         const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
-
-        // If description says value is Per Hit (but library is Total), divide Total by Count
-        if (mechanics.descriptionIsPerHit && !mechanics.damageIsPerHit) {
-            damage /= mechanics.count;
-        }
-
+        if (mechanics.descriptionIsPerHit && !mechanics.damageIsPerHit) damage /= mechanics.count;
         return {
-            id: skill.id,
-            damage,
-            health,
-            cooldown: skillData?.Cooldown || 10,
-            duration: skillData?.ActiveDuration || 0,
-            hasDamage: baseDamage > 0,
-            hasHealth: baseHealth > 0,
-            count: mechanics.count || 1,
-            damageIsPerHit: !!mechanics.descriptionIsPerHit || !!mechanics.damageIsPerHit
+            id: skill.id, damage, health, cooldown: skillData?.Cooldown || 10,
+            duration: skillData?.ActiveDuration || 0, hasDamage: baseDamage > 0,
+            hasHealth: (skillData?.HealthPerLevel?.[levelIdx] || 0) > 0,
+            count: mechanics.count || 1, damageIsPerHit: !!mechanics.descriptionIsPerHit || !!mechanics.damageIsPerHit
         };
     });
 
-    // Calculate PvP HP with multipliers
-    // stats.totalHealth = (basePlayerHealth + itemHealth + petHealth + skillPassiveHealth) * (1 + mountHealthMulti + secondaryHealthMulti)
-    // We have access to the breakdown from stats object
+    const commonHealthMulti = 1 + (stats.secondaryHealthMulti || 0);
+    const equipHealthMulti = stats.healthMultiplier || commonHealthMulti;
+    const forgeAscHpBonus = Math.max(0, equipHealthMulti - commonHealthMulti);
+    const globalSkinSetFactor = (1 + (stats.skinHealthMulti || 0)) + (stats.setHealthMulti || 0);
+    const totalSystemHp = (stats.petHealth || 0) + (stats.skillPassiveHealth || 0) + (stats.mountHealth || 0);
 
-    // Get PvP multipliers from config (defaults if not provided)
+    const totalHpBeforeGlobal = (stats.totalHealth || 10000) / Math.max(0.01, globalSkinSetFactor);
+    let derivedEquipHp = (totalHpBeforeGlobal - totalSystemHp) / Math.max(0.01, equipHealthMulti);
+    derivedEquipHp = Math.max(0, derivedEquipHp);
 
-
-    // Deconstruct Total Stats (User Input) into Components for PVP Multipliers
-    // Formula: Total = (Base + Items + SkillPassive + Pets) * (1 + Mount% + Secondary%)
-    // But wait, Pets are usually additive AFTER Mount% in some games, but here they seem additive BEFORE?
-    // Let's check StatEngine.ts:
-    // totalHealth = (basePlayerHealth + itemHealth + skillPassiveHealth + petHealth) * healthMultiplier
-    // healthMultiplier = (1 + mountHealthMulti + secondaryHealthMulti)
-
-    // So: BaseComponent = Total / Multipliers - PetHP
-
-    // 1. Calculate Multipliers
-    let mountHealthPct = stats.mountHealthMulti || 0;
-
-    // Secondary Stats from Passive Stats configuration
-    // For Player (stats), secondary stats are already included in health/damage multipliers 
-    // unless we want to separate them?
-    // StatEngine aggregates (1 + Mount + Secondary) into `healthMultiplier`.
-    // We can extract Secondary if we assume `healthMultiplier` = `1 + mountHealthPct + secHealthMulti`.
-    // So secHealthMulti = healthMultiplier - 1 - mountHealthPct.
-    let secHealthMulti = (stats.healthMultiplier || 1) - 1 - mountHealthPct;
-    secHealthMulti = Math.max(0, secHealthMulti);
-
-    // 2. Sum Active Pet HP
-    let totalPetHp = stats.petHealth || 0;
-    let skillPassiveHp = stats.skillPassiveHealth || 0;
-
-    // 3. Derived Base HP (Base + Items)
-    // Avoid division by zero
-    const effectiveMulti = Math.max(1, stats.healthMultiplier || 1);
-    const inputTotalHp = stats.totalHealth || 10000;
-    // Account for Skin + Set multipliers in reverse engineering
-    const skinHpFactor = 1 + (stats.skinHealthMulti || 0);
-    const setHpFactor = stats.setHealthMulti || 0;
-    const globalSkinSetFactor = skinHpFactor + setHpFactor; // Same formula as StatEngine
-
-    let derivedBaseHp = (inputTotalHp / effectiveMulti / Math.max(0.01, globalSkinSetFactor)) - totalPetHp - skillPassiveHp;
-    derivedBaseHp = Math.max(0, derivedBaseHp);
-
-    // 4. Apply PVP Multipliers
-    const pvpHpBaseMulti = 5//pvpBaseConfig?.PvpHpBaseMultiplier ?? 5.0;
+    const pvpHpBaseMulti = pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0;
     const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
     const pvpHpSkillMulti = pvpBaseConfig?.PvpHpSkillMultiplier ?? 0.5;
     const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
 
-    const pvpBaseHp = derivedBaseHp * pvpHpBaseMulti;
-    const pvpPetHp = totalPetHp * pvpHpPetMulti;
-    const pvpSkillHp = skillPassiveHp * pvpHpSkillMulti;
-    const pvpCombinedHp = pvpBaseHp + pvpPetHp + pvpSkillHp;
+    const petAscMultiHp = getAscMulti('Pets', ascensionLevels.pets || 0, 'Health', ascensionConfigsLibrary);
+    const skillAscMultiHp = getAscMulti('Skills', ascensionLevels.skills || 0, 'Health', ascensionConfigsLibrary);
+    const mountAscMultiHp = getAscMulti('Mounts', ascensionLevels.mounts || 0, 'Health', ascensionConfigsLibrary);
 
-    const pvpMountHealthMulti = mountHealthPct * pvpHpMountMulti;
+    const pvpEquipHp = derivedEquipHp * (commonHealthMulti + (forgeAscHpBonus * pvpHpBaseMulti));
+    const pvpPetHp = (stats.petHealth || 0) * (1 + petAscMultiHp) * pvpHpPetMulti;
+    const pvpSkillHp = (stats.skillPassiveHealth || 0) * (1 + skillAscMultiHp) * pvpHpSkillMulti;
+    const pvpMountHp = (stats.mountHealth || 0) * (1 + mountAscMultiHp) * pvpHpMountMulti;
 
-    const pvpTotalHp = pvpCombinedHp * (1 + pvpMountHealthMulti + secHealthMulti);
+    const pvpTotalHp = (pvpEquipHp + pvpPetHp + pvpSkillHp + pvpMountHp) * globalSkinSetFactor;
 
-
-
-    // Determine Weapon Info
     let weaponInfo = undefined;
     if (weaponLibrary && weaponSlot) {
-        // Helper to get weapon info from library
         const findWeapon = (item: any) => {
-            // WeaponLibrary uses complex keys: "{'Age': 0, 'Type': 'Weapon', 'Idx': 0}"
-            // item (ItemSlot) has age and idx
             if (item.age !== undefined && item.idx !== undefined) {
                 const key = `{'Age': ${item.age}, 'Type': 'Weapon', 'Idx': ${item.idx}}`;
                 if (weaponLibrary[key]) return weaponLibrary[key];
             }
-
-            // Fallback: try by ID if it exists (legacy or different format)
             if (item.id && weaponLibrary[item.id]) return weaponLibrary[item.id];
-
             return null;
         };
-
         const wData = findWeapon(weaponSlot);
         if (wData) {
-            const windup = wData.WindupTime !== undefined ? wData.WindupTime : 0.5;
-            const duration = wData.AttackDuration !== undefined ? wData.AttackDuration : 1.5;
-            const range = wData.AttackRange !== undefined ? wData.AttackRange : 0.3;
-
             weaponInfo = {
-                Age: wData.ItemId?.Age || wData.Age || 0,
-                Idx: wData.ItemId?.Idx || wData.Idx || 0,
+                Age: wData.ItemId?.Age || wData.Age || 0, Idx: wData.ItemId?.Idx || wData.Idx || 0,
                 Type: wData.ItemId?.Type || wData.Type || 'Melee',
-                IsRanged: (range > 1.0) ? 1 : 0,
-                AttackRange: range,
-                AttackDuration: duration,
-                WindupTime: windup,
-                ProjectileId: wData.ProjectileId // Capture Projectile ID if needed
+                IsRanged: (wData.AttackRange > 1.0) ? 1 : 0, AttackRange: wData.AttackRange,
+                AttackDuration: wData.AttackDuration, WindupTime: wData.WindupTime, ProjectileId: wData.ProjectileId
             };
         }
     }
 
     return {
-        hp: Math.round(Math.max(1, pvpTotalHp)),
-        damage: stats.totalDamage, // TODO: Apply similar logic for Damage if needed
-        attackSpeed: stats.attackSpeedMultiplier || 1,
-        weaponInfo,
-
+        hp: Math.round(Math.max(1, pvpTotalHp)), damage: stats.totalDamage,
+        attackSpeed: stats.attackSpeedMultiplier || 1, weaponInfo,
         isRanged: weaponInfo ? (weaponInfo.AttackRange ?? 0) > 1.0 : stats.isRangedWeapon,
-        projectileSpeed: stats.projectileSpeed, // Note: WeaponLibrary doesn't seem to have ProjectileSpeed, relying on stats or default
-
-
-        critChance: stats.criticalChance || 0,
-        critMulti: stats.criticalDamage || 1.5,
-        blockChance: stats.blockChance || 0,
-        lifesteal: stats.lifeSteal || 0,
-        doubleDamage: stats.doubleDamageChance || 0,
-        healthRegen: stats.healthRegen || 0,
-        damageMulti: 0,  // Already baked into stats.totalDamage
-        healthMulti: 0,  // Already baked into pvpTotalHp via reverse engineering
-        skillDamageMulti: stats.skillDamageMultiplier || 1,
-        skillCooldownMulti: stats.skillCooldownReduction || 0,
-
+        projectileSpeed: stats.projectileSpeed, critChance: stats.criticalChance || 0,
+        critMulti: stats.criticalDamage || 1.5, blockChance: stats.blockChance || 0,
+        lifesteal: stats.lifeSteal || 0, doubleDamage: stats.doubleDamageChance || 0,
+        healthRegen: stats.healthRegen || 0, damageMulti: 0, healthMulti: 0,
+        skillDamageMulti: stats.skillDamageMultiplier || 1, skillCooldownMulti: stats.skillCooldownReduction || 0,
         skills
     };
 }
 
-export function profileToEnemyConfig(profile: any, libs: any): EnemyConfig {
+export function profileToEnemyConfig(profile: UserProfile, libs: any, existingStats?: any): EnemyConfig {
     const engine = new StatEngine(profile, libs);
-    const stats = engine.calculate();
+    const stats = existingStats || engine.calculate();
     const techModifiers = engine.getTechModifiers();
+    const petBonusHp = techModifiers['PetBonusHealth'] || 0;
+    const petAscLevel = profile.misc?.petAscensionLevel || 0;
+    const petAscMulti = getAscMulti('Pets', petAscLevel, 'Health', libs.ascensionConfigsLibrary);
+    const petDeScale = 1 + petBonusHp + petAscMulti;
 
-    // Ensure we have 3 slots for pets and pre-calculate HP
-    const pets: (PetSlot | null)[] = [null, null, null];
-    if (profile.pets?.active) {
-        profile.pets.active.forEach((p: PetSlot, i: number) => {
-            if (i < 3) {
-                // Calculate Pet HP using PetUpgradeLibrary (matching StatEngine logic)
-                let petHp = 0;
-                if (libs.petUpgradeLibrary && libs.petLibrary) {
-                    // Check key format - try both ID and JSON key
-                    let petData = libs.petLibrary[p.id];
-                    if (!petData) {
-                        const key = `{'Rarity': '${p.rarity}', 'Id': ${p.id}}`;
-                        petData = libs.petLibrary[key];
-                    }
-
-                    if (petData) {
-                        const upgradeData = libs.petUpgradeLibrary[p.rarity];
-                        if (upgradeData?.LevelInfo) {
-                            const levelIdx = Math.max(0, p.level - 1);
-                            const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === levelIdx) || upgradeData.LevelInfo[0];
-
-                            if (levelInfo?.PetStats?.Stats) {
-                                const petType = petData.Type || 'Balanced';
-                                const typeMulti = libs.petBalancingLibrary?.[petType]?.HealthMultiplier || 1;
-                                const petHealthBonus = techModifiers['PetBonusHealth'] || 0;
-
-                                for (const stat of levelInfo.PetStats.Stats) {
-                                    const statType = stat.StatNode?.UniqueStat?.StatType;
-                                    let value = stat.Value || 0;
-
-                                    if (statType === 'Health') {
-                                        value *= typeMulti;
-                                        value *= (1 + petHealthBonus);
-                                        petHp += value;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                pets[i] = { ...p, hp: Math.round(petHp) };
-            }
-        });
-    }
+    const skillBonusHp = techModifiers['SkillPassiveHealth'] || 0;
+    const skillAscLevel = profile.misc?.skillAscensionLevel || 0;
+    const skillAscMulti = getAscMulti('Skills', skillAscLevel, 'Health', libs.ascensionConfigsLibrary);
+    const skillDeScale = 1 + skillBonusHp + skillAscMulti;
 
     const config: EnemyConfig = {
-        name: profile.name,
+        name: profile.name || 'Imported Profile',
+        level: profile.misc?.forgeLevel || 1,
+        weaponId: profile.items.Weapon?.idx || 0,
         weapon: profile.items.Weapon || null,
-        skills: profile.skills.equipped.map((skill: any) => {
-            const skillData = libs.skillLibrary?.[skill.id];
-            const levelIdx = Math.max(0, skill.level - 1);
-            let baseDamage = skillData?.DamagePerLevel?.[levelIdx] || 0;
-            let baseHealth = skillData?.HealthPerLevel?.[levelIdx] || 0;
-
-            const skillFactor = stats.skillDamageMultiplier || 1;
-            const globalFactor = stats.damageMultiplier || 1;
-            const mountFactor = stats.mountDamageMulti || 0;
-            const totalDamageMulti = skillFactor + (globalFactor - mountFactor) - 1;
-
-            baseDamage *= totalDamageMulti;
-            baseHealth *= totalDamageMulti;
-
-            const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
-            // If description says value is Per Hit (but library is Total), divide Total by Count
-            if (mechanics.descriptionIsPerHit && !mechanics.damageIsPerHit) {
-                baseDamage /= mechanics.count;
-            }
-
-            return {
-                id: skill.id,
-                rarity: skill.rarity,
-                damage: Math.round(baseDamage),
-                health: Math.round(baseHealth),
-                cooldown: skillData?.Cooldown || 10,
-                duration: skillData?.ActiveDuration || 0,
-                hasDamage: (skillData?.DamagePerLevel?.length || 0) > 0,
-                hasHealth: (skillData?.HealthPerLevel?.length || 0) > 0
-            };
-        }),
+        skillPassiveHp: Math.round((stats.skillPassiveHealth / Math.max(0.01, stats.healthMultiplier || 1)) / Math.max(0.01, skillDeScale)),
         stats: {
-            hp: stats.totalHealth,
             damage: stats.totalDamage,
+            hp: stats.totalHealth,
             power: stats.power,
-            skillPassiveHp: stats.skillPassiveHealth,
             skinDmgMulti: stats.skinDamageMulti,
             skinHpMulti: stats.skinHealthMulti,
             setDmgMulti: stats.setDamageMulti,
@@ -1431,165 +881,88 @@ export function profileToEnemyConfig(profile: any, libs: any): EnemyConfig {
             weaponWindup: stats.weaponWindupTime,
             weaponAttackDuration: stats.weaponAttackDuration,
         },
-        // Build individual skinEntries from each item's skin data
+        forgeAscensionLevel: profile.misc?.forgeAscensionLevel || 0,
+        skillAscensionLevel: profile.misc?.skillAscensionLevel || 0,
+        mountAscensionLevel: profile.misc?.mountAscensionLevel || 0,
+        petAscensionLevel: profile.misc?.petAscensionLevel || 0,
+        skills: profile.skills.equipped.map((skill: any) => {
+            const skillData = libs.skillLibrary?.[skill.id];
+            const levelIdx = Math.max(0, skill.level - 1);
+            const totalDamageMulti = (stats.skillDamageMultiplier || 1) + (stats.damageMultiplier || 1) - 1;
+            const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
+            let baseDamage = (skillData?.DamagePerLevel?.[levelIdx] || 0) * totalDamageMulti;
+            if (mechanics.descriptionIsPerHit && !mechanics.damageIsPerHit) baseDamage /= mechanics.count;
+            return {
+                id: skill.id, rarity: skill.rarity, damage: Math.round(baseDamage),
+                health: Math.round((skillData?.HealthPerLevel?.[levelIdx] || 0) * totalDamageMulti),
+                level: skill.level, cooldown: skillData?.Cooldown || 10, duration: skillData?.ActiveDuration || 0,
+                hasDamage: (skillData?.DamagePerLevel?.length || 0) > 0, hasHealth: (skillData?.HealthPerLevel?.length || 0) > 0
+            };
+        }),
         skinEntries: (() => {
             const entries: SkinEntry[] = [];
             const itemSlots = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'] as const;
             for (const slot of itemSlots) {
                 const item = profile.items[slot];
                 if (item?.skin?.stats) {
-                    const dmg = item.skin.stats['Damage'] || 0;
-                    const hp = item.skin.stats['Health'] || 0;
-                    if (dmg > 0 || hp > 0) {
-                        entries.push({ dmg, hp });
-                    }
+                    const dmg = item.skin.stats['Damage'] || 0, hp = item.skin.stats['Health'] || 0;
+                    if (dmg > 0 || hp > 0) entries.push({ dmg, hp });
                 }
             }
             return entries;
         })(),
-        // Detect set completion from skin SetIds in libraries
         hasCompleteSet: (() => {
             if (!libs.skinsLibrary || !libs.setsLibrary) return false;
-            const slotToJsonType: Record<string, string> = {
-                'Weapon': 'Weapon', 'Helmet': 'Helmet', 'Body': 'Armour',
-                'Gloves': 'Gloves', 'Belt': 'Belt', 'Necklace': 'Necklace',
-                'Ring': 'Ring', 'Shoe': 'Shoes'
-            };
-            const equippedSetCounts: Record<string, number> = {};
+            const slotToJsonType: Record<string, string> = { 'Weapon': 'Weapon', 'Helmet': 'Helmet', 'Body': 'Armour', 'Gloves': 'Gloves', 'Belt': 'Belt', 'Necklace': 'Necklace', 'Ring': 'Ring', 'Shoe': 'Shoes' };
+            const counts: Record<string, number> = {};
             const itemSlots = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'] as const;
             for (const slot of itemSlots) {
                 const item = profile.items[slot];
                 if (!item?.skin) continue;
-                const lookupType = item.skin?.type || slotToJsonType[slot];
-                const skinEntry = Object.values(libs.skinsLibrary).find(
-                    (s: any) => s.SkinId?.Type === lookupType && s.SkinId?.Idx === item.skin?.idx
-                ) as any;
-                if (skinEntry?.SetId) {
-                    equippedSetCounts[skinEntry.SetId] = (equippedSetCounts[skinEntry.SetId] || 0) + 1;
-                }
+                const skinEntry = Object.values(libs.skinsLibrary).find((s: any) => s.SkinId?.Type === (item.skin?.type || slotToJsonType[slot]) && s.SkinId?.Idx === item.skin?.idx) as any;
+                if (skinEntry?.SetId) counts[skinEntry.SetId] = (counts[skinEntry.SetId] || 0) + 1;
             }
-            for (const [setId, count] of Object.entries(equippedSetCounts)) {
-                const setEntry = libs.setsLibrary[setId];
-                if (!setEntry?.BonusTiers) continue;
-                for (const tier of setEntry.BonusTiers) {
-                    if (count >= tier.RequiredPieces) return true;
-                }
+            for (const [id, count] of Object.entries(counts)) {
+                const set = libs.setsLibrary[id];
+                if (set?.BonusTiers?.some((t: any) => count >= t.RequiredPieces)) return true;
             }
             return false;
         })(),
-        passiveStats: initPassiveStats(),
-        pets: pets,
+        passiveStats: {},
+        pets: profile.pets?.active.map((p: any) => ({ ...p, hp: p.hp ? Math.round(p.hp / Math.max(0.01, petDeScale)) : 0 })) || [],
         mount: (() => {
             const m = profile.mount?.active;
             if (!m) return null;
-
-            // Calculate Mount HP %
-            let hpPercent = 0;
-            if (libs.mountUpgradeLibrary) {
-                const upgradeData = libs.mountUpgradeLibrary[m.rarity];
-                if (upgradeData?.LevelInfo) {
-                    const levelIdx = Math.max(0, m.level - 1);
-                    const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === levelIdx) || upgradeData.LevelInfo[0];
-                    if (levelInfo?.MountStats?.Stats) {
-                        for (const stat of levelInfo.MountStats.Stats) {
-                            const statType = stat.StatNode?.UniqueStat?.StatType;
-                            const value = stat.Value || 0;
-                            if (statType === 'Health') hpPercent += value;
-                        }
-                    }
+            const mountAscLevel = profile.misc?.mountAscensionLevel || 0;
+            let mountAscMulti = 0;
+            if (mountAscLevel > 0 && libs.ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+                const configs = libs.ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
+                for (let i = 0; i < mountAscLevel && i < configs.length; i++) {
+                     configs[i].StatContributions?.forEach((s: any) => { if (s.StatNode?.UniqueStat?.StatType === 'Health') mountAscMulti += s.Value; });
                 }
             }
-
-            // Apply Tech Tree Bonus (from correct imported profile tree)
-            const mountHpBonus = techModifiers['MountHealth'] || 0;
-            hpPercent = hpPercent * (1 + mountHpBonus);
-
-            return { ...m, hp: parseFloat((hpPercent * 100).toFixed(2)) };
+            const deScale = (1 + (techModifiers['MountHealth'] || 0) + mountAscMulti);
+            return { ...m, hp: Math.round((stats.mountHealth || 0) / Math.max(0.01, deScale)) };
         })()
     };
-
-    const setPassive = (type: PassiveStatType, val: number | undefined) => {
-        if (val && val > 0) {
-            config.passiveStats[type] = {
-                enabled: true,
-                value: parseFloat((val * 100).toFixed(2))
-            };
-        }
-    };
-
-    // Note: We need to subtract stats that come from Pet/Mount secondary stats 
-    // because they are now handled by the Pet/Mount objects in EnemyConfig independently.
-    // However, StatEngine aggregates everything.
-    // For simplicity, we might just populate passiveStats with EVERYTHING and let the user adjust?
-    // OR we rely on `initPassiveStats` + `setPassive` to capture "Extra" stats not covered by Pet/Mount?
-    // Actually, `stats` from engine includes EVERYTHING.
-    // If we put strict values derived from Pet/Mount into `config.pet` and `config.mount`,
-    // then `enemyConfigToPvpStats` will re-add them.
-    // So we risk double counting if `passiveStats` also includes them.
-    // But `passiveStats` here (AttackSpeed etc) are calculated from totals.
-    // We should probably subtract the Pet/Mount contributions if we want "Base + Items" passives only.
-    // Or, much easier: WE DO NOT POPULATE `passiveStats` with total engine stats if we have explicit objects.
-    // We should calculate `passiveStats` from `stats.secondaryStats` MINUS Pet/Mount stats?
-    // That's complex.
-    // Alternative: profileToEnemyConfig is a "Best Effort" import.
-    // Let's populate the TOTALS in passiveStats and verify.
-    // Wait, `enemyConfigToPvpStats` ADDS `passiveStats` + `pet.secondaryStats`.
-    // So if I put total in `passiveStats`, and `pet` also has them, they get doubled.
-    // I should probably NOT populate `passiveStats` with aggregated totals if I can help it?
-    // But then I lose Item/TechTree stats.
-
-    // Solution:
-    // `stats` object has final totals.
-    // I should reconstruct `passiveStats` from `stats` MINUS `pet` and `mount` contributions.
-    // StatEngine keeps them separate internally in `secondaryStats` but collects them all.
-    // Actually, StatEngine doesn't expose the breakdown of secondary stats by source easily 
-    // (it's local vars in `collectAllSecondaryStats`).
-
-    // Compromise:
-    // Set `passiveStats` to ONLY include `Additional / Tech Tree` stats if possible?
-    // Or just import EVERYTHING into `passiveStats` and set `pet`/`mount` to NULL?
-    // The user WANTS to see Pet/Mount selectors.
-    // So I should populate Pet/Mount.
-    // Then I should try to remove their stats from `passiveStats`.
-
-    // Calculate deductions to subtract Pet/Mount secondary stats from global totals
+    const ps = ['DamageMulti', 'HealthMulti', 'CriticalChance', 'CriticalMulti', 'BlockChance', 'LifeSteal', 'DoubleDamageChance', 'HealthRegen', 'SkillDamageMulti', 'SkillCooldownMulti', 'AttackSpeed'];
+    ps.forEach(s => config.passiveStats[s] = { enabled: false, value: 0 });
     const deductions: Record<string, number> = {};
-    const addDeduction = (statsArr: any[]) => {
-        if (!statsArr) return;
-        statsArr.forEach(s => {
-            deductions[s.statId] = (deductions[s.statId] || 0) + (s.value / 100);
-        });
-    }
-
-    if (profile.pets?.active) profile.pets.active.forEach((p: any) => addDeduction(p.secondaryStats));
+    const addDeduction = (arr: any[]) => arr?.forEach(s => deductions[s.statId] = (deductions[s.statId] || 0) + (s.value / 100));
+    profile.pets?.active.forEach((p: any) => addDeduction(p.secondaryStats));
     if (profile.mount?.active?.secondaryStats) addDeduction(profile.mount.active.secondaryStats);
-
-    // Helper to get net value (Engine Total - Deductions)
-    const getNetValue = (statId: string, totalEngineValue: number, isMulti: boolean = false) => {
-        // isMulti means engine is 1.5 for +50%. deduction is 0.5.
-        // If isMulti, base is 1.0.
-        // setPassive takes a "0.5" for 50%.
-
-        const rawVal = isMulti ? totalEngineValue - 1 : totalEngineValue;
-        const deduction = deductions[statId] || 0;
-        return Math.max(0, rawVal - deduction);
-    };
-
-    setPassive('CriticalChance', getNetValue('CriticalChance', stats.criticalChance));
-    setPassive('CriticalMulti', getNetValue('CriticalMulti', stats.criticalDamage, true));
-    setPassive('BlockChance', getNetValue('BlockChance', stats.blockChance));
-    setPassive('HealthRegen', getNetValue('HealthRegen', stats.healthRegen));
-    setPassive('LifeSteal', getNetValue('LifeSteal', stats.lifeSteal));
-    setPassive('DoubleDamageChance', getNetValue('DoubleDamageChance', stats.doubleDamageChance));
-    setPassive('SkillDamageMulti', getNetValue('SkillDamageMulti', stats.skillDamageMultiplier, true));
-    setPassive('SkillCooldownMulti', getNetValue('SkillCooldownMulti', stats.skillCooldownReduction));
-    setPassive('AttackSpeed', getNetValue('AttackSpeed', stats.attackSpeedMultiplier, true));
-
-    // Explicitly handle DamageMulti/HealthMulti
-    // StatEngine: damageMultiplier = 1 + mountDamageMulti + secondaryDamageMulti
-    // We need the secondary part only (minus pet/mount contributions)
-    setPassive('DamageMulti', getNetValue('DamageMulti', stats.secondaryDamageMulti || 0));
-    setPassive('HealthMulti', getNetValue('HealthMulti', stats.secondaryHealthMulti || 0));
-
+    const setP = (type: string, val: number | undefined) => { if (val && val > 0) config.passiveStats[type] = { enabled: true, value: parseFloat((val * 100).toFixed(2)) }; };
+    const getNet = (id: string, total: number, isM: boolean = false) => Math.max(0, (isM ? total - 1 : total) - (deductions[id] || 0));
+    setP('CriticalChance', getNet('CriticalChance', stats.criticalChance));
+    setP('CriticalMulti', getNet('CriticalMulti', stats.criticalDamage, true));
+    setP('BlockChance', getNet('BlockChance', stats.blockChance));
+    setP('HealthRegen', getNet('HealthRegen', stats.healthRegen));
+    setP('LifeSteal', getNet('LifeSteal', stats.lifeSteal));
+    setP('DoubleDamageChance', getNet('DoubleDamageChance', stats.doubleDamageChance));
+    setP('SkillDamageMulti', getNet('SkillDamageMulti', stats.skillDamageMultiplier, true));
+    setP('SkillCooldownMulti', getNet('SkillCooldownMulti', stats.skillCooldownReduction));
+    setP('AttackSpeed', getNet('AttackSpeed', stats.attackSpeedMultiplier, true));
+    setP('DamageMulti', getNet('DamageMulti', stats.secondaryDamageMulti || 0));
+    setP('HealthMulti', getNet('HealthMulti', stats.secondaryHealthMulti || 0));
     return config;
 }

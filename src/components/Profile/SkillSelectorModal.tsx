@@ -11,6 +11,8 @@ import { cn, getRarityBgStyle } from '../../lib/utils';
 import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
+import { AscensionStars } from '../UI/AscensionStars';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 type MobileTab = 'rarity' | 'skills' | 'config';
 
@@ -33,6 +35,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
     const [mobileTab, setMobileTab] = useState<MobileTab>('rarity');
     const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
     const [skillLevel, setSkillLevel] = useState<number>(1);
+    const [ascensionLevel, setAscensionLevel] = useState<number>(0);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
@@ -41,10 +44,12 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                 setSelectedRarity(currentSkill.rarity);
                 setSelectedSkillId(currentSkill.id);
                 setSkillLevel(currentSkill.level);
+                setAscensionLevel(currentSkill.ascensionLevel || 0);
             } else {
                 setSelectedRarity('Common');
                 setSelectedSkillId(null);
                 setSkillLevel(1);
+                setAscensionLevel(0);
             }
             setSearchTerm('');
             setMobileTab('rarity');
@@ -109,7 +114,8 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                 id: selectedSkillId,
                 rarity: selectedRarity,
                 level: skillLevel,
-                evolution: 0
+                evolution: 0,
+                ascensionLevel
             });
             onClose();
         }
@@ -257,7 +263,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             {spriteMapping?.skills && (
                                                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={getRarityBgStyle(selectedRarity)}>
                                                     <SpriteSheetIcon
-                                                        textureSrc="./icons/game/SkillIcons.png"
+                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}
@@ -286,7 +292,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                         <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-3" style={getRarityBgStyle(selectedRarity)}>
                                             {spriteMapping?.skills && (
                                                 <SpriteSheetIcon
-                                                    textureSrc="./icons/game/SkillIcons.png"
+                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
                                                     spriteWidth={spriteMapping.skills.sprite_size.width}
                                                     spriteHeight={spriteMapping.skills.sprite_size.height}
                                                     sheetWidth={spriteMapping.skills.texture_size.width}
@@ -358,6 +364,13 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             </div>
                                         </div>
                                     )}
+
+                                    {!isPvp && (
+                                        <div className="flex justify-center mt-2">
+                                            <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                                        </div>
+                                    )}
+
                                     <Button variant="primary" className="w-full gap-2" onClick={handleSave}><Save className="w-4 h-4" />Confirm</Button>
                                 </>
                             ) : (
@@ -430,7 +443,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
                                                 <SpriteSheetIcon
-                                                    textureSrc="./icons/game/SkillIcons.png"
+                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
                                                     spriteWidth={spriteMapping.skills.sprite_size.width}
                                                     spriteHeight={spriteMapping.skills.sprite_size.height}
                                                     sheetWidth={spriteMapping.skills.texture_size.width}
@@ -465,7 +478,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             if (displaySkill && spriteMapping?.skills) {
                                                 return (
                                                     <SpriteSheetIcon
-                                                        textureSrc="./icons/game/SkillIcons.png"
+                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}
@@ -556,6 +569,12 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                 <Plus className="w-4 h-4" />
                                             </Button>
                                         </div>
+                                    </div>
+                                )}
+
+                                {!isPvp && (
+                                    <div className="flex justify-center mt-2">
+                                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
                                     </div>
                                 )}
 

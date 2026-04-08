@@ -11,6 +11,7 @@ import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { RARITIES } from '../../utils/constants';
 import { getStatName } from '../../utils/statNames';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 type MobileTab = 'rarity' | 'pets' | 'config';
 
@@ -41,6 +42,7 @@ const STAT_TYPES = [
 export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, context = 'profile' }: PetSelectorModalProps) {
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
+    const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: secondaryUnlockLib } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
@@ -95,6 +97,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
         if (!secondaryUnlockLib || !selectedRarity) return 0;
         return secondaryUnlockLib[selectedRarity]?.NumberOfSecondStats || 0;
     }, [secondaryUnlockLib, selectedRarity]);
+
+    const maxPetLevel = useMemo(() => {
+        if (!petUpgradeLibrary || !selectedRarity) return 100;
+        return (petUpgradeLibrary[selectedRarity]?.LevelInfo?.length || 100);
+    }, [petUpgradeLibrary, selectedRarity]);
 
     // Trim manual stats if they exceed the new slot limit
     useEffect(() => {
@@ -349,7 +356,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                 >
                                                     {petsConfig && (
                                                         <SpriteSheetIcon
-                                                            textureSrc="./icons/game/Pets.png"
+                                                            textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
                                                             spriteWidth={petsConfig.sprite_size.width}
                                                             spriteHeight={petsConfig.sprite_size.height}
                                                             sheetWidth={petsConfig.texture_size.width}
@@ -398,7 +405,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                             >
                                                                 {petsConfig && (
                                                                     <SpriteSheetIcon
-                                                                        textureSrc="./icons/game/Pets.png"
+                                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
                                                                         spriteWidth={petsConfig.sprite_size.width}
                                                                         spriteHeight={petsConfig.sprite_size.height}
                                                                         sheetWidth={petsConfig.texture_size.width}
@@ -451,7 +458,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                         >
                                             {petsConfig && (
                                                 <SpriteSheetIcon
-                                                    textureSrc="./icons/game/Pets.png"
+                                                    textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
                                                     spriteWidth={petsConfig.sprite_size.width}
                                                     spriteHeight={petsConfig.sprite_size.height}
                                                     sheetWidth={petsConfig.texture_size.width}
@@ -465,11 +472,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                         <p className={cn("text-xs font-bold uppercase", `text-rarity-${selectedRarity.toLowerCase()}`)}>{selectedRarity}</p>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase text-text-muted">Level</label>
+                                        <label className="text-xs font-bold uppercase text-text-muted">Level (Max {maxPetLevel})</label>
                                         <div className="flex items-center gap-2">
                                             <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.max(1, petLevel - 1))}><Minus className="w-4 h-4" /></Button>
-                                            <Input type="number" value={petLevel} onChange={(e) => setPetLevel(Math.max(1, parseInt(e.target.value) || 1))} className="text-center font-mono font-bold" />
-                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(petLevel + 1)}><Plus className="w-4 h-4" /></Button>
+                                            <Input type="number" value={petLevel} onChange={(e) => setPetLevel(Math.max(1, Math.min(maxPetLevel, parseInt(e.target.value) || 1)))} className="text-center font-mono font-bold" />
+                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.min(maxPetLevel, petLevel + 1))}><Plus className="w-4 h-4" /></Button>
                                         </div>
                                     </div>
                                     <div className="space-y-3">
@@ -515,6 +522,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                             );
                                         })}
                                     </div>
+
                                     <Button variant="primary" className="w-full gap-2" onClick={handleSave}><Save className="w-4 h-4" />Confirm</Button>
                                 </>
                             ) : (
@@ -591,7 +599,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                             >
                                                 {petsConfig && (
                                                     <SpriteSheetIcon
-                                                        textureSrc="./icons/game/Pets.png"
+                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
                                                         spriteWidth={petsConfig.sprite_size.width}
                                                         spriteHeight={petsConfig.sprite_size.height}
                                                         sheetWidth={petsConfig.texture_size.width}
@@ -643,7 +651,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                         >
                                                             {petsConfig && spriteInfo && (
                                                                 <SpriteSheetIcon
-                                                                    textureSrc="./icons/game/Pets.png"
+                                                                    textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
                                                                     spriteWidth={petsConfig.sprite_size.width}
                                                                     spriteHeight={petsConfig.sprite_size.height}
                                                                     sheetWidth={petsConfig.texture_size.width}
@@ -698,7 +706,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                             if (displayPet && petsConfig) {
                                                 return (
                                                     <SpriteSheetIcon
-                                                        textureSrc="./icons/game/Pets.png"
+                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
                                                         spriteWidth={petsConfig.sprite_size.width}
                                                         spriteHeight={petsConfig.sprite_size.height}
                                                         sheetWidth={petsConfig.texture_size.width}
@@ -758,7 +766,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                 {context !== 'pvp' && (
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase text-text-muted flex items-center gap-2">
-                                            Level
+                                            Level (Max {maxPetLevel})
                                         </label>
                                         <div className="flex items-center gap-2">
                                             <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.max(1, petLevel - 1))}>
@@ -767,10 +775,10 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                             <Input
                                                 type="number"
                                                 value={petLevel}
-                                                onChange={(e) => setPetLevel(Math.max(1, parseInt(e.target.value) || 1))}
+                                                onChange={(e) => setPetLevel(Math.max(1, Math.min(maxPetLevel, parseInt(e.target.value) || 1)))}
                                                 className="text-center font-mono font-bold"
                                             />
-                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(petLevel + 1)}>
+                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.min(maxPetLevel, petLevel + 1))}>
                                                 <Plus className="w-4 h-4" />
                                             </Button>
                                         </div>

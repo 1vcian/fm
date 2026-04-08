@@ -16,10 +16,20 @@ interface SkinId {
 
 /**
  * Returns the sort value for a skin based on the 8x8 sprite sheet layout.
+ * Optionally uses a dynamic mapping from ManualSpriteMapping.json
  */
-export const getSkinSortValue = (skin: { SkinId: SkinId }): number => {
+export const getSkinSortValue = (skin: { SkinId: SkinId }, mapping?: Record<string, number>): number => {
     const { Type, Idx } = skin.SkinId;
 
+    // Use dynamic mapping if available
+    if (mapping) {
+        const key = `${Type}_${Idx}`;
+        if (mapping[key] !== undefined) {
+            return mapping[key];
+        }
+    }
+
+    // Fallback to legacy hardcoded logic
     // Row 3 logic: Weapons always come after Row 1/2 (starts at index 16)
     if (Type === 'Weapon') {
         switch (Idx) {
@@ -44,7 +54,7 @@ export const getSkinSortValue = (skin: { SkinId: SkinId }): number => {
         case 4: baseIndex = 12; break; // Flower (12, 13)
         case 102: return 14;           // Unnamed 102 (Row 2, Col 6)
         case 103: return 15;           // Unnamed 103 (Row 2, Col 7)
-        default: baseIndex = 32 + Idx * 2;
+        default: baseIndex = 32 + (Idx % 16) * 2; // Adjusted to stay within reasonable range
     }
 
     const typeOffset = Type === 'Helmet' ? 0 : 1;
@@ -54,8 +64,8 @@ export const getSkinSortValue = (skin: { SkinId: SkinId }): number => {
 /**
  * Calculates the sprite position in percentages for CSS background-position.
  */
-export const getSkinSpritePosition = (skin: { SkinId: SkinId }): string | null => {
-    const index = getSkinSortValue(skin);
+export const getSkinSpritePosition = (skin: { SkinId: SkinId }, mapping?: Record<string, number>): string | null => {
+    const index = getSkinSortValue(skin, mapping);
 
     const col = index % SKIN_SPRITE_COLS;
     const row = Math.floor(index / SKIN_SPRITE_COLS);
@@ -71,8 +81,8 @@ export const getSkinSpritePosition = (skin: { SkinId: SkinId }): string | null =
 /**
  * Returns the CSS style object for a skin sprite.
  */
-export const getSkinSpriteStyle = (skin: { SkinId: SkinId }): React.CSSProperties => {
-    const position = getSkinSpritePosition(skin);
+export const getSkinSpriteStyle = (skin: { SkinId: SkinId }, mapping?: Record<string, number>): React.CSSProperties => {
+    const position = getSkinSpritePosition(skin, mapping);
     return {
         backgroundImage: 'url(./Texture2D/SkinsUiIcons.png)',
         backgroundSize: '800% 800%',
@@ -80,3 +90,4 @@ export const getSkinSpriteStyle = (skin: { SkinId: SkinId }): React.CSSPropertie
         imageRendering: 'pixelated' as const
     };
 };
+

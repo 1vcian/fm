@@ -43,16 +43,8 @@ interface LeagueReward {
 export default function Arena() {
     // 'ArenaRewardLibrary.json' for rewards.
     const { data: rewardsData, loading } = useGameData<Record<string, LeagueReward>>('ArenaRewardLibrary.json');
+    const { data: leagueData } = useGameData<Record<string, { LeagueId: number; PromotionEnd: number; DemotionStart: number }>>('ArenaLeagueLibrary.json');
 
-    // Thresholds match the progression: Unranked -> Diamond
-    const leagueThresholds: Record<number, { p: number; d: number }> = {
-        0: { p: 90, d: 0 },  // Unranked (Top 90 Promote)
-        1: { p: 80, d: 0 },  // Bronze (Top 80 Promote)
-        2: { p: 50, d: 90 }, // Silver (Top 50 Promote, Bottom 10 Demote)
-        3: { p: 20, d: 80 }, // Gold (Top 20 Promote, Bottom 20 Demote)
-        4: { p: 10, d: 70 }, // Platinum (Top 10 Promote, Bottom 30 Demote)
-        5: { p: 0, d: 60 }   // Diamond (None Promote, Bottom 40 Demote)
-    };
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
@@ -68,7 +60,10 @@ export default function Arena() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {LEAGUE_NAMES.map((name, idx) => {
-                    const thresholds = leagueThresholds[idx];
+                    const league = leagueData?.[String(idx)];
+                    const thresholds = league
+                        ? { p: league.PromotionEnd, d: league.DemotionStart }
+                        : { p: 0, d: 0 };
                     const rewardData = rewardsData ? (rewardsData[String(idx)] || rewardsData[idx]) : null;
                     const colorClass = LEAGUE_COLORS[idx];
                     const bgClass = LEAGUE_BG_GRADIENTS[idx];
@@ -161,6 +156,7 @@ function mapRewardType(type: string): string {
         'Coins': 'Coin',
         'SkillSummonTickets': 'SkillTicket',
         'TechPotions': 'Potion',
+        'Eggshells': 'Eggshell',
         'Pet': 'PetKey',
         'ClockWinders': 'MountKey'
     };

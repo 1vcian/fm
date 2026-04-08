@@ -1,7 +1,21 @@
+import { useState, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
-import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle } from 'lucide-react';
+import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle, Star, Quote } from 'lucide-react';
 
 export default function FAQ() {
+    const [supporters, setSupporters] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/supporters.json')
+            .then(res => res.json())
+            .then(data => {
+                setSupporters(data);
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    }, []);
+
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
             {/* Header */}
@@ -38,7 +52,7 @@ export default function FAQ() {
                                         <Globe className="w-4 h-4" /> 1vcian.me
                                     </a>
                                     <a
-                                        href="https://discord.com/invite/fmaster"
+                                        href="https://discord.gg/forgemaster"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-input border border-border hover:border-accent-primary transition-all text-xs font-bold text-indigo-400 hover:text-indigo-300"
@@ -89,6 +103,76 @@ export default function FAQ() {
                         </div>
                     </div>
                 </Card>
+
+                {/* Supporters Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-2">
+                            <Star className="w-6 h-6 text-yellow-500 fill-current" />
+                            Supporters Hall of Fame
+                        </h2>
+                        {!loading && supporters.length > 0 && (
+                            <span className="text-[10px] font-bold bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full border border-yellow-500/20 uppercase tracking-widest">
+                                {supporters.length} Heroes
+                            </span>
+                        )}
+                    </div>
+
+                    {loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {[1, 2, 3, 4].map(idx => (
+                                <div key={idx} className="h-32 bg-bg-secondary/20 rounded-2xl animate-pulse border border-border/50" />
+                            ))}
+                        </div>
+                    ) : supporters.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {supporters.map((item, idx) => {
+                                const s = item.supporter;
+                                const msg = item.supporter_message?.note;
+                                
+                                return (
+                                    <Card key={idx} className="p-4 relative group overflow-hidden border-accent-primary/5 hover:border-accent-primary/30 transition-all flex flex-col">
+                                        <div className="absolute -top-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
+                                            <Quote className="w-24 h-24" />
+                                        </div>
+                                        
+                                        <div className="flex items-start justify-between mb-3 relative z-10">
+                                            <div className="flex items-center gap-3">
+                                                {s.dp ? (
+                                                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-border bg-bg-secondary">
+                                                        <img src={s.dp} alt={s.name} className="w-full h-full object-cover" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex items-center justify-center font-black text-yellow-500 shadow-inner">
+                                                        {s.name[0]}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <div className="font-black text-text-primary text-sm uppercase tracking-tight">{s.name}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {msg ? (
+                                            <p className="text-sm text-text-secondary leading-relaxed italic relative z-10 pl-4 border-l-2 border-accent-primary/20 mt-auto">
+                                                "{msg}"
+                                            </p>
+                                        ) : (
+                                            <p className="text-xs text-text-muted italic opacity-50 mt-auto">
+                                                Supported with a gift!
+                                            </p>
+                                        )}
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <Card className="p-12 text-center bg-bg-secondary/10 border-dashed border-2 border-border/50">
+                            <Coffee className="w-12 h-12 text-text-muted mx-auto mb-4 opacity-20" />
+                            <p className="font-bold text-text-muted uppercase tracking-widest text-sm">Be the first to appear in the Hall of Fame!</p>
+                        </Card>
+                    )}
+                </div>
             </div>
         </div>
     );

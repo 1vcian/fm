@@ -46,20 +46,13 @@ interface SetEntry {
     BonusTiers: SetBonus[];
 }
 
-const SET_ICONS: Record<string, string> = {
-    'SantaSet': 'SteppingStoneCharIcon0.png',
-    'SnowmanSet': 'SteppingStoneCharIcon1.png',
-    'SkiSet': 'SteppingStoneCharIcon2.png',
-    'LeprechaunSet': 'SteppingStoneCharIcon4.png',
-    'FlowerSet': 'SteppingStoneCharIcon5.png',
-    'DruidSet': 'SteppingStoneCharIcon3.png',
-};
-
 export default function Skins() {
     const { data: skinsData, loading: loadingSkins } = useGameData<Record<string, SkinEntry>>('SkinsLibrary.json');
     const { data: setsData, loading: loadingSets } = useGameData<Record<string, SetEntry>>('SetsLibrary.json');
+    const { data: spriteMapping, loading: loadingMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
 
-    const loading = loadingSkins || loadingSets;
+    const loading = loadingSkins || loadingSets || loadingMapping;
 
     const groupedSkins = useMemo(() => {
         if (!skinsData) return { sets: [], misc: [] };
@@ -88,6 +81,30 @@ export default function Skins() {
 
         return { sets, misc };
     }, [skinsData, setsData]);
+
+    const weaponWindupLookup = useMemo(() => {
+        if (!weaponLibrary) return {} as Record<number, number>;
+        
+        // Internal tracking to store the age along with the windup
+        const tracking: Record<number, { age: number, windup: number }> = {};
+        
+        Object.entries(weaponLibrary).forEach(([_, data]: [string, any]) => {
+            const idx = data.ItemId?.Idx;
+            const age = data.ItemId?.Age;
+            if (data.ItemId?.Type === 'Weapon' && idx !== undefined && age !== undefined && data.WindupTime !== undefined) {
+                // Prioritize higher ages (1000, 10000, etc.) as they contain skin-specific values
+                if (tracking[idx] === undefined || age > tracking[idx].age) {
+                    tracking[idx] = { age, windup: data.WindupTime };
+                }
+            }
+        });
+
+        const finalLookup: Record<number, number> = {};
+        Object.entries(tracking).forEach(([idx, val]) => {
+            finalLookup[Number(idx)] = val.windup;
+        });
+        return finalLookup;
+    }, [weaponLibrary]);
 
     if (loading) {
         return <div className="p-8 text-center text-text-muted">Loading Skins & Sets...</div>;
@@ -123,7 +140,7 @@ export default function Skins() {
                 {Object.entries(groupedSkins.sets).map(([setId, skins]) => {
                     const setInfo = setsData?.[setId];
                     if (!setInfo) return null;
-                    const setIcon = SET_ICONS[setId];
+                    const setIcon = spriteMapping?.skinSets?.[setId];
 
                     return (
                         <div key={setId} className="bg-bg-secondary/20 border border-border rounded-xl overflow-hidden">
@@ -173,13 +190,14 @@ export default function Skins() {
 
                             {/* Skins Grid for this Set */}
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {skins.map((skin) => (
-                                    <SkinCard
-                                        key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
-                                        skin={skin}
-                                        bgStyle={getSkinSpriteStyle(skin)}
-                                    />
-                                ))}
+                                    {skins.map((skin) => (
+                                        <SkinCard
+                                            key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
+                                            skin={skin}
+                                            bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
+                                            windup={skin.SkinId.Type === 'Weapon' ? weaponWindupLookup[skin.SkinId.Idx] : undefined}
+                                        />
+                                    ))}
                             </div>
                         </div>
                     );
@@ -198,7 +216,8 @@ export default function Skins() {
                             <SkinCard
                                 key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                 skin={skin}
-                                bgStyle={getSkinSpriteStyle(skin)}
+                                bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
+                                windup={skin.SkinId.Type === 'Weapon' ? weaponWindupLookup[skin.SkinId.Idx] : undefined}
                             />
                         ))}
                     </div>
@@ -208,7 +227,7 @@ export default function Skins() {
     );
 }
 
-function SkinCard({ skin, bgStyle }: { skin: SkinEntry, bgStyle: React.CSSProperties }) {
+function SkinCard({ skin, bgStyle, windup }: { skin: SkinEntry, bgStyle: React.CSSProperties, windup?: number }) {
     return (
         <Card className="flex flex-col gap-3 overflow-hidden group hover:border-accent-primary/50 transition-colors">
             <div className="flex items-center gap-4">
@@ -223,10 +242,15 @@ function SkinCard({ skin, bgStyle }: { skin: SkinEntry, bgStyle: React.CSSProper
                     <span className="text-xs text-text-muted bg-bg-input px-2 py-0.5 rounded-full w-fit mb-1">
                         ID: {skin.SkinId.Idx}
                     </span>
-                    {/* Max Stats Badge */}
                     <span className="text-[10px] text-text-muted uppercase border border-border px-1.5 rounded">
                         Max Stats: {skin.MaxStatCount}
                     </span>
+                    {typeof windup === 'number' && (
+                        <div className="mt-1 flex items-center gap-1.5 text-accent-secondary">
+                            <Zap className="w-3 h-3" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Windup: {windup.toFixed(2)}s</span>
+                        </div>
+                    )}
                 </div>
             </div>
 

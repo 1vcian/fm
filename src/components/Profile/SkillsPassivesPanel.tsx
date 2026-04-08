@@ -3,12 +3,14 @@ import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { Card } from '../UI/Card';
-import { Sparkles, ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react';
+import { Sparkles, ChevronDown, ChevronUp, Plus, Minus, Trash2, RotateCcw } from 'lucide-react';
 import { Input } from '../UI/Input';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { useState, useMemo } from 'react';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { AscensionStars } from '../UI/AscensionStars';
 
 interface SkillInfo {
     id: string;
@@ -16,7 +18,6 @@ interface SkillInfo {
 }
 
 const RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
-const SKILL_MAX_LEVEL = 299; // From SkillBaseConfig.json
 
 interface SkillsPassivesPanelProps {
     considerAnimation?: boolean;
@@ -26,16 +27,43 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     const { profile, updateNestedProfile } = useProfile();
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const globalStats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const [expandedRarities, setExpandedRarities] = useState<Set<string>>(new Set(['Common']));
     const [frequencyWindow, setFrequencyWindow] = useState<number>(60.00);
+    const [previousPassives, setPreviousPassives] = useState<Record<string, number> | null>(null);
+    const [isUndoVisible, setIsUndoVisible] = useState(false);
 
     // Tech tree bonuses for skill passives
     const skillPassiveDamageBonus = techModifiers['SkillPassiveDamage'] || 0;
     const skillPassiveHealthBonus = techModifiers['SkillPassiveHealth'] || 0;
     const skillCooldownReduction = globalStats?.skillCooldownReduction || 0;
+
+    // Skill Ascension multipliers
+    const { ascensionDmgMulti, ascensionHpMulti } = useMemo(() => {
+        const skillAscensionLevel = profile.misc.skillAscensionLevel || 0;
+        let dMulti = 0;
+        let hMulti = 0;
+
+        if (skillAscensionLevel > 0 && ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
+            for (let i = 0; i < skillAscensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const s of stats) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    if (sTarget === 'PassiveSkillStatTarget') {
+                        const sVal = s.Value;
+                        if (sType === 'Damage') dMulti += sVal;
+                        if (sType === 'Health') hMulti += sVal;
+                    }
+                }
+            }
+        }
+        return { ascensionDmgMulti: dMulti, ascensionHpMulti: hMulti };
+    }, [profile.misc.skillAscensionLevel, ascensionConfigsLibrary]);
 
     // Get all skills organized by rarity
     const skillsByRarity = useMemo(() => {
@@ -52,7 +80,11 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     const passives = profile.skills?.passives || {};
 
     const handleLevelChange = (skillId: string, newLevel: number) => {
-        const clampedLevel = Math.max(0, Math.min(newLevel, SKILL_MAX_LEVEL));
+        setIsUndoVisible(false); // Manual edit clears undo state
+        const skillData = skillLibrary?.[skillId];
+        const rarity = skillData?.Rarity || 'Common';
+        const maxLevel = skillPassiveLibrary?.[rarity]?.LevelStats?.length || 299;
+        const clampedLevel = Math.max(0, Math.min(newLevel, maxLevel));
         const updatedPassives = { ...passives, [skillId]: clampedLevel };
 
         // Sync with equipped
@@ -62,6 +94,23 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
         );
 
         updateNestedProfile('skills', { passives: updatedPassives, equipped: updatedEquipped });
+    };
+
+    const handleResetAll = () => {
+        setPreviousPassives({ ...passives });
+        setIsUndoVisible(true);
+        
+        const resetPassives = { ...passives };
+        Object.keys(resetPassives).forEach(key => resetPassives[key] = 0);
+        
+        updateNestedProfile('skills', { passives: resetPassives });
+    };
+
+    const handleUndo = () => {
+        if (previousPassives) {
+            updateNestedProfile('skills', { passives: previousPassives });
+            setIsUndoVisible(false);
+        }
     };
 
     const getSpriteInfo = (skillId: string) => {
@@ -99,12 +148,9 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
             if (statType === 'Health') baseHealth += stat.Value || 0;
         }
 
-        // Apply tech tree bonuses and round to integer (as the game does)
-        // Game shows: Arrows Lv20 = DMG +75, HP +600 (not 75.04, 600.32)
-        // Apply tech tree bonuses and round to integer (as the game does)
-        // Game shows: Arrows Lv20 = DMG +75, HP +600 (not 75.04, 600.32)
-        const damage = Math.floor(baseDamage * (1 + skillPassiveDamageBonus));
-        const health = Math.floor(baseHealth * (1 + skillPassiveHealthBonus));
+        // Apply tech tree bonuses, ascension, and round to integer (as the game does)
+        const damage = Math.floor(baseDamage * (1 + skillPassiveDamageBonus + ascensionDmgMulti));
+        const health = Math.floor(baseHealth * (1 + skillPassiveHealthBonus + ascensionHpMulti));
 
         const baseCooldown = skillData.Cooldown || 0;
         const cooldown = baseCooldown * Math.max(0.1, 1 - skillCooldownReduction);
@@ -116,9 +162,10 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
             health,
             damageBonus: skillPassiveDamageBonus,
             healthBonus: skillPassiveHealthBonus,
-            baseCooldown,
-            cooldown,
-            cooldownReduction: skillCooldownReduction
+            cooldown: cooldown,
+            cooldownReduction: skillCooldownReduction,
+            ascensionDmgMulti,
+            ascensionHpMulti
         };
     };
 
@@ -126,6 +173,27 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     const totals = useMemo(() => {
         let totalBaseDmg = 0, totalBaseHp = 0;
         let totalDmg = 0, totalHp = 0;
+        
+        let ascensionActiveSkillDmgMulti = 0;
+        let ascensionActiveSkillHpMulti = 0;
+
+        const skillAscensionLevel = profile.misc.skillAscensionLevel || 0;
+        if (skillAscensionLevel > 0 && ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
+            for (let i = 0; i < skillAscensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const s of stats) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    const sVal = s.Value;
+                    if (sTarget === 'ActiveSkillStatTarget') {
+                        if (sType === 'Damage') ascensionActiveSkillDmgMulti += sVal;
+                        if (sType === 'Health') ascensionActiveSkillHpMulti += sVal;
+                    }
+                }
+            }
+        }
+
         for (const [skillId, level] of Object.entries(passives)) {
             if ((level as number) <= 0) continue;
             const stats = getSkillStats(skillId, level as number);
@@ -142,9 +210,14 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
             damage: totalDmg,
             health: totalHp,
             damageBonus: skillPassiveDamageBonus,
-            healthBonus: skillPassiveHealthBonus
+            healthBonus: skillPassiveHealthBonus,
+            ascensionDmgMulti,
+            ascensionHpMulti,
+            // Calculate active skill multipliers for display
+            activeDamageMulti: 1 + ascensionActiveSkillDmgMulti + (techModifiers['ActiveSkillDamage'] || 0),
+            activeHealthMulti: 1 + ascensionActiveSkillHpMulti + (techModifiers['ActiveSkillHealth'] || 0)
         };
-    }, [passives, skillPassiveLibrary, skillLibrary, skillPassiveDamageBonus, skillPassiveHealthBonus]);
+    }, [passives, skillPassiveLibrary, skillLibrary, skillPassiveDamageBonus, skillPassiveHealthBonus, ascensionDmgMulti, ascensionHpMulti]);
 
     const toggleRarity = (rarity: string) => {
         setExpandedRarities(prev => {
@@ -160,12 +233,42 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
 
     return (
         <Card className="p-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <img src="./Texture2D/TechTreePower.png" alt="Skill Passives" className="w-8 h-8 object-contain" />
-                Skill Passives
-                <span className="text-sm font-normal text-text-muted ml-auto">
-                    {ownedCount}/{totalSkills}
-                </span>
+            <h2 className="text-xl font-bold mb-6 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <Sparkles className="w-8 h-8 text-yellow-400" />
+                    Skill Passives
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-normal text-text-muted mr-2">
+                        {ownedCount}/{totalSkills}
+                    </span>
+                    <button
+                        onClick={isUndoVisible ? handleUndo : handleResetAll}
+                        className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border",
+                            isUndoVisible 
+                                ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20" 
+                                : "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                        )}
+                        title={isUndoVisible ? "Undo Reset" : "Reset All to 0"}
+                    >
+                        {isUndoVisible ? (
+                            <>
+                                <RotateCcw className="w-3 h-3" />
+                                Undo
+                            </>
+                        ) : (
+                            <>
+                                <Trash2 className="w-3 h-3" />
+                                Reset
+                            </>
+                        )}
+                    </button>
+                    <AscensionStars
+                        value={profile.misc.skillAscensionLevel || 0}
+                        onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
+                    />
+                </div>
             </h2>
 
             {/* Frequency Window Input */}
@@ -188,23 +291,39 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
             </div>
 
             {/* Totals Display */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/30 text-center">
-                    <div className="text-xs text-text-muted uppercase">Passive DMG</div>
+                    <div className="text-xs text-text-muted uppercase font-bold tracking-wider mb-1">Passive DMG</div>
                     <div className="font-mono font-bold text-red-400 text-lg">
                         +{formatCompactNumber(totals.damage)}
-                        {totals.damageBonus > 0 && (
-                            <span className="text-green-400 text-xs ml-1">(+{(totals.damageBonus * 100).toFixed(0)}%)</span>
+                        {(totals.damageBonus > 0 || totals.ascensionDmgMulti > 0) && (
+                            <span className="text-green-400 text-xs ml-1">(+{( (totals.damageBonus + totals.ascensionDmgMulti) * 100).toFixed(0)}%)</span>
                         )}
                     </div>
                 </div>
                 <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/30 text-center">
-                    <div className="text-xs text-text-muted uppercase">Passive HP</div>
+                    <div className="text-xs text-text-muted uppercase font-bold tracking-wider mb-1">Passive HP</div>
                     <div className="font-mono font-bold text-green-400 text-lg">
                         +{formatCompactNumber(totals.health)}
-                        {totals.healthBonus > 0 && (
-                            <span className="text-green-400 text-xs ml-1">(+{(totals.healthBonus * 100).toFixed(0)}%)</span>
+                        {(totals.healthBonus > 0 || totals.ascensionHpMulti > 0) && (
+                            <span className="text-green-400 text-xs ml-1">(+{( (totals.healthBonus + totals.ascensionHpMulti) * 100).toFixed(0)}%)</span>
                         )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Active Skill Multipliers */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="p-3 bg-amber-500/5 rounded-lg border border-amber-500/20 text-center">
+                    <div className="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-1">Active Skill DMG</div>
+                    <div className="font-mono font-bold text-amber-500 text-lg leading-tight">
+                        {totals.activeDamageMulti.toFixed(1)}x
+                    </div>
+                </div>
+                <div className="p-3 bg-blue-500/5 rounded-lg border border-blue-500/20 text-center">
+                    <div className="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-1">Active Skill HEAL</div>
+                    <div className="font-mono font-bold text-blue-400 text-lg leading-tight">
+                        {totals.activeHealthMulti.toFixed(1)}x
                     </div>
                 </div>
             </div>
@@ -268,7 +387,7 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                                     >
                                                         {spriteInfo ? (
                                                             <SpriteSheetIcon
-                                                                textureSrc="./icons/game/SkillIcons.png"
+                                                                textureSrc={getAscensionTexturePath('SkillIcons', profile.misc.skillAscensionLevel || 0)}
                                                                 spriteWidth={spriteInfo.config.sprite_size.width}
                                                                 spriteHeight={spriteInfo.config.sprite_size.height}
                                                                 sheetWidth={spriteInfo.config.texture_size.width}
@@ -302,7 +421,7 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                                         className="flex-1 h-6 text-xs text-center min-w-[40px] bg-transparent border-0 focus-visible:ring-0 p-0"
                                                         placeholder="0"
                                                         min={0}
-                                                        max={SKILL_MAX_LEVEL}
+                                                        max={skillPassiveLibrary?.[skill.rarity]?.LevelStats?.length || 299}
                                                     />
                                                     <button
                                                         onClick={() => handleLevelChange(skill.id, level + 1)}
@@ -319,8 +438,8 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                                             <span className="text-text-muted self-start min-[400px]:self-auto">DMG</span>
                                                             <span className="text-red-400 font-mono text-right break-words leading-tight">
                                                                 +{Math.round(stats.damage).toLocaleString()}
-                                                                {stats.damageBonus > 0 && (
-                                                                    <span className="text-green-400 ml-0.5 text-[8px] inline-block">(+{(stats.damageBonus * 100).toFixed(0)}%)</span>
+                                                                {(stats.damageBonus > 0 || stats.ascensionDmgMulti > 0) && (
+                                                                    <span className="text-green-400 ml-0.5 text-[8px] inline-block">(+{( ( (1 + stats.damageBonus) * (1 + stats.ascensionDmgMulti) - 1 ) * 100).toFixed(0)}%)</span>
                                                                 )}
                                                             </span>
                                                         </div>
@@ -328,8 +447,8 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                                             <span className="text-text-muted self-start min-[400px]:self-auto">HP</span>
                                                             <span className="text-green-400 font-mono text-right break-words leading-tight">
                                                                 +{Math.round(stats.health).toLocaleString()}
-                                                                {stats.healthBonus > 0 && (
-                                                                    <span className="text-green-400 ml-0.5 text-[8px] inline-block">(+{(stats.healthBonus * 100).toFixed(0)}%)</span>
+                                                                {(stats.healthBonus > 0 || stats.ascensionHpMulti > 0) && (
+                                                                    <span className="text-green-400 ml-0.5 text-[8px] inline-block">(+{( ( (1 + stats.healthBonus) * (1 + stats.ascensionHpMulti) - 1 ) * 100).toFixed(0)}%)</span>
                                                                 )}
                                                             </span>
                                                         </div>

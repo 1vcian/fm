@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { getItemImage } from '../utils/itemAssets';
 import { useGameData } from '../hooks/useGameData';
+import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { Sword } from 'lucide-react';
@@ -8,22 +9,26 @@ import { cn, getAgeBgStyle, getAgeIconStyle, getInventoryIconStyle } from '../li
 import { AGES } from '../utils/constants';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
 import { formatNumber } from '../utils/format';
+import { AscensionStars } from '../components/UI/AscensionStars';
 
 const SLOTS = ['Weapon', 'Helmet', 'Armour', 'Gloves', 'Shoes', 'Necklace', 'Ring', 'Belt'];
 
 export default function Items() {
+    const { profile } = useProfile();
     const { data: itemLibrary, loading: loadingItemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: secondaryParams, loading: loadingSecondaryParams } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');
     const { data: autoMapping, loading: loadingAutoMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: balancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
+    const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const techModifiers = useTreeModifiers();
 
     // Default to first age (Primitive)
     const [selectedAgeIdx, setSelectedAgeIdx] = useState<number>(0);
     const [selectedSlot, setSelectedSlot] = useState<string>('Weapon');
     const [selectedLevel, setSelectedLevel] = useState<number>(1);
+    const [ascensionLevel, setAscensionLevel] = useState<number>(profile.misc.forgeAscensionLevel || 0);
 
     // Dynamic Max Level calculation
     const currentMaxLevel = useMemo(() => {
@@ -42,6 +47,24 @@ export default function Items() {
         const bonus = techModifiers[slotBonusKey] || 0;
         return base + bonus;
     }, [balancingConfig, selectedSlot, techModifiers]);
+
+    // Ascension Multiplier calculation
+    const forgeAscensionMulti = useMemo(() => {
+        let total = 0;
+        if (ascensionLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
+            const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
+            // The config values are per level, we sum them up to get the cumulative multiplier increment
+            for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
+                // We pick the first stat contribution (they are usually the same for HP/Dmg in Forge)
+                // (Value + 1) / 100 converts game value (e.g. 49) to multiplier increment (e.g. 0.5)
+                const contrib = configs[i].StatContributions?.[0];
+                if (contrib) {
+                    total += (contrib.Value + 1) / 100;
+                }
+            }
+        }
+        return total;
+    }, [ascensionLevel, ascensionConfigs]);
 
     // Scaling factor from config
     const levelScaling = balancingConfig?.LevelScalingBase || 1.01;
@@ -170,6 +193,17 @@ export default function Items() {
                                 Lv {selectedLevel}
                             </div>
                         </div>
+
+                        <div className="h-10 w-px bg-border/50 hidden md:block" />
+
+                        <div className="flex items-center gap-4">
+                            <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                            {forgeAscensionMulti > 0 && (
+                                <div className="bg-amber-400/10 text-amber-400 px-2 py-1 rounded text-xs font-mono font-bold border border-amber-400/20">
+                                    +{(forgeAscensionMulti * 100).toLocaleString()}%
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </Card>
             </div>
@@ -228,6 +262,9 @@ export default function Items() {
                                             // Apply Tech Tree stat multiplier
                                             scaledValue *= statMultiplier;
 
+                                            // Apply Forge Ascension multiplier
+                                            scaledValue *= (1 + forgeAscensionMulti);
+
                                             // Apply Melee multiplier for weapons if applicable
                                             if (selectedSlot === 'Weapon' && (statType === 'Damage' || statType === 'Attack')) {
                                                 const weaponKey = `{'Age': ${selectedAgeIdx}, 'Type': 'Weapon', 'Idx': ${item.ItemId?.Idx}}`;
@@ -270,8 +307,12 @@ export default function Items() {
                                                         <span className="text-[10px] text-text-muted uppercase font-bold">Range</span>
                                                         <span className="font-mono font-bold text-text-primary">{weaponData.AttackRange?.toFixed(1) || '0.0'}</span>
                                                     </div>
+                                                    <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col">
+                                                        <span className="text-[10px] text-text-muted uppercase font-bold">Windup</span>
+                                                        <span className="font-mono font-bold text-accent-secondary">{weaponData.WindupTime ? weaponData.WindupTime.toFixed(2) + 's' : 'N/A'}</span>
+                                                    </div>
                                                     {projectileData && (weaponData.AttackRange ?? 0) > 1 && (
-                                                        <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col">
+                                                        <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col col-span-2">
                                                             <span className="text-[10px] text-text-muted uppercase font-bold">Proj Speed</span>
                                                             <span className="font-mono font-bold text-text-primary">{projectileData.Speed || 'N/A'}</span>
                                                         </div>

@@ -1,14 +1,18 @@
 import { useSkillsCalculator } from '../../hooks/useSkillsCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
-import { RefreshCw, Info, Trophy, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Info, Trophy, Zap, Minus, Plus, RefreshCcw } from 'lucide-react';
 
 export default function SkillCalculator() {
     const {
         level, setLevel,
+        progress, setProgress,
         ticketCount, setTicketCount,
         results,
-        techBonuses
+        techBonuses,
+        maxPossibleLevel,
+        levels,
+        applyResultsToProfile
     } = useSkillsCalculator();
 
     // Correct Colors from Tailwind Config
@@ -21,12 +25,6 @@ export default function SkillCalculator() {
         Mythic: '#D55DFF',    // Age 6 / Interstellar / Mythic?? (Checking config: Interstellar is D55DFF, Mythic is D55DFF). OK.
     };
 
-    // Helpers
-    const getStageLabel = (lvl: number) => {
-        const world = Math.floor((lvl - 1) / 10) + 1;
-        const stage = ((lvl - 1) % 10) + 1;
-        return `${world}-${stage}`;
-    };
 
     return (
         <div className="space-y-6 animate-fade-in pb-20 max-w-5xl mx-auto">
@@ -60,49 +58,61 @@ export default function SkillCalculator() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {/* Stage Selector */}
-                        <div className="space-y-4 pt-2">
-                            <div className="flex items-center justify-between bg-bg-primary/50 p-4 rounded-xl border border-white/5">
-                                <div>
-                                    <div className="text-xs font-bold text-text-secondary uppercase">Summon Level</div>
-                                    <div className="text-3xl font-black text-white flex items-center gap-3">
-                                        Stage {getStageLabel(level)}
-                                        <span className="text-sm font-bold text-accent-primary bg-accent-primary/10 px-2 py-0.5 rounded border border-accent-primary/20">
-                                            Level {level}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-4">
+                        {/* Level & Progress */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-3 bg-bg-primary/30 p-4 rounded-xl border border-white/5">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase">Current Level</label>
+                                <div className="flex items-center justify-between gap-2">
                                     <button
                                         onClick={() => setLevel(Math.max(1, level - 1))}
+                                        className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
                                         disabled={level <= 1}
-                                        className="p-3 bg-bg-input rounded-xl hover:bg-bg-tertiary disabled:opacity-30 border border-white/5 transition-all active:scale-95"
                                     >
-                                        <ChevronLeft className="w-6 h-6" />
+                                        <Minus className="w-3 h-3 text-text-primary" />
                                     </button>
-
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max={maxPossibleLevel}
+                                        value={level}
+                                        onChange={(e) => setLevel(Math.max(1, Math.min(maxPossibleLevel, Number(e.target.value))))}
+                                        className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
+                                    />
                                     <button
-                                        onClick={() => setLevel(Math.min(100, level + 1))}
-                                        className="p-3 bg-bg-input rounded-xl hover:bg-bg-tertiary disabled:opacity-30 border border-white/5 transition-all active:scale-95"
+                                        onClick={() => setLevel(Math.min(maxPossibleLevel, level + 1))}
+                                        className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
+                                        disabled={level >= maxPossibleLevel}
                                     >
-                                        <ChevronRight className="w-6 h-6" />
+                                        <Plus className="w-3 h-3 text-text-primary" />
                                     </button>
                                 </div>
+                                <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Max: {maxPossibleLevel}</div>
                             </div>
-
-                            <input
-                                type="range"
-                                min="1"
-                                max="100"
-                                value={level}
-                                onChange={(e) => setLevel(parseInt(e.target.value))}
-                                className="w-full h-4 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
-                            />
-                            <div className="flex justify-between text-[10px] text-text-secondary font-mono px-1">
-                                <span>World 1</span>
-                                <span>World 5</span>
-                                <span>World 10</span>
+                            <div className="space-y-3 bg-bg-primary/30 p-4 rounded-xl border border-white/5">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase">Current Progress</label>
+                                <div className="flex items-center justify-between gap-2">
+                                    <button
+                                        onClick={() => setProgress(Math.max(0, progress - 1))}
+                                        className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
+                                        disabled={progress <= 0}
+                                    >
+                                        <Minus className="w-3 h-3 text-text-primary" />
+                                    </button>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={progress}
+                                        onChange={(e) => setProgress(Number(e.target.value))}
+                                        className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
+                                    />
+                                    <button
+                                        onClick={() => setProgress(progress + 1)}
+                                        className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors flex items-center justify-center shrink-0 w-8 h-8"
+                                    >
+                                        <Plus className="w-3 h-3 text-text-primary" />
+                                    </button>
+                                </div>
+                                <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Next: {levels[Math.min(level - 1, levels.length - 1)]?.SummonsRequired || '?'}</div>
                             </div>
                         </div>
 
@@ -133,7 +143,7 @@ export default function SkillCalculator() {
                 <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-accent-primary">
-                            <RefreshCw className="w-5 h-5" />
+                            <RefreshCcw className="w-5 h-5" />
                             Results
                         </CardTitle>
                     </CardHeader>
@@ -156,7 +166,7 @@ export default function SkillCalculator() {
                                 </div>
 
                                 {/* Summons Info Grid */}
-                                <div className="grid grid-cols-3 gap-3 pb-2 border-b border-white/5">
+                                <div className="grid grid-cols-4 gap-3 pb-2 border-b border-white/5">
                                     <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
                                         <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">Summons</div>
                                         <div className="text-lg font-mono font-bold text-white">
@@ -167,6 +177,13 @@ export default function SkillCalculator() {
                                         <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">Skills</div>
                                         <div className="text-lg font-mono font-bold text-accent-primary">
                                             {Math.floor(results.totalSkills).toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
+                                        <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">End Level</div>
+                                        <div className="text-lg font-mono font-bold text-accent-primary flex items-center gap-1">
+                                            <span className="text-xs opacity-50 font-normal">Lv.{level} ➔</span>
+                                            Lv.{results.endLevel}
                                         </div>
                                     </div>
                                     <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
@@ -225,6 +242,14 @@ export default function SkillCalculator() {
                                     <span className="opacity-50 mx-1">|</span>
                                     Skills/Ticket: {(results.totalSkills / (ticketCount || 1)).toFixed(2)}
                                 </div>
+
+                                <button
+                                    onClick={applyResultsToProfile}
+                                    className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
+                                >
+                                    <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                    Update Level & Progress to Lv.{results.endLevel}
+                                </button>
                             </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">

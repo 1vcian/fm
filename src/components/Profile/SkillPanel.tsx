@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { MAX_ACTIVE_SKILLS, SKILL_MECHANICS } from '../../utils/constants';
 import { SkillSelectorModal } from './SkillSelectorModal';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { AscensionStars } from '../UI/AscensionStars';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 interface SkillPanelProps {
     considerAnimation?: boolean;
@@ -58,6 +60,8 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
         updateNestedProfile('skills', updates);
     };
 
+    const skillAscensionLevel = profile.misc.skillAscensionLevel || 0;
+
     const handleAdd = (skill: SkillSlot) => {
         if (equippedSkills.length >= MAX_ACTIVE_SKILLS) return;
 
@@ -101,10 +105,9 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
         // Apply Global Multipliers (Aggregated from Items, Pets, Tech Tree)
         const skillFactor = globalStats?.skillDamageMultiplier || 1;
         const globalFactor = globalStats?.damageMultiplier || 1;
-        const mountFactor = globalStats?.mountDamageMulti || 0;
-
-        // Remove Mount Damage from global factor for Active Skills
-        const totalDamageMulti = skillFactor + (globalFactor - mountFactor) - 1;
+        // Total Damage Multiplier for Active Skills
+        // User Requirement: Exclude Mount Damage (it's now flat and added to base anyway)
+        const totalDamageMulti = skillFactor + globalFactor - 1;
 
         // Health Formula (Skill Healing):
         // User Request: Healing should match Damage Logic (include Generic Damage from Pets/Items, exclude Innate Mount).
@@ -159,6 +162,12 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                 <h2 className="text-xl font-bold flex items-center gap-2">
                     <img src="./Texture2D/SkillTabIcon.png" alt="Active Skills" className="w-8 h-8 object-contain" />
                     Active Skills
+                    <div className="ml-auto">
+                        <AscensionStars 
+                            value={skillAscensionLevel}
+                            onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
+                        />
+                    </div>
                 </h2>
                 <div className="flex items-center gap-2 flex-wrap">
                     {setConsiderAnimation && (
@@ -204,7 +213,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                 >
                                     {spriteInfo ? (
                                         <SpriteSheetIcon
-                                            textureSrc="./icons/game/SkillIcons.png"
+                                            textureSrc={getAscensionTexturePath('SkillIcons', skillAscensionLevel)}
                                             spriteWidth={spriteInfo.config.sprite_size.width}
                                             spriteHeight={spriteInfo.config.sprite_size.height}
                                             sheetWidth={spriteInfo.config.texture_size.width}

@@ -248,6 +248,7 @@ export function usePetStats(pet: PetSlot | null) {
     const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: petBalancingLibrary } = useGameData<any>('PetBalancingLibrary.json');
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
 
     return useMemo(() => {
         if (!pet || !petUpgradeLibrary || !petLibrary) {
@@ -277,24 +278,39 @@ export function usePetStats(pet: PetSlot | null) {
         let damage = 0;
         let health = 0;
 
+        let ascensionDmgMulti = 0;
+        let ascensionHpMulti = 0;
+        if (pet.ascensionLevel && pet.ascensionLevel > 0 && ascensionConfigsLibrary?.Pets?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Pets.AscensionConfigPerLevel;
+            for (let i = 0; i < pet.ascensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const s of stats) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sVal = s.Value;
+                    if (sType === 'Damage') ascensionDmgMulti += sVal;
+                    if (sType === 'Health') ascensionHpMulti += sVal;
+                }
+            }
+        }
+
         for (const stat of levelInfo.PetStats.Stats) {
             const statType = stat.StatNode?.UniqueStat?.StatType;
             let value = stat.Value || 0;
 
             if (statType === 'Damage') {
                 value *= typeMulti.DamageMultiplier;
-                value *= (1 + damageBonus);
+                value *= (1 + damageBonus + ascensionDmgMulti);
                 damage += value;
             }
             if (statType === 'Health') {
                 value *= typeMulti.HealthMultiplier;
-                value *= (1 + healthBonus);
+                value *= (1 + healthBonus + ascensionHpMulti);
                 health += value;
             }
         }
 
         return { damage, health, damageBonus, healthBonus };
-    }, [pet, techModifiers, petUpgradeLibrary, petBalancingLibrary, petLibrary]);
+    }, [pet, techModifiers, petUpgradeLibrary, petBalancingLibrary, petLibrary, ascensionConfigsLibrary]);
 }
 
 /**
@@ -303,6 +319,7 @@ export function usePetStats(pet: PetSlot | null) {
 export function useMountStats(mount: MountSlot | null) {
     const techModifiers = useTreeModifiers();
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
 
     return useMemo(() => {
         if (!mount || !mountUpgradeLibrary) {
@@ -329,13 +346,28 @@ export function useMountStats(mount: MountSlot | null) {
             }
         }
 
+        let ascensionDmgMulti = 0;
+        let ascensionHpMulti = 0;
+        if (mount.ascensionLevel && mount.ascensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
+            for (let i = 0; i < mount.ascensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const s of stats) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sVal = s.Value;
+                    if (sType === 'Damage') ascensionDmgMulti += sVal;
+                    if (sType === 'Health') ascensionHpMulti += sVal;
+                }
+            }
+        }
+
         // Apply tech tree bonuses multiplicatively
         const damageBonus = techModifiers['MountDamage'] || 0;
         const healthBonus = techModifiers['MountHealth'] || 0;
 
-        damageMulti *= (1 + damageBonus);
-        healthMulti *= (1 + healthBonus);
+        damageMulti *= (1 + damageBonus + ascensionDmgMulti);
+        healthMulti *= (1 + healthBonus + ascensionHpMulti);
 
         return { damageMulti, healthMulti, damageBonus, healthBonus };
-    }, [mount, techModifiers, mountUpgradeLibrary]);
+    }, [mount, techModifiers, mountUpgradeLibrary, ascensionConfigsLibrary]);
 }

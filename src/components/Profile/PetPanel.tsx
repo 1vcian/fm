@@ -3,7 +3,7 @@ import { Card } from '../UI/Card';
 import { Cat, Plus, X, Minus, Pencil, Bookmark } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { PetSlot } from '../../types/Profile';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { MAX_ACTIVE_PETS } from '../../utils/constants';
 import { PetSelectorModal } from './PetSelectorModal';
@@ -12,6 +12,8 @@ import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { formatSecondaryStat } from '../../utils/statNames';
 import { InputModal } from '../UI/InputModal';
+import { AscensionStars } from '../UI/AscensionStars';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 export function PetPanel() {
     const { profile, updateNestedProfile } = useProfile();
@@ -23,6 +25,7 @@ export function PetPanel() {
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
     const { data: petUpgradeLib } = useGameData<any>('PetUpgradeLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
 
@@ -62,6 +65,27 @@ export function PetPanel() {
     const petDamageBonus = techModifiers['PetBonusDamage'] || 0;
     const petHealthBonus = techModifiers['PetBonusHealth'] || 0;
 
+    // Pet Ascension multipliers
+    const { ascensionDmgMulti, ascensionHpMulti } = useMemo(() => {
+        const petAscensionLevel = profile.misc.petAscensionLevel || 0;
+        let dMulti = 0;
+        let hMulti = 0;
+
+        if (petAscensionLevel > 0 && ascensionConfigsLibrary?.Pets?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Pets.AscensionConfigPerLevel;
+            for (let i = 0; i < petAscensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const s of stats) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sVal = s.Value;
+                    if (sType === 'Damage') dMulti += sVal;
+                    if (sType === 'Health') hMulti += sVal;
+                }
+            }
+        }
+        return { ascensionDmgMulti: dMulti, ascensionHpMulti: hMulti };
+    }, [profile.misc.petAscensionLevel, ascensionConfigsLibrary]);
+
     const handleRemove = (index: number) => {
         const newPets = [...activePets];
         newPets.splice(index, 1);
@@ -83,11 +107,14 @@ export function PetPanel() {
 
     const handleLevelChange = (index: number, delta: number) => {
         const pet = activePets[index];
-        const newLevel = Math.max(1, Math.min(200, pet.level + delta)); // Assuming max 200
+        const maxLevel = petUpgradeLib?.[pet.rarity]?.LevelInfo?.length || 100;
+        const newLevel = Math.max(1, Math.min(maxLevel, pet.level + delta));
         const newPets = [...activePets];
         newPets[index] = { ...pet, level: newLevel };
         updateNestedProfile('pets', { active: newPets });
     };
+
+    const petAscensionLevel = profile.misc.petAscensionLevel || 0;
 
     const handleConfirmSave = (name: string) => {
         if (!petToSave) return;
@@ -182,6 +209,12 @@ export function PetPanel() {
                     />
                 </div>
                 Active Pets
+                <div className="ml-auto">
+                    <AscensionStars 
+                        value={petAscensionLevel}
+                        onChange={(val) => updateNestedProfile('misc', { petAscensionLevel: val })}
+                    />
+                </div>
             </h2>
 
             <div className="space-y-3">
@@ -208,7 +241,7 @@ export function PetPanel() {
                                 >
                                     {spriteInfo ? (
                                         <SpriteSheetIcon
-                                            textureSrc="./icons/game/Pets.png"
+                                            textureSrc={getAscensionTexturePath('Pets', petAscensionLevel)}
                                             spriteWidth={spriteInfo.config.sprite_size.width}
                                             spriteHeight={spriteInfo.config.sprite_size.height}
                                             sheetWidth={spriteInfo.config.texture_size.width}
@@ -247,10 +280,10 @@ export function PetPanel() {
                                                 for (const stat of levelInfo.PetStats.Stats) {
                                                     const val = stat.Value || 0;
                                                     if (stat.StatNode?.UniqueStat?.StatType === 'Damage') {
-                                                        damage = val * typeMultipliers.DamageMultiplier * (1 + petDamageBonus);
+                                                        damage = val * typeMultipliers.DamageMultiplier * (1 + petDamageBonus + ascensionDmgMulti);
                                                     }
                                                     if (stat.StatNode?.UniqueStat?.StatType === 'Health') {
-                                                        health = val * typeMultipliers.HealthMultiplier * (1 + petHealthBonus);
+                                                        health = val * typeMultipliers.HealthMultiplier * (1 + petHealthBonus + ascensionHpMulti);
                                                     }
                                                 }
                                             }
@@ -259,11 +292,15 @@ export function PetPanel() {
                                                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
                                                     <span className="text-red-400 font-mono whitespace-nowrap">
                                                         DMG: {Math.round(damage).toLocaleString()}
-                                                        {petDamageBonus > 0 && <span className="text-green-400 ml-1">(+{(petDamageBonus * 100).toFixed(0)}%)</span>}
+                                                        {(petDamageBonus > 0 || ascensionDmgMulti > 0) && (
+                                                            <span className="text-green-400 ml-1">(+{( (petDamageBonus + ascensionDmgMulti) * 100).toFixed(0)}%)</span>
+                                                        )}
                                                     </span>
                                                     <span className="text-green-400 font-mono">
                                                         HP: {Math.round(health).toLocaleString()}
-                                                        {petHealthBonus > 0 && <span className="text-green-400 ml-1">(+{(petHealthBonus * 100).toFixed(0)}%)</span>}
+                                                        {(petHealthBonus > 0 || ascensionHpMulti > 0) && (
+                                                            <span className="text-green-400 ml-1">(+{( ( (1+petHealthBonus) * (1+ascensionHpMulti) - 1 ) * 100).toFixed(0)}%)</span>
+                                                        )}
                                                     </span>
                                                 </div>
                                             );

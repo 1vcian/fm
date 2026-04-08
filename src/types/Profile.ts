@@ -19,6 +19,7 @@ export interface PetSlot {
     id: number;
     level: number;
     evolution: number;
+    ascensionLevel?: number;
     secondaryStats?: {
         statId: string;
         value: number;
@@ -32,6 +33,7 @@ export interface MountSlot {
     id: number;
     level: number;
     evolution: number;
+    ascensionLevel?: number;
     skills: number[];
     secondaryStats?: {
         statId: string;
@@ -46,6 +48,7 @@ export interface SkillSlot {
     rarity: string;
     level: number;
     evolution: number;
+    ascensionLevel?: number;
 }
 
 export interface UserProfile {
@@ -98,6 +101,10 @@ export interface UserProfile {
 
     misc: {
         forgeLevel: number;
+        forgeAscensionLevel?: number;
+        petAscensionLevel?: number;
+        skillAscensionLevel?: number;
+        mountAscensionLevel?: number;
         dungeonLevels: {
             [dungeonId: string]: number; // e.g. "Dungeon_Hammer" -> 50
         };
@@ -116,6 +123,9 @@ export interface UserProfile {
         mountCalculatorLevel?: number;
         mountCalculatorProgress?: number;
         mountCalculatorWinders?: number;
+        eggSummonLevel?: number;
+        eggSummonProgress?: number;
+        eggshellCount?: number;
         techPotions?: number;
         dungeonKeyCounts?: {
             Hammer: number;

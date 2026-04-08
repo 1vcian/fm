@@ -10,6 +10,12 @@ interface ComparisonContextType {
     originalMount: MountSlot | null;
     testMount: MountSlot | null;
     snapshotMount: MountSlot | null;
+    originalForgeAscension: number | null;
+    testForgeAscension: number | null;
+    snapshotForgeAscension: number | null;
+    originalMountAscension: number | null;
+    testMountAscension: number | null;
+    snapshotMountAscension: number | null;
 
     enterCompareMode: () => void;
     exitCompareMode: () => void;
@@ -17,6 +23,10 @@ interface ComparisonContextType {
     updateTestItem: (slot: keyof UserProfile['items'], item: UserProfile['items'][keyof UserProfile['items']]) => void;
     updateOriginalMount: (mount: MountSlot | null) => void;
     updateTestMount: (mount: MountSlot | null) => void;
+    updateOriginalForgeAscension: (level: number) => void;
+    updateTestForgeAscension: (level: number) => void;
+    updateOriginalMountAscension: (level: number) => void;
+    updateTestMountAscension: (level: number) => void;
     keepOriginal: () => void;
     applyTestBuild: () => void;
 }
@@ -33,6 +43,12 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [originalMount, setOriginalMount] = useState<MountSlot | null>(null);
     const [testMount, setTestMount] = useState<MountSlot | null>(null);
     const [snapshotMount, setSnapshotMount] = useState<MountSlot | null>(null);
+    const [originalForgeAscension, setOriginalForgeAscension] = useState<number | null>(null);
+    const [testForgeAscension, setTestForgeAscension] = useState<number | null>(null);
+    const [snapshotForgeAscension, setSnapshotForgeAscension] = useState<number | null>(null);
+    const [originalMountAscension, setOriginalMountAscension] = useState<number | null>(null);
+    const [testMountAscension, setTestMountAscension] = useState<number | null>(null);
+    const [snapshotMountAscension, setSnapshotMountAscension] = useState<number | null>(null);
 
     const enterCompareMode = useCallback(() => {
         const clonedItems = JSON.parse(JSON.stringify(profile.items));
@@ -45,8 +61,18 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTestMount(clonedMount ? JSON.parse(JSON.stringify(clonedMount)) : null);
         setSnapshotMount(clonedMount ? JSON.parse(JSON.stringify(clonedMount)) : null);
 
+        const currentForgeAsc = profile.misc.forgeAscensionLevel || 0;
+        setOriginalForgeAscension(currentForgeAsc);
+        setTestForgeAscension(currentForgeAsc);
+        setSnapshotForgeAscension(currentForgeAsc);
+
+        const currentMountAsc = profile.misc.mountAscensionLevel || 0;
+        setOriginalMountAscension(currentMountAsc);
+        setTestMountAscension(currentMountAsc);
+        setSnapshotMountAscension(currentMountAsc);
+
         setIsComparing(true);
-    }, [profile.items, profile.mount.active]);
+    }, [profile.items, profile.mount.active, profile.misc.forgeAscensionLevel, profile.misc.mountAscensionLevel]);
 
     const exitCompareMode = useCallback(() => {
         setIsComparing(false);
@@ -56,6 +82,12 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setOriginalMount(null);
         setTestMount(null);
         setSnapshotMount(null);
+        setOriginalForgeAscension(null);
+        setTestForgeAscension(null);
+        setSnapshotForgeAscension(null);
+        setOriginalMountAscension(null);
+        setTestMountAscension(null);
+        setSnapshotMountAscension(null);
     }, []);
 
     const updateOriginalItem = useCallback((slot: keyof UserProfile['items'], item: UserProfile['items'][keyof UserProfile['items']]) => {
@@ -74,6 +106,22 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTestMount(mount);
     }, []);
 
+    const updateOriginalForgeAscension = useCallback((level: number) => {
+        setOriginalForgeAscension(level);
+    }, []);
+
+    const updateTestForgeAscension = useCallback((level: number) => {
+        setTestForgeAscension(level);
+    }, []);
+
+    const updateOriginalMountAscension = useCallback((level: number) => {
+        setOriginalMountAscension(level);
+    }, []);
+
+    const updateTestMountAscension = useCallback((level: number) => {
+        setTestMountAscension(level);
+    }, []);
+
     const keepOriginal = useCallback(() => {
         if (originalItems) {
             updateNestedProfile('items', originalItems);
@@ -81,8 +129,14 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (originalMount !== undefined) {
             updateNestedProfile('mount', { active: originalMount });
         }
+        if (originalForgeAscension !== null) {
+            updateNestedProfile('misc', { forgeAscensionLevel: originalForgeAscension });
+        }
+        if (originalMountAscension !== null) {
+            updateNestedProfile('misc', { mountAscensionLevel: originalMountAscension });
+        }
         exitCompareMode();
-    }, [originalItems, originalMount, updateNestedProfile, exitCompareMode]);
+    }, [originalItems, originalMount, originalForgeAscension, originalMountAscension, updateNestedProfile, exitCompareMode]);
 
     const applyTestBuild = useCallback(() => {
         if (testItems) {
@@ -91,8 +145,14 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (testMount !== undefined) {
             updateNestedProfile('mount', { active: testMount });
         }
+        if (testForgeAscension !== null) {
+            updateNestedProfile('misc', { forgeAscensionLevel: testForgeAscension });
+        }
+        if (testMountAscension !== null) {
+            updateNestedProfile('misc', { mountAscensionLevel: testMountAscension });
+        }
         exitCompareMode();
-    }, [testItems, testMount, updateNestedProfile, exitCompareMode]);
+    }, [testItems, testMount, testForgeAscension, testMountAscension, updateNestedProfile, exitCompareMode]);
 
     return (
         <ComparisonContext.Provider value={{
@@ -103,12 +163,22 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             originalMount,
             testMount,
             snapshotMount,
+            originalForgeAscension,
+            testForgeAscension,
+            snapshotForgeAscension,
+            originalMountAscension,
+            testMountAscension,
+            snapshotMountAscension,
             enterCompareMode,
             exitCompareMode,
             updateOriginalItem,
             updateTestItem,
             updateOriginalMount,
             updateTestMount,
+            updateOriginalForgeAscension,
+            updateTestForgeAscension,
+            updateOriginalMountAscension,
+            updateTestMountAscension,
             keepOriginal,
             applyTestBuild,
         }}>

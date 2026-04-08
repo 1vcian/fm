@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
-import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info } from 'lucide-react';
+import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -11,10 +11,12 @@ export default function GuildWar() {
     const { data: dayConfig, loading: l1 } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: passConfig, loading: l2 } = useGameData<any>('GuildWarProgressPassLibrary.json');
     const { data: warConfig, loading: l3 } = useGameData<any>('GuildWarConfig.json');
+    const { data: tierConfig, loading: l4 } = useGameData<any>('GuildTierConfig.json');
+    const { data: baseConfig, loading: l5 } = useGameData<any>('GuildBaseConfig.json');
 
     const [activeDay, setActiveDay] = useState(0);
 
-    const loading = l1 || l2 || l3;
+    const loading = l1 || l2 || l3 || l4 || l5;
 
     // Process tasks for the active day
     const dayTasks = useMemo(() => {
@@ -40,6 +42,15 @@ export default function GuildWar() {
             }))
             .sort((a, b) => a.points - b.points);
     }, [passConfig]);
+
+    // Process Tiers (S to E)
+    const tiers = useMemo(() => {
+        if (!tierConfig) return [];
+        return Object.values(tierConfig).sort((a: any, b: any) => {
+            const order = ['S', 'A', 'B', 'C', 'D', 'E'];
+            return order.indexOf(a.Tier) - order.indexOf(b.Tier);
+        });
+    }, [tierConfig]);
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
@@ -82,155 +93,284 @@ export default function GuildWar() {
                     <span className="text-sm font-bold uppercase tracking-widest">Loading War Logs...</span>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column: Daily Tasks */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-                            <h2 className="text-xl font-bold flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-accent-primary" />
-                                {DAYS[activeDay]} Preparation Tasks
-                            </h2>
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-1.5 rounded-xl font-bold text-xs border border-blue-500/20 shadow-lg shadow-blue-500/5">
-                                    <Trophy className="w-4 h-4" />
-                                    Guild Win: <span className="text-blue-200">{dayVictoryPoints} Victory Points</span>
+                <>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Left Column: Daily Tasks */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <Calendar className="w-5 h-5 text-accent-primary" />
+                                    {DAYS[activeDay]} Preparation Tasks
+                                </h2>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-1.5 rounded-xl font-bold text-xs border border-blue-500/20 shadow-lg shadow-blue-500/5">
+                                        <Trophy className="w-4 h-4" />
+                                        Guild Win: <span className="text-blue-200">{dayVictoryPoints} Victory Points</span>
+                                    </div>
+                                    <div className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold uppercase tracking-widest border border-accent-primary/20">
+                                        Day {activeDay + 1}
+                                    </div>
                                 </div>
-                                <div className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold uppercase tracking-widest border border-accent-primary/20">
-                                    Day {activeDay + 1}
-                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {dayTasks.map((task: any, idx: number) => (
+                                    <Card key={idx} className="p-4 hover:border-accent-primary/50 transition-all group relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                                            <Zap className="w-12 h-12 text-accent-primary" />
+                                        </div>
+
+                                        <div className="flex items-start gap-3 relative z-10">
+                                            <div className="p-2 bg-bg-secondary/50 rounded-lg border border-border shrink-0">
+                                                <GameIcon name={getTaskIcon(task.Task)} size={32} />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="text-sm font-bold text-text-primary mb-1 line-clamp-1">
+                                                    {formatTaskName(task.Task)}
+                                                </h3>
+                                                <div className="flex items-center gap-1.5 mt-2">
+                                                    <div className="flex items-center gap-1 bg-accent-primary/20 px-2 py-0.5 rounded text-[10px] font-bold text-accent-primary border border-accent-primary/30 uppercase tracking-tighter">
+                                                        <Zap className="w-3 h-3" />
+                                                        +{task.Rewards?.[0]?.Amount} Points
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                                {dayTasks.length === 0 && (
+                                    <div className="sm:col-span-2 flex flex-col items-center justify-center p-12 bg-bg-secondary/20 rounded-2xl border-2 border-dashed border-border text-text-muted">
+                                        <Info className="w-8 h-8 mb-2 opacity-20" />
+                                        <span className="font-bold uppercase tracking-widest text-xs">No preparation tasks for this day</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Schedule & Rules Breakdown */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <Card className="p-5 border-l-4 border-l-blue-500">
+                                    <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-4 flex items-center gap-2">
+                                        <Calendar className="w-4 h-4" /> Weekly Schedule
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-xs font-mono font-bold bg-bg-secondary px-2 py-1 rounded border border-border min-w-[100px] text-center">MON - SAT</div>
+                                            <div className="text-sm text-text-secondary">Preparation Phase (Tasks)</div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-xs font-mono font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30 min-w-[100px] text-center">SUNDAY</div>
+                                            <div className="text-sm text-text-primary font-bold">Main Guild Battle</div>
+                                        </div>
+                                    </div>
+                                </Card>
+
+                                <Card className="p-5 border-l-4 border-l-red-500">
+                                    <h3 className="font-black text-xs uppercase tracking-widest text-red-500 mb-4 flex items-center gap-2">
+                                        <Swords className="w-4 h-4" /> Attack Rules
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                                            <span className="text-text-muted">Max Tickets / Member</span>
+                                            <span className="font-bold text-text-primary">{warConfig?.MaxWarTicketsPerMember || 5}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                                            <span className="text-text-muted">Max Atk Points</span>
+                                            <span className="font-bold text-text-primary">{warConfig?.MaxPointsForAttackingOpponentGuildMember || 50}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-text-muted">Brawl Win Bonus</span>
+                                            <span className="font-bold text-accent-primary">+{warConfig?.BrawlWinPointsReward || 1000}</span>
+                                        </div>
+                                    </div>
+                                </Card>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {dayTasks.map((task: any, idx: number) => (
-                                <Card key={idx} className="p-4 hover:border-accent-primary/50 transition-all group relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                                        <Zap className="w-12 h-12 text-accent-primary" />
+                        {/* Right Column: Progress Pass */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Trophy className="w-5 h-5 text-yellow-500" />
+                                <h2 className="text-xl font-bold italic tracking-tight">Progress Pass</h2>
+                            </div>
+
+                            <div className="space-y-3">
+                                {milestones.map((m, idx) => (
+                                    <div key={idx} className="group relative">
+                                        {/* Progress Line */}
+                                        {idx < milestones.length - 1 && (
+                                            <div className="absolute left-6 top-10 bottom-0 w-1 bg-bg-secondary group-hover:bg-accent-primary/20 transition-colors z-0" />
+                                        )}
+
+                                        <div className="relative z-10 flex gap-4">
+                                            <div className="shrink-0">
+                                                <div className="w-12 h-12 rounded-2xl bg-bg-input border-2 border-border flex items-center justify-center font-bold text-sm shadow-lg group-hover:border-accent-primary/50 transition-colors">
+                                                    <Trophy className={cn("w-5 h-5", idx === 0 ? "text-bronze" : idx === 1 ? "text-silver" : "text-yellow-500")} />
+                                                </div>
+                                            </div>
+
+                                            <Card className="flex-1 p-3 bg-bg-secondary/40 hover:bg-bg-secondary/60 transition-colors border-accent-primary/10">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <div className="text-xs font-bold text-accent-primary uppercase tracking-tighter">
+                                                        {m.points.toLocaleString()} Points
+                                                    </div>
+                                                    <ChevronRight className="w-4 h-4 text-text-muted opacity-30" />
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    {m.rewards.map((rew: any, rIdx: number) => (
+                                                        <div key={rIdx} className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
+                                                            <GameIcon
+                                                                name={mapRewardType(rew.Type)}
+                                                                size={16}
+                                                            />
+                                                            <span className="text-[11px] font-mono font-black">
+                                                                {rew.Amount.toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </Card>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Clan Tiers & War Rewards Section */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-2">
+                            <Trophy className="w-6 h-6 text-yellow-500" />
+                            <h2 className="text-2xl font-black italic uppercase tracking-tighter">Clan Tiers & War Rewards</h2>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {tiers.map((tier: any) => (
+                                <Card key={tier.Tier} className="overflow-hidden border-t-4 flex flex-col" style={{ borderTopColor: getTierColor(tier.Tier) }}>
+                                    <div className="p-4 bg-bg-secondary/20 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shadow-lg border" style={{ backgroundColor: getTierColor(tier.Tier) + '20', color: getTierColor(tier.Tier), borderColor: getTierColor(tier.Tier) + '40' }}>
+                                                {tier.Tier}
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-bold text-text-muted uppercase tracking-widest">Required Points</div>
+                                                <div className="font-mono font-black text-sm">{tier.RequiredPoints.toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[10px] font-bold text-text-muted uppercase mb-1">War Points Gained</div>
+                                            <div className="flex gap-2 justify-end">
+                                            <span className="text-green-400 font-bold text-xs">+{tier.TierPointsOnWin} Win</span>
+                                            <span className="text-red-400 font-bold text-xs">-{tier.TierPointsOnLose} Lose</span>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-start gap-3 relative z-10">
-                                        <div className="p-2 bg-bg-secondary/50 rounded-lg border border-border shrink-0">
-                                            <GameIcon name={getTaskIcon(task.Task)} size={32} />
+                                    <div className="p-4 grid grid-cols-2 gap-4 flex-1">
+                                        {/* Win Rewards */}
+                                        <div className="space-y-2">
+                                            <div className="text-[10px] font-black uppercase text-green-500 flex items-center gap-1">
+                                                <Shield className="w-3 h-3" /> Victory Rewards
+                                            </div>
+                                            <div className="space-y-1">
+                                                {tier.WarWonRewards.map((rew: any, rIdx: number) => (
+                                                    <div key={rIdx} className="flex items-center justify-between bg-black/20 px-2 py-1 rounded border border-white/5 text-[10px]">
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            <GameIcon name={mapRewardType(rew.Type)} size={14} className="shrink-0" />
+                                                            <span className="truncate opacity-70">{rew.Type}</span>
+                                                        </div>
+                                                        <span className="font-mono font-black ml-1 shrink-0">{rew.Amount.toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="min-w-0 flex-1">
-                                            <h3 className="text-sm font-bold text-text-primary mb-1 line-clamp-1">
-                                                {formatTaskName(task.Task)}
-                                            </h3>
-                                            <div className="flex items-center gap-1.5 mt-2">
-                                                <div className="flex items-center gap-1 bg-accent-primary/20 px-2 py-0.5 rounded text-[10px] font-bold text-accent-primary border border-accent-primary/30 uppercase tracking-tighter">
-                                                    <Zap className="w-3 h-3" />
-                                                    +{task.Rewards?.[0]?.Amount} Points
-                                                </div>
+
+                                        {/* Lose Rewards */}
+                                        <div className="space-y-2 border-l border-border/50 pl-4">
+                                            <div className="text-[10px] font-black uppercase text-red-500 flex items-center gap-1">
+                                                <X className="w-3 h-3" /> Defeat Rewards
+                                            </div>
+                                            <div className="space-y-1">
+                                                {tier.WarLostRewards.map((rew: any, rIdx: number) => (
+                                                    <div key={rIdx} className="flex items-center justify-between bg-black/10 px-2 py-1 rounded border border-white/5 text-[10px] opacity-60">
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            <GameIcon name={mapRewardType(rew.Type)} size={14} className="shrink-0" />
+                                                            <span className="truncate opacity-70">{rew.Type}</span>
+                                                        </div>
+                                                        <span className="font-mono font-black ml-1 shrink-0">{rew.Amount.toLocaleString()}</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
                                 </Card>
                             ))}
-                            {dayTasks.length === 0 && (
-                                <div className="sm:col-span-2 flex flex-col items-center justify-center p-12 bg-bg-secondary/20 rounded-2xl border-2 border-dashed border-border text-text-muted">
-                                    <Info className="w-8 h-8 mb-2 opacity-20" />
-                                    <span className="font-bold uppercase tracking-widest text-xs">No preparation tasks for this day</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Schedule & Rules Breakdown */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                            <Card className="p-5 border-l-4 border-l-blue-500">
-                                <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-4 flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" /> Weekly Schedule
-                                </h3>
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-xs font-mono font-bold bg-bg-secondary px-2 py-1 rounded border border-border min-w-[100px] text-center">MON - SAT</div>
-                                        <div className="text-sm text-text-secondary">Preparation Phase (Tasks)</div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-xs font-mono font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30 min-w-[100px] text-center">SUNDAY</div>
-                                        <div className="text-sm text-text-primary font-bold">Main Guild Battle</div>
-                                    </div>
-                                </div>
-                            </Card>
-
-                            <Card className="p-5 border-l-4 border-l-red-500">
-                                <h3 className="font-black text-xs uppercase tracking-widest text-red-500 mb-4 flex items-center gap-2">
-                                    <Swords className="w-4 h-4" /> Attack Rules
-                                </h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-                                        <span className="text-text-muted">Max Tickets / Member</span>
-                                        <span className="font-bold text-text-primary">{warConfig?.MaxWarTicketsPerMember || 5}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-                                        <span className="text-text-muted">Max Atk Points</span>
-                                        <span className="font-bold text-text-primary">{warConfig?.MaxPointsForAttackingOpponentGuildMember || 50}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-text-muted">Brawl Win Bonus</span>
-                                        <span className="font-bold text-accent-primary">+{warConfig?.BrawlWinPointsReward || 1000}</span>
-                                    </div>
-                                </div>
-                            </Card>
                         </div>
                     </div>
 
-                    {/* Right Column: Progress Pass */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Trophy className="w-5 h-5 text-yellow-500" />
-                            <h2 className="text-xl font-bold italic tracking-tight">Progress Pass</h2>
-                        </div>
+                    {/* Guild Base Rules Summary */}
+                    {baseConfig && (
+                        <Card className="p-6 bg-gradient-to-br from-bg-secondary/40 to-bg-secondary/10 border-accent-primary/10">
+                            <div className="flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
+                                <div className="p-4 bg-accent-primary/10 rounded-3xl border border-accent-primary/20 shrink-0">
+                                    <Shield className="w-12 h-12 text-accent-primary" />
+                                </div>
+                                <div className="space-y-6 flex-1">
+                                    <div>
+                                        <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-1">General Guild Rules</h2>
+                                        <p className="text-text-muted text-sm">Basic configuration and membership limits from dynamic logs.</p>
+                                    </div>
 
-                        <div className="space-y-3">
-                            {milestones.map((m, idx) => (
-                                <div key={idx} className="group relative">
-                                    {/* Progress Line */}
-                                    {idx < milestones.length - 1 && (
-                                        <div className="absolute left-6 top-10 bottom-0 w-1 bg-bg-secondary group-hover:bg-accent-primary/20 transition-colors z-0" />
-                                    )}
-
-                                    <div className="relative z-10 flex gap-4">
-                                        <div className="shrink-0">
-                                            <div className="w-12 h-12 rounded-2xl bg-bg-input border-2 border-border flex items-center justify-center font-bold text-sm shadow-lg group-hover:border-accent-primary/50 transition-colors">
-                                                {/* Medal or Number? */}
-                                                <Trophy className={cn("w-5 h-5", idx === 0 ? "text-bronze" : idx === 1 ? "text-silver" : "text-yellow-500")} />
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-6">
+                                        <div className="space-y-1">
+                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Member Limit</div>
+                                            <div className="text-xl font-black">{baseConfig.MaxGuildMemberCount} / Clan</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Creation Cost</div>
+                                            <div className="text-xl font-black text-yellow-500 flex items-center justify-center md:justify-start gap-1">
+                                                <GameIcon name="Gem" size={24} />
+                                                {baseConfig.GuildCreateCost}
                                             </div>
                                         </div>
-
-                                        <Card className="flex-1 p-3 bg-bg-secondary/40 hover:bg-bg-secondary/60 transition-colors border-accent-primary/10">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <div className="text-xs font-bold text-accent-primary uppercase tracking-tighter">
-                                                    {m.points.toLocaleString()} Points
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-text-muted opacity-30" />
+                                        <div className="space-y-1">
+                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Name Length</div>
+                                            <div className="text-xl font-black">{baseConfig.MaxGuildNameLength} Chars</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Leave Cooldown</div>
+                                            <div className="text-xl font-black text-red-400">{baseConfig.GuildLeaveCooldownDurationMinutes / 60} Hours</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Role Limits</div>
+                                            <div className="text-[11px] font-bold text-text-secondary leading-tight mt-1">
+                                                Captain: {baseConfig.MaxCaptainRoleMemberCount} • R1: {baseConfig.MaxR1RoleMemberCount} • R2: {baseConfig.MaxR2RoleMemberCount}
                                             </div>
-
-                                            <div className="flex flex-wrap gap-2">
-                                                {m.rewards.map((rew: any, rIdx: number) => (
-                                                    <div key={rIdx} className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
-                                                        <GameIcon
-                                                            name={mapRewardType(rew.Type)}
-                                                            size={16}
-                                                        />
-                                                        <span className="text-[11px] font-mono font-black">
-                                                            {rew.Amount.toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </Card>
+                                        </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                            </div>
+                        </Card>
+                    )}
+                </>
             )}
         </div>
     );
 }
 
 // Helpers
+function getTierColor(tier: string): string {
+    const colors: Record<string, string> = {
+        'S': '#fcd34d', // Yellow/Gold
+        'A': '#f87171', // Red
+        'B': '#c084fc', // Purple
+        'C': '#60a5fa', // Blue
+        'D': '#4ade80', // Green
+        'E': '#94a3b8', // Gray/Steel
+    };
+    return colors[tier] || '#ffffff';
+}
+
 function getTaskIcon(taskType: string): string {
     const t = taskType.toLowerCase();
     if (t.includes('forge')) return 'Hammer';
@@ -241,6 +381,7 @@ function getTaskIcon(taskType: string): string {
     if (t.includes('merge') && t.includes('pet')) return 'PetKey';
     if (t.includes('merge') && t.includes('mount')) return 'MountKey';
     if (t.includes('spendcoins')) return 'Coin';
+    if (t.includes('spendgem')) return 'Gem';
     if (t.includes('dungeon')) return 'HammerKey'; // Generic dungeon key
     if (t.includes('techtree')) return 'Potion';
     return 'Star';
@@ -267,7 +408,8 @@ function mapRewardType(type: string): string {
         'SkillSummonTickets': 'SkillTicket',
         'TechPotions': 'Potion',
         'Pet': 'PetKey',
-        'ClockWinders': 'MountKey'
+        'ClockWinders': 'MountKey',
+        'Eggshells': 'Eggshell'
     };
     return map[type] || 'Star';
 }

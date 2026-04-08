@@ -5,6 +5,7 @@ import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
 import { Star, Search } from 'lucide-react';
+import { AscensionStars } from '../components/UI/AscensionStars';
 
 export default function Mounts() {
     const { profile } = useProfile();
@@ -12,13 +13,31 @@ export default function Mounts() {
     const { data: mountUpgrades, loading: l1b } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: petUnlockLib, loading: l1c } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: spriteMapping, loading: l2 } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: ascensionConfigs, loading: l3 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRarity, setFilterRarity] = useState<string | null>(null);
     const [globalLevel, setGlobalLevel] = useState(50);
+    const [ascensionLevel, setAscensionLevel] = useState(0);
 
-    const loading = l1 || l1b || l1c || l2;
+    const loading = l1 || l1b || l1c || l2 || l3;
     const mountsConfig = spriteMapping?.mounts;
+
+    // Compute ascension multiplier from JSON
+    const ascensionMulti = useMemo(() => {
+        let dmg = 0, hp = 0;
+        if (ascensionLevel > 0 && ascensionConfigs?.Mounts?.AscensionConfigPerLevel) {
+            const configs = ascensionConfigs.Mounts.AscensionConfigPerLevel;
+            for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
+                for (const s of configs[i].StatContributions || []) {
+                    const val = s.Value;
+                    if (s.StatNode?.UniqueStat?.StatType === 'Damage') dmg += val;
+                    if (s.StatNode?.UniqueStat?.StatType === 'Health') hp += val;
+                }
+            }
+        }
+        return { dmg, hp };
+    }, [ascensionLevel, ascensionConfigs]);
 
     // Build sprite lookup
     const spriteLookup = useMemo(() => {
@@ -86,12 +105,19 @@ export default function Mounts() {
         const scale = 80 / spriteW;
 
         return {
-            backgroundImage: `url(./Texture2D/MountIcons.png)`,
+            backgroundImage: `url(${getAscMountSpriteUrl()})`,
             backgroundPosition: `-${x * scale}px -${y * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: '80px',
             height: '80px',
         };
+    };
+
+    const getAscMountSpriteUrl = () => {
+        if (ascensionLevel === 1) return './Texture2D/MegaMountIcons.png';
+        if (ascensionLevel === 2) return './Texture2D/UltraMountIcons.png';
+        if (ascensionLevel === 3) return './Texture2D/ApexMountIcons.png';
+        return './Texture2D/MountIcons.png';
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
@@ -132,7 +158,7 @@ export default function Mounts() {
 
             {/* Global Level Slider */}
             <Card className="p-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                     <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Display Level:</span>
                     <input
                         type="range"
@@ -143,6 +169,14 @@ export default function Mounts() {
                         className="flex-1 accent-accent-primary"
                     />
                     <span className="font-mono font-bold text-accent-primary w-10 text-center">{globalLevel}</span>
+                    <div className="h-6 w-px bg-border/50 hidden sm:block" />
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
+                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                        {ascensionLevel > 0 && (
+                            <span className="text-xs text-amber-400 font-mono">+{((ascensionMulti.dmg) * 100).toFixed(0)}%</span>
+                        )}
+                    </div>
                 </div>
             </Card>
 
@@ -210,13 +244,13 @@ export default function Mounts() {
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                                     <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base Dmg</span>
                                                     <span className="font-mono font-bold text-red-200">
-                                                        +{((damageStat?.Value || 0) * 100).toFixed(2)}%
+                                                        +{((damageStat?.Value || 0) * (1 + ascensionMulti.dmg)).toFixed(2)}
                                                     </span>
                                                 </div>
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                                     <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base HP</span>
                                                     <span className="font-mono font-bold text-green-200">
-                                                        +{((healthStat?.Value || 0) * 100).toFixed(2)}%
+                                                        +{((healthStat?.Value || 0) * (1 + ascensionMulti.hp)).toFixed(2)}
                                                     </span>
                                                 </div>
                                             </>

@@ -40,8 +40,24 @@ export function useBattleSimulation() {
     const { data: projectilesLibrary, loading: loading11 } = useGameData<any>('ProjectileLibrary.json');
     const { data: skillLibrary, loading: loading12 } = useGameData<any>('SkillLibrary.json');
     const { data: skillPassiveLibrary, loading: loading13 } = useGameData<any>('SkillPassiveLibrary.json');
+    const { data: dungeonBaseConfig, loading: loading14 } = useGameData<any>('DungeonBaseConfig.json');
 
-    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13;
+    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14;
+
+    // Derived Constants
+    const maxDungeonLevel = useMemo(() => dungeonBaseConfig?.MaxDungeonLevel ?? 399, [dungeonBaseConfig]);
+
+    const maxAgeIdx = useMemo(() => {
+        if (!mainBattleLibrary) return 10; // Fallback
+        let maxAge = 0;
+        Object.keys(mainBattleLibrary).forEach(key => {
+            const match = key.match(/['"]?AgeIdx['"]?\s*:\s*(\d+)/);
+            if (match) {
+                maxAge = Math.max(maxAge, parseInt(match[1]));
+            }
+        });
+        return maxAge;
+    }, [mainBattleLibrary]);
 
     const libs = useMemo(() => ({
         mainBattleLibrary,
@@ -57,6 +73,7 @@ export function useBattleSimulation() {
         projectilesLibrary,
         skillLibrary,
         skillPassiveLibrary,
+        dungeonBaseConfig,
         // Build generic lookup map
         mainBattleLookup: (() => {
             if (!mainBattleLibrary) return undefined;
@@ -85,7 +102,8 @@ export function useBattleSimulation() {
         potionDungeonBattleLibrary,
         projectilesLibrary,
         skillLibrary,
-        skillPassiveLibrary
+        skillPassiveLibrary,
+        dungeonBaseConfig
     ]);
 
     // Simulate a specific main battle (Averaged over configurable runs for prediction)
@@ -126,7 +144,7 @@ export function useBattleSimulation() {
         let maxBeatable = null;
 
         // Limit search range to prevent freezing on large iterates
-        const searchLimit = 200;
+        const searchLimit = 500; // Increased to allow discovery of later ages
 
         for (let i = 0; i < Math.min(stages.length, searchLimit); i++) {
             const stage = stages[i];
@@ -147,10 +165,10 @@ export function useBattleSimulation() {
 
     // Find the highest beatable Dungeon Level
     const findMaxBeatableDungeon = useCallback((dungeonType: 'hammer' | 'skill' | 'egg' | 'potion') => {
-        // Levels 0 to 99
+        // Levels 0 up to maxDungeonLevel
         let maxBeatableLevel = -1;
 
-        for (let level = 0; level <= 99; level++) {
+        for (let level = 0; level <= maxDungeonLevel; level++) {
             const result = simulateDungeon(dungeonType, level);
             if (result && result.victory) {
                 maxBeatableLevel = level;
@@ -159,7 +177,7 @@ export function useBattleSimulation() {
             }
         }
         return maxBeatableLevel;
-    }, [libs, simulateDungeon]);
+    }, [libs, simulateDungeon, maxDungeonLevel]);
 
     const getAvailableStages = useCallback(() => {
         return getStagesFromUtils(libs);
@@ -190,6 +208,8 @@ export function useBattleSimulation() {
         getAvailableStages,
         getBattleCountForAge,
         libs,
-        isLoading
+        isLoading,
+        maxDungeonLevel,
+        maxAgeIdx
     };
 }

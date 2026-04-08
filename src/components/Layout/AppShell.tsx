@@ -6,7 +6,7 @@ import { Coffee, ExternalLink, Github } from 'lucide-react';
 import { useGameDataContext } from '../../context/GameDataContext';
 
 export default function AppShell() {
-    const { versions, selectedVersion, setSelectedVersion } = useGameDataContext();
+    const { selectedVersion } = useGameDataContext();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
@@ -46,18 +46,9 @@ export default function AppShell() {
                                     GitHub <Github className="w-3 h-3" />
                                 </a>
                             </div>
-                            {versions.length > 0 && (
-                                <div className="mt-2 flex items-center gap-2 text-xs">
-                                    <span className="opacity-70">Data Version:</span>
-                                    <select
-                                        value={selectedVersion}
-                                        onChange={(e) => setSelectedVersion(e.target.value)}
-                                        className="bg-bg-input border border-border rounded px-2 py-0.5 text-text-primary text-xs outline-none focus:border-accent-primary cursor-pointer"
-                                    >
-                                        {versions.map(v => (
-                                            <option key={v} value={v}>{v}</option>
-                                        ))}
-                                    </select>
+                            {selectedVersion && (
+                                <div className="mt-2 text-xs opacity-70">
+                                    Data Version: {selectedVersion}
                                 </div>
                             )}
                         </div>

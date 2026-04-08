@@ -214,7 +214,17 @@ function ComparisonStatRow({
 export function StatsSummaryPanel() {
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
-    const { isComparing, originalItems, testItems, originalMount, testMount } = useComparison();
+    const { 
+        isComparing,
+        originalItems, 
+        testItems,
+        originalMount, 
+        testMount, 
+        originalMountAscension,
+        testMountAscension,
+        originalForgeAscension, 
+        testForgeAscension 
+    } = useComparison();
     const { profile } = useProfile();
     const { treeMode } = useTreeMode();
 
@@ -234,6 +244,7 @@ export function StatsSummaryPanel() {
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const libs: LibraryData = useMemo(() => ({
         petUpgradeLibrary,
@@ -251,13 +262,14 @@ export function StatsSummaryPanel() {
         secondaryStatLibrary,
         skinsLibrary,
         setsLibrary,
+        ascensionConfigsLibrary,
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary,
         skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
         techTreeLibrary, techTreePositionLibrary,
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
-        skinsLibrary, setsLibrary,
+        skinsLibrary, setsLibrary, ascensionConfigsLibrary
     ]);
 
     // Calculate stats for original and test items when comparing
@@ -290,20 +302,30 @@ export function StatsSummaryPanel() {
             ...profile,
             items: originalItems,
             techTree: effectiveTechTree,
-            mount: { ...profile.mount, active: originalMount }
+            mount: { ...profile.mount, active: originalMount },
+            misc: { 
+                ...profile.misc, 
+                forgeAscensionLevel: originalForgeAscension ?? profile.misc.forgeAscensionLevel,
+                mountAscensionLevel: originalMountAscension ?? profile.misc.mountAscensionLevel
+            }
         };
         const testProfile = {
             ...profile,
             items: testItems,
             techTree: effectiveTechTree,
-            mount: { ...profile.mount, active: testMount }
+            mount: { ...profile.mount, active: testMount },
+            misc: { 
+                ...profile.misc, 
+                forgeAscensionLevel: testForgeAscension ?? profile.misc.forgeAscensionLevel,
+                mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel
+            }
         };
 
         const origStats = calculateStats(originalProfile, libs);
         const tstStats = calculateStats(testProfile, libs);
 
         return { originalStats: origStats, testStats: tstStats };
-    }, [isComparing, originalItems, testItems, originalMount, testMount, profile, libs, itemBalancingConfig, itemBalancingLibrary, treeMode, techTreePositionLibrary, techTreeLibrary]);
+    }, [isComparing, originalItems, testItems, originalMount, testMount, originalForgeAscension, testForgeAscension, originalMountAscension, testMountAscension, profile, libs, itemBalancingConfig, itemBalancingLibrary, treeMode, techTreePositionLibrary, techTreeLibrary]);
 
     if (!stats) {
         return (

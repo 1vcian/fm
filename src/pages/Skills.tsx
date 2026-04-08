@@ -6,6 +6,7 @@ import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
 import { Zap, Search, Star, Clock, Crosshair, Sword, Heart } from 'lucide-react';
 import { formatNumber } from '../utils/format';
+import { AscensionStars } from '../components/UI/AscensionStars';
 
 export default function Skills() {
     const { profile } = useProfile();
@@ -13,13 +14,38 @@ export default function Skills() {
     const { data: skillUpgrades, loading: l1b } = useGameData<any>('SkillUpgradeLibrary.json');
     const { data: passiveLibrary, loading: l1c } = useGameData<any>('SkillPassiveLibrary.json');
     const { data: spriteMapping, loading: l2 } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: ascensionConfigs, loading: l3 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRarity, setFilterRarity] = useState<string | null>(null);
     const [globalLevel, setGlobalLevel] = useState(50);
+    const [ascensionLevel, setAscensionLevel] = useState(0);
 
-    const loading = l1 || l1b || l1c || l2;
+    const loading = l1 || l1b || l1c || l2 || l3;
     const skillsConfig = spriteMapping?.skills;
+
+    // Compute ascension multipliers from JSON (active + passive)
+    const ascensionMulti = useMemo(() => {
+        let activeDmg = 0, activeHp = 0, passiveDmg = 0, passiveHp = 0;
+        if (ascensionLevel > 0 && ascensionConfigs?.Skills?.AscensionConfigPerLevel) {
+            const configs = ascensionConfigs.Skills.AscensionConfigPerLevel;
+            for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
+                for (const s of configs[i].StatContributions || []) {
+                    const val = s.Value;
+                    const target = s.StatNode?.StatTarget?.$type;
+                    const statType = s.StatNode?.UniqueStat?.StatType;
+                    if (target === 'ActiveSkillStatTarget') {
+                        if (statType === 'Damage') activeDmg += val;
+                        if (statType === 'Health') activeHp += val;
+                    } else if (target === 'PassiveSkillStatTarget') {
+                        if (statType === 'Damage') passiveDmg += val;
+                        if (statType === 'Health') passiveHp += val;
+                    }
+                }
+            }
+        }
+        return { activeDmg, activeHp, passiveDmg, passiveHp };
+    }, [ascensionLevel, ascensionConfigs]);
 
     // Build sprite lookup
     const spriteLookup = useMemo(() => {
@@ -83,12 +109,19 @@ export default function Skills() {
         const scale = 64 / spriteW;
 
         return {
-            backgroundImage: `url(./Texture2D/SkillIcons.png)`,
+            backgroundImage: `url(${getAscSkillSpriteUrl()})`,
             backgroundPosition: `-${x * scale}px -${y * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: '64px',
             height: '64px',
         };
+    };
+
+    const getAscSkillSpriteUrl = () => {
+        if (ascensionLevel === 1) return './Texture2D/MegaSkillIcons.png';
+        if (ascensionLevel === 2) return './Texture2D/UltraSkillIcons.png';
+        if (ascensionLevel === 3) return './Texture2D/ApexSkillIcons.png';
+        return './Texture2D/SkillIcons.png';
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
@@ -129,7 +162,7 @@ export default function Skills() {
 
             {/* Global Level Slider */}
             <Card className="p-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                     <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Display Level:</span>
                     <input
                         type="range"
@@ -140,6 +173,14 @@ export default function Skills() {
                         className="flex-1 accent-accent-primary"
                     />
                     <span className="font-mono font-bold text-accent-primary w-10 text-center">{globalLevel}</span>
+                    <div className="h-6 w-px bg-border/50 hidden sm:block" />
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
+                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                        {ascensionLevel > 0 && (
+                            <span className="text-xs text-amber-400 font-mono">+{((ascensionMulti.activeDmg) * 100).toFixed(0)}%</span>
+                        )}
+                    </div>
                 </div>
             </Card>
 
@@ -153,8 +194,8 @@ export default function Skills() {
 
                         // Stats at global level
                         const levelIdx = Math.min(Math.max(1, globalLevel) - 1, skill.damagePerLevel.length - 1);
-                        const dmgAtLevel = skill.damagePerLevel[levelIdx] || 0;
-                        const hpAtLevel = skill.healthPerLevel[levelIdx] || 0;
+                        const dmgAtLevel = (skill.damagePerLevel[levelIdx] || 0) * (1 + ascensionMulti.activeDmg);
+                        const hpAtLevel = (skill.healthPerLevel[levelIdx] || 0) * (1 + ascensionMulti.activeHp);
 
                         return (
                             <Card key={skill.type} variant="hover" className={cn(
@@ -223,8 +264,10 @@ export default function Skills() {
 
                                             return currentStats.map((stat: any, idx: number) => {
                                                 const statType = stat.StatNode?.UniqueStat?.StatType || "Unknown";
-                                                const value = stat.Value || 0;
-                                                // Check for Additive/Multiplicative if needed, usually additive flats here
+                                                let value = stat.Value || 0;
+                                                // Apply passive ascension multiplier
+                                                if (statType === 'Damage') value *= (1 + ascensionMulti.passiveDmg);
+                                                if (statType === 'Health') value *= (1 + ascensionMulti.passiveHp);
                                                 const isPercent = false;
 
                                                 // Only show positive values

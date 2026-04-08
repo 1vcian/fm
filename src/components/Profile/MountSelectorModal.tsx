@@ -11,6 +11,7 @@ import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { getStatName } from '../../utils/statNames';
 import { useProfile } from '../../context/ProfileContext';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 type MobileTab = 'rarity' | 'mounts' | 'config';
 
@@ -77,6 +78,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
         if (!petUnlockLib || !selectedRarity) return 0;
         return petUnlockLib[selectedRarity]?.NumberOfSecondStats || 0;
     }, [petUnlockLib, selectedRarity]);
+
+    const maxMountLevel = useMemo(() => {
+        if (!mountUpgradeLib || !selectedRarity) return 100;
+        return mountUpgradeLib[selectedRarity]?.LevelInfo?.length || 100;
+    }, [mountUpgradeLib, selectedRarity]);
 
     // Trim manual stats if they exceed the new slot limit
     useEffect(() => {
@@ -434,11 +440,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                     </div>
                                     {context !== 'pvp' && (
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold uppercase text-text-muted">Level</label>
+                                            <label className="text-xs font-bold uppercase text-text-muted">Level (Max {maxMountLevel})</label>
                                             <div className="flex items-center gap-2">
                                                 <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.max(1, mountLevel - 1))}><Minus className="w-4 h-4" /></Button>
-                                                <Input type="number" value={mountLevel} onChange={(e) => setMountLevel(Math.max(1, parseInt(e.target.value) || 1))} className="text-center font-mono font-bold" />
-                                                <Button variant="ghost" size="sm" onClick={() => setMountLevel(mountLevel + 1)}><Plus className="w-4 h-4" /></Button>
+                                                <Input type="number" value={mountLevel} onChange={(e) => setMountLevel(Math.max(1, Math.min(maxMountLevel, parseInt(e.target.value) || 1)))} className="text-center font-mono font-bold" />
+                                                <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.min(maxMountLevel, mountLevel + 1))}><Plus className="w-4 h-4" /></Button>
                                             </div>
                                         </div>
                                     )}
@@ -543,7 +549,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
                                                 <SpriteSheetIcon
-                                                    textureSrc="./icons/game/MountIcons.png"
+                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
                                                     spriteWidth={mountsConfig.sprite_size.width}
                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                     sheetWidth={mountsConfig.texture_size.width}
@@ -599,7 +605,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                         >
                                                             {mountsConfig && (
                                                                 <SpriteSheetIcon
-                                                                    textureSrc="./icons/game/MountIcons.png"
+                                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
                                                                     spriteWidth={mountsConfig.sprite_size.width}
                                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                                     sheetWidth={mountsConfig.texture_size.width}
@@ -693,9 +699,27 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                         {getStatName(stat.StatNode?.UniqueStat?.StatType || '')}
                                                     </span>
                                                     <span className="font-mono text-accent-primary font-bold">
-                                                        {stat.StatNode?.UniqueStat?.StatNature === 'Multiplier'
-                                                            ? `+${(stat.Value * 100).toFixed(2)}%`
-                                                            : stat.Value}
+                                                        {(() => {
+                                                            const statType = stat.StatNode?.UniqueStat?.StatType;
+                                                            const isFlat = statType === 'Damage' || statType === 'Health';
+                                                            const isMultiplier = !isFlat && (
+                                                                stat.StatNode?.UniqueStat?.StatNature === 'Multiplier' ||
+                                                                stat.StatNode?.UniqueStat?.StatNature === 'OneMinusMultiplier'
+                                                            );
+                                                            
+                                                            if (isFlat) {
+                                                                const val = stat.Value;
+                                                                let formatted = '';
+                                                                if (val >= 1000000) formatted = (val / 1000000).toFixed(2) + 'M';
+                                                                else if (val >= 1000) formatted = (val / 1000).toFixed(2) + 'K';
+                                                                else formatted = val.toFixed(2);
+                                                                return `+${formatted}`;
+                                                            }
+                                                            
+                                                            return isMultiplier
+                                                                ? `+${(stat.Value * 100).toFixed(2)}%`
+                                                                : stat.Value;
+                                                        })()}
                                                     </span>
                                                 </div>
                                             ))}
@@ -706,7 +730,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                 {context !== 'pvp' && (
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase text-text-muted flex items-center gap-2">
-                                            Level
+                                            Level (Max {maxMountLevel})
                                         </label>
                                         <div className="flex items-center gap-2">
                                             <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.max(1, mountLevel - 1))}>
@@ -715,10 +739,10 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                             <Input
                                                 type="number"
                                                 value={mountLevel}
-                                                onChange={(e) => setMountLevel(Math.max(1, parseInt(e.target.value) || 1))}
+                                                onChange={(e) => setMountLevel(Math.max(1, Math.min(maxMountLevel, parseInt(e.target.value) || 1)))}
                                                 className="text-center font-mono font-bold"
                                             />
-                                            <Button variant="ghost" size="sm" onClick={() => setMountLevel(mountLevel + 1)}>
+                                            <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.min(maxMountLevel, mountLevel + 1))}>
                                                 <Plus className="w-4 h-4" />
                                             </Button>
                                         </div>

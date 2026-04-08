@@ -30,40 +30,7 @@ const DUNGEON_TABS: TabConfig[] = [
     { id: 'Potion', label: 'Potion', name: 'Potion Dungeon', icon: 'PotionKey', type: 'sprite' },
 ];
 
-// --- Egg Sprite Component ---
-const EGG_RARITY_MAP: Record<string, number> = {
-    'Common': 0,
-    'Rare': 1,
-    'Epic': 2,
-    'Legendary': 3,
-    'Ultimate': 4,
-    'Mythic': 5,
-};
 
-function EggSprite({ rarity, size = 32 }: { rarity: string; size?: number }) {
-    const idx = EGG_RARITY_MAP[rarity] ?? 0;
-    const col = idx % 4;
-    const row = Math.floor(idx / 4);
-
-    // 4x4 Grid -> 400% size
-    const xPos = (col / 3) * 100;
-    const yPos = (row / 3) * 100;
-
-    return (
-        <div
-            className="shrink-0 relative pixelated drop-shadow-md"
-            style={{
-                width: size,
-                height: size,
-                backgroundImage: 'url(./Texture2D/Eggs.png)',
-                backgroundSize: '400% 400%',
-                backgroundPosition: `${xPos}% ${yPos}%`,
-                imageRendering: 'pixelated'
-            }}
-            title={rarity}
-        />
-    );
-}
 
 export default function Dungeons() {
     const [selectedTab, setSelectedTab] = useState<DungeonType>('Hammer');
@@ -98,7 +65,7 @@ export default function Dungeons() {
     const [showDebug, setShowDebug] = useState(false);
 
     const { profile, updateNestedProfile } = useProfile();
-    const { playerStats, libs } = useBattleSimulation();
+    const { playerStats, libs, maxDungeonLevel } = useBattleSimulation();
     const { treeMode } = useTreeMode();
 
     const updateKeys = (type: string, count: number) => {
@@ -295,8 +262,22 @@ export default function Dungeons() {
         const levelIndex = level - 1;
 
         if (selectedTab === 'Egg') {
-            if (!eggRewardData) return null;
-            return { type: 'Egg' as const, data: eggRewardData[String(levelIndex)] };
+            // Egg Dungeon (Invasion) rewards Eggshells, mapped as 'Pet' in JSON
+            if (!rewardData || !rewardData['Pet']) return null;
+            const rew = rewardData['Pet'];
+            
+            const rewards = (rew.CurrencyType || []).map((curr: string, idx: number) => {
+                const base = rew.RewardBase?.[idx] || 0;
+                const inc = rew.RewardIncrease?.[idx] || 0;
+                let amount = base + (inc * levelIndex);
+
+                // Apply Multipliers (none yet for Eggshells in tech tree mapping, but placeholder for scale)
+                // if (curr === 'Eggshells') amount *= techTreeMultipliers.Eggshell; 
+
+                return { currency: curr, amount };
+            });
+
+            return { type: 'Currency' as const, rewards };
         } else {
             if (!rewardData) return null;
             const rew = rewardData[selectedTab];
@@ -322,7 +303,7 @@ export default function Dungeons() {
     }, [selectedTab, level, rewardData, eggRewardData, techTreeMultipliers]);
 
     const navigate = (delta: number) => {
-        setLevel(prev => Math.max(1, Math.min(100, prev + delta)));
+        setLevel(prev => Math.max(1, Math.min(maxDungeonLevel + 1, prev + delta)));
     };
 
     const getStageLabel = (lvl: number) => {
@@ -337,6 +318,7 @@ export default function Dungeons() {
         if (currency === 'SkillSummonTickets') return 'SkillTicket';
         if (currency === 'TechPotions') return 'Potion';
         if (currency === 'HeroSummonTickets') return 'PVPTicket';
+        if (currency === 'Eggshells') return 'Eggshell';
         return 'GemSquare'; // Fallback
     };
 
@@ -465,7 +447,7 @@ export default function Dungeons() {
                                     <div className="text-xs uppercase text-text-muted font-bold tracking-wider mb-1">Stage</div>
                                     <div className="text-3xl font-black text-accent-primary">{getStageLabel(level)}</div>
                                 </div>
-                                <button onClick={() => navigate(1)} disabled={level >= 100} className="p-3 bg-black/40 rounded-lg hover:bg-black/60 disabled:opacity-30 border border-white/5">
+                                <button onClick={() => navigate(1)} disabled={level >= maxDungeonLevel + 1} className="p-3 bg-black/40 rounded-lg hover:bg-black/60 disabled:opacity-30 border border-white/5">
                                     <ChevronRight className="w-6 h-6" />
                                 </button>
                             </div>
@@ -474,15 +456,15 @@ export default function Dungeons() {
                         <input
                             type="range"
                             min="1"
-                            max="100"
+                            max={maxDungeonLevel + 1}
                             value={level}
                             onChange={(e) => setLevel(parseInt(e.target.value))}
                             className="w-full h-4 bg-black/40 rounded-lg appearance-none cursor-pointer accent-accent-primary mb-2"
                         />
                         <div className="flex justify-between text-xs text-text-secondary font-mono">
                             <span>Stage 1-1</span>
-                            <span>Stage 5-10</span>
-                            <span>Stage 10-10</span>
+                            <span>Stage {Math.floor(maxDungeonLevel / 20) + 1}-10</span>
+                            <span>Stage {Math.floor(maxDungeonLevel / 10) + 1}-10</span>
                         </div>
                     </Card>
 
@@ -582,23 +564,7 @@ export default function Dungeons() {
                                 </span>
                             </h3>
 
-                            {rewardInfo?.type === 'Egg' && rewardInfo.data ? (
-                                <div className="space-y-4">
-                                    {['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].map((rarity) => {
-                                        const chance = rewardInfo.data[rarity] || 0;
-                                        if (chance <= 0) return null;
-                                        return (
-                                            <div key={rarity} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
-                                                <div className="flex items-center gap-3">
-                                                    <EggSprite rarity={rarity} size={32} />
-                                                    <span className={cn("text-sm font-bold", `text-rarity-${rarity.toLowerCase()}`)}>{rarity}</span>
-                                                </div>
-                                                <span className="font-mono text-white font-bold">{(chance * 100).toFixed(2)}%</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : rewardInfo?.type === 'Currency' && rewardInfo?.rewards ? (
+                            {rewardInfo?.type === 'Currency' && rewardInfo?.rewards ? (
                                 <div className="space-y-6 text-center py-6">
                                     <div className="w-24 h-24 mx-auto bg-gradient-to-br from-white/10 to-transparent rounded-full flex items-center justify-center border border-white/10 mb-6 relative group">
                                         <div className="absolute inset-0 bg-accent-primary/20 rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -610,7 +576,6 @@ export default function Dungeons() {
                                             <div key={idx} className="flex items-center justify-between gap-4 p-3 bg-white/5 rounded-lg border border-white/5">
                                                 <div className="flex items-center gap-3">
                                                     <SpriteIcon name={getRewardIcon(rew.currency)} size={32} className="drop-shadow-md" />
-
                                                 </div>
                                                 <div className="text-xl font-black text-white tracking-tight">
                                                     {Math.round(rew.amount).toLocaleString()}

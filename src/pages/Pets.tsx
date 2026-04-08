@@ -6,6 +6,40 @@ import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
 import { Search, Cat, Sword, Heart, Zap, Shield, Star } from 'lucide-react';
 import { formatNumber } from '../utils/format';
+import { AscensionStars } from '../components/UI/AscensionStars';
+import { getAscensionTexturePath } from '../utils/ascensionUtils';
+
+function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity: string; size?: number; className?: string; ascensionLevel?: number }) {
+    const rarityIndex: Record<string, number> = {
+        'Common': 0, 'Rare': 1, 'Epic': 2,
+        'Legendary': 3, 'Ultimate': 4, 'Mythic': 5
+    };
+
+    const idx = rarityIndex[rarity] ?? 0;
+    const col = idx % 4;
+    const row = Math.floor(idx / 4);
+
+    const xPos = (col / 3) * 100;
+    const yPos = (row / 3) * 100;
+
+    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel);
+
+    return (
+        <div
+            className={cn("inline-block shrink-0", className)}
+            style={{
+                width: size,
+                height: size,
+                backgroundImage: `url(${texturePath})`,
+                backgroundPosition: `${xPos}% ${yPos}%`,
+                backgroundSize: '400% 400%',
+                backgroundRepeat: 'no-repeat',
+                imageRendering: 'pixelated'
+            }}
+            title={rarity}
+        />
+    );
+}
 
 export default function Pets() {
     const { profile } = useProfile();
@@ -14,13 +48,31 @@ export default function Pets() {
     const { data: petBalancing, loading: l3 } = useGameData<any>('PetBalancingLibrary.json');
     const { data: petUnlockLib, loading: l3b } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: spriteMapping, loading: l4 } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: ascensionConfigs, loading: l5 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRarity, setFilterRarity] = useState<string | null>(null);
-    const [globalLevel, setGlobalLevel] = useState(50); // Global level slider
+    const [globalLevel, setGlobalLevel] = useState(50);
+    const [ascensionLevel, setAscensionLevel] = useState(0);
 
-    const loading = l1 || l2 || l3 || l3b || l4;
+    const loading = l1 || l2 || l3 || l3b || l4 || l5;
     const petsConfig = spriteMapping?.pets;
+
+    // Compute ascension multiplier from JSON
+    const ascensionMulti = useMemo(() => {
+        let dmg = 0, hp = 0;
+        if (ascensionLevel > 0 && ascensionConfigs?.Pets?.AscensionConfigPerLevel) {
+            const configs = ascensionConfigs.Pets.AscensionConfigPerLevel;
+            for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
+                for (const s of configs[i].StatContributions || []) {
+                    const val = s.Value;
+                    if (s.StatNode?.UniqueStat?.StatType === 'Damage') dmg += val;
+                    if (s.StatNode?.UniqueStat?.StatType === 'Health') hp += val;
+                }
+            }
+        }
+        return { dmg, hp };
+    }, [ascensionLevel, ascensionConfigs]);
 
     // Build lookup from ManualSpriteMapping
     const spriteLookup = useMemo(() => {
@@ -87,12 +139,19 @@ export default function Pets() {
         const scale = 64 / spriteW;
 
         return {
-            backgroundImage: `url(./Texture2D/Pets.png)`,
+            backgroundImage: `url(${getAscSpriteUrl()})`,
             backgroundPosition: `-${x * scale}px -${y * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: '64px',
             height: '64px',
         };
+    };
+
+    const getAscSpriteUrl = () => {
+        if (ascensionLevel === 1) return './Texture2D/MegaPets.png';
+        if (ascensionLevel === 2) return './Texture2D/UltraPets.png';
+        if (ascensionLevel === 3) return './Texture2D/ApexPets.png';
+        return './Texture2D/Pets.png';
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
@@ -131,7 +190,7 @@ export default function Pets() {
 
             {/* Global Level Slider */}
             <Card className="p-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                     <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Display Level:</span>
                     <input
                         type="range"
@@ -142,6 +201,52 @@ export default function Pets() {
                         className="flex-1 accent-accent-primary"
                     />
                     <span className="font-mono font-bold text-accent-primary w-10 text-center">{globalLevel}</span>
+                    <div className="h-6 w-px bg-border/50 hidden sm:block" />
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
+                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                        {ascensionLevel > 0 && (
+                            <span className="text-xs text-amber-400 font-mono">+{((ascensionMulti.dmg) * 100).toFixed(0)}%</span>
+                        )}
+                    </div>
+                </div>
+            </Card>
+
+            {/* Egg Ascension Preview */}
+            <Card className="p-6 bg-gradient-to-br from-bg-secondary/50 to-bg-card border-accent-secondary/20">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="p-2 rounded-lg bg-accent-secondary/10">
+                        <Star className="w-5 h-5 text-accent-secondary" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-text-primary tracking-tight">Egg Ascension Preview</h2>
+                        <p className="text-xs text-text-muted">Visual evolution of eggs based on ascension level</p>
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                    {['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].map((rarity) => (
+                        <div key={rarity} className="flex flex-col items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors group">
+                            <div className="relative">
+                                <div className={cn(
+                                    "absolute inset-0 blur-xl opacity-20 group-hover:opacity-40 transition-opacity",
+                                    `bg-rarity-${rarity.toLowerCase()}`
+                                )} />
+                                <EggIcon 
+                                    rarity={rarity} 
+                                    size={64} 
+                                    ascensionLevel={ascensionLevel} 
+                                    className="relative z-10 drop-shadow-xl scale-110 group-hover:scale-125 transition-transform duration-300" 
+                                />
+                            </div>
+                            <span className={cn(
+                                "text-[10px] font-black uppercase tracking-widest",
+                                `text-rarity-${rarity.toLowerCase()}`
+                            )}>
+                                {rarity}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             </Card>
 
@@ -161,8 +266,8 @@ export default function Pets() {
                         const baseHp = baseStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === 'Health')?.Value || 0;
 
                         const typeMod = petBalancing?.[pet.type] || { DamageMultiplier: 1, HealthMultiplier: 1 };
-                        const finalDmg = baseDmg * (typeMod.DamageMultiplier || 1);
-                        const finalHp = baseHp * (typeMod.HealthMultiplier || 1);
+                        const finalDmg = baseDmg * (typeMod.DamageMultiplier || 1) * (1 + ascensionMulti.dmg);
+                        const finalHp = baseHp * (typeMod.HealthMultiplier || 1) * (1 + ascensionMulti.hp);
 
                         const spriteStyle = getSpriteStyle(pet.spriteIndex);
 

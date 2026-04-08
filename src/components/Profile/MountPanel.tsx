@@ -11,6 +11,8 @@ import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { getStatName, getStatColor } from '../../utils/statNames';
 import { InputModal } from '../UI/InputModal';
+import { AscensionStars } from '../UI/AscensionStars';
+import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 export function MountPanel() {
     const { profile, updateNestedProfile } = useProfile();
@@ -20,6 +22,7 @@ export function MountPanel() {
 
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
 
     // Get tech tree modifiers
     const techModifiers = useTreeModifiers();
@@ -40,7 +43,8 @@ export function MountPanel() {
 
     const handleLevelChange = (delta: number) => {
         if (!activeMount) return;
-        const newLevel = Math.max(1, Math.min(100, activeMount.level + delta));
+        const maxLevel = mountUpgradeLibrary?.[activeMount.rarity]?.LevelInfo?.length || 100;
+        const newLevel = Math.max(1, Math.min(maxLevel, activeMount.level + delta));
         updateNestedProfile('mount', { active: { ...activeMount, level: newLevel } });
     };
 
@@ -64,21 +68,41 @@ export function MountPanel() {
                 const targetLevel = Math.max(0, activeMount.level - 1);
                 const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === targetLevel) || upgradeData.LevelInfo[0];
 
+                // Calculate Ascension Multiplier
+                let ascensionDmgMulti = 0;
+                let ascensionHpMulti = 0;
+                const mountAscensionLevel = profile.misc.mountAscensionLevel || 0;
+                if (mountAscensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+                    const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
+                    for (let i = 0; i < mountAscensionLevel && i < ascConfigs.length; i++) {
+                        const stats = ascConfigs[i].StatContributions || [];
+                        for (const s of stats) {
+                            const sType = s.StatNode?.UniqueStat?.StatType;
+                            const sVal = s.Value;
+                            if (sType === 'Damage') ascensionDmgMulti += sVal;
+                            if (sType === 'Health') ascensionHpMulti += sVal;
+                        }
+                    }
+                }
+
                 if (levelInfo?.MountStats?.Stats) {
                     levelInfo.MountStats.Stats.forEach((stat: any) => {
                         const statType = stat.StatNode?.UniqueStat?.StatType || 'Unknown';
                         let value = stat.Value || 0;
                         let techBonus = 0;
+                        let ascensionBonus = 0;
 
                         // Apply tech tree bonus for Damage/Health
                         if (statType === 'Damage') {
                             baseDamageMulti = value;
                             techBonus = mountDamageBonus;
-                            value = value * (1 + techBonus);
+                            ascensionBonus = ascensionDmgMulti;
+                            value = value * (1 + techBonus + ascensionBonus);
                         } else if (statType === 'Health') {
                             baseHealthMulti = value;
                             techBonus = mountHealthBonus;
-                            value = value * (1 + techBonus);
+                            ascensionBonus = ascensionHpMulti;
+                            value = value * (1 + techBonus + ascensionBonus);
                         }
 
                         combined.push({
@@ -86,8 +110,12 @@ export function MountPanel() {
                             value: value,
                             baseValue: stat.Value,
                             techBonus: techBonus,
-                            isMultiplier: stat.StatNode?.UniqueStat?.StatNature === 'Multiplier' ||
+                            ascensionBonus: ascensionBonus,
+                            // DMG and HP of mounts are now flat additives
+                            isMultiplier: statType !== 'Damage' && statType !== 'Health' && (
+                                stat.StatNode?.UniqueStat?.StatNature === 'Multiplier' ||
                                 stat.StatNode?.UniqueStat?.StatNature === 'OneMinusMultiplier'
+                            )
                         });
                     });
                 }
@@ -203,7 +231,7 @@ export function MountPanel() {
                             >
                                 {activeSprite ? (
                                     <SpriteSheetIcon
-                                        textureSrc="./icons/game/MountIcons.png"
+                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
                                         spriteWidth={activeSprite.config.sprite_size.width}
                                         spriteHeight={activeSprite.config.sprite_size.height}
                                         sheetWidth={activeSprite.config.texture_size.width}
@@ -215,32 +243,53 @@ export function MountPanel() {
                                     <MountIcon className="w-6 h-6 text-text-muted" />
                                 )}
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <div className="font-bold truncate">{activeSprite?.name || `${activeMount.rarity} Mount #${activeMount.id}`}</div>
-                                <div className="text-xs text-text-muted truncate">Level {activeMount.level}</div>
-                            </div>
+                                <div className="flex flex-col gap-2 w-full">
+                                    <div className="flex items-center justify-between">
+                                        <div className="font-bold truncate text-lg text-accent-primary">{activeSprite?.name || `${activeMount.rarity} Mount #${activeMount.id}`}</div>
+                                        <div className="text-xs text-text-muted">Level {activeMount.level}</div>
+                                    </div>
+                                    <div className="bg-bg-input/50 p-3 rounded-xl border border-border/50 flex flex-col items-center gap-2">
+                                        <AscensionStars 
+                                            value={profile.misc.mountAscensionLevel || 0}
+                                            onChange={(val: number) => updateNestedProfile('misc', { mountAscensionLevel: val })}
+                                        />
+                                    </div>
+                                </div>
                         </div>
 
                         {/* Mount Stats */}
                         {combinedStats.length > 0 && (
                             <div className="mb-3">
                                 <div className="flex flex-wrap gap-2">
-                                    {combinedStats.map((stat, idx) => (
-                                        <span key={idx} className={cn(
-                                            "text-xs bg-bg-input px-2 py-1 rounded",
-                                            stat.isManual && "border border-accent-primary/30",
-                                            getStatColor(stat.label)
-                                        )}>
-                                            {getStatName(stat.label)}: <span className="font-mono font-bold">
-                                                {stat.isMultiplier ? '+' : ''}
-                                                {(stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(2)}
+                                    {combinedStats.map((stat, idx) => {
+                                        const label = stat.label.toLowerCase();
+                                        const isFlat = label === 'damage' || label === 'health' || label === 'dmg' || label === 'hp';
+                                        const formatValue = (val: number) => {
+                                            if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
+                                            if (val >= 1000) return (val / 1000).toFixed(2) + 'K';
+                                            return val.toFixed(0); // No decimals for flat stats unless < 1000
+                                        };
+
+                                        return (
+                                            <span key={idx} className={cn(
+                                                "text-xs bg-bg-input px-2 py-1 rounded",
+                                                stat.isManual && "border border-accent-primary/30",
+                                                getStatColor(stat.label)
+                                            )}>
+                                                {getStatName(stat.label)}: <span className="font-mono font-bold">
+                                                {stat.isMultiplier || isFlat ? '+' : ''}
+                                                {isFlat ? formatValue(stat.value) : (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(2)}
                                                 {stat.isMultiplier ? '%' : ''}
+                                                </span>
+                                                {stat.techBonus > 0 && (
+                                                    <span className="text-green-400 ml-1 text-[10px]">(+{(stat.techBonus * 100).toFixed(0)}%)</span>
+                                                )}
+                                                {stat.ascensionBonus > 0 && (
+                                                    <span className="text-yellow-400 ml-1 text-[10px]">(+{(stat.ascensionBonus * 100).toFixed(0)}%)</span>
+                                                )}
                                             </span>
-                                            {stat.techBonus > 0 && (
-                                                <span className="text-green-400 ml-1 text-[10px]">(+{(stat.techBonus * 100).toFixed(0)}%)</span>
-                                            )}
-                                        </span>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

@@ -28,8 +28,8 @@ interface StatBreakdown {
     flatDamageTotal: number;
     flatHealthTotal: number;
 
-    mountDamageMulti: number;
-    mountHealthMulti: number;
+    mountDamage: number;
+    mountHealth: number;
 
     secondaryDamageMulti: number;
     secondaryHealthMulti: number;
@@ -282,10 +282,9 @@ const Verify: React.FC = () => {
             skillHealthTotal += hp;
         }
 
-        // 5. Mount Multipliers
-        let mountDamageMulti = 0;
-        let mountHealthMulti = 0;
-
+        // 5. Mount Stats (FLAT ADDITIVE)
+        let mountDamage = 0;
+        let mountHealth = 0;
         if (profile.mount?.active) {
             const mount = profile.mount.active;
             const upgradeData = mountUpgradeLibrary[mount.rarity];
@@ -296,15 +295,15 @@ const Verify: React.FC = () => {
                     for (const stat of levelInfo.MountStats.Stats) {
                         const statType = stat.StatNode?.UniqueStat?.StatType;
                         const value = stat.Value || 0;
-                        if (statType === 'Damage') mountDamageMulti += value;
-                        if (statType === 'Health') mountHealthMulti += value;
+                        if (statType === 'Damage') mountDamage += value;
+                        if (statType === 'Health') mountHealth += value;
                     }
                 }
             }
             const mountDmgBonus = techModifiers['MountDamage'] || 0;
             const mountHpBonus = techModifiers['MountHealth'] || 0;
-            mountDamageMulti *= (1 + mountDmgBonus);
-            mountHealthMulti *= (1 + mountHpBonus);
+            mountDamage *= (1 + mountDmgBonus);
+            mountHealth *= (1 + mountHpBonus);
         }
 
         // 6. Secondary Stats (Accumulator)
@@ -359,13 +358,13 @@ const Verify: React.FC = () => {
         const weaponWithMelee = isWeaponMelee ? weaponDamage * effectiveMeleeMulti : weaponDamage;
         const itemDamageWithMelee = weaponWithMelee + otherItemDamage;
 
-        const flatDamageWithMelee = PLAYER_BASE_DAMAGE + itemDamageWithMelee + petDamageTotal + skillDamageTotal;
-        const flatHealthTotal = PLAYER_BASE_HEALTH + itemHealthTotal + petHealthTotal + skillHealthTotal;
+        const flatDamageTotal = PLAYER_BASE_DAMAGE + itemDamageWithMelee + petDamageTotal + skillDamageTotal + mountDamage;
+        const flatHealthTotal = PLAYER_BASE_HEALTH + itemHealthTotal + petHealthTotal + skillHealthTotal + mountHealth;
 
-        const damageAdditiveMulti = 1 + mountDamageMulti + secondaryDamageMulti;
-        const healthAdditiveMulti = 1 + mountHealthMulti + secondaryHealthMulti;
+        const damageAdditiveMulti = 1 + secondaryDamageMulti;
+        const healthAdditiveMulti = 1 + secondaryHealthMulti;
 
-        const damageAfterAdditive = flatDamageWithMelee * damageAdditiveMulti;
+        const damageAfterAdditive = flatDamageTotal * damageAdditiveMulti;
         const healthAfterAdditive = flatHealthTotal * healthAdditiveMulti;
 
 
@@ -426,10 +425,10 @@ const Verify: React.FC = () => {
             petsTotal: { source: 'Pets Total', damage: petDamageTotal, health: petHealthTotal },
             skills,
             skillsTotal: { source: 'Skills Passives Total', damage: skillDamageTotal, health: skillHealthTotal },
-            flatDamageTotal: flatDamageWithMelee,
+            flatDamageTotal,
             flatHealthTotal,
-            mountDamageMulti,
-            mountHealthMulti,
+            mountDamage,
+            mountHealth,
             secondaryDamageMulti,
             secondaryHealthMulti,
             secondaryMeleeDamageMulti,
