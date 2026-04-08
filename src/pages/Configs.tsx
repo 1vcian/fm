@@ -373,6 +373,21 @@ export default function Configs() {
                         </Button>
                     </div>
 
+                    {/* Comparison Summary */}
+                    {isCompareMode && comparison && (
+                        <div className="flex gap-2 text-[10px] font-bold">
+                            <span className="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20">
+                                {comparison.added.length} NEW
+                            </span>
+                            <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">
+                                {comparison.modified.length} MOD
+                            </span>
+                            <span className="bg-red-500/10 text-red-400 px-2 py-0.5 rounded border border-red-500/20">
+                                {comparison.removed.length} DEL
+                            </span>
+                        </div>
+                    )}
+
                     {/* Version Selector */}
                     {versions.length > 0 && (
                         <div className="space-y-2">
@@ -461,7 +476,12 @@ export default function Configs() {
                                 <div className="flex items-center gap-2 min-w-0">
                                     <FileJson className={cn("w-4 h-4 shrink-0 opacity-70", selectedFile === file && "text-accent-primary")} />
                                     <div className="flex flex-col overflow-hidden text-left">
-                                        <span className="truncate">{file.replace('.json', '')}</span>
+                                        <span className={cn(
+                                            "truncate",
+                                            isCompareMode && comparison?.removed.includes(file) && "line-through opacity-50"
+                                        )}>
+                                            {file.replace('.json', '')}
+                                        </span>
                                         {!hasContent && <span className="text-[10px] text-text-muted italic">Loading...</span>}
                                     </div>
                                 </div>
