@@ -25,7 +25,9 @@
             "name": "Mention",
             "dp": "https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/FFB3A0/ME.png"
         },
-        "supporter_message": []
+        "supporter_message": {
+            "note": "Thanks very much"
+        }
     },
     {
         "coffee_count": 1,
@@ -35,6 +37,16 @@
         },
         "supporter_message": {
             "note": "Thanks for your good work!!"
+        }
+    },
+    {
+        "coffee_count": 1,
+        "supporter": {
+            "name": "Jens Gynnerstedt",
+            "dp": "https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/80BEAF/JG.png"
+        },
+        "supporter_message": {
+            "note": "For the great work with the Forge Master-tool!"
         }
     }
 ]

@@ -1,0 +1,16 @@
+{
+  "TokenPack0": {
+    "Id": "TokenPack0",
+    "Reward": {
+      "Amount": 8,
+      "Type": "Token",
+      "$type": "CurrencyReward"
+    },
+    "Price": null,
+    "Limit": {
+      "ResetsWithNewDay": 0,
+      "CooldownInSeconds": 0,
+      "AllowedPurchasesPerCooldown": 1
+    }
+  }
+}
