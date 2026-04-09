@@ -2,6 +2,16 @@
     {
         "coffee_count": 1,
         "supporter": {
+            "name": "Jens Gynnerstedt",
+            "dp": "https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/80BEAF/JG.png"
+        },
+        "supporter_message": {
+            "note": "For the great work with the Forge Master-tool!"
+        }
+    },
+    {
+        "coffee_count": 1,
+        "supporter": {
             "name": "AJx",
             "dp": "https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/B6CDBD/AJ.png"
         },
@@ -37,16 +47,6 @@
         },
         "supporter_message": {
             "note": "Thanks for your good work!!"
-        }
-    },
-    {
-        "coffee_count": 1,
-        "supporter": {
-            "name": "Jens Gynnerstedt",
-            "dp": "https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/80BEAF/JG.png"
-        },
-        "supporter_message": {
-            "note": "For the great work with the Forge Master-tool!"
         }
     }
 ]

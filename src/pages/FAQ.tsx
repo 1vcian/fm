@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
-import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle, Star, Quote, Users, Github } from 'lucide-react';
+import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle, Star, Quote, Users, Github, PlusCircle, MinusCircle } from 'lucide-react';
+import contributorsStats from '../data/contributors_stats.json';
 
 export default function FAQ() {
     const [supporters, setSupporters] = useState<any[]>([]);
@@ -21,7 +22,20 @@ export default function FAQ() {
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
-                    setContributors(data);
+                    // Merge with local stats
+                    const merged = data.map(gh => {
+                        const stats = contributorsStats.find(s => 
+                            s.name.toLowerCase() === gh.login.toLowerCase() ||
+                            gh.login.toLowerCase() === s.email?.split('@')[0].toLowerCase()
+                        );
+                        return { 
+                            ...gh, 
+                            additions: stats?.additions || 0,
+                            deletions: stats?.deletions || 0,
+                            commits: stats?.commits || gh.contributions
+                        };
+                    });
+                    setContributors(merged);
                 }
                 setLoadingContributors(false);
             })
@@ -130,7 +144,7 @@ export default function FAQ() {
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            {contributors.map((c, idx) => (
+                            {contributors.map((c: any, idx: number) => (
                                 <a
                                     key={idx}
                                     href={c.html_url}
@@ -141,12 +155,24 @@ export default function FAQ() {
                                     <div className="w-10 h-10 rounded-xl overflow-hidden border border-border group-hover:border-accent-primary/50 transition-colors">
                                         <img src={c.avatar_url} alt={c.login} className="w-full h-full object-cover" />
                                     </div>
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 flex-1">
                                         <div className="font-bold text-xs truncate text-text-primary group-hover:text-accent-primary transition-colors">
                                             {c.login}
                                         </div>
-                                        <div className="text-[10px] text-text-muted">
-                                            {c.contributions} contribution{c.contributions !== 1 ? 's' : ''}
+                                        <div className="flex flex-col gap-0.5 mt-1">
+                                            <div className="flex items-center gap-1.5 text-[9px] font-bold">
+                                                <span className="text-text-muted">{c.commits} patches</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-0.5 text-green-400 text-[9px] font-mono">
+                                                    <PlusCircle size={8} />
+                                                    {c.additions.toLocaleString()}
+                                                </div>
+                                                <div className="flex items-center gap-0.5 text-red-400 text-[9px] font-mono">
+                                                    <MinusCircle size={8} />
+                                                    {c.deletions.toLocaleString()}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </a>
