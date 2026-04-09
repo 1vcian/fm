@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
@@ -16,6 +16,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { calculateStats, LibraryData } from '../../utils/statEngine';
 import { useTreeMode } from '../../context/TreeModeContext';
+import { DpsBreakdownModal } from './DpsBreakdownModal';
 
 interface StatRowProps {
     icon: React.ReactNode;
@@ -24,9 +25,10 @@ interface StatRowProps {
     subValue?: string;
     count?: number;
     color?: string;
+    onInfoPointsClick?: () => void;
 }
 
-function StatRow({ icon, label, value, subValue, count, color = 'text-accent-primary' }: StatRowProps) {
+function StatRow({ icon, label, value, subValue, count, color = 'text-accent-primary', onInfoPointsClick }: StatRowProps) {
     return (
         <div className="flex flex-col justify-between p-2.5 bg-bg-input/30 rounded-lg border border-border/30 hover:bg-bg-input/50 transition-colors min-h-[5rem]">
             <div className="flex items-center gap-2 w-full">
@@ -34,7 +36,22 @@ function StatRow({ icon, label, value, subValue, count, color = 'text-accent-pri
                     {icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-text-primary leading-tight break-words">{label}</div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="text-sm font-medium text-text-primary leading-tight break-words">{label}</div>
+                        {onInfoPointsClick && (
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onInfoPointsClick();
+                                }}
+                                className="px-2 py-0.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded-md transition-all text-orange-400 hover:text-orange-300 flex items-center gap-1 group shadow-[0_0_10px_rgba(249,115,22,0.1)] active:scale-95 ml-auto"
+                                title="Show Detailed Breakdown"
+                            >
+                                <Sparkles className="w-3 h-3 animate-pulse text-orange-400 group-hover:text-orange-300" />
+                                <span className="text-[9px] font-bold uppercase tracking-wider">Details</span>
+                            </button>
+                        )}
+                    </div>
                     {count !== undefined && count > 0 && (
                         <div className="text-[11px] text-text-muted">({count} Stats)</div>
                     )}
@@ -212,6 +229,7 @@ function ComparisonStatRow({
 }
 
 export function StatsSummaryPanel() {
+    const [showDpsModal, setShowDpsModal] = useState(false);
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const { 
@@ -339,27 +357,9 @@ export function StatsSummaryPanel() {
                 </div>
             </Card>
         );
-    }
-
-    // Calculate effective Weapon DPS
-    // Formula: Damage × AttackSpeed × CritMultiplier × DoubleDamageMultiplier
-    // User Requirement: Caps at 100% (1.0)
-    const cappedCritChance = Math.min(stats.criticalChance, 1);
-    const cappedDoubleDamageChance = Math.min(stats.doubleDamageChance, 1);
-
-    const critMultiplier = 1 + cappedCritChance * (stats.criticalDamage - 1);
-    const doubleDmgMultiplier = 1 + cappedDoubleDamageChance;
-    // WindupTime è compreso nella AttackDuration. Ciclo totale = AttackDuration / AttackSpeed
-    const totalAttackTime = stats.weaponAttackDuration / stats.attackSpeedMultiplier;
-
-    // Attacchi al secondo
-    const attacksPerSecond = 1 / totalAttackTime;
-
-    // DPS finale
-    const weaponDps = stats.totalDamage * attacksPerSecond * critMultiplier * doubleDmgMultiplier;
-    // Skill DPS (already fully calculated in statEngine including crits/multipliers)
-    // Total Effective DPS = Weapon DPS + Skill DPS
-    const effectiveDps = weaponDps + stats.skillDps;
+    }    // DPS values are now pre-calculated in StatEngine.ts to ensure 100% synchronization
+    const weaponDps = stats.weaponDps;
+    const effectiveDps = stats.averageTotalDps;
 
     // Healing Per Second calculations
     // 1. Passive Health Regen: MaxHP × HealthRegen% per second
@@ -381,10 +381,9 @@ export function StatsSummaryPanel() {
         const cappedDouble = Math.min(s.doubleDamageChance, 1);
         const critMult = 1 + cappedCrit * (s.criticalDamage - 1);
         const doubleMult = 1 + cappedDouble;
-        const attackDuration = s.weaponAttackDuration / s.attackSpeedMultiplier;
-        const aps = 1 / attackDuration;
+        const aps = 1 / (s.weaponAttackDuration / s.attackSpeedMultiplier);
         const weapon = s.totalDamage * aps * critMult * doubleMult;
-        const skills = s.skillDps;
+        const skills = s.skillDps + (s.skillBuffDps || 0);
         return { total: weapon + skills, weapon, skills };
     };
 
@@ -500,14 +499,14 @@ export function StatsSummaryPanel() {
                         icon={<Swords className="w-4 h-4" />}
                         label="Total Damage"
                         value={stats.totalDamage.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        subValue={formatMultiplier(stats.damageMultiplier)}
+                        subValue={`${formatMultiplier(stats.damageMultiplier)} (Sub: ${formatPercent(stats.damageBreakdown.substats, 1)}, Asc: x${(stats.damageBreakdown.ascension + 1).toFixed(1)} [${formatPercent(stats.damageBreakdown.ascension, 0)}])`}
                         color="text-red-400"
                     />
                     <StatRow
                         icon={<Heart className="w-4 h-4" />}
                         label="Total Health"
                         value={stats.totalHealth.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        subValue={formatMultiplier(stats.healthMultiplier)}
+                        subValue={`${formatMultiplier(stats.healthMultiplier)} (Sub: ${formatPercent(stats.healthBreakdown.substats, 1)}, Asc: x${(stats.healthBreakdown.ascension + 1).toFixed(1)} [${formatPercent(stats.healthBreakdown.ascension, 0)}])`}
                         color="text-green-400"
                     />
                     <StatRow
@@ -516,6 +515,7 @@ export function StatsSummaryPanel() {
                         value={effectiveDps.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         subValue={`Weapon: ${weaponDps.toLocaleString(undefined, { maximumFractionDigits: 0 })} | Skills: ${stats.skillDps.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                         color="text-orange-400"
+                        onInfoPointsClick={() => setShowDpsModal(true)}
                     />
                     <StatRow
                         icon={<TrendingUp className="w-4 h-4" />}
@@ -579,6 +579,7 @@ export function StatsSummaryPanel() {
                             label="DPS"
                             value={formatCompactNumber(effectiveDps)}
                             color="text-orange-400"
+                            onInfoPointsClick={() => setShowDpsModal(true)}
                         />
                         <StatRow
                             icon={<Heart className="w-4 h-4 text-text-primary" />}
@@ -618,6 +619,7 @@ export function StatsSummaryPanel() {
                             icon={<Swords className="w-4 h-4" />}
                             label={getStatName('SkillDamageMulti')}
                             value={formatMultiplier(stats.skillDamageMultiplier)}
+                            subValue={`Sub: ${formatPercent(stats.skillDamageBreakdown.substats, 1)}, Tree: ${formatPercent(stats.skillDamageBreakdown.tree, 1)}, Asc: x${(stats.skillDamageBreakdown.ascension + 1).toFixed(1)} [${formatPercent(stats.skillDamageBreakdown.ascension, 0)}]`}
                             count={stats.statCounts?.['SkillDamageMulti']}
                             color="text-blue-400"
                         />
@@ -639,6 +641,7 @@ export function StatsSummaryPanel() {
                             icon={<Swords className="w-4 h-4" />}
                             label={getStatName('DamageMulti')}
                             value={formatPercent(stats.secondaryDamageMulti)}
+                            subValue={`Sub: ${formatPercent(stats.damageBreakdown.substats, 1)}, Asc: x${(stats.damageBreakdown.ascension + 1).toFixed(1)} [${formatPercent(stats.damageBreakdown.ascension, 0)}]`}
                             count={stats.statCounts?.['DamageMulti']}
                             color="text-red-400"
                         />
@@ -646,6 +649,7 @@ export function StatsSummaryPanel() {
                             icon={<Heart className="w-4 h-4" />}
                             label={getStatName('HealthMulti')}
                             value={formatPercent(stats.secondaryHealthMulti)}
+                            subValue={`Sub: ${formatPercent(stats.healthBreakdown.substats, 1)}, Asc: x${(stats.healthBreakdown.ascension + 1).toFixed(1)} [${formatPercent(stats.healthBreakdown.ascension, 0)}]`}
                             count={stats.statCounts?.['HealthMulti']}
                             color="text-green-400"
                         />
@@ -774,19 +778,27 @@ export function StatsSummaryPanel() {
                             </div>
 
                             <div className="flex justify-between">
-                                <span>APS (1 / {totalAttackTime.toFixed(2)}s)</span>
-                                <span className="text-text-primary">{attacksPerSecond.toFixed(2)}/s</span>
+                                <span>APS (1 / {(stats.weaponAttackDuration / stats.attackSpeedMultiplier).toFixed(2)}s)</span>
+                                <span className="text-text-primary">{(1 / (stats.weaponAttackDuration / stats.attackSpeedMultiplier)).toFixed(2)}/s</span>
                             </div>
 
-                            <div className="flex justify-between">
-                                <span>Crit Avg (1 + {formatPercent(Math.min(stats.criticalChance, 1))} × {(stats.criticalDamage - 1).toFixed(2)})</span>
-                                <span className="text-text-primary">{critMultiplier.toFixed(2)}x</span>
-                            </div>
+                            {(() => {
+                                const critMultiplier = 1 + Math.min(stats.criticalChance, 1) * (stats.criticalDamage - 1);
+                                const doubleDmgMultiplier = 1 + Math.min(stats.doubleDamageChance, 1);
+                                return (
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span>Crit Avg (1 + {formatPercent(Math.min(stats.criticalChance, 1))} × {(stats.criticalDamage - 1).toFixed(2)})</span>
+                                            <span className="text-text-primary">{critMultiplier.toFixed(2)}x</span>
+                                        </div>
 
-                            <div className="flex justify-between">
-                                <span>Double Dmg (1 + {formatPercent(Math.min(stats.doubleDamageChance, 1))})</span>
-                                <span className="text-text-primary">{doubleDmgMultiplier.toFixed(2)}x</span>
-                            </div>
+                                        <div className="flex justify-between">
+                                            <span>Double Dmg (1 + {formatPercent(Math.min(stats.doubleDamageChance, 1))})</span>
+                                            <span className="text-text-primary">{doubleDmgMultiplier.toFixed(2)}x</span>
+                                        </div>
+                                    </>
+                                );
+                            })()}
 
                             <div className="border-t border-border/30 pt-2 flex justify-between font-bold">
                                 <span className="text-accent-primary">Weapon DPS</span>
@@ -797,6 +809,16 @@ export function StatsSummaryPanel() {
                 </CollapsibleSection>
 
             </div>
+
+            {stats && (
+                <DpsBreakdownModal
+                    isOpen={showDpsModal}
+                    onClose={() => setShowDpsModal(false)}
+                    stats={stats}
+                    profile={profile}
+                    skillLibrary={skillLibrary}
+                />
+            )}
         </Card>
     );
 }

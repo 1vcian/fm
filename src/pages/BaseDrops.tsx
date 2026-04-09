@@ -135,10 +135,10 @@ export default function BaseDrops() {
                     <table className="w-full text-sm text-left border-collapse table-fixed">
                         <thead>
                             <tr className="border-b border-border bg-bg-secondary/80">
-                                <th className="p-4 sticky left-0 top-0 bg-bg-secondary z-30 w-[80px] border-r border-b border-border/50">
+                                <th className="p-2 sm:p-4 sticky left-0 top-0 bg-bg-secondary z-30 w-[60px] sm:w-[80px] border-r border-b border-border/50">
                                     <div className="flex flex-col items-center">
-                                        <span className="text-[10px] uppercase text-text-muted">Forge</span>
-                                        <span className="text-xs font-bold font-mono">Level</span>
+                                        <span className="text-[8px] sm:text-[10px] uppercase text-text-muted">Forge</span>
+                                        <span className="text-[10px] sm:text-xs font-bold font-mono">Level</span>
                                     </div>
                                 </th>
                                 {AGES.map((age, idx) => (
@@ -167,7 +167,7 @@ export default function BaseDrops() {
                                             const bVal = isCompareMode ? (baseRow?.[key] ?? 0) : tVal;
 
                                             return (
-                                                <td key={key} className={cn("p-4 text-right font-mono", (tVal > 0 || bVal > 0) ? "text-text-primary" : "text-text-muted opacity-10")}>
+                                                <td key={key} className={cn("p-2 sm:p-4 text-right font-mono text-xs sm:text-sm", (tVal > 0 || bVal > 0) ? "text-text-primary" : "text-text-muted opacity-10")}>
                                                     {isCompareMode ? renderComparisonValue(bVal, tVal) : (tVal > 0 ? formatPercent(tVal) : '-')}
                                                 </td>
                                             );
@@ -191,6 +191,9 @@ export default function BaseDrops() {
             let levels: any[] = [];
             if (isEgg) {
                 levels = targetData?.Levels || [];
+            } else if (summonConfigTarget?.Levels) {
+                // Prioritize Config levels (usually 100) over Library keys (sometimes only 50)
+                levels = summonConfigTarget.Levels.map((l: any, idx: number) => ({ ...l, key: String(idx) }));
             } else {
                 levels = Object.keys(targetData || {}).sort((a, b) => Number(a) - Number(b)).map(k => ({ ...targetData[k], key: k }));
             }
@@ -200,10 +203,10 @@ export default function BaseDrops() {
                     <table className="w-full text-sm text-left border-collapse table-fixed">
                         <thead>
                             <tr className="border-b border-border bg-bg-secondary/80">
-                                <th className="p-4 sticky left-0 top-0 bg-bg-secondary z-30 w-[100px] border-r border-b border-border/50">
+                                <th className="p-2 sm:p-4 sticky left-0 top-0 bg-bg-secondary z-30 w-[80px] sm:w-[100px] border-r border-b border-border/50">
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase text-text-muted">Summon</span>
-                                        <span className="text-xs font-bold font-mono">Level</span>
+                                        <span className="text-[8px] sm:text-[10px] uppercase text-text-muted">Summon</span>
+                                        <span className="text-[10px] sm:text-xs font-bold font-mono">Level</span>
                                     </div>
                                 </th>
                                 <th className="p-4 bg-bg-secondary/95 w-[140px] text-center border-r border-b border-border/50 sticky top-0 z-20">
@@ -227,7 +230,11 @@ export default function BaseDrops() {
                         <tbody>
                             {levels.map((targetRow, i) => {
                                 const lvlIdx = isEgg ? i : Number(targetRow.key);
-                                const baseRow = isCompareMode ? (isEgg ? baseData?.Levels?.[i] : baseData?.[targetRow.key]) : null;
+                                const baseRow = isCompareMode ? (
+                                    (isEgg || summonConfigBase?.Levels) 
+                                        ? (isEgg ? baseData?.Levels?.[i] : summonConfigBase?.Levels?.[i])
+                                        : baseData?.[targetRow.key]
+                                ) : null;
                                 
                                 // Get summons required for next level
                                 let tSummons = 0;
@@ -291,11 +298,11 @@ export default function BaseDrops() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+        <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20 px-4 sm:px-0">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-                <div>
-                    <h1 className="text-4xl font-black bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-primary bg-animate-gradient bg-clip-text text-transparent mb-2 flex items-center gap-4">
-                        <HelpCircle className="w-12 h-12 text-accent-primary" />
+                <div className="w-full">
+                    <h1 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-primary bg-animate-gradient bg-clip-text text-transparent mb-2 flex items-center gap-3 sm:gap-4">
+                        <HelpCircle className="w-10 h-10 sm:w-12 h-12 text-accent-primary" />
                         BASE DROPS WIKI
                     </h1>
                     <p className="text-text-secondary max-w-2xl font-medium">
@@ -351,7 +358,7 @@ export default function BaseDrops() {
                 </Card>
             </div>
 
-            <div className="flex p-1 bg-bg-secondary/30 rounded-2xl border border-white/5 w-fit">
+            <div className="flex p-1 bg-bg-secondary/30 rounded-2xl border border-white/5 w-fit items-center overflow-x-auto max-w-full no-scrollbar">
                 {[
                     { id: 'forge', label: 'Forge', icon: 'Hammer' },
                     { id: 'eggs', label: 'Eggs', icon: 'Egg' },
@@ -362,7 +369,7 @@ export default function BaseDrops() {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as TabType)}
                         className={cn(
-                            "px-8 py-3 flex items-center gap-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all",
+                            "px-4 sm:px-8 py-2 sm:py-3 flex items-center gap-2 sm:gap-3 rounded-xl font-black uppercase tracking-widest text-[10px] sm:text-xs transition-all whitespace-nowrap",
                             activeTab === tab.id 
                                 ? "bg-accent-primary text-black shadow-lg shadow-accent-primary/20 scale-105 z-10" 
                                 : "text-text-muted hover:text-text-primary hover:bg-white/5"
@@ -370,7 +377,7 @@ export default function BaseDrops() {
                     >
                          <SpriteIcon 
                             name={tab.icon} 
-                            size={16} 
+                            size={14} 
                             className={cn(
                                 "transition-all",
                                 activeTab === tab.id ? "" : "opacity-70 group-hover:opacity-100"

@@ -222,6 +222,7 @@
 
 .animate-float {
     animation: float 3s infinite ease-in-out;
+    will-change: transform;
 }
 
 .coffee-btn-glow {

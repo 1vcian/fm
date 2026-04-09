@@ -351,9 +351,9 @@ export default function Configs() {
     };
 
     return (
-        <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6 animate-fade-in">
+        <div className="min-h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6 animate-fade-in pb-12 md:pb-0">
             {/* Sidebar: File List */}
-            <Card className="md:w-96 flex flex-col p-0 overflow-hidden h-full">
+            <Card className="w-full md:w-96 flex flex-col p-0 overflow-hidden h-[400px] md:h-full shrink-0">
                 <div className="p-4 border-b border-border bg-bg-secondary/50 space-y-3">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold flex items-center gap-2">
@@ -498,7 +498,7 @@ export default function Configs() {
             </Card>
 
             {/* Main Content: JSON Viewer or Diff Viewer */}
-            <Card className="flex-1 overflow-hidden flex flex-col h-full p-0">
+            <Card className="flex-1 overflow-hidden flex flex-col min-h-[400px] md:h-full p-0">
                 {selectedFile ? (
                     <>
                         <div className="p-4 border-b border-border bg-bg-secondary/50 flex items-center justify-between">
@@ -556,8 +556,8 @@ export default function Configs() {
                                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary"></div>
                                         </div>
                                     ) : (
-                                        <div className="text-sm font-mono text-text-secondary leading-relaxed whitespace-pre-wrap break-all">
-                                            <pre className="font-inherit">
+                                        <div className="text-sm font-mono text-text-secondary leading-relaxed whitespace-pre-wrap break-all overflow-x-auto">
+                                            <pre className="font-inherit whitespace-pre-wrap sm:whitespace-pre">
                                                 {renderHighlightedContent(multiFileCache[selectedVersion][selectedFile], searchTerm)}
                                             </pre>
                                         </div>

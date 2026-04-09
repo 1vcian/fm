@@ -8,8 +8,17 @@ const promiseCache: Record<string, Promise<any> | undefined> = {};
 
 export function useGameData<T>(fileName: string) {
     const { selectedVersion } = useGameDataContext();
-    const [data, setData] = useState<T | null>(null);
-    const [loading, setLoading] = useState(true);
+    
+    // Create a unique cache key that includes the version
+    const cacheKey = selectedVersion && fileName ? `${selectedVersion}/${fileName}` : null;
+
+    // Initialize from cache if available to prevent flicker
+    const [data, setData] = useState<T | null>(() => {
+        return cacheKey ? (dataCache[cacheKey] || null) : null;
+    });
+    const [loading, setLoading] = useState(() => {
+        return !cacheKey || !dataCache[cacheKey];
+    });
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -18,9 +27,13 @@ export function useGameData<T>(fileName: string) {
         // Create a unique cache key that includes the version
         const cacheKey = `${selectedVersion}/${fileName}`;
 
+        // If data is already in cache, it should have been initialized in useState.
+        // But we check again to be safe and avoid unnecessary work.
         if (dataCache[cacheKey]) {
-            setData(dataCache[cacheKey]);
-            setLoading(false);
+            if (data !== dataCache[cacheKey]) {
+                setData(dataCache[cacheKey]);
+                setLoading(false);
+            }
             return;
         }
 

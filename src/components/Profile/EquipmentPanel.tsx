@@ -229,6 +229,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                     // For now we assume they are Damage or Health which share the same value context
                     // and apply to the card's display. We take the max of available contributions 
                     // because Forge Ascension usually applies the same % to both.
+                    // Forge Ascension values use direct multipliers (no division)
                     total += stat.Value;
                     break; // Keep the same result as before for now but more robust structure
                 }
@@ -414,7 +415,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                         />
                         {forgeAscensionMulti > 0 && (
                             <div className="hidden sm:block text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
-                                +{(forgeAscensionMulti * 100).toLocaleString()}%
+                                x{(forgeAscensionMulti + 1).toFixed(1)} (+{(forgeAscensionMulti * 100).toLocaleString()}%)
                             </div>
                         )}
                     </div>
@@ -742,7 +743,7 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
             }
         }
 
-        return count > 0 ? (totalPercent * 100) / count : null;
+        return count > 0 ? totalPercent / count : null;
     };
 
     const getStatPerfection = (statIdx: string, value: number): number | null => {
@@ -1054,7 +1055,7 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
                                         <span>DMG +{mountStats.damage >= 1000000 ? (mountStats.damage / 1000000).toFixed(2) + 'M' : mountStats.damage.toLocaleString()}</span>
                                         {(mountStats.damageBonus > 0 || (mountStats.ascensionDmgMulti || 0) > 0) && (
                                             <span className="text-green-400 text-[10px]">
-                                                (+{((mountStats.damageBonus + (mountStats.ascensionDmgMulti || 0)) * 100).toFixed(0)}%)
+                                                (x{( (mountStats.damageBonus + (mountStats.ascensionDmgMulti || 0)) + 1).toFixed(1)} [+{((mountStats.damageBonus + (mountStats.ascensionDmgMulti || 0)) * 100).toFixed(0)}%])
                                             </span>
                                         )}
                                     </div>
@@ -1064,7 +1065,7 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
                                         <span>HP +{mountStats.health >= 1000000 ? (mountStats.health / 1000000).toFixed(2) + 'M' : mountStats.health.toLocaleString()}</span>
                                         {(mountStats.healthBonus > 0 || (mountStats.ascensionHpMulti || 0) > 0) && (
                                             <span className="text-green-400 text-[10px]">
-                                                (+{((mountStats.healthBonus + (mountStats.ascensionHpMulti || 0)) * 100).toFixed(0)}%)
+                                                (x{( (mountStats.healthBonus + (mountStats.ascensionHpMulti || 0)) + 1).toFixed(1)} [+{((mountStats.healthBonus + (mountStats.ascensionHpMulti || 0)) * 100).toFixed(0)}%])
                                             </span>
                                         )}
                                     </div>
@@ -1084,7 +1085,7 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
                                                 <span className={cn("font-mono font-bold shrink-0 flex items-center gap-1", formatted.color)}>
                                                     {formatted.formattedValue}
                                                     {(() => {
-                                                        const statPerf = getStatPerfection(stat.statId, stat.value * 100);
+                                                        const statPerf = getStatPerfection(stat.statId, stat.value);
                                                         if (statPerf !== null) {
                                                             return (
                                                                 <span className={cn(

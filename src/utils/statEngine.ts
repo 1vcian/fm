@@ -3,7 +3,8 @@
  * Central engine for calculating player stats from all sources (Items, Pets, Tech Tree, Mounts, Skills).
  */
 
-import type { UserProfile } from '../types/Profile.ts';
+import { UserProfile } from '../types/Profile';
+import { SKILL_MECHANICS } from './constants';
 
 export type StatNature = 'Multiplier' | 'Additive' | 'OneMinusMultiplier' | 'Divisor';
 
@@ -12,6 +13,13 @@ export interface StatEntry {
     statNature: StatNature;
     value: number;
     target?: string;
+}
+
+export interface StatBreakdown {
+    substats: number;
+    tree: number;
+    ascension: number;
+    other: number;
 }
 
 export interface BasePlayerStats {
@@ -101,12 +109,27 @@ export interface AggregatedStats {
     projectileRadius: number;
 
     skillDps: number;
+    skillBuffDps: number;
     skillHps: number;
+    weaponDps: number;
+    averageTotalDps: number;
 
     // Power calculation
     power: number;
     powerDamageMultiplier: number;
     maxItemLevels: Record<string, number>;
+
+    // Breakdowns
+    damageBreakdown: StatBreakdown;
+    healthBreakdown: StatBreakdown;
+    skillDamageBreakdown: StatBreakdown;
+
+    // Source breakdowns for secondary stats (for detailed UI display)
+    critChanceBreakdown: StatBreakdown;
+    critDamageBreakdown: StatBreakdown;
+    doubleDamageBreakdown: StatBreakdown;
+    attackSpeedBreakdown: StatBreakdown;
+    skillCooldownBreakdown: StatBreakdown;
 
     // Source tracking
     statCounts: Record<string, number>;
@@ -166,7 +189,10 @@ export const DEFAULT_STATS: AggregatedStats = {
     projectileSpeed: 0,
     projectileRadius: 0,
     skillDps: 0,
+    skillBuffDps: 0,
     skillHps: 0,
+    weaponDps: 0,
+    averageTotalDps: 0,
     power: 0,
     powerDamageMultiplier: 8,
     maxItemLevels: {
@@ -179,6 +205,14 @@ export const DEFAULT_STATS: AggregatedStats = {
         'Ring': 99,
         'Shoe': 99,
     },
+    damageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    healthBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    skillDamageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    critChanceBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    critDamageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    doubleDamageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    attackSpeedBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    skillCooldownBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     statCounts: {}
 };
 
@@ -200,6 +234,16 @@ export interface LibraryData {
     skinsLibrary?: any;
     setsLibrary?: any;
     ascensionConfigsLibrary?: any;
+    // Missing fields from BattleHelper
+    mainBattleLibrary?: any;
+    enemyAgeScalingLibrary?: any;
+    enemyLibrary?: any;
+    mainBattleConfig?: any;
+    hammerThiefDungeonBattleLibrary?: any;
+    skillDungeonBattleLibrary?: any;
+    eggDungeonBattleLibrary?: any;
+    potionDungeonBattleLibrary?: any;
+    mainBattleLookup?: any;
 }
 
 export class StatEngine {
@@ -372,7 +416,8 @@ export class StatEngine {
     }
 
     private reset() {
-        this.stats = { ...DEFAULT_STATS };
+        // Deep clone DEFAULT_STATS to ensure breakdowns (objects) don't accumulate across calculations
+        this.stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
         this.displayStats = {};
         this.debugLogs = [];
 
@@ -514,6 +559,8 @@ export class StatEngine {
                 for (const stat of stats) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
                     const value = stat.Value;
+                    // Forge Ascension values use direct multipliers (no division).
+                    // Example: 49.0 = +4900% boost (50x multiplier).
                     if (statType === 'Damage') this.forgeAscensionDamageMulti += value;
                     if (statType === 'Health') this.forgeAscensionHealthMulti += value;
                 }
@@ -724,6 +771,7 @@ export class StatEngine {
                     for (const s of stats) {
                         const sType = s.StatNode?.UniqueStat?.StatType;
                         const sVal = s.Value;
+                        // Pet Ascension values use direct multipliers
                         if (sType === 'Damage') ascensionDmgMulti += sVal;
                         if (sType === 'Health') ascensionHpMulti += sVal;
                     }
@@ -793,6 +841,7 @@ export class StatEngine {
                 for (const s of stats) {
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     const sVal = s.Value;
+                    // Mount Ascension values use direct multipliers
                     if (sType === 'Damage') ascensionDmgMulti += sVal;
                     if (sType === 'Health') ascensionHpMulti += sVal;
                 }
@@ -834,14 +883,29 @@ export class StatEngine {
                 case 'HealthMulti': this.secondaryStats.healthMulti += val; break;
                 case 'MeleeDamageMulti': this.secondaryStats.meleeDamageMulti += val; break;
                 case 'RangedDamageMulti': this.secondaryStats.rangedDamageMulti += val; break;
-                case 'CriticalChance': this.secondaryStats.criticalChance += val; break;
-                case 'CriticalMulti': this.secondaryStats.criticalDamage += val; break;
-                case 'DoubleDamageChance': this.secondaryStats.doubleDamageChance += val; break;
-                case 'AttackSpeed': this.secondaryStats.attackSpeed += val; break;
+                case 'CriticalChance': 
+                    this.secondaryStats.criticalChance += val; 
+                    this.stats.critChanceBreakdown.substats += val;
+                    break;
+                case 'CriticalMulti': 
+                    this.secondaryStats.criticalDamage += val; 
+                    this.stats.critDamageBreakdown.substats += val;
+                    break;
+                case 'DoubleDamageChance': 
+                    this.secondaryStats.doubleDamageChance += val; 
+                    this.stats.doubleDamageBreakdown.substats += val;
+                    break;
+                case 'AttackSpeed': 
+                    this.secondaryStats.attackSpeed += val; 
+                    this.stats.attackSpeedBreakdown.substats += val;
+                    break;
                 case 'LifeSteal': this.secondaryStats.lifeSteal += val; break;
                 case 'HealthRegen': this.secondaryStats.healthRegen += val; break;
                 case 'BlockChance': this.secondaryStats.blockChance += val; break;
-                case 'SkillCooldownMulti': this.secondaryStats.skillCooldownMulti += val; break;
+                case 'SkillCooldownMulti': 
+                    this.secondaryStats.skillCooldownMulti += val; 
+                    this.stats.skillCooldownBreakdown.substats += val;
+                    break;
                 case 'SkillDamageMulti': this.secondaryStats.skillDamageMulti += val; break;
                 case 'MoveSpeed': this.secondaryStats.moveSpeed += val; break;
             }
@@ -876,9 +940,11 @@ export class StatEngine {
         // Easier: Just multiply by 100 here so collectSecondary's division neutralizes it.
         if (this.profile.mount.active?.secondaryStats) {
             for (const sec of this.profile.mount.active.secondaryStats) {
-                // Mount stats are already normalized (0.253), collectSecondary divides by 100. 
-                // So we multiply by 100 to cancel it out.
-                collectSecondary(sec.statId, sec.value * 100);
+                // REGRESSION HANDLING: Old profiles store Mount stats as fractions (e.g. 0.013).
+                // New profiles store them as percentage points (e.g. 1.3).
+                // If value < 0.5, we assume it's an old fractional value and normalize it to percentage points.
+                const val = sec.value < 0.5 ? sec.value * 100 : sec.value;
+                collectSecondary(sec.statId, val);
             }
         }
 
@@ -897,6 +963,40 @@ export class StatEngine {
         let totalPassiveDmg = 0;
         let totalPassiveHp = 0;
 
+        // Global Skill Ascension bonuses
+        const skillAscensionLevel = this.profile.misc.skillAscensionLevel || 0;
+        let ascensionDmgMulti = 0;
+        let ascensionHpMulti = 0;
+        let ascensionActiveSkillDmgMulti = 0;
+        let ascensionActiveSkillHpMulti = 0;
+
+        if (skillAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
+            const ascConfigs = this.libs.ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
+            for (let i = 0; i < skillAscensionLevel && i < ascConfigs.length; i++) {
+                const stats = ascConfigs[i].StatContributions || [];
+                for (const s of stats) {
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    const sVal = s.Value;
+
+                    if (sTarget === 'PassiveSkillStatTarget') {
+                        // Skill passives use direct multipliers
+                        if (sType === 'Damage') ascensionDmgMulti += sVal;
+                        if (sType === 'Health') ascensionHpMulti += sVal;
+                    } else if (sTarget === 'ActiveSkillStatTarget') {
+                        // Skill multipliers use direct multipliers
+                        if (sType === 'Damage') ascensionActiveSkillDmgMulti += sVal;
+                        if (sType === 'Health') ascensionActiveSkillHpMulti += sVal;
+                    }
+                }
+            }
+        }
+
+        // Initialize breakdowns (once)
+        this.stats.skillDamageBreakdown.ascension = ascensionActiveSkillDmgMulti;
+        // The tech node is just named "SkillDamage", which provides both Damage and Health targets
+        this.stats.skillDamageBreakdown.tree = this.techModifiers['SkillDamage'] || 0;
+
         for (const [skillId, level] of Object.entries(passives)) {
             if (typeof level !== 'number' || level <= 0) continue;
 
@@ -912,36 +1012,10 @@ export class StatEngine {
             const levelInfo = passiveData.LevelStats[levelIdx];
             if (!levelInfo?.Stats) continue;
 
-            const skillAscensionLevel = this.profile.misc.skillAscensionLevel || 0;
-
-            let ascensionDmgMulti = 0;
-            let ascensionHpMulti = 0;
-            let ascensionActiveSkillDmgMulti = 0;
-            let ascensionActiveSkillHpMulti = 0;
-
-            if (skillAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
-                const ascConfigs = this.libs.ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
-                for (let i = 0; i < skillAscensionLevel && i < ascConfigs.length; i++) {
-                    const stats = ascConfigs[i].StatContributions || [];
-                    for (const s of stats) {
-                        const sType = s.StatNode?.UniqueStat?.StatType;
-                        const sTarget = s.StatNode?.StatTarget?.$type;
-                        const sVal = s.Value;
-
-                        if (sTarget === 'PassiveSkillStatTarget') {
-                            if (sType === 'Damage') ascensionDmgMulti += sVal;
-                            if (sType === 'Health') ascensionHpMulti += sVal;
-                        } else if (sTarget === 'ActiveSkillStatTarget') {
-                            if (sType === 'Damage') ascensionActiveSkillDmgMulti += sVal;
-                            if (sType === 'Health') ascensionActiveSkillHpMulti += sVal;
-                        }
-                    }
-                }
-            }
-
-            // Apply active skill ascension multiplier to total skill damage/health multiplier layer (Reset first to avoid loop pollution)
-            this.stats.skillDamageMultiplier = 1 + (this.techModifiers['ActiveSkillDamage'] || 0) + (this.secondaryStats.skillDamageMulti || 0) + ascensionActiveSkillDmgMulti;
-            this.stats.skillHealthMultiplier = 1 + (this.techModifiers['ActiveSkillHealth'] || 0) + ascensionActiveSkillHpMulti;
+            // Skill damage multiplier is base (1) + tree + substats + ascension
+            // NOTE: substats (this.secondaryStats.skillDamageMulti) are added in finalizeCalculation
+            this.stats.skillDamageMultiplier = 1 + (this.techModifiers['SkillDamage'] || 0) + this.stats.skillDamageBreakdown.ascension;
+            this.stats.skillHealthMultiplier = 1 + (this.techModifiers['SkillDamage'] || 0) + ascensionActiveSkillHpMulti;
 
             let skillBaseDmg = 0;
             let skillBaseHp = 0;
@@ -1078,19 +1152,31 @@ export class StatEngine {
                 if (target === 'ActiveSkillStatTarget' || statType === 'SkillCooldownMulti') {
                     // Check nature. Usually oneMinusMultiplier
                     this.stats.skillCooldownReduction = this.combine(this.stats.skillCooldownReduction, value, 'OneMinusMultiplier');
+                    if (statNature === 'Multiplier' || statNature === 'OneMinusMultiplier') {
+                        this.stats.skillCooldownBreakdown.tree += value;
+                    }
                 }
                 break;
             case 'CriticalChance':
                 this.stats.criticalChance = this.combine(this.stats.criticalChance, value, statNature);
+                if (statNature === 'Multiplier' || statNature === 'Additive') {
+                    this.stats.critChanceBreakdown.tree += value;
+                }
                 break;
             case 'CriticalDamage':
                 this.stats.criticalDamage = this.combine(this.stats.criticalDamage, value, statNature);
+                if (statNature === 'Multiplier' || statNature === 'Additive') {
+                    this.stats.critDamageBreakdown.tree += value;
+                }
                 break;
             case 'BlockChance':
                 this.stats.blockChance = this.combine(this.stats.blockChance, value, statNature);
                 break;
             case 'DoubleDamageChance':
                 this.stats.doubleDamageChance = this.combine(this.stats.doubleDamageChance, value, statNature);
+                if (statNature === 'Multiplier' || statNature === 'Additive') {
+                    this.stats.doubleDamageBreakdown.tree += value;
+                }
                 break;
             case 'HealthRegen':
                 this.stats.healthRegen = this.combine(this.stats.healthRegen, value, statNature);
@@ -1100,6 +1186,9 @@ export class StatEngine {
                 break;
             case 'AttackSpeed':
                 this.stats.attackSpeedMultiplier = this.combine(this.stats.attackSpeedMultiplier, value, statNature);
+                if (statNature === 'Multiplier') {
+                    this.stats.attackSpeedBreakdown.tree += value;
+                }
                 break;
             case 'Experience':
                 this.stats.experienceMultiplier = this.combine(this.stats.experienceMultiplier, value, statNature);
@@ -1206,6 +1295,20 @@ export class StatEngine {
         const systemContributionDmg = (this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMulti;
         const systemContributionHp = (this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMulti;
 
+        // Populate breakdowns for Damage/Health Multipliers
+        this.stats.damageBreakdown = {
+            substats: this.secondaryStats.damageMulti,
+            tree: 0, 
+            ascension: this.forgeAscensionDamageMulti,
+            other: 0
+        };
+        this.stats.healthBreakdown = {
+            substats: this.secondaryStats.healthMulti,
+            tree: 0,
+            ascension: this.forgeAscensionHealthMulti,
+            other: 0
+        };
+
         let totalDmgBeforeGlobal = equipContributionDmg + systemContributionDmg;
         let totalHpBeforeGlobal = equipContributionHp + systemContributionHp;
 
@@ -1281,7 +1384,9 @@ export class StatEngine {
         this.stats.healthRegen = this.secondaryStats.healthRegen;
         this.stats.blockChance = this.secondaryStats.blockChance;
         this.stats.skillCooldownReduction = this.secondaryStats.skillCooldownMulti;
-        // Add secondary stat skill damage bonus to skill multiplier (from Ring/Pet)
+
+        // Add secondary stat skill damage bonus once to skill multiplier
+        this.stats.skillDamageBreakdown.substats = this.secondaryStats.skillDamageMulti;
         this.stats.skillDamageMultiplier += this.secondaryStats.skillDamageMulti;
 
         // Move Speed
@@ -1305,51 +1410,64 @@ export class StatEngine {
                 const cdMult = Math.max(0.1, 1 - this.stats.skillCooldownReduction);
                 const finalCd = Math.max(0.1, cooldown * cdMult);
 
-                if (baseSkillDmg > 0) {
-                    // SKILL DAMAGE FIX: Treated as FLAT Damage (not percentage of player damage)
-                    // Verified by observing huge values (e.g. 4M for StrafeRun vs 1.6M Player Damage)
-                    // If treated as %, it yields Billions of DPS.
-
-                    const flatSkillDmg = baseSkillDmg; // RAW value from library seems correct as flat damage
-
-                    // Statistical Multiplier for Crit/Double
-                    // Avg Multi = 1 + (CritChance * (CritDmg - 1)) + (DoubleChance * 1)
-                    const critFactor = this.stats.criticalChance * (this.stats.criticalDamage - 1);
-                    const doubleFactor = this.stats.doubleDamageChance * 1; // Adds 100% damage
-                    const statMultiplier = 1 + critFactor + doubleFactor;
-
-
-
-                    // CORRECT SKILL DAMAGE FORMULA:
-                    // SkillDmg = Base * (1 + SkillMulti + GlobalMulti - MountMulti) * Crit/Double
-                    // Why substract Mount? Because "GlobalMulti" (damageMultiplier) includes Mount, 
-                    // but in-game analysis shows Mount Damage does NOT apply to Active Skills.
+                if (baseSkillDmg > 0 || baseSkillHeal > 0) {
                     const globalDamageMulti = this.stats.damageMultiplier;
-                    const skillMulti = this.stats.skillDamageMultiplier; // Already includes "SkillDamageMulti" from Ring/Pet
-
+                    const skillMulti = this.stats.skillDamageMultiplier;
                     const effectiveMultiplier = skillMulti + globalDamageMulti - 1;
 
-                    // Apply Skin and Set Multipliers to Skills as well
-                    const skinFactor = 1 + this.skinDamageMulti;
-                    const setFactor = 1 + this.setDamageMulti;
-                    const dmgPerHit = flatSkillDmg * effectiveMultiplier * statMultiplier * skinFactor * setFactor;
+                    const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale", "0", "1", "6", "12", "13"];
+                    const isBuffSkill = BUFF_SKILLS.includes(String(skill.id));
 
-                    this.stats.skillDps += dmgPerHit / finalCd;
+                    if (isBuffSkill) {
+                        const skillVal = baseSkillDmg > 0 ? baseSkillDmg : baseSkillHeal;
+                        const finalBonus = skillVal * effectiveMultiplier;
+
+                        // Uptime calculation (average contribution)
+                        const duration = skillData.ActiveDuration || 0;
+                        const cycle = finalCd + duration;
+                        const uptime = duration / Math.max(0.1, cycle);
+
+                        // Buff damage benefits from weapon stats (Power x APS x Crit x Double)
+                        const aps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
+                        const critMult = 1 + Math.min(this.stats.criticalChance, 1) * (this.stats.criticalDamage - 1);
+                        const doubleMult = 1 + Math.min(this.stats.doubleDamageChance, 1);
+
+                        const averageBonusDps = finalBonus * aps * critMult * doubleMult * uptime;
+                        this.stats.skillBuffDps += averageBonusDps;
+                    } else {
+                        // Regular damage skill
+                        if (baseSkillDmg > 0) {
+                            const mechanics = SKILL_MECHANICS[String(skill.id)] || { count: 1 };
+                            const hitCount = mechanics.count || 1;
+                            const totalDmgPerActivation = baseSkillDmg * effectiveMultiplier * hitCount;
+                            this.stats.skillDps += totalDmgPerActivation / finalCd;
+                        }
+                    }
                 }
+
                 if (baseSkillHeal > 0) {
                     // SKILL HEALING
                     const flatSkillHeal = baseSkillHeal;
-                    const skillMulti = this.stats.skillHealthMultiplier;
-                    const effectiveMultiplier = skillMulti; // Healing usually doesn't benefit from global Damage Multi
-                    
-                    const healPerHit = flatSkillHeal * effectiveMultiplier;
+                    const hSkillMulti = this.stats.skillHealthMultiplier;
+                    const hEffectiveMultiplier = hSkillMulti;
+
+                    const healPerHit = flatSkillHeal * hEffectiveMultiplier;
                     this.stats.skillHps += healPerHit / finalCd;
                 }
-            }
-        }
-    }
+            } // end for
+        } // end if library
 
-}
+        // Final DPS Synchronization (Weapon + Damage Skills + Buff Skills)
+        const aps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
+        const critMult = 1 + Math.min(this.stats.criticalChance, 1) * (this.stats.criticalDamage - 1);
+        const doubleMult = 1 + Math.min(this.stats.doubleDamageChance, 1);
+        
+        this.stats.weaponDps = this.stats.totalDamage * aps * critMult * doubleMult;
+        this.stats.averageTotalDps = this.stats.weaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0);
+
+        this.debugLogs.push(`FINAL DPS: Weapon=${this.stats.weaponDps.toFixed(0)}, Total=${this.stats.averageTotalDps.toFixed(0)}`);
+    } // end finalizeCalculation
+} // end class
 
 export function calculateStats(profile: UserProfile, libs: LibraryData): any {
     const engine = new StatEngine(profile, libs);

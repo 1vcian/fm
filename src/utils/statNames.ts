@@ -105,18 +105,10 @@ export function getStatColor(statId: string): string {
  * Values > 2 are assumed to be raw percentages (e.g., 48.1 = 48.10%)
  * Values <= 2 are assumed to be multipliers (e.g., 0.481 = 48.10%)
  */
-export function formatStatValue(value: number, statId?: string): string {
-    let val = value;
-
-    // Special handling for HealthRegen and LifeSteal which are often small "Point" values (e.g. 1.32%)
-    // If we multiply 1.32 * 100 we get 132%, which is wrong.
-    // So for these, we treat anything > 0.5 as a Point (Keep).
-    if (statId && ['HealthRegen', 'LifeSteal', 'BlockChance'].includes(statId)) {
-        val = value > 0.5 ? value : value * 100;
-    } else {
-        // Standard Heuristic
-        val = value > 2 ? value : value * 100;
-    }
+export function formatStatValue(value: number): string {
+    // Standard Format: input value is assumed to be in Percentage Points (e.g., 1.3 for 1.3%)
+    // We removed the fragile heuristic (value > 2) because it caused scaling bugs.
+    const val = value;
 
     // Use up to 3 decimal places, strip trailing zeros
     return `+${parseFloat(val.toFixed(3))}%`;
@@ -128,7 +120,7 @@ export function formatStatValue(value: number, statId?: string): string {
 export function formatSecondaryStat(statId: string, value: number): { name: string; formattedValue: string; icon: string; color: string } {
     return {
         name: getStatName(statId),
-        formattedValue: formatStatValue(value, statId),
+        formattedValue: formatStatValue(value),
         icon: getStatIcon(statId),
         color: getStatColor(statId),
     };

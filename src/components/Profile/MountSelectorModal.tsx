@@ -52,11 +52,8 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                 setSelectedRarity(currentMount.rarity);
                 setSelectedMountId(currentMount.id);
                 setMountLevel(currentMount.level);
-                // Convert decimal stats to percentage for editing (0.197 -> 19.7)
-                setManualStats(currentMount.secondaryStats?.map(s => ({
-                    ...s,
-                    value: s.value * 100
-                })) || []);
+                // Secondary stats are now stored as percentage points (e.g., 1.3)
+                setManualStats(currentMount.secondaryStats || []);
             } else {
                 setSelectedRarity('Common');
                 setSelectedMountId(null);
@@ -155,14 +152,8 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
 
     const handleSave = () => {
         if (selectedMountId !== null) {
-            // Convert percentage back to decimal for storage (19.7 -> 0.197)
-            const statsToSave = manualStats.map(s => {
-                return {
-                    ...s,
-                    value: s.value / 100
-                };
-            });
-            onSelect(selectedRarity, selectedMountId, mountLevel, statsToSave);
+            // Stats are now stored as percentage points (e.g., 1.3)
+            onSelect(selectedRarity, selectedMountId, mountLevel, manualStats);
             onClose();
         }
     };
@@ -361,10 +352,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                             setSelectedRarity(savedMount.rarity);
                                                             setSelectedMountId(savedMount.id);
                                                             setMountLevel(savedMount.level);
-                                                            setManualStats(savedMount.secondaryStats?.map(s => ({
-                                                                ...s,
-                                                                value: s.value * 100
-                                                            })) || []);
+                                                            setManualStats(savedMount.secondaryStats || []);
                                                             setMobileTab('config');
                                                         }}
                                                     >
@@ -591,11 +579,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                         setSelectedRarity(savedMount.rarity);
                                                         setSelectedMountId(savedMount.id);
                                                         setMountLevel(savedMount.level);
-                                                        // Convert decimal to percentage
-                                                        setManualStats(savedMount.secondaryStats?.map(s => ({
-                                                            ...s,
-                                                            value: s.value * 100
-                                                        })) || []);
+                                                        setManualStats(savedMount.secondaryStats || []);
                                                     }}
                                                 >
                                                     <div className="flex items-center gap-3">

@@ -119,11 +119,13 @@ export default function ForgeWiki() {
                 </p>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Upgrade Table</CardTitle>
+            <Card className="overflow-hidden border-border/40 shadow-xl">
+                <CardHeader className="border-b border-border/50 bg-bg-secondary/20">
+                    <CardTitle className="text-lg">Upgrade Table</CardTitle>
                 </CardHeader>
-                <div className="overflow-x-auto">
+                
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="bg-bg-secondary/50 text-text-secondary font-medium uppercase tracking-wider text-xs">
                             <tr>
@@ -195,6 +197,70 @@ export default function ForgeWiki() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-border/30">
+                    {data.map((row) => (
+                        <div key={row.level} className="p-4 space-y-4 hover:bg-white/5 transition-colors">
+                            <div className="flex justify-between items-center">
+                                <div className="font-black text-xl text-accent-primary">
+                                    Lvl {row.level}
+                                    {!row.isMax && <span className="text-text-muted text-xs font-normal ml-2">→ {row.level + 1}</span>}
+                                    {row.isMax && <span className="text-text-muted text-xs font-normal ml-2">(Max)</span>}
+                                </div>
+                                <div className="text-text-secondary font-bold text-sm">
+                                    {row.isMax ? '-' : formatTime(row.totalTimeSeconds)}
+                                </div>
+                            </div>
+
+                            {!row.isMax && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-bg-input/50 p-2 rounded border border-border/50">
+                                        <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Total Cost</div>
+                                        <div className="text-yellow-500 font-mono font-bold">
+                                            {new Intl.NumberFormat('en-US').format(row.cost)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-bg-input/50 p-2 rounded border border-border/50">
+                                        <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Total Hammers</div>
+                                        <div className="text-text-primary font-mono font-bold">
+                                            {new Intl.NumberFormat('en-US').format(row.hammersToUpgrade)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-bg-input/50 p-2 rounded border border-border/50">
+                                        <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Cost Per Step</div>
+                                        <div className="text-yellow-500/80 font-mono text-sm capitalize">
+                                            {new Intl.NumberFormat('en-US').format(row.costPerTier)} × {row.tiers}
+                                        </div>
+                                    </div>
+                                    <div className="bg-bg-input/50 p-2 rounded border border-border/50">
+                                        <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Hammers/Step</div>
+                                        <div className="text-text-muted font-mono text-sm">
+                                            {new Intl.NumberFormat('en-US').format(row.hammersPerTier)}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="pt-2">
+                                <div className="text-[10px] uppercase font-bold text-text-muted mb-2">Drop Probabilities</div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {row.probs && Object.entries(row.probs)
+                                        .sort((a, b) => b[1] - a[1])
+                                        .map(([tier, prob]) => (
+                                            <div key={tier} className={cn(
+                                                "text-[9px] px-2 py-1 rounded bg-bg-secondary border border-border flex flex-col items-center min-w-[60px]",
+                                                `text-age-${tier.toLowerCase()}`
+                                            )}>
+                                                <span className="font-black">{prob.toFixed(1)}%</span>
+                                                <span className="opacity-70">{tierNames[tier]}</span>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </Card>
         </div>

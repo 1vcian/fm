@@ -292,15 +292,11 @@ export function PetPanel() {
                                                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
                                                     <span className="text-red-400 font-mono whitespace-nowrap">
                                                         DMG: {Math.round(damage).toLocaleString()}
-                                                        {(petDamageBonus > 0 || ascensionDmgMulti > 0) && (
-                                                            <span className="text-green-400 ml-1">(+{( (petDamageBonus + ascensionDmgMulti) * 100).toFixed(0)}%)</span>
-                                                        )}
+                                                            <span className="text-green-400 ml-1">(x{( (petDamageBonus + ascensionDmgMulti) + 1).toFixed(1)} [+{ ( (petDamageBonus + ascensionDmgMulti) * 100).toFixed(0) }%])</span>
                                                     </span>
                                                     <span className="text-green-400 font-mono">
                                                         HP: {Math.round(health).toLocaleString()}
-                                                        {(petHealthBonus > 0 || ascensionHpMulti > 0) && (
-                                                            <span className="text-green-400 ml-1">(+{( ( (1+petHealthBonus) * (1+ascensionHpMulti) - 1 ) * 100).toFixed(0)}%)</span>
-                                                        )}
+                                                            <span className="text-green-400 ml-1">(x{( (petHealthBonus + ascensionHpMulti) + 1).toFixed(1)} [+{ ( (petHealthBonus + ascensionHpMulti) * 100).toFixed(0) }%])</span>
                                                     </span>
                                                 </div>
                                             );

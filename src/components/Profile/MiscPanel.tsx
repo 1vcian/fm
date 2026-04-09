@@ -186,7 +186,7 @@ export function MiscPanel() {
                                                     {nextAscConfig.StatContributions.map((s: any, idx: number) => (
                                                         <div key={idx} className="flex items-center justify-between text-[10px]">
                                                             <span className="text-text-muted">{s.StatNode.UniqueStat.StatType} Bonus</span>
-                                                            <span className="text-green-400">+{s.Value}%</span>
+                                                            <span className="text-green-400">x{(s.Value + 1).toFixed(1)} (+{s.Value * 100}%)</span>
                                                         </div>
                                                     ))}
                                                 </div>

@@ -47,7 +47,7 @@ export default function Arena() {
 
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
+        <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 animate-fade-in pb-12 px-4 sm:px-0">
             <div className="flex items-center gap-4 border-b border-border pb-6">
                 <Swords className="w-10 h-10 text-accent-primary" />
                 <div>
@@ -58,7 +58,7 @@ export default function Arena() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {LEAGUE_NAMES.map((name, idx) => {
                     const league = leagueData?.[String(idx)];
                     const thresholds = league
@@ -73,7 +73,7 @@ export default function Arena() {
                             {/* Background Gradient */}
                             <div className={cn("absolute inset-0 bg-gradient-to-br opacity-50 pointer-events-none", bgClass)} />
 
-                            <div className="relative z-10 p-6 flex flex-col h-full">
+                            <div className="relative z-10 p-4 sm:p-6 flex flex-col h-full">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className={cn(
                                         "w-20 h-20 flex items-center justify-center relative bg-bg-input/20 rounded-full border-2 shadow-xl group",
@@ -86,8 +86,8 @@ export default function Arena() {
                                         />
                                     </div>
                                     <div>
-                                        <h2 className={cn("text-3xl font-black uppercase italic tracking-tighter", colorClass.split(' ')[1])}>{name}</h2>
-                                        <div className="text-[10px] font-bold text-text-muted opacity-50 uppercase tracking-widest">League {idx + 1}</div>
+                                        <h2 className={cn("text-2xl sm:text-3xl font-black uppercase italic tracking-tighter", colorClass.split(' ')[1])}>{name}</h2>
+                                        <div className="text-[10px] font-bold text-text-muted/60 uppercase tracking-widest">League {idx + 1}</div>
                                     </div>
                                 </div>
 

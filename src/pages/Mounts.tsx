@@ -124,14 +124,14 @@ export default function Mounts() {
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
 
     return (
-        <div className="space-y-6 animate-fade-in pb-12">
+        <div className="space-y-6 animate-fade-in pb-12 px-4 sm:px-0">
             <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-border pb-6">
-                <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                        <Star className="w-8 h-8 text-accent-primary" />
+                <div className="w-full">
+                    <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
+                        <Star className="w-8 h-8 sm:w-10 h-10 text-accent-primary" />
                         Mount Wiki
                     </h1>
-                    <p className="text-text-secondary">
+                    <p className="text-text-secondary text-sm sm:text-base">
                         Complete mount database with stats.
                     </p>
                 </div>

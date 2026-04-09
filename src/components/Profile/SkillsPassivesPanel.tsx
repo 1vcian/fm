@@ -232,20 +232,20 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     const totalSkills = Object.keys(skillLibrary || {}).length;
 
     return (
-        <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center justify-between gap-2">
+        <Card className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-2">
-                    <Sparkles className="w-8 h-8 text-yellow-400" />
-                    Skill Passives
+                    <Sparkles className="w-6 h-6 sm:w-8 h-8 text-yellow-400" />
+                    <h2 className="text-lg sm:text-xl font-bold">Skill Passives</h2>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-normal text-text-muted mr-2">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <span className="text-[10px] sm:text-xs font-normal text-text-muted mr-auto sm:mr-2">
                         {ownedCount}/{totalSkills}
                     </span>
                     <button
                         onClick={isUndoVisible ? handleUndo : handleResetAll}
                         className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border",
+                            "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold transition-all border",
                             isUndoVisible 
                                 ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20" 
                                 : "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
@@ -264,12 +264,14 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                             </>
                         )}
                     </button>
-                    <AscensionStars
-                        value={profile.misc.skillAscensionLevel || 0}
-                        onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
-                    />
+                    <div className="scale-90 sm:scale-100 origin-right">
+                        <AscensionStars
+                            value={profile.misc.skillAscensionLevel || 0}
+                            onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
+                        />
+                    </div>
                 </div>
-            </h2>
+            </div>
 
             {/* Frequency Window Input */}
             <div className="flex items-center gap-2 mb-4 bg-bg-input/50 p-2 rounded-lg border border-border/30">

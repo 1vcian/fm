@@ -136,15 +136,18 @@ export default function TechTree() {
         };
     };
 
-    // Auto-center
+    // Auto-center & Center Function
+    const centerView = () => {
+        if (scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            const scrollX = (container.scrollWidth - container.clientWidth) / 2;
+            const scrollY = 0; // Start at top
+            container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' });
+        }
+    };
+
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (scrollContainerRef.current) {
-                const container = scrollContainerRef.current;
-                const scrollX = (container.scrollWidth - container.clientWidth) / 2;
-                container.scrollTo({ left: scrollX, behavior: 'auto' });
-            }
-        }, 50);
+        const timeout = setTimeout(centerView, 100);
         return () => clearTimeout(timeout);
     }, [activeTab, loading, treeDimensions]);
 
@@ -400,9 +403,7 @@ export default function TechTree() {
             {/* Wiki Header */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-border pb-4 mb-4 shrink-0 px-2 sm:px-0">
                 <div className="flex items-center gap-3 self-start md:self-center">
-                    <div className="inline-block shrink-0 drop-shadow-md" role="img" aria-label="Potion" style={{
-                        width: '40px',
-                        height: '40px',
+                    <div className="inline-block shrink-0 drop-shadow-md sm:w-[40px] sm:h-[40px] w-[32px] h-[32px]" role="img" aria-label="Potion" style={{
                         backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
                         backgroundPosition: '0px -40px',
                         backgroundSize: '320px 320px',
@@ -514,6 +515,13 @@ export default function TechTree() {
                         Max Tree
                     </button>
                     <button
+                        onClick={centerView}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-secondary/20 border border-accent-secondary/30 hover:bg-accent-secondary/30 text-accent-secondary text-[11px] font-bold transition-all"
+                    >
+                        <RefreshCw className="w-3 h-3" />
+                        Center View
+                    </button>
+                    <button
                         onClick={maxOutTree}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-primary/20 border border-accent-primary/30 hover:bg-accent-primary/30 text-accent-primary text-[11px] font-bold transition-all"
                     >
@@ -537,10 +545,12 @@ export default function TechTree() {
                             className="flex-1 overflow-auto relative custom-scrollbar select-none touch-pan-x touch-pan-y"
                         >
                             <div
-                                className="relative"
+                                className="relative sm:[--tree-scale:1] [--tree-scale:0.8]"
                                 style={{
                                     width: `${treeDimensions.width}px`,
-                                    height: `${treeDimensions.height}px`
+                                    height: `${treeDimensions.height}px`,
+                                    transformOrigin: 'top center',
+                                    scale: 'var(--tree-scale, 1)'
                                 }}
                             >
                                 {/* SVG Connections Layer */}

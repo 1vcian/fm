@@ -487,29 +487,37 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     }, [isNameTaken]);
 
+    const contextValue = React.useMemo(() => ({
+        profile,
+        updateProfile,
+        updateNestedProfile,
+        profiles,
+        activeProfileId: importedProfile ? importedProfile.id : activeProfileId,
+        switchProfile,
+        createProfile,
+        cloneProfile,
+        deleteProfile,
+        renameProfile,
+        setProfileIcon,
+        saveProfile,
+        resetProfile,
+        exportProfile,
+        importProfile,
+        importProfileFromJsonString,
+        saveSharedProfile,
+        getTechLevel,
+        getDungeonLevel,
+        isNameTaken,
+    }), [
+        profile, updateProfile, updateNestedProfile, profiles, importedProfile,
+        activeProfileId, switchProfile, createProfile, cloneProfile, deleteProfile,
+        renameProfile, setProfileIcon, saveProfile, resetProfile, exportProfile,
+        importProfile, importProfileFromJsonString, saveSharedProfile, getTechLevel,
+        getDungeonLevel, isNameTaken
+    ]);
+
     return (
-        <ProfileContext.Provider value={{
-            profile,
-            updateProfile,
-            updateNestedProfile,
-            profiles,
-            activeProfileId: importedProfile ? importedProfile.id : activeProfileId,
-            switchProfile,
-            createProfile,
-            cloneProfile,
-            deleteProfile,
-            renameProfile,
-            setProfileIcon,
-            saveProfile,
-            resetProfile,
-            exportProfile,
-            importProfile,
-            importProfileFromJsonString, // New export
-            saveSharedProfile,
-            getTechLevel,
-            getDungeonLevel,
-            isNameTaken,
-        }}>
+        <ProfileContext.Provider value={contextValue}>
             {children}
         </ProfileContext.Provider>
     );

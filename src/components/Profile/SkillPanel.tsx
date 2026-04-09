@@ -158,40 +158,43 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
 
     return (
         <Card className="p-6">
-            <div className="flex flex-col gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
                     <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Active Skills" className="w-8 h-8 object-contain" />
                     Active Skills
-                    <div className="ml-auto">
+                </h2>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <div className="scale-90 sm:scale-100 origin-right">
                         <AscensionStars 
                             value={skillAscensionLevel}
                             onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
                         />
                     </div>
-                </h2>
-                <div className="flex items-center gap-2 flex-wrap">
-                    {setConsiderAnimation && (
-                        <button
-                            onClick={() => setConsiderAnimation(!considerAnimation)}
-                            className={`px-3 py-1.5 text-xs font-bold rounded border transition-colors ${considerAnimation
-                                ? 'bg-accent-primary text-black border-accent-primary'
-                                : 'bg-transparent text-text-muted border-text-muted/30 hover:border-text-muted'
-                                }`}
-                            title="Toggle Animation Duration (+0.5s)"
-                        >
-                            ANIM {considerAnimation ? 'ON' : 'OFF'}
-                        </button>
-                    )}
-                    <div className="flex items-center gap-2 bg-bg-input/50 p-1.5 rounded border border-border/30">
-                        <span className="text-xs text-text-muted whitespace-nowrap px-1">Window:</span>
-                        <Input
-                            type="text"
-                            step="0.1"
-                            value={frequencyWindow}
-                            onChange={(e) => setFrequencyWindow(parseFloat(e.target.value.replace(',', '.')) || 60)}
-                            className="w-24 text-center h-8 font-mono font-bold text-xs bg-bg-secondary/50"
-                        />
-                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap mb-4">
+                {setConsiderAnimation && (
+                    <button
+                        onClick={() => setConsiderAnimation(!considerAnimation)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded border transition-colors ${considerAnimation
+                            ? 'bg-accent-primary text-black border-accent-primary'
+                            : 'bg-transparent text-text-muted border-text-muted/30 hover:border-text-muted'
+                            }`}
+                        title="Toggle Animation Duration (+0.5s)"
+                    >
+                        ANIM {considerAnimation ? 'ON' : 'OFF'}
+                    </button>
+                )}
+                <div className="flex items-center gap-2 bg-bg-input/50 p-1.5 rounded border border-border/30">
+                    <span className="text-xs text-text-muted whitespace-nowrap px-1">Window:</span>
+                    <Input
+                        type="text"
+                        step="0.1"
+                        value={frequencyWindow}
+                        onChange={(e) => setFrequencyWindow(parseFloat(e.target.value.replace(',', '.')) || 60)}
+                        className="w-20 sm:w-24 text-center h-8 font-mono font-bold text-xs bg-bg-secondary/50"
+                    />
                 </div>
             </div>
 
@@ -265,7 +268,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                                     <span className="font-mono font-bold text-accent-primary break-all leading-tight">
                                                         {Math.round(stats.totalDamage).toLocaleString()}
                                                     </span>
-                                                    {stats.damageBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(+{(stats.damageBonus * 100).toFixed(0)}%)</span>}
+                                                    {stats.damageBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.damageBonus + 1).toFixed(1)} [+{ (stats.damageBonus * 100).toFixed(0) }%])</span>}
                                                 </div>
                                                 {stats.count > 1 && (
                                                     <div className="text-[10px] text-text-muted mt-0.5">
@@ -281,7 +284,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                                     <span className="font-mono font-bold text-green-400 break-all leading-tight">
                                                         {Math.round(stats.health).toLocaleString()}
                                                     </span>
-                                                    {stats.healthBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(+{(stats.healthBonus * 100).toFixed(0)}%)</span>}
+                                                    {stats.healthBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.healthBonus + 1).toFixed(1)} [+{ (stats.healthBonus * 100).toFixed(0) }%])</span>}
                                                 </div>
                                             </div>
                                         )}

@@ -319,6 +319,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     }, [selectedItemData, ageIdx, itemLibrary, jsonType]);
 
     const numSecondarySlots = useMemo(() => {
+        // If the user has at least one forge ascension, all items get 2 secondary stats
+        const currentAscension = profile.misc.forgeAscensionLevel || 0;
+        if (currentAscension > 0) return 2;
+
         if (!secondaryData) return 0;
         let targetAge = ageIdx;
         if (ageIdx === -1) {
@@ -329,7 +333,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             }
         }
         return secondaryData[String(targetAge)]?.NumberOfSecondStats || 0;
-    }, [secondaryData, ageIdx, selectedItemData]);
+    }, [secondaryData, ageIdx, selectedItemData, profile.misc.forgeAscensionLevel]);
 
     // Trim manual stats if they exceed the new slot limit
     useEffect(() => {

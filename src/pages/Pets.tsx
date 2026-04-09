@@ -158,14 +158,14 @@ export default function Pets() {
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
 
     return (
-        <div className="space-y-6 animate-fade-in pb-12">
+        <div className="space-y-6 animate-fade-in pb-12 px-4 sm:px-0">
             <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-border pb-6">
-                <div>
+                <div className="w-full">
                     <h1 className="text-3xl font-bold text-text-primary flex items-center gap-2">
                         <Cat className="w-8 h-8 text-accent-secondary" />
                         Pet Wiki
                     </h1>
-                    <p className="text-text-secondary">Complete pet database with stats and type information.</p>
+                    <p className="text-text-secondary text-sm sm:text-base">Complete pet database with stats and type information.</p>
                 </div>
 
                 <div className="flex gap-2 items-center flex-wrap">

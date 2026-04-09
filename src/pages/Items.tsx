@@ -108,12 +108,12 @@ export default function Items() {
 
             {/* Header / Age Selector */}
             <div className="flex flex-col gap-6">
-                <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                        <Sword className="w-10 h-10 text-accent-primary" />
+                <div className="px-4 sm:px-0">
+                    <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
+                        <Sword className="w-8 h-8 sm:w-10 h-10 text-accent-primary" />
                         Item Wiki
                     </h1>
-                    <p className="text-text-muted mt-1">Browse equipment stats across all ages.</p>
+                    <p className="text-text-muted mt-1 text-sm sm:text-base">Browse equipment stats across all ages.</p>
                 </div>
 
                 {/* Age Filter Bar */}
@@ -214,12 +214,12 @@ export default function Items() {
                     <div className="text-text-muted text-lg animate-pulse">Forging Items...</div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 px-4 sm:px-0">
                     {items.length > 0 ? items.map((item: any, i: number) => {
                         const stats = item.EquipmentStats || [];
                         // We can also extract secondary stat info from SecondaryStatItemUnlockLibrary based on age
                         const secondaryData = secondaryParams?.[String(selectedAgeIdx)];
-                        const numSecondary = secondaryData?.NumberOfSecondStats || 0;
+                        const numSecondary = (ascensionLevel > 0) ? 2 : (secondaryData?.NumberOfSecondStats || 0);
 
                         return (
                             <Card key={i} className="flex flex-col h-full hover:border-accent-primary/50 transition-all duration-300 group overflow-hidden">
