@@ -2,22 +2,31 @@
   {
     "name": "Lucian",
     "email": "medrihanlucian@gmail.com",
-    "additions": 2238249,
-    "deletions": 491749,
-    "commits": 136
+    "login": "1vcian",
+    "additions": 2238409,
+    "deletions": 491767,
+    "commits": 137,
+    "avatar_url": "https://avatars.githubusercontent.com/u/15808247?v=4",
+    "html_url": "https://github.com/1vcian"
   },
   {
     "name": "simon-m",
     "email": "simon.mignot.dev@gmail.com",
+    "login": "Simon-Mignot",
     "additions": 673,
     "deletions": 70,
-    "commits": 2
+    "commits": 2,
+    "avatar_url": "https://avatars.githubusercontent.com/u/9926861?v=4",
+    "html_url": "https://github.com/Simon-Mignot"
   },
   {
     "name": "Demian Myers",
     "email": "murky.knight@gmail.com",
+    "login": "murkyknight",
     "additions": 4,
     "deletions": 2,
-    "commits": 1
+    "commits": 1,
+    "avatar_url": "https://avatars.githubusercontent.com/u/27320933?v=4",
+    "html_url": "https://github.com/murkyknight"
   }
 ]
