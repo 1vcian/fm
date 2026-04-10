@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
@@ -7,7 +8,7 @@ import { cn } from '../lib/utils';
 
 const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const getInitialDay = () => {
+const getTodayIdx = () => {
     const day = new Date().getDay(); // 0 is Sunday
     const mapping: Record<number, number> = {
         2: 0, // Tue
@@ -19,6 +20,10 @@ const getInitialDay = () => {
         1: 5  // Mon (Battle Day) -> show Sunday tasks by default
     };
     return mapping[day] ?? 0;
+};
+
+const getInitialDay = () => {
+    return getTodayIdx();
 };
 
 export default function GuildWar() {
@@ -82,22 +87,35 @@ export default function GuildWar() {
                     </div>
                 </div>
 
-                {/* Day Selector */}
-                <div className="flex gap-1 bg-bg-secondary/30 p-1 rounded-xl border border-border w-full md:w-auto overflow-x-auto no-scrollbar">
-                    {DAYS.map((name, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setActiveDay(idx)}
-                            className={cn(
-                                "px-4 py-2 rounded-lg font-bold text-xs transition-all whitespace-nowrap uppercase tracking-widest",
-                                activeDay === idx
-                                    ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20"
-                                    : "text-text-muted hover:text-text-primary hover:bg-white/5"
-                            )}
-                        >
-                            {name}
-                        </button>
-                    ))}
+                <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-text-muted uppercase tracking-[0.2em] bg-bg-secondary/50 px-3 py-1 rounded-full border border-white/5">
+                        <Calendar className="w-3 h-3 text-accent-primary" />
+                        Today: {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+                    </div>
+                    {/* Day Selector */}
+                    <div className="flex gap-1 bg-bg-secondary/30 p-1 rounded-xl border border-border w-full md:w-auto overflow-x-auto no-scrollbar">
+                        {DAYS.map((name, idx) => {
+                            const isToday = idx === getTodayIdx();
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => setActiveDay(idx)}
+                                    className={cn(
+                                        "px-4 py-2 rounded-lg font-bold text-xs transition-all whitespace-nowrap uppercase tracking-widest relative",
+                                        activeDay === idx
+                                            ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20"
+                                            : "text-text-muted hover:text-text-primary hover:bg-white/5",
+                                        isToday && activeDay !== idx && "border border-accent-primary/30"
+                                    )}
+                                >
+                                    {name}
+                                    {isToday && (
+                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent-primary rounded-full shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.8)] animate-pulse" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
@@ -107,96 +125,165 @@ export default function GuildWar() {
                     <span className="text-sm font-bold uppercase tracking-widest">Loading War Logs...</span>
                 </div>
             ) : (
-                <>
+                <div className="space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Column: Daily Tasks */}
-                        <div className="lg:col-span-2 space-y-6">
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-accent-primary" />
-                                    {DAYS[activeDay]} Preparation Tasks
+                        {/* Left Column: Daily Tasks & Tools */}
+                        <div className="lg:col-span-2 space-y-8">
+                            {/* Recommended Tools */}
+                            <div className="space-y-4">
+                                <h2 className="text-sm font-black text-text-muted uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-accent-primary" />
+                                    Recommended Calculators
                                 </h2>
-                                <div className="flex items-center gap-2">
-                                    <div className="flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-1.5 rounded-xl font-bold text-xs border border-blue-500/20 shadow-lg shadow-blue-500/5">
-                                        <Trophy className="w-4 h-4" />
-                                        Guild Win: <span className="text-blue-200">{dayVictoryPoints} Victory Points</span>
-                                    </div>
-                                    <div className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold uppercase tracking-widest border border-accent-primary/20">
-                                        Day {activeDay + 1}
-                                    </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <Link to="/calculators/forge" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
+                                        <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
+                                            <Shield className="w-5 h-5 text-accent-primary" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-[11px] font-bold text-white truncate">Forge Master</div>
+                                            <div className="text-[10px] text-text-muted">Daily Points</div>
+                                        </div>
+                                    </Link>
+
+                                    {(activeDay === 0 || activeDay === 2 || activeDay === 4 || activeDay === 5) && (
+                                        <Link to="/calculators/skills" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-secondary/40 hover:bg-accent-secondary/5 transition-all group shadow-sm hover:shadow-accent-secondary/5">
+                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
+                                                <Zap className="w-5 h-5 text-accent-secondary" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-bold text-white truncate">Skill Summons</div>
+                                                <div className="text-[10px] text-text-muted">Tue, Thu, Sat</div>
+                                            </div>
+                                        </Link>
+                                    )}
+
+                                    {(activeDay === 2 || activeDay === 4 || activeDay === 5) && (
+                                        <Link to="/calculators/mounts" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
+                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
+                                                <Shield className="w-5 h-5 text-accent-primary" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-bold text-white truncate">Mount Trainer</div>
+                                                <div className="text-[10px] text-text-muted">Thu, Sat</div>
+                                            </div>
+                                        </Link>
+                                    )}
+
+                                    {(activeDay === 0 || activeDay === 3 || activeDay === 5) && (
+                                        <Link to="/calculators/tree" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-secondary/40 hover:bg-accent-secondary/5 transition-all group shadow-sm hover:shadow-accent-secondary/5">
+                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
+                                                <Zap className="w-5 h-5 text-accent-secondary" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-bold text-white truncate">Tree Optimizer</div>
+                                                <div className="text-[10px] text-text-muted">Tue, Fri</div>
+                                            </div>
+                                        </Link>
+                                    )}
+
+                                    {(activeDay === 1 || activeDay === 3 || activeDay === 4 || activeDay === 5) && (
+                                        <Link to="/dungeons" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
+                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
+                                                <Shield className="w-5 h-5 text-accent-primary" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-bold text-white truncate">Dungeon Analyzer</div>
+                                                <div className="text-[10px] text-text-muted">Wed, Fri, Sat</div>
+                                            </div>
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {dayTasks.map((task: any, idx: number) => (
-                                    <Card key={idx} className="p-4 hover:border-accent-primary/50 transition-all group relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                                            <Zap className="w-12 h-12 text-accent-primary" />
+                            <div className="space-y-6">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                        <Calendar className="w-5 h-5 text-accent-primary" />
+                                        {DAYS[activeDay]} Preparation Tasks
+                                    </h2>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-1.5 rounded-xl font-bold text-xs border border-blue-500/20 shadow-lg shadow-blue-500/5">
+                                            <Trophy className="w-4 h-4" />
+                                            Guild Win: <span className="text-blue-200">{dayVictoryPoints} Victory Points</span>
                                         </div>
+                                        <div className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold uppercase tracking-widest border border-accent-primary/20">
+                                            Day {activeDay + 1}
+                                        </div>
+                                    </div>
+                                </div>
 
-                                        <div className="flex items-start gap-3 relative z-10">
-                                            <div className="p-2 bg-bg-secondary/50 rounded-lg border border-border shrink-0">
-                                                <GameIcon name={getTaskIcon(task.Task)} size={32} />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {dayTasks.map((task: any, idx: number) => (
+                                        <Card key={idx} className="p-4 hover:border-accent-primary/50 transition-all group relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                                                <Zap className="w-12 h-12 text-accent-primary" />
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-sm font-bold text-text-primary mb-1 line-clamp-1">
-                                                    {formatTaskName(task.Task)}
-                                                </h3>
-                                                <div className="flex items-center gap-1.5 mt-2">
-                                                    <div className="flex items-center gap-1 bg-accent-primary/20 px-2 py-0.5 rounded text-[10px] font-bold text-accent-primary border border-accent-primary/30 uppercase tracking-tighter">
-                                                        <Zap className="w-3 h-3" />
-                                                        +{task.Rewards?.[0]?.Amount} Points
+
+                                            <div className="flex items-start gap-3 relative z-10">
+                                                <div className="p-2 bg-bg-secondary/50 rounded-lg border border-border shrink-0">
+                                                    <GameIcon name={getTaskIcon(task.Task)} size={32} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="text-sm font-bold text-text-primary mb-1 line-clamp-1">
+                                                        {formatTaskName(task.Task)}
+                                                    </h3>
+                                                    <div className="flex items-center gap-1.5 mt-2">
+                                                        <div className="flex items-center gap-1 bg-accent-primary/20 px-2 py-0.5 rounded text-[10px] font-bold text-accent-primary border border-accent-primary/30 uppercase tracking-tighter">
+                                                            <Zap className="w-3 h-3" />
+                                                            +{task.Rewards?.[0]?.Amount} Points
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                        </Card>
+                                    ))}
+                                    {dayTasks.length === 0 && (
+                                        <div className="sm:col-span-2 flex flex-col items-center justify-center p-12 bg-bg-secondary/20 rounded-2xl border-2 border-dashed border-border text-text-muted">
+                                            <Info className="w-8 h-8 mb-2 opacity-20" />
+                                            <span className="font-bold uppercase tracking-widest text-xs">No preparation tasks for this day</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Schedule & Rules Breakdown */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                    <Card className="p-5 border-l-4 border-l-blue-500">
+                                        <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-4 flex items-center gap-2">
+                                            <Calendar className="w-4 h-4" /> Weekly Schedule
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="text-xs font-mono font-bold bg-bg-secondary px-2 py-1 rounded border border-border min-w-[100px] text-center uppercase">TUE - SUN</div>
+                                                <div className="text-sm text-text-secondary">Preparation Phase (Tasks)</div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="text-xs font-mono font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30 min-w-[100px] text-center uppercase">MONDAY</div>
+                                                <div className="text-sm text-text-primary font-bold">Main Guild Battle</div>
+                                            </div>
                                         </div>
                                     </Card>
-                                ))}
-                                {dayTasks.length === 0 && (
-                                    <div className="sm:col-span-2 flex flex-col items-center justify-center p-12 bg-bg-secondary/20 rounded-2xl border-2 border-dashed border-border text-text-muted">
-                                        <Info className="w-8 h-8 mb-2 opacity-20" />
-                                        <span className="font-bold uppercase tracking-widest text-xs">No preparation tasks for this day</span>
-                                    </div>
-                                )}
-                            </div>
 
-                            {/* Schedule & Rules Breakdown */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                                <Card className="p-5 border-l-4 border-l-blue-500">
-                                    <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-4 flex items-center gap-2">
-                                        <Calendar className="w-4 h-4" /> Weekly Schedule
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-xs font-mono font-bold bg-bg-secondary px-2 py-1 rounded border border-border min-w-[100px] text-center uppercase">TUE - SUN</div>
-                                            <div className="text-sm text-text-secondary">Preparation Phase (Tasks)</div>
+                                    <Card className="p-5 border-l-4 border-l-red-500">
+                                        <h3 className="font-black text-xs uppercase tracking-widest text-red-500 mb-4 flex items-center gap-2">
+                                            <Swords className="w-4 h-4" /> Attack Rules
+                                        </h3>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                                                <span className="text-text-muted">Max Tickets / Member</span>
+                                                <span className="font-bold text-text-primary">{warConfig?.MaxWarTicketsPerMember || 5}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                                                <span className="text-text-muted">Max Atk Points</span>
+                                                <span className="font-bold text-text-primary">{warConfig?.MaxPointsForAttackingOpponentGuildMember || 50}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-text-muted">Brawl Win Bonus</span>
+                                                <span className="font-bold text-accent-primary">+{warConfig?.BrawlWinPointsReward || 1000}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-xs font-mono font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30 min-w-[100px] text-center uppercase">MONDAY</div>
-                                            <div className="text-sm text-text-primary font-bold">Main Guild Battle</div>
-                                        </div>
-                                    </div>
-                                </Card>
-
-                                <Card className="p-5 border-l-4 border-l-red-500">
-                                    <h3 className="font-black text-xs uppercase tracking-widest text-red-500 mb-4 flex items-center gap-2">
-                                        <Swords className="w-4 h-4" /> Attack Rules
-                                    </h3>
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-                                            <span className="text-text-muted">Max Tickets / Member</span>
-                                            <span className="font-bold text-text-primary">{warConfig?.MaxWarTicketsPerMember || 5}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-                                            <span className="text-text-muted">Max Atk Points</span>
-                                            <span className="font-bold text-text-primary">{warConfig?.MaxPointsForAttackingOpponentGuildMember || 50}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-text-muted">Brawl Win Bonus</span>
-                                            <span className="font-bold text-accent-primary">+{warConfig?.BrawlWinPointsReward || 1000}</span>
-                                        </div>
-                                    </div>
-                                </Card>
+                                    </Card>
+                                </div>
                             </div>
                         </div>
 
@@ -252,7 +339,7 @@ export default function GuildWar() {
                     </div>
 
                     {/* Clan Tiers & War Rewards Section */}
-                    <div className="space-y-6">
+                    <div className="col-span-1 lg:col-span-3 space-y-6">
                         <div className="flex items-center gap-2">
                             <Trophy className="w-6 h-6 text-yellow-500" />
                             <h2 className="text-2xl font-black italic uppercase tracking-tighter">Clan Tiers & War Rewards</h2>
@@ -329,49 +416,51 @@ export default function GuildWar() {
 
                     {/* Guild Base Rules Summary */}
                     {baseConfig && (
-                        <Card className="p-6 bg-gradient-to-br from-bg-secondary/40 to-bg-secondary/10 border-accent-primary/10">
-                            <div className="flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
-                                <div className="p-4 bg-accent-primary/10 rounded-3xl border border-accent-primary/20 shrink-0">
-                                    <Shield className="w-12 h-12 text-accent-primary" />
-                                </div>
-                                <div className="space-y-6 flex-1">
-                                    <div>
-                                        <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-1">General Guild Rules</h2>
-                                        <p className="text-text-muted text-sm">Basic configuration and membership limits from dynamic logs.</p>
+                        <div className="col-span-1 lg:col-span-3">
+                            <Card className="p-6 bg-gradient-to-br from-bg-secondary/40 to-bg-secondary/10 border-accent-primary/10">
+                                <div className="flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
+                                    <div className="p-4 bg-accent-primary/10 rounded-3xl border border-accent-primary/20 shrink-0">
+                                        <Shield className="w-12 h-12 text-accent-primary" />
                                     </div>
+                                    <div className="space-y-6 flex-1">
+                                        <div>
+                                            <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-1">General Guild Rules</h2>
+                                            <p className="text-text-muted text-sm">Basic configuration and membership limits from dynamic logs.</p>
+                                        </div>
 
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-6">
-                                        <div className="space-y-1">
-                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Member Limit</div>
-                                            <div className="text-xl font-black">{baseConfig.MaxGuildMemberCount} / Clan</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Creation Cost</div>
-                                            <div className="text-xl font-black text-yellow-500 flex items-center justify-center md:justify-start gap-1">
-                                                <GameIcon name="Gem" size={24} />
-                                                {baseConfig.GuildCreateCost}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-6">
+                                            <div className="space-y-1">
+                                                <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Member Limit</div>
+                                                <div className="text-xl font-black">{baseConfig.MaxGuildMemberCount} / Clan</div>
                                             </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Name Length</div>
-                                            <div className="text-xl font-black">{baseConfig.MaxGuildNameLength} Chars</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Leave Cooldown</div>
-                                            <div className="text-xl font-black text-red-400">{baseConfig.GuildLeaveCooldownDurationMinutes / 60} Hours</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Role Limits</div>
-                                            <div className="text-[11px] font-bold text-text-secondary leading-tight mt-1">
-                                                Captain: {baseConfig.MaxCaptainRoleMemberCount} • R1: {baseConfig.MaxR1RoleMemberCount} • R2: {baseConfig.MaxR2RoleMemberCount}
+                                            <div className="space-y-1">
+                                                <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Creation Cost</div>
+                                                <div className="text-xl font-black text-yellow-500 flex items-center justify-center md:justify-start gap-1">
+                                                    <GameIcon name="Gem" size={24} />
+                                                    {baseConfig.GuildCreateCost}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Name Length</div>
+                                                <div className="text-xl font-black">{baseConfig.MaxGuildNameLength} Chars</div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Leave Cooldown</div>
+                                                <div className="text-xl font-black text-red-400">{baseConfig.GuildLeaveCooldownDurationMinutes / 60} Hours</div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Role Limits</div>
+                                                <div className="text-[11px] font-bold text-text-secondary leading-tight mt-1">
+                                                    Captain: {baseConfig.MaxCaptainRoleMemberCount} • R1: {baseConfig.MaxR1RoleMemberCount} • R2: {baseConfig.MaxR2RoleMemberCount}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </Card>
+                            </Card>
+                        </div>
                     )}
-                </>
+                </div>
             )}
         </div>
     );

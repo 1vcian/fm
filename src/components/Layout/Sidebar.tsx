@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import {
     Star, Egg, Key, Shirt, Cat,
-    Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee
+    Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
 import { useProfile } from '../../context/ProfileContext';
@@ -12,6 +12,29 @@ interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
 }
+
+const getTodayIdx = () => {
+    const day = new Date().getDay(); // 0 is Sunday
+    const mapping: Record<number, number> = {
+        2: 0, 3: 1, 4: 2, 5: 3, 6: 4, 0: 5, 1: 5
+    };
+    return mapping[day] ?? 0;
+};
+
+const isRecommended = (path: string) => {
+    const today = getTodayIdx();
+    // Forge
+    if (path === '/forge-calculator' || path === '/wiki/forge') return true;
+    // Dungeons
+    if (path === '/dungeons') return [1, 3, 4].includes(today);
+    // Tech Tree
+    if (path === '/calculators/tree' || path === '/tech-tree') return [0, 3].includes(today);
+    // Skills
+    if (path === '/calculators/skills' || path === '/skills') return [0, 2, 4].includes(today);
+    // Mounts
+    if (path === '/calculators/mounts' || path === '/mounts') return [2, 4].includes(today);
+    return false;
+};
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
@@ -107,6 +130,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 {group.items.map((item) => {
                                     const isActive = location.pathname === item.path;
                                     const Icon = item.icon;
+                                    const recommended = isRecommended(item.path);
 
                                     if ('external' in item && item.external) {
                                         const isCoffee = item.name.toLowerCase().includes('coffee');
@@ -136,18 +160,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                             to={item.path}
                                             onClick={() => window.innerWidth < 1024 && onClose()}
                                             className={cn(
-                                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
                                                 isActive
                                                     ? "bg-gradient-to-r from-accent-primary/20 to-transparent text-accent-primary border border-accent-primary/20"
-                                                    : "text-text-secondary hover:text-text-primary hover:bg-white/5"
+                                                    : recommended
+                                                        ? "text-text-primary hover:bg-white/5 border border-dashed border-accent-primary/20 bg-accent-primary/5"
+                                                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                                             )}
                                         >
                                             {'isProfile' in item && item.isProfile ? (
                                                 <ProfileIcon iconIndex={profile.iconIndex} size={18} className="border-0" />
                                             ) : Icon ? (
-                                                <Icon size={18} />
+                                                <Icon size={18} className={cn(recommended && !isActive && "text-accent-primary")} />
                                             ) : null}
-                                            {item.name}
+                                            <span className="flex-1">{item.name}</span>
+                                            {recommended && !isActive && (
+                                                <Zap size={12} className="text-accent-primary fill-accent-primary animate-pulse" />
+                                            )}
                                         </Link>
                                     )
                                 })}
