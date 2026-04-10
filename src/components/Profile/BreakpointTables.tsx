@@ -8,15 +8,15 @@ interface BreakpointTablesProps {
     realWindup?: number;
 }
 
-export const BreakpointTables = memo(({ 
-    weaponAttackDuration, 
-    weaponWindupTime, 
+export const BreakpointTables = memo(({
+    weaponAttackDuration,
+    weaponWindupTime,
     currentAttackSpeedMultiplier,
     realCycleTime: providedRealCycleTime,
     realWindup: providedRealWindup
 }: BreakpointTablesProps) => {
     const currentBonus = (currentAttackSpeedMultiplier - 1) * 100;
-    
+
     // Calculate current real-time values if not provided
     const realCycleTime = providedRealCycleTime !== undefined ? providedRealCycleTime : (() => {
         const steppedW = Math.floor((weaponWindupTime / currentAttackSpeedMultiplier) * 10) / 10;
@@ -59,11 +59,11 @@ export const BreakpointTables = memo(({
                                     reqBonus = (high - 1) * 100;
                                     const isReached = currentBonus >= reqBonus - 0.01;
                                     const isNext = !isReached && (target >= realCycleTime - 0.11);
-                                    
+
                                     return (
                                         <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isNext ? 'text-orange-400 bg-orange-400/5' : 'text-white/40'}`}>
                                             <td className="py-2.5 font-bold">
-                                                {target.toFixed(1)}s 
+                                                {target.toFixed(1)}s
                                                 {Math.abs(target - realCycleTime) < 0.01 && <span className="text-[8px] bg-orange-500/20 px-1 rounded uppercase font-sans text-orange-400 ml-1">Current</span>}
                                             </td>
                                             <td className="py-2.5">+{reqBonus.toFixed(1)}%</td>
@@ -104,11 +104,11 @@ export const BreakpointTables = memo(({
                                     reqBonus = (high - 1) * 100;
                                     const isReached = currentBonus >= reqBonus - 0.01;
                                     const isNext = !isReached && (target >= realWindup - 0.11);
-                                    
+
                                     return (
                                         <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isNext ? 'text-orange-400 bg-orange-400/5' : 'text-white/40'}`}>
                                             <td className="py-2.5 font-bold">
-                                                {target.toFixed(1)}s 
+                                                {target.toFixed(1)}s
                                                 {Math.abs(target - realWindup) < 0.01 && <span className="text-[8px] bg-orange-500/20 px-1 rounded uppercase font-sans text-orange-400 ml-1">Current</span>}
                                                 {target === 0.3 && <span className="ml-1 text-[7px] text-blue-400 font-sans uppercase">Meta</span>}
                                             </td>
@@ -124,7 +124,7 @@ export const BreakpointTables = memo(({
 
             {/* Double Attack Cycle Table (The "Second Table") */}
             <div className="space-y-4 lg:col-span-2 border-t border-white/5 pt-6">
-                <div className="text-[9px] uppercase text-purple-400/60 font-bold tracking-wider">Double Attack Cycle Breakpoints (The "Second Table")</div>
+                <div className="text-[9px] uppercase text-purple-400/60 font-bold tracking-wider">Double Attack Cycle Breakpoints </div>
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left font-mono text-[10px] md:text-xs">
                         <thead>
@@ -147,25 +147,25 @@ export const BreakpointTables = memo(({
                                     let low = 1.0, high = 15.0;
                                     for (let i = 0; i < 25; i++) {
                                         const mid = (low + high) / 2;
-                                        const sum = Math.floor((baseW / mid) * 10) / 10 + 
-                                                    Math.floor((baseR / mid) * 10) / 10 +
-                                                    Math.floor((baseD / mid) * 10) / 10;
+                                        const sum = Math.floor((baseW / mid) * 10) / 10 +
+                                            Math.floor((baseR / mid) * 10) / 10 +
+                                            Math.floor((baseD / mid) * 10) / 10;
                                         if (sum <= targetPhases + 0.001) high = mid;
                                         else low = mid;
                                     }
                                     reqBonus = (high - 1) * 100;
-                                    
+
                                     // Current state
                                     const currentDDelay = Math.floor((0.25 / currentAttackSpeedMultiplier) * 10) / 10;
                                     const currentDoubleCycle = realCycleTime + currentDDelay;
 
                                     const isReached = currentBonus >= reqBonus - 0.01;
                                     const isNext = !isReached && (target >= currentDoubleCycle - 0.11);
-                                    
+
                                     return (
                                         <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isNext ? 'text-purple-400 bg-purple-400/5' : 'text-white/40'}`}>
                                             <td className="py-2.5 font-bold">
-                                                {target.toFixed(1)}s 
+                                                {target.toFixed(1)}s
                                                 {Math.abs(target - currentDoubleCycle) < 0.01 && <span className="text-[8px] bg-purple-500/20 px-1 rounded uppercase font-sans text-purple-400 ml-1">Current</span>}
                                             </td>
                                             <td className="py-2.5">+{reqBonus.toFixed(1)}%</td>
@@ -192,7 +192,7 @@ export const BreakpointExplanation = memo(() => (
             The Windup phase dictates animation fluidness. Reaching the <span className="text-blue-300">0.3s Meta bracket</span> significantly reduces the perceived delay between the primary strike and the Double Attack proc, maximizing real-time performance.
         </div>
         <div>
-            <span className="text-purple-400 font-bold uppercase block mb-1">Second Table: Double Attack Cycle</span>
+            <span className="text-purple-400 font-bold uppercase block mb-1">Double Attack Cycle</span>
             When a Double Attack procs, the total cycle is extended by a sequential delay (base 0.25s). High Double Attack builds should aim for breakpoints in this table to minimize the "dead time" between double strikes.
         </div>
         <div className="bg-white/5 p-3 rounded-lg border border-white/10 italic">
