@@ -1,9 +1,11 @@
 import { useMountsCalculator } from '../../hooks/useMountsCalculator';
+import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { Trophy, Info, Minus, Plus, RefreshCcw } from 'lucide-react';
 
 export default function MountCalculator() {
+    const { profile, updateNestedProfile } = useProfile();
     const {
         level: currentLevel, setLevel,
         progress: currentProgress, setProgress,
@@ -51,8 +53,6 @@ export default function MountCalculator() {
                     )}
                 </div>
             </div>
-
-
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* INPUTS */}
@@ -122,24 +122,48 @@ export default function MountCalculator() {
                             </div>
                         </div>
 
-                        {/* Winders Input */}
-                        <div className="space-y-2 pt-2 pb-2">
-                            <label className="text-xs font-bold text-text-secondary uppercase flex items-center gap-2">
-                                <SpriteIcon name="MountKey" size={16} />
-                                Available Winders
-                            </label>
-                            <div className="relative group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors">
-                                    <SpriteIcon name="MountKey" size={20} />
+                        {/* Winder Input */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-text-secondary uppercase flex items-center gap-2">
+                                    <SpriteIcon name="MountKey" size={16} />
+                                    Available Winders
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors pointer-events-none">
+                                        <SpriteIcon name="MountKey" size={20} className="opacity-50" />
+                                    </div>
+                                    <input
+                                        type="number"
+                                        value={windersCount}
+                                        onChange={(e) => setWindersCount(Number(e.target.value))}
+                                        className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
+                                        placeholder="0"
+                                        min="0"
+                                    />
                                 </div>
-                                <input
-                                    type="number"
-                                    value={windersCount}
-                                    onChange={(e) => setWindersCount(Number(e.target.value))}
-                                    className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
-                                    placeholder="0"
-                                    min="0"
-                                />
+                            </div>
+
+                            {/* Ascension Toggle */}
+                            <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
+                                        <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-4 h-4 object-contain" />
+                                        Simulate Ascension
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={profile.misc.simulateAscensionInCalculators}
+                                            onChange={(e) => updateNestedProfile('misc', { simulateAscensionInCalculators: e.target.checked })}
+                                        />
+                                        <div className="w-11 h-6 bg-bg-input peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                    </label>
+                                </div>
+                                <p className="text-[10px] text-text-muted leading-relaxed">
+                                    When ON, reaching max level resets it to 1 of the next tier. When OFF, extra winders progress only the max level.
+                                </p>
                             </div>
                         </div>
                     </CardContent>
@@ -183,6 +207,22 @@ export default function MountCalculator() {
                                     * Simulation assumes all obtained mounts are merged
                                 </div>
 
+                                {results.summonsToMax && (
+                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                                            <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-6 h-6 object-contain" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="text-xs font-bold text-amber-400 uppercase">Max Level Milestone</div>
+                                            <div className="text-[11px] text-text-secondary leading-relaxed">
+                                                You reach <span className="text-white font-bold">Max Level</span> in <span className="text-amber-400 font-bold">{results.summonsToMax.toLocaleString()} summons</span> ({(results.summonsToMax * results.finalCost).toLocaleString()} winders).
+                                                The remaining <span className="text-white font-bold">{((results.totalSummons - results.summonsToMax) * results.finalCost).toLocaleString()}</span> winders progress 
+                                                into <span className="text-amber-400 font-bold">{results.simulateAscension ? `Ascension ${results.endAscensionLevel}` : 'Max Level'}</span>.
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Summons Info Grid */}
                                 <div className="grid grid-cols-3 gap-3 pb-2 border-b border-white/5">
                                     <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
@@ -193,9 +233,16 @@ export default function MountCalculator() {
                                     </div>
                                     <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
                                         <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">End Level</div>
-                                        <div className="text-lg font-mono font-bold text-accent-primary flex items-center gap-1">
-                                            <span className="text-xs opacity-50 font-normal">Lv.{currentLevel} ➔</span>
-                                            Lv.{results.endLevel}
+                                        <div className="text-lg font-mono font-bold text-accent-primary flex flex-col justify-center">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-xs opacity-50 font-normal">Lv.{currentLevel} ➔</span>
+                                                Lv.{results.endLevel}
+                                            </div>
+                                            {results.endAscensionLevel > (profile.misc.mountAscensionLevel || 0) && (
+                                                <div className="text-[10px] text-amber-500 font-bold">
+                                                    (Ascension {results.endAscensionLevel})
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
@@ -260,7 +307,7 @@ export default function MountCalculator() {
                                     className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
                                 >
                                     <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                                    Update Level & Progress to Lv.{results.endLevel}
+                                    Update Level to Lv.{results.endLevel}{results.endAscensionLevel > (profile.misc.mountAscensionLevel || 0) ? ` (Asc. ${results.endAscensionLevel})` : ''}
                                 </button>
                             </>
                         ) : (

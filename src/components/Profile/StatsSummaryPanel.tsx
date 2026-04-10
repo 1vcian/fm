@@ -14,8 +14,9 @@ import { getStatName } from '../../utils/statNames';
 import { useComparison } from '../../context/ComparisonContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
-import { calculateStats, LibraryData } from '../../utils/statEngine';
+import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEngine';
 import { useTreeMode } from '../../context/TreeModeContext';
+import { UserProfile } from '../../types/Profile';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
 
 interface StatRowProps {
@@ -128,6 +129,8 @@ interface ComparisonStatRowProps {
     color?: string;
     originalDetails?: { label: string; value: number }[];
     testDetails?: { label: string; value: number }[];
+    onOriginalDetailsClick?: () => void;
+    onTestDetailsClick?: () => void;
 }
 
 function ComparisonStatRow({
@@ -138,13 +141,13 @@ function ComparisonStatRow({
     formatFn = (val) => val.toLocaleString(undefined, { maximumFractionDigits: 0 }),
     color = 'text-accent-primary',
     originalDetails,
-    testDetails
+    testDetails,
+    onOriginalDetailsClick,
+    onTestDetailsClick
 }: ComparisonStatRowProps) {
     const delta = formatDelta(originalValue, testValue);
     const isExactlySame = originalValue === testValue;
     const testIsHigher = testValue > originalValue;
-    const hasDetails = (originalDetails && originalDetails.length > 0) || (testDetails && testDetails.length > 0);
-
     // Calculate deltas for details
     const detailDeltas = originalDetails?.map((orig, i) => {
         const test = testDetails?.[i];
@@ -171,12 +174,25 @@ function ComparisonStatRow({
             <div className="grid grid-cols-2 gap-4 text-sm">
                 {/* Equipped Column */}
                 <div className="text-center">
-                    <div className="text-xs text-text-muted mb-1">Equipped</div>
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                        <div className="text-xs text-text-muted">Equipped</div>
+                        {onOriginalDetailsClick && (
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOriginalDetailsClick();
+                                }}
+                                className="p-1 px-1.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded transition-all text-orange-400 hover:text-orange-300 flex items-center gap-1 group active:scale-95"
+                                title="Show Detailed Breakdown (Equipped)"
+                            >
+                                <Sparkles className="w-2.5 h-2.5 animate-pulse" />
+                                <span className="text-[8px] font-bold uppercase tracking-wider">Details</span>
+                            </button>
+                        )}
+                    </div>
                     <div className={cn("font-mono font-bold text-base", !isExactlySame && !testIsHigher && color)}>
                         {formatFn(originalValue)}
                     </div>
-                    {/* Spacer to align with Test column's delta area */}
-                    {hasDetails && <div className="h-[42px]" />}
                     {originalDetails && originalDetails.length > 0 && (
                         <div className="mt-2 text-[10px] text-text-muted space-y-0.5">
                             {originalDetails.map((d, i) => (
@@ -187,7 +203,22 @@ function ComparisonStatRow({
                 </div>
                 {/* Test Column with Delta */}
                 <div className="text-center">
-                    <div className="text-xs text-text-muted mb-1">Test Build</div>
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                        <div className="text-xs text-text-muted">Test Build</div>
+                        {onTestDetailsClick && (
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onTestDetailsClick();
+                                }}
+                                className="p-1 px-1.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded transition-all text-orange-400 hover:text-orange-300 flex items-center gap-1 group active:scale-95"
+                                title="Show Detailed Breakdown (Test Build)"
+                            >
+                                <Sparkles className="w-2.5 h-2.5 animate-pulse" />
+                                <span className="text-[8px] font-bold uppercase tracking-wider">Details</span>
+                            </button>
+                        )}
+                    </div>
                     <div className={cn("font-mono font-bold text-base", !isExactlySame && testIsHigher && color)}>
                         {formatFn(testValue)}
                     </div>
@@ -230,6 +261,7 @@ function ComparisonStatRow({
 
 export function StatsSummaryPanel() {
     const [showDpsModal, setShowDpsModal] = useState(false);
+    const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile } | null>(null);
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const { 
@@ -290,10 +322,10 @@ export function StatsSummaryPanel() {
         skinsLibrary, setsLibrary, ascensionConfigsLibrary
     ]);
 
-    // Calculate stats for original and test items when comparing
-    const { originalStats, testStats } = useMemo(() => {
+    // Calculate stats and profiles for original and test items when comparing
+    const { originalStats, testStats, originalProfile, testProfile } = useMemo(() => {
         if (!isComparing || !originalItems || !testItems || !itemBalancingConfig || !itemBalancingLibrary) {
-            return { originalStats: null, testStats: null };
+            return { originalStats: null, testStats: null, originalProfile: null, testProfile: null };
         }
 
         // Build effective tech tree based on tree mode
@@ -340,10 +372,14 @@ export function StatsSummaryPanel() {
         };
 
         const origStats = calculateStats(originalProfile, libs);
-        const tstStats = calculateStats(testProfile, libs);
+        const testStats = calculateStats(testProfile, libs);
 
-        return { originalStats: origStats, testStats: tstStats };
-    }, [isComparing, originalItems, testItems, originalMount, testMount, originalForgeAscension, testForgeAscension, originalMountAscension, testMountAscension, profile, libs, itemBalancingConfig, itemBalancingLibrary, treeMode, techTreePositionLibrary, techTreeLibrary]);
+        return { originalStats: origStats, testStats: testStats, originalProfile, testProfile };
+    }, [
+        isComparing, originalItems, testItems, itemBalancingConfig, itemBalancingLibrary, 
+        profile, originalMount, testMount, originalForgeAscension, originalMountAscension,
+        testForgeAscension, testMountAscension, treeMode, techTreePositionLibrary, techTreeLibrary, libs
+    ]);
 
     if (!stats) {
         return (
@@ -383,8 +419,18 @@ export function StatsSummaryPanel() {
         const doubleMult = 1 + cappedDouble;
         const aps = 1 / (s.weaponAttackDuration / s.attackSpeedMultiplier);
         const weapon = s.totalDamage * aps * critMult * doubleMult;
+
+        // Use pre-calculated real-time values from StatEngine
+        const realWeapon = s.realWeaponDps;
+        
         const skills = s.skillDps + (s.skillBuffDps || 0);
-        return { total: weapon + skills, weapon, skills };
+        return { 
+            total: weapon + skills, 
+            weapon, 
+            skills,
+            realTotal: realWeapon + skills,
+            realWeapon
+        };
     };
 
     // Helper to calculate HPS from stats with breakdown
@@ -396,8 +442,8 @@ export function StatsSummaryPanel() {
     };
 
     // Calculate DPS/HPS for comparison stats with details
-    const originalDpsDetails = originalStats ? calculateDpsDetails(originalStats) : { total: 0, weapon: 0, skills: 0 };
-    const testDpsDetails = testStats ? calculateDpsDetails(testStats) : { total: 0, weapon: 0, skills: 0 };
+    const originalDpsDetails = originalStats ? calculateDpsDetails(originalStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
+    const testDpsDetails = testStats ? calculateDpsDetails(testStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
     const originalHpsDetails = originalStats ? calculateHpsDetails(originalStats, originalDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
     const testHpsDetails = testStats ? calculateHpsDetails(testStats, testDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
 
@@ -408,8 +454,7 @@ export function StatsSummaryPanel() {
     const testHps = testHpsDetails.total;
 
     // Show comparison view when comparing
-    if (isComparing && originalStats && testStats) {
-        return (
+    const mainContent = (isComparing && originalStats && testStats) ? (
             <Card className="p-6">
                 <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                     <AnimatedClock className="w-8 h-8" />
@@ -440,7 +485,7 @@ export function StatsSummaryPanel() {
                     />
                     <ComparisonStatRow
                         icon={<Zap className="w-4 h-4" />}
-                        label="DPS"
+                        label="Theoretical DPS"
                         originalValue={originalDps}
                         testValue={testDps}
                         color="text-orange-400"
@@ -452,6 +497,45 @@ export function StatsSummaryPanel() {
                             { label: 'Weapon', value: testDpsDetails.weapon },
                             { label: 'Skills', value: testDpsDetails.skills }
                         ]}
+                        onOriginalDetailsClick={() => {
+                            if (originalStats && originalProfile) {
+                                setModalData({ stats: originalStats, profile: originalProfile });
+                                setShowDpsModal(true);
+                            }
+                        }}
+                        onTestDetailsClick={() => {
+                            if (testStats && testProfile) {
+                                setModalData({ stats: testStats, profile: testProfile });
+                                setShowDpsModal(true);
+                            }
+                        }}
+                    />
+                    <ComparisonStatRow
+                        icon={<Zap className="w-4 h-4" />}
+                        label="Real-Time DPS"
+                        originalValue={originalDpsDetails.realTotal}
+                        testValue={testDpsDetails.realTotal}
+                        color="text-orange-500"
+                        originalDetails={[
+                            { label: 'Weapon', value: originalDpsDetails.realWeapon },
+                            { label: 'Skills', value: originalDpsDetails.skills }
+                        ]}
+                        testDetails={[
+                            { label: 'Weapon', value: testDpsDetails.realWeapon },
+                            { label: 'Skills', value: testDpsDetails.skills }
+                        ]}
+                        onOriginalDetailsClick={() => {
+                            if (originalStats && originalProfile) {
+                                setModalData({ stats: originalStats, profile: originalProfile });
+                                setShowDpsModal(true);
+                            }
+                        }}
+                        onTestDetailsClick={() => {
+                            if (testStats && testProfile) {
+                                setModalData({ stats: testStats, profile: testProfile });
+                                setShowDpsModal(true);
+                            }
+                        }}
                     />
                     <ComparisonStatRow
                         icon={<TrendingUp className="w-4 h-4" />}
@@ -472,10 +556,7 @@ export function StatsSummaryPanel() {
                     />
                 </div>
             </Card>
-        );
-    }
-
-    return (
+        ) : (
         <Card className="p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <AnimatedClock className="w-8 h-8" />
@@ -499,7 +580,7 @@ export function StatsSummaryPanel() {
                         icon={<Swords className="w-4 h-4" />}
                         label="Total Damage"
                         value={stats.totalDamage.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        subValue={`${formatMultiplier(stats.damageMultiplier)} (Sub: ${formatPercent(stats.damageBreakdown.substats, 1)}, Asc: x${(stats.damageBreakdown.ascension + 1).toFixed(1)} [${formatPercent(stats.damageBreakdown.ascension, 0)}])`}
+                        subValue={`${formatMultiplier(stats.damageMultiplier)} ${stats.isRangedWeapon ? `(Ranged: ${formatPercent(stats.rangedDamageMultiplier)})` : `(Melee: ${formatPercent(stats.meleeDamageMultiplier)})`} (Sub: ${formatPercent(stats.damageBreakdown.substats, 1)}, Asc: x${(stats.damageBreakdown.ascension + 1).toFixed(1)} [${formatPercent(stats.damageBreakdown.ascension, 0)}])`}
                         color="text-red-400"
                     />
                     <StatRow
@@ -513,8 +594,16 @@ export function StatsSummaryPanel() {
                         icon={<Zap className="w-4 h-4" />}
                         label="Effective DPS"
                         value={effectiveDps.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        subValue={`Weapon: ${weaponDps.toLocaleString(undefined, { maximumFractionDigits: 0 })} | Skills: ${stats.skillDps.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                        subValue={`Theoretical (Linear Scaling)`}
                         color="text-orange-400"
+                        onInfoPointsClick={() => setShowDpsModal(true)}
+                    />
+                    <StatRow
+                        icon={<Zap className="w-4 h-4" />}
+                        label="Real-Time DPS"
+                        value={stats.realTotalDps.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        subValue={`Stepped (Breakpoints & Frame Rounding)`}
+                        color="text-orange-500"
                         onInfoPointsClick={() => setShowDpsModal(true)}
                     />
                     <StatRow
@@ -810,15 +899,22 @@ export function StatsSummaryPanel() {
 
             </div>
 
-            {stats && (
-                <DpsBreakdownModal
-                    isOpen={showDpsModal}
-                    onClose={() => setShowDpsModal(false)}
-                    stats={stats}
-                    profile={profile}
-                    skillLibrary={skillLibrary}
-                />
-            )}
         </Card>
+    );
+
+    return (
+        <>
+            {mainContent}
+            <DpsBreakdownModal 
+                isOpen={showDpsModal} 
+                onClose={() => {
+                    setShowDpsModal(false);
+                    setModalData(null);
+                }}
+                stats={modalData?.stats || stats}
+                profile={modalData?.profile || profile}
+                skillLibrary={libs.skillLibrary}
+            />
+        </>
     );
 }

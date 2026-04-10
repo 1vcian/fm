@@ -135,6 +135,7 @@ export interface UserProfile {
         };
         gemCount: number;
         useGemsInCalculators: boolean;
+        simulateAscensionInCalculators: boolean;
     };
 }
 
@@ -204,6 +205,7 @@ export const INITIAL_PROFILE: UserProfile = {
             Potion: 0
         },
         gemCount: 0,
-        useGemsInCalculators: false
+        useGemsInCalculators: false,
+        simulateAscensionInCalculators: true
     }
 };

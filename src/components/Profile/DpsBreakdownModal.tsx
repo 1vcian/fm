@@ -6,6 +6,7 @@ import { AggregatedStats } from '../../utils/statEngine';
 import { UserProfile } from '../../types/Profile';
 import { formatPercent, formatCompactNumber } from '../../utils/statsCalculator';
 import { SKILL_MECHANICS } from '../../utils/constants';
+import { BreakpointTables, BreakpointExplanation } from './BreakpointTables';
 
 interface DpsBreakdownModalProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ interface DpsBreakdownModalProps {
 // Internal component to handle content and memoization to prevent flickering
 const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBreakdownModalProps, 'isOpen'>) => {
     const [showFullNumbers, setShowFullNumbers] = useState(false);
+    const [useRealTime, setUseRealTime] = useState(true);
+    const [showBreakpoints, setShowBreakpoints] = useState(false);
 
     // Local helper for compact formatting of large values
     const formatVal = (val: number, decimals: number = 0) => {
@@ -27,25 +30,34 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
     };
 
     // --- WEAPON DPS CALCULATIONS ---
-    const { cappedCritChance, cappedDoubleChance, critMult, doubleMult, aps, weaponDps, baseDuration, speedBonus } = useMemo(() => {
+    const { 
+        cappedCritChance, cappedDoubleChance, critMult, doubleMult, 
+        theoreticalAps, weaponDps, realWeaponDps, realAps,
+        speedBonus, effectiveWindup, realCycleTime
+    } = useMemo(() => {
         const cCrit = Math.min(stats.criticalChance, 1);
         const cDouble = Math.min(stats.doubleDamageChance, 1);
         const bDuration = stats.weaponAttackDuration;
         const sBonus = stats.attackSpeedMultiplier;
-        const attacksPerSec = 1 / (bDuration / sBonus);
-        const weaponDps = stats.weaponDps; // Use centralized value
-
+        
         return {
             cappedCritChance: cCrit,
             cappedDoubleChance: cDouble,
             critMult: 1 + cCrit * (stats.criticalDamage - 1),
             doubleMult: 1 + cDouble,
-            baseDuration: bDuration,
             speedBonus: sBonus,
-            aps: attacksPerSec,
-            weaponDps
+            effectiveWindup: stats.weaponWindupTime / sBonus,
+            theoreticalAps: 1 / (bDuration / sBonus),
+            weaponDps: stats.weaponDps,
+            realAps: stats.realAps,
+            realWeaponDps: stats.realWeaponDps,
+            realCycleTime: stats.realCycleTime
         };
     }, [stats]);
+
+    // Used for display throughout the modal
+    const displayAps = useRealTime ? realAps : theoreticalAps;
+    const displayWeaponDps = useRealTime ? realWeaponDps : weaponDps;
 
     // --- SKILL DPS CALCULATIONS ---
     const { damageSkills, buffSkills } = useMemo(() => {
@@ -81,7 +93,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                 const uptime = duration / Math.max(0.1, cycle);
                 const bonusPower = baseSkillValue * effectiveMultiplier;
                 // Buffs benefit from weapon stats (Power x APS x Crit x Double)
-                const weaponSynergy = aps * critMult * doubleMult;
+                const weaponSynergy = displayAps * critMult * doubleMult;
                 const dpsContrib = bonusPower * weaponSynergy * uptime;
 
                 return {
@@ -117,7 +129,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
         const tSkillDps = processed.reduce((acc: number, curr: any) => acc + curr.dps, 0);
 
         return { damageSkills: dSkills, buffSkills: bSkills, totalSkillDps: tSkillDps };
-    }, [profile.skills.equipped, skillLibrary, stats, aps, critMult, doubleMult]);
+    }, [profile.skills.equipped, skillLibrary, stats, displayAps, critMult, doubleMult]);
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-[2px] p-2 md:p-4" onClick={onClose}>
@@ -132,6 +144,29 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                         </div>
                     </div>
                     <div className="flex items-center gap-1 md:gap-2">
+                        <div className="flex items-center bg-bg-secondary rounded-lg p-1 mr-2 border border-border/40">
+                             <button 
+                                onClick={() => setShowBreakpoints(!showBreakpoints)}
+                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-2 ${showBreakpoints ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                                title="View Attack Speed Thresholds"
+                            >
+                                <Zap className="w-3 h-3" />
+                                Breakpoints
+                            </button>
+                            <div className="w-px h-4 bg-border/40 mx-1" />
+                            <button 
+                                onClick={() => setUseRealTime(false)}
+                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${!useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                            >
+                                Theoretical
+                            </button>
+                            <button 
+                                onClick={() => setUseRealTime(true)}
+                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                            >
+                                Real-Time
+                            </button>
+                        </div>
                         <button 
                             onClick={() => setShowFullNumbers(!showFullNumbers)} 
                             className={`p-2 rounded-lg transition-all flex items-center gap-2 ${showFullNumbers ? 'bg-orange-500/20 text-orange-400 ring-1 ring-orange-500/30' : 'hover:bg-white/5 text-white/40 hover:text-white/60'}`}
@@ -159,22 +194,39 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                             {/* Base Stats */}
                             <div className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-3 min-w-0">
-                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Core Power</div>
+                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans flex justify-between">
+                                    Core Power
+                                    {useRealTime && <span className="text-orange-400/60 animate-pulse text-[8px]">Steps Active</span>}
+                                </div>
                                 <div className="flex justify-between items-baseline gap-2">
                                     <span className="text-[11px] text-white/60">Base Dmg</span>
                                     <span className="text-base md:text-lg font-mono font-bold text-white break-all">{formatVal(stats.totalDamage)}</span>
                                 </div>
                                 <div className="space-y-2 pt-3 border-t border-white/5">
                                     <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40">Delay</span>
-                                        <span className="font-mono text-white/80">{baseDuration.toFixed(2)}s</span>
+                                        <span className="text-white/40">Attack Cycle</span>
+                                        <span className={`font-mono transition-colors ${useRealTime ? 'text-orange-400 font-bold' : 'text-white/80'}`}>
+                                            {useRealTime ? realCycleTime.toFixed(2) : (stats.weaponAttackDuration / speedBonus).toFixed(3)}s
+                                        </span>
                                     </div>
                                     <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40">Speed</span>
+                                        <span className="text-white/40">Base Duration</span>
+                                        <span className="font-mono text-white/60">{stats.weaponAttackDuration.toFixed(2)}s</span>
+                                    </div>
+                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs border-b border-white/5 pb-2">
+                                        <span className="text-white/40">Base Windup</span>
+                                        <span className="font-mono text-white/60">{stats.weaponWindupTime.toFixed(2)}s</span>
+                                    </div>
+                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
+                                        <span className="text-white/40">Speed Mult</span>
                                         <span className="font-mono text-white/80">{speedBonus.toFixed(2)}x</span>
                                     </div>
+                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
+                                        <span className="text-white/40">Eff. Windup</span>
+                                        <span className="font-mono text-white/80">{effectiveWindup.toFixed(2)}s</span>
+                                    </div>
                                     <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-1 font-mono">
-                                        APS: {aps.toFixed(2)}
+                                        APS: {displayAps.toFixed(2)}
                                     </div>
                                 </div>
                             </div>
@@ -205,9 +257,11 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                                 </div>
                             </div>
 
-                            {/* Double Chance */}
                             <div className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-3 min-w-0">
-                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Double Chance</div>
+                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans flex justify-between">
+                                    Double Chance
+                                    {useRealTime && stats.doubleDamageChance > 0 && <span className="text-orange-400/60 animate-pulse text-[8px]">Steps Active</span>}
+                                </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-baseline text-[11px] md:text-xs">
                                         <span className="text-white/40 whitespace-nowrap">Proc Chance</span>
@@ -217,6 +271,18 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                                         <span>Tree: {formatPercent(stats.doubleDamageBreakdown.tree)}</span>
                                         <span>Items: {formatPercent(stats.doubleDamageBreakdown.substats)}</span>
                                     </div>
+                                    {useRealTime && stats.doubleDamageChance > 0 && (
+                                        <div className="pt-2 border-t border-white/5 space-y-1">
+                                            <div className="flex justify-between items-baseline text-[11px] md:text-xs">
+                                                <span className="text-white/40">Seq. Delay</span>
+                                                <span className="font-mono text-orange-400 font-bold">{(stats.doubleHitDelay / speedBonus).toFixed(2)}s → {(stats.realDoubleHitCycle - realCycleTime).toFixed(1)}s</span>
+                                            </div>
+                                            <div className="flex justify-between items-baseline text-[11px] md:text-xs">
+                                                <span className="text-white/40">Full Cycle</span>
+                                                <span className="font-mono text-white/80">{stats.realDoubleHitCycle.toFixed(2)}s</span>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-2 font-mono">
                                         Multi: {doubleMult.toFixed(2)}x
                                     </div>
@@ -226,21 +292,59 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
 
                             {/* Weapon Result */}
                             <div className="bg-orange-500/10 rounded-2xl p-4 md:p-6 border border-orange-500/20 sm:col-span-2 lg:col-span-3 group transition-all hover:bg-orange-500/[0.12]">
-                                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-                                    <div className="min-w-0">
-                                        <div className="text-[9px] md:text-[10px] uppercase text-orange-400 font-bold tracking-widest mb-1 font-sans">Effective Weapon DPS</div>
-                                        <div className="text-2xl sm:text-3xl md:text-4xl font-mono font-bold text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.2)] break-all">
-                                            {formatVal(weaponDps)}
+                                {showBreakpoints ? (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between border-b border-orange-500/20 pb-3">
+                                            <div className="text-[10px] uppercase text-orange-400 font-bold tracking-[0.1em]">Dynamic Breakpoints for {stats.weaponAttackDuration.toFixed(1)}s Base</div>
+                                            <button onClick={() => setShowBreakpoints(false)} className="text-[10px] text-white/40 hover:text-white/60 uppercase font-bold">Back to Result</button>
+                                        </div>
+                                        <div className="overflow-x-auto custom-scrollbar">
+                                        <BreakpointTables 
+                                            weaponAttackDuration={stats.weaponAttackDuration}
+                                            weaponWindupTime={stats.weaponWindupTime}
+                                            currentAttackSpeedMultiplier={stats.attackSpeedMultiplier}
+                                            realCycleTime={stats.realCycleTime}
+                                            realWindup={stats.weaponWindupTime / stats.attackSpeedMultiplier}
+                                        />
+
+                                        <BreakpointExplanation />
                                         </div>
                                     </div>
-                                    <div className="text-left md:text-right text-[10px] md:text-[11px] text-white/30 font-mono leading-relaxed max-w-sm flex flex-wrap md:flex-col gap-x-2">
-                                        <div className="text-orange-300/40 font-bold uppercase text-[8px] md:text-[9px] w-full mb-1">Calculation:</div>
-                                        <span className="whitespace-nowrap">Dmg({formatVal(stats.totalDamage)}) ×</span>
-                                        <span className="whitespace-nowrap">APS({aps.toFixed(2)}) ×</span>
-                                        <span className="whitespace-nowrap">Crit({critMult.toFixed(2)}) ×</span>
-                                        <span className="whitespace-nowrap">Double({doubleMult.toFixed(2)})</span>
+                                ) : (
+                                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+                                        <div className="min-w-0 text-left">
+                                            <div className="text-[9px] md:text-[10px] uppercase text-orange-400 font-bold tracking-widest mb-1 font-sans">
+                                                Effective {useRealTime ? 'Weighted Real-Time' : 'Theoretical'} Weapon DPS
+                                            </div>
+                                            <div className="text-2xl sm:text-3xl md:text-4xl font-mono font-bold text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.2)] break-all">
+                                                {formatVal(displayWeaponDps)}
+                                            </div>
+                                            {useRealTime && (
+                                                <div className="text-[10px] text-white/40 mt-1 font-mono">
+                                                    {stats.doubleDamageChance > 0 
+                                                        ? `Weighted avg of Normal (${realCycleTime.toFixed(2)}s) and Double (${stats.realDoubleHitCycle.toFixed(2)}s) cycles`
+                                                        : `Rounded to 0.1s frame steps + 0.2s fixed delay`}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-left md:text-right text-[10px] md:text-[11px] text-white/30 font-mono leading-relaxed max-w-sm flex flex-wrap md:flex-col gap-x-2">
+                                            <div className="text-orange-300/40 font-bold uppercase text-[8px] md:text-[9px] w-full mb-1">Calculation:</div>
+                                            <span className="whitespace-nowrap">Dmg({formatVal(stats.totalDamage)}) ×</span>
+                                            {useRealTime && stats.doubleDamageChance > 0 ? (
+                                                <>
+                                                    <span className="whitespace-nowrap text-purple-400 font-bold">WeightedAPS({displayAps.toFixed(2)}) ×</span>
+                                                    <span className="whitespace-nowrap">Crit({critMult.toFixed(2)})</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="whitespace-nowrap">APS({displayAps.toFixed(2)}) ×</span>
+                                                    <span className="whitespace-nowrap">Crit({critMult.toFixed(2)}) ×</span>
+                                                    <span className="whitespace-nowrap">Double({doubleMult.toFixed(2)})</span>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </section>
@@ -354,7 +458,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                         <div className="flex flex-col min-w-0">
                             <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Weapon</span>
                             <span className="text-sm md:text-xl font-bold text-orange-400 leading-none truncate">
-                                {formatVal(weaponDps)}
+                                {formatVal(displayWeaponDps)}
                             </span>
                         </div>
                         <div className="text-white/10 font-bold text-sm md:text-base">+</div>
@@ -365,9 +469,11 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                             </span>
                         </div>
                         <div className="flex flex-col w-full md:w-auto md:ml-auto border-t md:border-t-0 border-white/5 pt-3 md:pt-0">
-                            <span className="text-[8px] md:text-[9px] uppercase text-orange-400 font-bold tracking-widest bg-orange-500/10 px-2 py-1 rounded-md mb-1 leading-none font-sans w-fit">Total Effective DPS</span>
+                            <span className="text-[8px] md:text-[9px] uppercase text-orange-400 font-bold tracking-widest bg-orange-500/10 px-2 py-1 rounded-md mb-1 leading-none font-sans w-fit">
+                                Total {useRealTime ? 'Real-Time' : 'Theoretical'} DPS
+                            </span>
                             <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] leading-none mt-1 break-all">
-                                {formatVal(stats.averageTotalDps)}
+                                {formatVal(useRealTime ? stats.realTotalDps : stats.averageTotalDps)}
                             </span>
                         </div>
                     </div>

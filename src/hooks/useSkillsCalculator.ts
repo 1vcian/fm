@@ -111,8 +111,9 @@ export function useSkillsCalculator() {
     }, [techTreeLibrary, techTreeMapping, treeMode, simulatedTree, profile]);
 
     // 7. Constants from unified config
-    const BASE_SUMMON_COST = skillSummonConfig?.SingleSummonCost?.Amount || skillBaseConfig?.SummonCost || 200;
+    const unitCost = skillSummonConfig?.SingleSummonCost?.Amount || 40;
     const SKILLS_PER_SUMMON = skillBaseConfig?.SummonCount || 5;
+    const BASE_SUMMON_COST = unitCost * SKILLS_PER_SUMMON;
     const levels: any[] = skillSummonConfig?.Levels || [];
     const currency = skillSummonConfig?.SingleSummonCost?.Currency || 'SkillSummonTickets';
     const finalCostPerSummon = Math.ceil(BASE_SUMMON_COST * (1 - techBonuses.costReduction));
@@ -144,6 +145,9 @@ export function useSkillsCalculator() {
         // Simulation state
         let currentLevel = level;
         let currentProgress = progress;
+        const simulateAscension = profile?.misc?.simulateAscensionInCalculators ?? true;
+        let ascensionLevel = profile?.misc?.skillAscensionLevel || 0;
+        let summonsToMax: number | null = null;
 
         const breakdown: { rarity: string; count: number; percentage: number; pointsPerUnit: number; totalPoints: number; }[] = [];
         const countsByRarity: Record<string, number> = {};
@@ -168,9 +172,27 @@ export function useSkillsCalculator() {
             // Progress level
             currentProgress += SKILLS_PER_SUMMON * (1 + techBonuses.extraChance);
             let threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
+            
             while (threshold && currentProgress >= threshold) {
                 currentProgress -= threshold;
                 currentLevel++;
+                
+                // Ascension check: if we go past maxLevel, handle based on toggle
+                if (currentLevel > maxPossibleLevel) {
+                    if (summonsToMax === null) {
+                        summonsToMax = i + 1;
+                    }
+                    
+                    if (simulateAscension) {
+                        currentLevel = 1;
+                        ascensionLevel++;
+                    } else {
+                        currentLevel = maxPossibleLevel;
+                        // Break the while loop since we won't progress further
+                        break;
+                    }
+                }
+                
                 threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
             }
         }
@@ -205,10 +227,13 @@ export function useSkillsCalculator() {
             baseCost: BASE_SUMMON_COST,
             costReduction: techBonuses.costReduction,
             endLevel: currentLevel,
-            endProgress: currentProgress
+            endProgress: Math.round(currentProgress),
+            endAscensionLevel: ascensionLevel,
+            summonsToMax,
+            simulateAscension
         };
 
-    }, [ticketCount, level, progress, levels, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, finalCostPerSummon, BASE_SUMMON_COST]);
+    }, [ticketCount, level, progress, levels, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, finalCostPerSummon, BASE_SUMMON_COST, profile?.misc?.simulateAscensionInCalculators]);
 
     // Apply results
     const applyResultsToProfile = () => {

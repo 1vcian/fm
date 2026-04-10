@@ -112,6 +112,13 @@ export interface AggregatedStats {
     skillBuffDps: number;
     skillHps: number;
     weaponDps: number;
+    realWeaponDps: number;  // Stepped DPS (breakpoints)
+    realTotalDps: number;   // Total with stepped weapon DPS
+    realAps: number;        // Stepped APS
+    realCycleTime: number;   // Stepped cycle duration (s)
+    realDoubleHitCycle: number;
+    realDoubleHitAps: number;
+    doubleHitDelay: number;
     averageTotalDps: number;
 
     // Power calculation
@@ -192,6 +199,13 @@ export const DEFAULT_STATS: AggregatedStats = {
     skillBuffDps: 0,
     skillHps: 0,
     weaponDps: 0,
+    realWeaponDps: 0,
+    realTotalDps: 0,
+    realAps: 0,
+    realCycleTime: 0,
+    realDoubleHitCycle: 0,
+    realDoubleHitAps: 0,
+    doubleHitDelay: 0,
     averageTotalDps: 0,
     power: 0,
     powerDamageMultiplier: 8,
@@ -485,17 +499,32 @@ export class StatEngine {
         // Weapon Info
         const weapon = this.profile.items.Weapon;
         if (weapon && this.libs.weaponLibrary) {
-            const key = `{'Age': ${weapon.age}, 'Type': 'Weapon', 'Idx': ${weapon.idx}}`;
-            const weaponData = this.libs.weaponLibrary[key];
-            if (weaponData) {
-                // Melee = AttackRange < 1, Ranged = AttackRange >= 1
-                const attackRange = weaponData.AttackRange || 0;
+            const baseKey = `{'Age': ${weapon.age}, 'Type': 'Weapon', 'Idx': ${weapon.idx}}`;
+            const baseData = this.libs.weaponLibrary[baseKey];
+            
+            if (baseData) {
+                // Determine base weapon characteristics
+                const attackRange = baseData.AttackRange || 0;
                 this.stats.isRangedWeapon = attackRange >= 1;
                 this.stats.weaponAttackRange = attackRange;
-                this.stats.weaponWindupTime = weaponData.WindupTime || 0.5;
-                this.stats.weaponAttackDuration = weaponData.AttackDuration || 1.0;
+                
+                // Animation defaults from base weapon
+                this.stats.weaponWindupTime = baseData.WindupTime || 0.5;
+                this.stats.weaponAttackDuration = baseData.AttackDuration || 1.5;
 
-                const projId = weaponData.ProjectileId;
+                // SKIN OVERRIDE FOR ANIMATION ONLY
+                if (weapon.skin && weapon.skin.idx !== undefined) {
+                    const skinKey = `{'Age': 999, 'Type': 'Weapon', 'Idx': ${weapon.skin.idx}}`;
+                    const skinData = this.libs.weaponLibrary[skinKey];
+                    if (skinData) {
+                        this.stats.weaponWindupTime = skinData.WindupTime || this.stats.weaponWindupTime;
+                        this.stats.weaponAttackDuration = skinData.AttackDuration || this.stats.weaponAttackDuration;
+                        this.debugLogs.push(`SKIN OVERRIDE: Using animation from skin index ${weapon.skin.idx} (W:${this.stats.weaponWindupTime}s, D:${this.stats.weaponAttackDuration}s)`);
+                    }
+                }
+
+                // Projectiles (Always from Base Weapon)
+                const projId = baseData.ProjectileId;
                 if (projId !== undefined && projId > -1 && this.libs.projectilesLibrary) {
                     const projData = this.libs.projectilesLibrary[String(projId)];
                     if (projData) {
@@ -1458,14 +1487,46 @@ export class StatEngine {
         } // end if library
 
         // Final DPS Synchronization (Weapon + Damage Skills + Buff Skills)
-        const aps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
         const critMult = 1 + Math.min(this.stats.criticalChance, 1) * (this.stats.criticalDamage - 1);
         const doubleMult = 1 + Math.min(this.stats.doubleDamageChance, 1);
         
-        this.stats.weaponDps = this.stats.totalDamage * aps * critMult * doubleMult;
+        // AVERAGE WEAPON DPS (Theoretical - used for simple summary)
+        const simpleAps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
+        this.stats.weaponDps = this.stats.totalDamage * simpleAps * critMult * doubleMult;
         this.stats.averageTotalDps = this.stats.weaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0);
 
-        this.debugLogs.push(`FINAL DPS: Weapon=${this.stats.weaponDps.toFixed(0)}, Total=${this.stats.averageTotalDps.toFixed(0)}`);
+        // REAL-TIME STEPPED CALCULATION (Breakpoints)
+        // Formula: cycle = floor(base / speed * 10) / 10 + 0.2
+        const speedMult = this.stats.attackSpeedMultiplier;
+        const baseDuration = this.stats.weaponAttackDuration || 1.5;
+        const baseWindup = this.stats.weaponWindupTime || 0.5;
+        const baseRecovery = Math.max(0, baseDuration - baseWindup);
+
+        const steppedWindup = Math.floor((baseWindup / speedMult) * 10) / 10;
+        const steppedRecovery = Math.floor((baseRecovery / speedMult) * 10) / 10;
+        const steppedCycle = Math.max(0.4, steppedWindup + steppedRecovery + 0.2);
+        
+        // DOUBLE HIT SEQUENTIAL TIMING (0.25s base delay)
+        const baseDoubleDelay = 0.25;
+        this.stats.doubleHitDelay = baseDoubleDelay;
+        const steppedDoubleDelay = Math.floor((baseDoubleDelay / speedMult) * 10) / 10;
+        const doubleHitCycle = steppedCycle + steppedDoubleDelay;
+
+        // WEIGHTED AVERAGE REAL DPS (The "Second Table" logic)
+        // Correct Real APS = (1 + Chance) / ((1 - Chance) * NormalCycle + Chance * DoubleCycle)
+        const dChance = Math.min(this.stats.doubleDamageChance, 1);
+        const averageRealCycle = (1 - dChance) * steppedCycle + dChance * doubleHitCycle;
+        const weightedAps = (1 + dChance) / averageRealCycle;
+
+        this.stats.realCycleTime = steppedCycle;
+        this.stats.realDoubleHitCycle = doubleHitCycle;
+        this.stats.realAps = weightedAps;
+        this.stats.realDoubleHitAps = 2 / doubleHitCycle; // Stats only for pure double hit phase 
+        
+        this.stats.realWeaponDps = this.stats.totalDamage * weightedAps * critMult;
+        this.stats.realTotalDps = this.stats.realWeaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0);
+
+        this.debugLogs.push(`FINAL DPS: Weapon=${this.stats.weaponDps.toFixed(0)}, RealWeapon=${this.stats.realWeaponDps.toFixed(0)}, Total=${this.stats.averageTotalDps.toFixed(0)}`);
     } // end finalizeCalculation
 } // end class
 

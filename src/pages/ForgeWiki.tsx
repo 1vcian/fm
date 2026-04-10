@@ -1,29 +1,43 @@
 import { useMemo } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
-import { forgeProbabilities, expValues, tierNames } from '../constants/forgeData';
+import { expValues, tierNames } from '../constants/forgeData';
+import { AGES } from '../utils/constants';
 import { Card, CardHeader, CardTitle } from '../components/UI/Card';
 import { Hammer } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function ForgeWiki() {
     const { data: upgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
+    const { data: dropData } = useGameData<any>('ItemAgeDropChancesLibrary.json');
     const techModifiers = useTreeModifiers();
     const forgeCostReduction = techModifiers['ForgeUpgradeCost'] || 0;
     const forgeTimerSpeed = techModifiers['ForgeTimerSpeed'] || 0;
     const freeForgeChance = techModifiers['FreeForgeChance'] || 0;
 
     const data = useMemo(() => {
-        if (!upgradeData) return [];
+        if (!upgradeData || !dropData) return [];
 
-        // Use forgeProbabilities as the source of truth for levels we want to display.
-        // Match them with upgrade data if available.
-        const allLevels = Object.keys(forgeProbabilities).map(Number).sort((a, b) => a - b);
+        // Build levels list from dropData (0..34 -> Level 1..35)
+        const sortedKeys = Object.keys(dropData).map(Number).sort((a, b) => a - b);
+        
+        return sortedKeys.map(id => {
+            const level = id + 1;
 
-        return allLevels.map(level => {
+            // Probability Mapping (Age0..9 -> Descriptive Tiers)
+            const rawProbs = dropData[String(id)];
+            const probs: Record<string, number> = {};
+            if (rawProbs) {
+                AGES.forEach((ageName, index) => {
+                    const key = `Age${index}`;
+                    if (rawProbs[key] && rawProbs[key] > 0) {
+                        probs[ageName.toLowerCase().replace('-', '')] = rawProbs[key] * 100;
+                    }
+                });
+            }
+
             // Upgrade Data for THIS level (Upgrade FROM level -> level+1)
-            // JSON Key N represents the upgrade FROM N to N+1.
-            const nextLevelData = upgradeData ? (upgradeData[String(level)] || upgradeData[level]) : null;
+            const nextLevelData = upgradeData[String(level)];
 
             if (!nextLevelData) {
                 // Represents max level (or missing data).
@@ -38,7 +52,7 @@ export default function ForgeWiki() {
                     hammersToUpgrade: 0,
                     hammersPerTier: 0,
                     totalTimeSeconds: 0,
-                    probs: forgeProbabilities[level], // Still show probabilities for this level
+                    probs, 
                     isMax: true
                 };
             }
@@ -49,10 +63,10 @@ export default function ForgeWiki() {
             const baseDuration = nextLevelData.Duration || 0;
 
             // Calculate EXP Per Hammer for THIS level
-            const probs = forgeProbabilities[level];
             let expPerHammer = 0;
             if (probs) {
                 for (const [tier, probability] of Object.entries(probs)) {
+                    // Normalize tier name back to key if needed for expValues
                     const exp = expValues[tier] || 0;
                     expPerHammer += (probability / 100) * exp;
                 }

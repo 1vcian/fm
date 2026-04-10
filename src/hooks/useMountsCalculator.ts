@@ -79,6 +79,7 @@ export function useMountsCalculator() {
     const MOUNTS_PER_SUMMON = 1 + techBonuses.extraChance;
     const finalCostPerSummon = Math.ceil(BASE_COST * (1 - techBonuses.costReduction));
     const levels: any[] = mountSummonConfig?.Levels || [];
+    const maxPossibleLevel = levels.length || 100;
     const currency = mountSummonConfig?.SingleSummonCost?.Currency || 'ClockWinders';
 
     // 5. Simulation Results
@@ -105,6 +106,9 @@ export function useMountsCalculator() {
         // Simulation state
         let currentLevel = level;
         let currentProgress = progress;
+        const simulateAscension = profile?.misc?.simulateAscensionInCalculators ?? true;
+        let ascensionLevel = profile?.misc?.mountAscensionLevel || 0;
+        let summonsToMax: number | null = null;
 
         const breakdown: Record<string, { count: number; summonPoints: number; mergePoints: number }> = {
             Common: { count: 0, summonPoints: 0, mergePoints: 0 },
@@ -146,6 +150,23 @@ export function useMountsCalculator() {
             while (threshold && currentProgress >= threshold) {
                 currentProgress -= threshold;
                 currentLevel++;
+
+                // Ascension check
+                if (currentLevel > maxPossibleLevel) {
+                    if (summonsToMax === null) {
+                        summonsToMax = i + 1;
+                    }
+                    
+                    if (simulateAscension) {
+                        currentLevel = 1;
+                        ascensionLevel++;
+                    } else {
+                        currentLevel = maxPossibleLevel;
+                        // Break the while loop since we won't progress further
+                        break;
+                    }
+                }
+
                 threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
             }
         }
@@ -153,7 +174,10 @@ export function useMountsCalculator() {
         return {
             totalSummons: totalPaidSummons,
             endLevel: currentLevel,
-            endProgress: currentProgress,
+            endProgress: Math.round(currentProgress),
+            endAscensionLevel: ascensionLevel,
+            summonsToMax,
+            simulateAscension,
             totalPoints: totalSummonPoints + totalMergePoints,
             totalSummonPoints,
             totalMergePoints,
@@ -175,10 +199,9 @@ export function useMountsCalculator() {
             return levels[idx] || {};
         }
 
-    }, [windersCount, level, progress, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, MOUNTS_PER_SUMMON]);
+    }, [windersCount, level, progress, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, MOUNTS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators]);
 
-    // Max Level Helper
-    const maxPossibleLevel = levels.length || 100;
+
 
     // Action to apply results to profile
     const applyResultsToProfile = () => {

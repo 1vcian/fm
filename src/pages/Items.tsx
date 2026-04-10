@@ -4,7 +4,8 @@ import { useGameData } from '../hooks/useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { Sword } from 'lucide-react';
+import { Sword, Zap, Activity } from 'lucide-react';
+import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
 import { cn, getAgeBgStyle, getAgeIconStyle, getInventoryIconStyle } from '../lib/utils';
 import { AGES } from '../utils/constants';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
@@ -29,6 +30,7 @@ export default function Items() {
     const [selectedSlot, setSelectedSlot] = useState<string>('Weapon');
     const [selectedLevel, setSelectedLevel] = useState<number>(1);
     const [ascensionLevel, setAscensionLevel] = useState<number>(profile.misc.forgeAscensionLevel || 0);
+    const [breakpointModal, setBreakpointModal] = useState<{ isOpen: boolean; weapon?: any }>({ isOpen: false });
 
     // Dynamic Max Level calculation
     const currentMaxLevel = useMemo(() => {
@@ -105,6 +107,13 @@ export default function Items() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-12">
+            <BreakpointWikiModal 
+                isOpen={breakpointModal.isOpen}
+                onClose={() => setBreakpointModal({ isOpen: false })}
+                weaponName={breakpointModal.weapon?.Name || 'Weapon'}
+                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.1}
+                weaponWindupTime={breakpointModal.weapon?.WindupTime || 0.4}
+            />
 
             {/* Header / Age Selector */}
             <div className="flex flex-col gap-6">
@@ -309,8 +318,28 @@ export default function Items() {
                                                     </div>
                                                     <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col">
                                                         <span className="text-[10px] text-text-muted uppercase font-bold">Windup</span>
-                                                        <span className="font-mono font-bold text-accent-secondary">{weaponData.WindupTime ? weaponData.WindupTime.toFixed(2) + 's' : 'N/A'}</span>
+                                                        <div className="flex items-center gap-1.5 text-accent-secondary font-mono font-bold">
+                                                            <Activity className="w-3 h-3" />
+                                                            {weaponData.WindupTime ? weaponData.WindupTime.toFixed(2) + 's' : 'N/A'}
+                                                        </div>
                                                     </div>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setBreakpointModal({ 
+                                                                isOpen: true, 
+                                                                weapon: { 
+                                                                    Name: `${selectedSlot} ${item.ItemId?.Idx + 1}`,
+                                                                    AttackDuration: item.EquipmentStats?.[0]?.Value ? 1.1 : 1.1, // Fallback, but we should try to find real duration
+                                                                    WindupTime: weaponData.WindupTime 
+                                                                } 
+                                                            });
+                                                        }}
+                                                        className="mt-2 w-full flex items-center justify-center gap-2 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary py-2 rounded-lg text-[9px] font-bold uppercase transition-all ring-1 ring-accent-primary/30 col-span-2"
+                                                    >
+                                                        <Zap className="w-3 h-3" />
+                                                        Show Breakpoints Table
+                                                    </button>
                                                     {projectileData && (weaponData.AttackRange ?? 0) > 1 && (
                                                         <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col col-span-2">
                                                             <span className="text-[10px] text-text-muted uppercase font-bold">Proj Speed</span>

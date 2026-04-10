@@ -83,7 +83,7 @@ export function useTreeOptimizer() {
     const optimization = useMemo(() => {
         if (!mapping || !library || !upgradeLibrary || !dayConfig || !forgeConfig) return null;
 
-        // Map Tier -> Points
+        // Map Tier -> Points (with fallbacks)
         const tierPoints: Record<number, number> = {
             0: 300,   // I
             1: 7500,  // II
@@ -91,6 +91,27 @@ export function useTreeOptimizer() {
             3: 35000, // IV
             4: 62000  // V
         };
+
+        // Extract dynamic points from dayConfig if available
+        if (dayConfig) {
+            const taskToTier: Record<string, number> = {
+                'FinishITechTreeUpgrade': 0,
+                'FinishIITechTreeUpgrade': 1,
+                'FinishIIITechTreeUpgrade': 2,
+                'FinishIVTechTreeUpgrade': 3,
+                'FinishVTechTreeUpgrade': 4
+            };
+
+            Object.values(dayConfig).forEach((dayData: any) => {
+                dayData.Tasks?.forEach((task: any) => {
+                    const tier = taskToTier[task.Task];
+                    if (tier !== undefined) {
+                        const amount = task.Rewards?.find((r: any) => r.$type === "WarPointsReward")?.Amount;
+                        if (amount) tierPoints[tier] = amount;
+                    }
+                });
+            });
+        }
 
         // Initialize Virtual Tree (based on My/Max/Empty mode)
         const currentTree: Record<string, Record<number, number>> = {

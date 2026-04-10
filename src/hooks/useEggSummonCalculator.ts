@@ -81,6 +81,7 @@ export function useEggSummonCalculator() {
 
     // Levels data
     const levels = eggSummonConfig?.Levels || [];
+    const maxPossibleLevel = levels.length || 100;
 
     // Simulation Results
     const results = useMemo(() => {
@@ -93,6 +94,9 @@ export function useEggSummonCalculator() {
         // Simulation state
         let currentLevel = level;
         let currentProgress = progress;
+        const simulateAscension = profile?.misc?.simulateAscensionInCalculators ?? true;
+        let ascensionLevel = profile?.misc?.petAscensionLevel || 0;
+        let summonsToMax: number | null = null;
 
         const breakdown: Record<string, { count: number }> = {
             Common: { count: 0 },
@@ -102,8 +106,6 @@ export function useEggSummonCalculator() {
             Ultimate: { count: 0 },
             Mythic: { count: 0 }
         };
-
-
 
         for (let i = 0; i < totalPaidSummons; i++) {
             // Level index is 0-based, our level is 1-based
@@ -125,6 +127,23 @@ export function useEggSummonCalculator() {
             while (threshold && currentProgress >= threshold) {
                 currentProgress -= threshold;
                 currentLevel++;
+                
+                // Ascension check
+                if (currentLevel > maxPossibleLevel) {
+                    if (summonsToMax === null) {
+                        summonsToMax = i + 1;
+                    }
+                    
+                    if (simulateAscension) {
+                        currentLevel = 1;
+                        ascensionLevel++;
+                    } else {
+                        currentLevel = maxPossibleLevel;
+                        // Break the while loop since we won't progress further
+                        break;
+                    }
+                }
+
                 threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
             }
         }
@@ -132,7 +151,10 @@ export function useEggSummonCalculator() {
         return {
             totalSummons: totalPaidSummons,
             endLevel: currentLevel,
-            endProgress: currentProgress,
+            endProgress: Math.round(currentProgress),
+            endAscensionLevel: ascensionLevel,
+            summonsToMax,
+            simulateAscension,
             breakdown: Object.entries(breakdown)
                 .map(([rarity, data]) => ({
                     rarity,
@@ -150,10 +172,9 @@ export function useEggSummonCalculator() {
             return levels[idx] || {};
         }
 
-    }, [eggshellCount, level, progress, eggSummonConfig, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, EGGS_PER_SUMMON]);
+    }, [eggshellCount, level, progress, eggSummonConfig, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, EGGS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators]);
 
-    // Max Level Helper
-    const maxPossibleLevel = levels.length || 100;
+
 
     // Apply results to profile
     const applyResultsToProfile = () => {

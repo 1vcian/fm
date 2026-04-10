@@ -5,7 +5,21 @@ import { useGameData } from '../hooks/useGameData';
 import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const getInitialDay = () => {
+    const day = new Date().getDay(); // 0 is Sunday
+    const mapping: Record<number, number> = {
+        2: 0, // Tue
+        3: 1, // Wed
+        4: 2, // Thu
+        5: 3, // Fri
+        6: 4, // Sat
+        0: 5, // Sun
+        1: 5  // Mon (Battle Day) -> show Sunday tasks by default
+    };
+    return mapping[day] ?? 0;
+};
 
 export default function GuildWar() {
     const { data: dayConfig, loading: l1 } = useGameData<any>('GuildWarDayConfigLibrary.json');
@@ -14,7 +28,7 @@ export default function GuildWar() {
     const { data: tierConfig, loading: l4 } = useGameData<any>('GuildTierConfig.json');
     const { data: baseConfig, loading: l5 } = useGameData<any>('GuildBaseConfig.json');
 
-    const [activeDay, setActiveDay] = useState(0);
+    const [activeDay, setActiveDay] = useState(getInitialDay());
 
     const loading = l1 || l2 || l3 || l4 || l5;
 
@@ -154,11 +168,11 @@ export default function GuildWar() {
                                     </h3>
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="text-xs font-mono font-bold bg-bg-secondary px-2 py-1 rounded border border-border min-w-[100px] text-center">MON - SAT</div>
+                                            <div className="text-xs font-mono font-bold bg-bg-secondary px-2 py-1 rounded border border-border min-w-[100px] text-center uppercase">TUE - SUN</div>
                                             <div className="text-sm text-text-secondary">Preparation Phase (Tasks)</div>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <div className="text-xs font-mono font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30 min-w-[100px] text-center">SUNDAY</div>
+                                            <div className="text-xs font-mono font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30 min-w-[100px] text-center uppercase">MONDAY</div>
                                             <div className="text-sm text-text-primary font-bold">Main Guild Battle</div>
                                         </div>
                                     </div>

@@ -11,7 +11,6 @@ import { cn, getRarityBgStyle } from '../../lib/utils';
 import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
-import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 type MobileTab = 'rarity' | 'skills' | 'config';
@@ -365,11 +364,6 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                         </div>
                                     )}
 
-                                    {!isPvp && (
-                                        <div className="flex justify-center mt-2">
-                                            <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
-                                        </div>
-                                    )}
 
                                     <Button variant="primary" className="w-full gap-2" onClick={handleSave}><Save className="w-4 h-4" />Confirm</Button>
                                 </>
@@ -572,11 +566,6 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                     </div>
                                 )}
 
-                                {!isPvp && (
-                                    <div className="flex justify-center mt-2">
-                                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
-                                    </div>
-                                )}
 
                                 <div className="pt-4 mt-auto">
                                     <Button variant="primary" className="w-full gap-2" onClick={handleSave}>

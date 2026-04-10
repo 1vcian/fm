@@ -228,26 +228,50 @@ export default function Eggs() {
                                 </div>
 
                                 {/* Currency Input */}
-                                <div className="space-y-2 pt-2 pb-2">
-                                    <label className="text-xs font-bold text-text-secondary uppercase flex items-center gap-2">
-                                        <SpriteIcon name="Eggshell" size={16} />
-                                        Available {eggSummon.currency}
-                                    </label>
-                                    <div className="relative group">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors">
-                                            <SpriteIcon name="Eggshell" size={20} />
+                                <div className="space-y-4 pt-2">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-text-secondary uppercase flex items-center gap-2">
+                                            <SpriteIcon name="Eggshell" size={16} />
+                                            Available {eggSummon.currency}
+                                        </label>
+                                        <div className="relative group">
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors">
+                                                <SpriteIcon name="Eggshell" size={20} />
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={eggSummon.eggshellCount}
+                                                onChange={(e) => eggSummon.setEggshellCount(Number(e.target.value))}
+                                                className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
+                                                placeholder="0"
+                                                min="0"
+                                            />
                                         </div>
-                                        <input
-                                            type="number"
-                                            value={eggSummon.eggshellCount}
-                                            onChange={(e) => eggSummon.setEggshellCount(Number(e.target.value))}
-                                            className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
-                                            placeholder="0"
-                                            min="0"
-                                        />
+                                        <div className="text-[10px] text-text-muted px-1">
+                                            Estimated cost per summon: <span className="text-accent-primary font-bold">{eggSummon.finalCostPerSummon}</span> 🥚
+                                        </div>
                                     </div>
-                                    <div className="text-[10px] text-text-muted px-1">
-                                        Estimated cost per summon: <span className="text-accent-primary font-bold">{eggSummon.finalCostPerSummon}</span> 🥚
+
+                                    {/* Ascension Toggle */}
+                                    <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
+                                        <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-4 h-4 object-contain" />
+                                        Simulate Ascension
+                                    </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={profile.misc.simulateAscensionInCalculators}
+                                                    onChange={(e) => updateNestedProfile('misc', { simulateAscensionInCalculators: e.target.checked })}
+                                                />
+                                                <div className="w-11 h-6 bg-bg-input peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                            </label>
+                                        </div>
+                                        <p className="text-[10px] text-text-muted leading-relaxed">
+                                            When ON, reaching max level resets it to 1 of the next tier. When OFF, extra eggshells progress only the max level.
+                                        </p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -265,6 +289,21 @@ export default function Eggs() {
                             <CardContent className="space-y-6 relative z-10">
                                 {eggSummon.results && eggSummon.results.totalSummons > 0 ? (
                                     <>
+                                        {eggSummon.results.summonsToMax && (
+                                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                                                    <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-6 h-6 object-contain" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-bold text-amber-400 uppercase">Max Level Milestone</div>
+                                                    <div className="text-[11px] text-text-secondary leading-relaxed">
+                                                        You reach <span className="text-white font-bold">Max Level</span> in <span className="text-amber-400 font-bold">{eggSummon.results.summonsToMax.toLocaleString()} summons</span> ({(eggSummon.results.summonsToMax * eggSummon.results.finalCost).toLocaleString()} shells).
+                                                        The remaining <span className="text-white font-bold">{((eggSummon.results.totalSummons - eggSummon.results.summonsToMax) * eggSummon.results.finalCost).toLocaleString()}</span> shells progress 
+                                                        into <span className="text-amber-400 font-bold">{eggSummon.results.simulateAscension ? `Ascension ${eggSummon.results.endAscensionLevel}` : 'Max Level'}</span>.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
 
 
                                         {/* Summons Info Grid */}
@@ -277,9 +316,16 @@ export default function Eggs() {
                                             </div>
                                             <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
                                                 <div className="text-[10px] text-text-muted uppercase font-bold mb-0.5">End Level</div>
-                                                <div className="text-lg font-mono font-bold text-accent-primary flex items-center gap-1">
-                                                    <span className="text-xs opacity-50 font-normal">Lv.{eggSummon.level} ➔</span>
-                                                    Lv.{eggSummon.results.endLevel}
+                                                <div className="text-lg font-mono font-bold text-accent-primary flex flex-col justify-center">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs opacity-50 font-normal">Lv.{eggSummon.level} ➔</span>
+                                                        Lv.{eggSummon.results.endLevel}
+                                                    </div>
+                                                    {eggSummon.results.endAscensionLevel > (profile.misc.petAscensionLevel || 0) && (
+                                                        <div className="text-[10px] text-amber-500 font-bold">
+                                                            (Ascension {eggSummon.results.endAscensionLevel})
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="bg-bg-tertiary/50 p-3 rounded-lg border border-white/5">
@@ -330,7 +376,7 @@ export default function Eggs() {
                                             className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
                                         >
                                             <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                                            Update Level & Progress to Lv.{eggSummon.results.endLevel}
+                                            Update Level to Lv.{eggSummon.results.endLevel}{eggSummon.results.endAscensionLevel > (profile.misc.petAscensionLevel || 0) ? ` (Asc. ${eggSummon.results.endAscensionLevel})` : ''}
                                         </button>
                                     </>
                                 ) : (

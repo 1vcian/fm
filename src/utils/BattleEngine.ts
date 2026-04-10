@@ -25,6 +25,7 @@ export interface EntityState {
     isWindingUp: boolean; // Kept for legacy compatibility if needed, but we will use combatPhase
     combatPhase: 'IDLE' | 'CHARGING' | 'RECOVERING'; // NEW: Explicit phase tracking
     pendingDoubleHit: boolean; // Tracks if we need to do a second hit after current windup
+    doubleHitTimer: number; // NEW: Timer for sequential hits
 
     // Movement / Range
     isRanged: boolean;
@@ -212,6 +213,7 @@ export class BattleEngine {
             isWindingUp: false,
             combatPhase: 'IDLE',
             pendingDoubleHit: false,
+            doubleHitTimer: 0,
             isRanged: playerStats.isRangedWeapon,
             projectileSpeed: playerStats.projectileSpeed, // Keep speed constant for now? Or scale? Usually speed is absolute.
             attackRange: scaledPlayerRange,
@@ -299,6 +301,7 @@ export class BattleEngine {
                 isWindingUp: false,
                 combatPhase: 'IDLE',
                 pendingDoubleHit: false,
+                doubleHitTimer: 0,
                 isRanged: !!(e.weaponInfo && (e.weaponInfo.AttackRange ?? 0) > 1.0),
                 projectileSpeed: e.projectileSpeed,
                 weaponSpriteKey: e.weaponSpriteKey,
@@ -670,6 +673,25 @@ export class BattleEngine {
         const effectiveRecovery = Math.max(0.01, (duration - windup) / speedMult);
 
         // State Machine
+        // Update Double Hit Timer (Sequential Animation)
+        if (entity.pendingDoubleHit) {
+            entity.doubleHitTimer -= dt;
+            if (entity.doubleHitTimer <= 0) {
+                // Time for the second strike!
+                const target = targets[0];
+                if (target && !target.isDead) {
+                    this.performAttack(entity, target, true);
+                    this.logs.push({
+                        time: this.time,
+                        event: 'DOUBLE_HIT',
+                        details: 'Second Strike!'
+                    });
+                }
+                entity.pendingDoubleHit = false;
+                entity.doubleHitTimer = 0;
+            }
+        }
+
         switch (entity.combatPhase) {
             case 'IDLE':
                 entity.combatPhase = 'CHARGING';
@@ -694,7 +716,7 @@ export class BattleEngine {
 
                             this.performAttack(entity, target);
 
-                            // Double Damage Check
+                            // Double Damage Check (Sequential)
                             if (entity.isPlayer && !entity.pendingDoubleHit &&
                                 Math.random() < this.playerStats.doubleDamageChance) {
                                 if (!target.isDead) {
@@ -703,12 +725,10 @@ export class BattleEngine {
                                         event: 'DOUBLE_DAMAGE',
                                         details: 'Double Damage Proc!'
                                     });
-                                    this.performAttack(entity, target, true);
-                                    this.logs.push({
-                                        time: this.time,
-                                        event: 'DOUBLE_HIT',
-                                        details: 'Second Strike!'
-                                    });
+                                    // Set timer for the second strike (Sequential delay from stats)
+                                    entity.pendingDoubleHit = true;
+                                    const baseDoubleDelay = this.playerStats.doubleHitDelay || 0.25;
+                                    entity.doubleHitTimer = Math.floor((baseDoubleDelay / entity.attackSpeed) * 10) / 10;
                                 }
                             }
 

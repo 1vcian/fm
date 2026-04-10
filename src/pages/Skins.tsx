@@ -4,6 +4,8 @@ import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { Shield, Sword, Heart, Zap } from 'lucide-react';
 import { getSkinSpriteStyle } from '../utils/skinSprites';
+import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
+import { useState } from 'react';
 
 interface SkinStat {
     StatNode: {
@@ -82,11 +84,13 @@ export default function Skins() {
         return { sets, misc };
     }, [skinsData, setsData]);
 
-    const weaponWindupLookup = useMemo(() => {
-        if (!weaponLibrary) return {} as Record<number, number>;
+    const [breakpointModal, setBreakpointModal] = useState<{ isOpen: boolean; weapon?: any }>({ isOpen: false });
+
+    const weaponTimingLookup = useMemo(() => {
+        if (!weaponLibrary) return {} as Record<number, { windup: number, duration: number }>;
         
-        // Internal tracking to store the age along with the windup
-        const tracking: Record<number, { age: number, windup: number }> = {};
+        // Internal tracking to store the age along with the windup/duration
+        const tracking: Record<number, { age: number, windup: number, duration: number }> = {};
         
         Object.entries(weaponLibrary).forEach(([_, data]: [string, any]) => {
             const idx = data.ItemId?.Idx;
@@ -94,14 +98,14 @@ export default function Skins() {
             if (data.ItemId?.Type === 'Weapon' && idx !== undefined && age !== undefined && data.WindupTime !== undefined) {
                 // Prioritize higher ages (1000, 10000, etc.) as they contain skin-specific values
                 if (tracking[idx] === undefined || age > tracking[idx].age) {
-                    tracking[idx] = { age, windup: data.WindupTime };
+                    tracking[idx] = { age, windup: data.WindupTime, duration: data.AttackDuration || 1.1 };
                 }
             }
         });
 
-        const finalLookup: Record<number, number> = {};
+        const finalLookup: Record<number, { windup: number, duration: number }> = {};
         Object.entries(tracking).forEach(([idx, val]) => {
-            finalLookup[Number(idx)] = val.windup;
+            finalLookup[Number(idx)] = { windup: val.windup, duration: val.duration };
         });
         return finalLookup;
     }, [weaponLibrary]);
@@ -126,6 +130,13 @@ export default function Skins() {
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
+            <BreakpointWikiModal 
+                isOpen={breakpointModal.isOpen}
+                onClose={() => setBreakpointModal({ isOpen: false })}
+                weaponName={breakpointModal.weapon?.Name || 'Skin'}
+                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.1}
+                weaponWindupTime={breakpointModal.weapon?.WindupTime || 0.4}
+            />
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
                     Skins & Sets
@@ -195,7 +206,12 @@ export default function Skins() {
                                             key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                             skin={skin}
                                             bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
-                                            windup={skin.SkinId.Type === 'Weapon' ? weaponWindupLookup[skin.SkinId.Idx] : undefined}
+                                            windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
+                                            duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
+                                            onShowBreakpoints={(w, d) => setBreakpointModal({ 
+                                                isOpen: true, 
+                                                weapon: { Name: `${skin.SetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w } 
+                                            })}
                                         />
                                     ))}
                             </div>
@@ -217,7 +233,12 @@ export default function Skins() {
                                 key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                 skin={skin}
                                 bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
-                                windup={skin.SkinId.Type === 'Weapon' ? weaponWindupLookup[skin.SkinId.Idx] : undefined}
+                                windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
+                                duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
+                                onShowBreakpoints={(w, d) => setBreakpointModal({ 
+                                    isOpen: true, 
+                                    weapon: { Name: `${skin.SetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w } 
+                                })}
                             />
                         ))}
                     </div>
@@ -227,7 +248,13 @@ export default function Skins() {
     );
 }
 
-function SkinCard({ skin, bgStyle, windup }: { skin: SkinEntry, bgStyle: React.CSSProperties, windup?: number }) {
+function SkinCard({ skin, bgStyle, windup, duration, onShowBreakpoints }: { 
+    skin: SkinEntry, 
+    bgStyle: React.CSSProperties, 
+    windup?: number,
+    duration?: number,
+    onShowBreakpoints?: (windup: number, duration: number) => void
+}) {
     return (
         <Card className="flex flex-col gap-3 overflow-hidden group hover:border-accent-primary/50 transition-colors">
             <div className="flex items-center gap-4">
@@ -246,9 +273,23 @@ function SkinCard({ skin, bgStyle, windup }: { skin: SkinEntry, bgStyle: React.C
                         Max Stats: {skin.MaxStatCount}
                     </span>
                     {typeof windup === 'number' && (
-                        <div className="mt-1 flex items-center gap-1.5 text-accent-secondary">
-                            <Zap className="w-3 h-3" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Windup: {windup.toFixed(2)}s</span>
+                        <div className="mt-1 flex flex-col gap-1.5">
+                            <div className="flex items-center gap-1.5 text-accent-secondary">
+                                <Zap className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Windup: {windup.toFixed(2)}s</span>
+                            </div>
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (windup !== undefined && duration !== undefined) {
+                                        onShowBreakpoints?.(windup, duration);
+                                    }
+                                }}
+                                className="mt-1 w-full flex items-center justify-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary py-1 rounded border border-accent-primary/30 text-[8px] font-bold uppercase transition-all"
+                            >
+                                <Zap className="w-2.5 h-2.5" />
+                                Breakpoints
+                            </button>
                         </div>
                     )}
                 </div>
