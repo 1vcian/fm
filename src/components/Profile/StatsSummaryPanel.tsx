@@ -40,7 +40,7 @@ function StatRow({ icon, label, value, subValue, count, color = 'text-accent-pri
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <div className="text-sm font-medium text-text-primary leading-tight break-words">{label}</div>
                         {onInfoPointsClick && (
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onInfoPointsClick();
@@ -177,7 +177,7 @@ function ComparisonStatRow({
                     <div className="flex items-center justify-center gap-2 mb-1">
                         <div className="text-xs text-text-muted">Equipped</div>
                         {onOriginalDetailsClick && (
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onOriginalDetailsClick();
@@ -206,7 +206,7 @@ function ComparisonStatRow({
                     <div className="flex items-center justify-center gap-2 mb-1">
                         <div className="text-xs text-text-muted">Test Build</div>
                         {onTestDetailsClick && (
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onTestDetailsClick();
@@ -264,16 +264,16 @@ export function StatsSummaryPanel() {
     const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile } | null>(null);
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
-    const { 
+    const {
         isComparing,
-        originalItems, 
+        originalItems,
         testItems,
-        originalMount, 
-        testMount, 
+        originalMount,
+        testMount,
         originalMountAscension,
         testMountAscension,
-        originalForgeAscension, 
-        testForgeAscension 
+        originalForgeAscension,
+        testForgeAscension
     } = useComparison();
     const { profile } = useProfile();
     const { treeMode } = useTreeMode();
@@ -353,8 +353,8 @@ export function StatsSummaryPanel() {
             items: originalItems,
             techTree: effectiveTechTree,
             mount: { ...profile.mount, active: originalMount },
-            misc: { 
-                ...profile.misc, 
+            misc: {
+                ...profile.misc,
                 forgeAscensionLevel: originalForgeAscension ?? profile.misc.forgeAscensionLevel,
                 mountAscensionLevel: originalMountAscension ?? profile.misc.mountAscensionLevel
             }
@@ -364,8 +364,8 @@ export function StatsSummaryPanel() {
             items: testItems,
             techTree: effectiveTechTree,
             mount: { ...profile.mount, active: testMount },
-            misc: { 
-                ...profile.misc, 
+            misc: {
+                ...profile.misc,
                 forgeAscensionLevel: testForgeAscension ?? profile.misc.forgeAscensionLevel,
                 mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel
             }
@@ -376,7 +376,7 @@ export function StatsSummaryPanel() {
 
         return { originalStats: origStats, testStats: testStats, originalProfile, testProfile };
     }, [
-        isComparing, originalItems, testItems, itemBalancingConfig, itemBalancingLibrary, 
+        isComparing, originalItems, testItems, itemBalancingConfig, itemBalancingLibrary,
         profile, originalMount, testMount, originalForgeAscension, originalMountAscension,
         testForgeAscension, testMountAscension, treeMode, techTreePositionLibrary, techTreeLibrary, libs
     ]);
@@ -422,11 +422,11 @@ export function StatsSummaryPanel() {
 
         // Use pre-calculated real-time values from StatEngine
         const realWeapon = s.realWeaponDps;
-        
+
         const skills = s.skillDps + (s.skillBuffDps || 0);
-        return { 
-            total: weapon + skills, 
-            weapon, 
+        return {
+            total: weapon + skills,
+            weapon,
             skills,
             realTotal: realWeapon + skills,
             realWeapon
@@ -455,108 +455,108 @@ export function StatsSummaryPanel() {
 
     // Show comparison view when comparing
     const mainContent = (isComparing && originalStats && testStats) ? (
-            <Card className="p-6">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                    <AnimatedClock className="w-8 h-8" />
-                    Stats Comparison
-                </h2>
+        <Card className="p-6">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <AnimatedClock className="w-8 h-8" />
+                Stats Comparison
+            </h2>
 
-                <div className="space-y-3">
-                    <ComparisonStatRow
-                        icon={<Gauge className="w-4 h-4" />}
-                        label="Power"
-                        originalValue={originalStats.power}
-                        testValue={testStats.power}
-                        color="text-purple-400"
-                    />
-                    <ComparisonStatRow
-                        icon={<Swords className="w-4 h-4" />}
-                        label="Damage"
-                        originalValue={originalStats.totalDamage}
-                        testValue={testStats.totalDamage}
-                        color="text-red-400"
-                    />
-                    <ComparisonStatRow
-                        icon={<Heart className="w-4 h-4" />}
-                        label="Health"
-                        originalValue={originalStats.totalHealth}
-                        testValue={testStats.totalHealth}
-                        color="text-green-400"
-                    />
-                    <ComparisonStatRow
-                        icon={<Zap className="w-4 h-4" />}
-                        label="Theoretical DPS"
-                        originalValue={originalDps}
-                        testValue={testDps}
-                        color="text-orange-400"
-                        originalDetails={[
-                            { label: 'Weapon', value: originalDpsDetails.weapon },
-                            { label: 'Skills', value: originalDpsDetails.skills }
-                        ]}
-                        testDetails={[
-                            { label: 'Weapon', value: testDpsDetails.weapon },
-                            { label: 'Skills', value: testDpsDetails.skills }
-                        ]}
-                        onOriginalDetailsClick={() => {
-                            if (originalStats && originalProfile) {
-                                setModalData({ stats: originalStats, profile: originalProfile });
-                                setShowDpsModal(true);
-                            }
-                        }}
-                        onTestDetailsClick={() => {
-                            if (testStats && testProfile) {
-                                setModalData({ stats: testStats, profile: testProfile });
-                                setShowDpsModal(true);
-                            }
-                        }}
-                    />
-                    <ComparisonStatRow
-                        icon={<Zap className="w-4 h-4" />}
-                        label="Real-Time DPS"
-                        originalValue={originalDpsDetails.realTotal}
-                        testValue={testDpsDetails.realTotal}
-                        color="text-orange-500"
-                        originalDetails={[
-                            { label: 'Weapon', value: originalDpsDetails.realWeapon },
-                            { label: 'Skills', value: originalDpsDetails.skills }
-                        ]}
-                        testDetails={[
-                            { label: 'Weapon', value: testDpsDetails.realWeapon },
-                            { label: 'Skills', value: testDpsDetails.skills }
-                        ]}
-                        onOriginalDetailsClick={() => {
-                            if (originalStats && originalProfile) {
-                                setModalData({ stats: originalStats, profile: originalProfile });
-                                setShowDpsModal(true);
-                            }
-                        }}
-                        onTestDetailsClick={() => {
-                            if (testStats && testProfile) {
-                                setModalData({ stats: testStats, profile: testProfile });
-                                setShowDpsModal(true);
-                            }
-                        }}
-                    />
-                    <ComparisonStatRow
-                        icon={<TrendingUp className="w-4 h-4" />}
-                        label="HPS"
-                        originalValue={originalHps}
-                        testValue={testHps}
-                        color="text-emerald-400"
-                        originalDetails={[
-                            { label: 'Regen', value: originalHpsDetails.regen },
-                            { label: 'Lifesteal', value: originalHpsDetails.lifesteal },
-                            { label: 'Skills', value: originalHpsDetails.skills }
-                        ]}
-                        testDetails={[
-                            { label: 'Regen', value: testHpsDetails.regen },
-                            { label: 'Lifesteal', value: testHpsDetails.lifesteal },
-                            { label: 'Skills', value: testHpsDetails.skills }
-                        ]}
-                    />
-                </div>
-            </Card>
-        ) : (
+            <div className="space-y-3">
+                <ComparisonStatRow
+                    icon={<Gauge className="w-4 h-4" />}
+                    label="Power"
+                    originalValue={originalStats.power}
+                    testValue={testStats.power}
+                    color="text-purple-400"
+                />
+                <ComparisonStatRow
+                    icon={<Swords className="w-4 h-4" />}
+                    label="Damage"
+                    originalValue={originalStats.totalDamage}
+                    testValue={testStats.totalDamage}
+                    color="text-red-400"
+                />
+                <ComparisonStatRow
+                    icon={<Heart className="w-4 h-4" />}
+                    label="Health"
+                    originalValue={originalStats.totalHealth}
+                    testValue={testStats.totalHealth}
+                    color="text-green-400"
+                />
+                <ComparisonStatRow
+                    icon={<Zap className="w-4 h-4" />}
+                    label="Theoretical DPS"
+                    originalValue={originalDps}
+                    testValue={testDps}
+                    color="text-orange-400"
+                    originalDetails={[
+                        { label: 'Weapon', value: originalDpsDetails.weapon },
+                        { label: 'Skills', value: originalDpsDetails.skills }
+                    ]}
+                    testDetails={[
+                        { label: 'Weapon', value: testDpsDetails.weapon },
+                        { label: 'Skills', value: testDpsDetails.skills }
+                    ]}
+                    onOriginalDetailsClick={() => {
+                        if (originalStats && originalProfile) {
+                            setModalData({ stats: originalStats, profile: originalProfile });
+                            setShowDpsModal(true);
+                        }
+                    }}
+                    onTestDetailsClick={() => {
+                        if (testStats && testProfile) {
+                            setModalData({ stats: testStats, profile: testProfile });
+                            setShowDpsModal(true);
+                        }
+                    }}
+                />
+                <ComparisonStatRow
+                    icon={<Zap className="w-4 h-4" />}
+                    label="Real-Time DPS"
+                    originalValue={originalDpsDetails.realTotal}
+                    testValue={testDpsDetails.realTotal}
+                    color="text-orange-500"
+                    originalDetails={[
+                        { label: 'Weapon', value: originalDpsDetails.realWeapon },
+                        { label: 'Skills', value: originalDpsDetails.skills }
+                    ]}
+                    testDetails={[
+                        { label: 'Weapon', value: testDpsDetails.realWeapon },
+                        { label: 'Skills', value: testDpsDetails.skills }
+                    ]}
+                    onOriginalDetailsClick={() => {
+                        if (originalStats && originalProfile) {
+                            setModalData({ stats: originalStats, profile: originalProfile });
+                            setShowDpsModal(true);
+                        }
+                    }}
+                    onTestDetailsClick={() => {
+                        if (testStats && testProfile) {
+                            setModalData({ stats: testStats, profile: testProfile });
+                            setShowDpsModal(true);
+                        }
+                    }}
+                />
+                <ComparisonStatRow
+                    icon={<TrendingUp className="w-4 h-4" />}
+                    label="HPS"
+                    originalValue={originalHps}
+                    testValue={testHps}
+                    color="text-emerald-400"
+                    originalDetails={[
+                        { label: 'Regen', value: originalHpsDetails.regen },
+                        { label: 'Lifesteal', value: originalHpsDetails.lifesteal },
+                        { label: 'Skills', value: originalHpsDetails.skills }
+                    ]}
+                    testDetails={[
+                        { label: 'Regen', value: testHpsDetails.regen },
+                        { label: 'Lifesteal', value: testHpsDetails.lifesteal },
+                        { label: 'Skills', value: testHpsDetails.skills }
+                    ]}
+                />
+            </div>
+        </Card>
+    ) : (
         <Card className="p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <AnimatedClock className="w-8 h-8" />
@@ -905,8 +905,8 @@ export function StatsSummaryPanel() {
     return (
         <>
             {mainContent}
-            <DpsBreakdownModal 
-                isOpen={showDpsModal} 
+            <DpsBreakdownModal
+                isOpen={showDpsModal}
                 onClose={() => {
                     setShowDpsModal(false);
                     setModalData(null);

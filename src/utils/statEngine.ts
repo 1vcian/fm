@@ -1110,7 +1110,9 @@ export class StatEngine {
                         (targetType === 'WeaponStatTarget' ||
                             targetType === 'EquipmentStatTarget' ||
                             targetType === 'PetStatTarget' ||
-                            targetType === 'MountStatTarget');
+                            targetType === 'MountStatTarget' ||
+                            targetType === 'ActiveSkillStatTarget' ||
+                            targetType === 'PassiveSkillStatTarget');
 
                     if (isHandledByModifiers) {
                         continue;
