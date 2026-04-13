@@ -745,12 +745,6 @@ export function StatsSummaryPanel() {
                     </div>
                     <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-2">
                         <CompactStat
-                            icon={<TrendingUp className="w-3 h-3" />}
-                            label="EXP"
-                            value={formatMultiplier(stats.experienceMultiplier)}
-                            color="text-violet-400"
-                        />
-                        <CompactStat
                             icon={<Coins className="w-3 h-3" />}
                             label="Sell"
                             value={formatMultiplier(stats.sellPriceMultiplier)}
