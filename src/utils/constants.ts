@@ -75,8 +75,8 @@ export const SKILL_MECHANICS: {
     "CannonBarrage": { count: 3, isAOE: true, interval: 0.3, delay: 0.5, descriptionIsPerHit: true },
 
     // --- Single Hit AOE Skills ---
-    "7": { count: 2, isAOE: true, delay: 0.25, descriptionIsPerHit: true }, // Stampede (Avg 2 hits/target, Per Hit)
-    "Stampede": { count: 2, isAOE: true, delay: 0.25, descriptionIsPerHit: true },
+    "7": { count: 2, isAOE: true, delay: 0.25 }, // Stampede (Avg 2 hits/target, Per Hit)
+    "Stampede": { count: 2, isAOE: true, delay: 0.25, damageIsPerHit: true },
     "8": { count: 1, isAOE: true, delay: 0.5 }, // Thorns (Total)
     "Thorns": { count: 1, isAOE: true, delay: 0.5 },
     "9": { count: 1, isAOE: true, delay: 1.5 }, // Bomb (Total)

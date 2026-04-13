@@ -165,7 +165,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                 </h2>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                     <div className="scale-90 sm:scale-100 origin-right">
-                        <AscensionStars 
+                        <AscensionStars
                             value={skillAscensionLevel}
                             onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
                         />
@@ -268,7 +268,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                                     <span className="font-mono font-bold text-accent-primary break-all leading-tight">
                                                         {Math.round(stats.totalDamage).toLocaleString()}
                                                     </span>
-                                                    {stats.damageBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.damageBonus + 1).toFixed(1)} [+{ (stats.damageBonus * 100).toFixed(0) }%])</span>}
+                                                    {stats.damageBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.damageBonus + 1).toFixed(1)} [+{(stats.damageBonus * 100).toFixed(0)}%])</span>}
                                                 </div>
                                                 {stats.count > 1 && (
                                                     <div className="text-[10px] text-text-muted mt-0.5">
@@ -284,7 +284,7 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                                     <span className="font-mono font-bold text-green-400 break-all leading-tight">
                                                         {Math.round(stats.health).toLocaleString()}
                                                     </span>
-                                                    {stats.healthBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.healthBonus + 1).toFixed(1)} [+{ (stats.healthBonus * 100).toFixed(0) }%])</span>}
+                                                    {stats.healthBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.healthBonus + 1).toFixed(1)} [+{(stats.healthBonus * 100).toFixed(0)}%])</span>}
                                                 </div>
                                             </div>
                                         )}
