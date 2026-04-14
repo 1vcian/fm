@@ -18,6 +18,7 @@ export interface TechUpgrade {
     gemCost?: number;
 }
 
+
 export function useTreeOptimizer() {
     const { profile, updateProfile } = useProfile();
     const { treeMode } = useTreeMode();
@@ -27,9 +28,20 @@ export function useTreeOptimizer() {
     const { data: library } = useGameData<any>('TechTreeLibrary.json');
     const { data: upgradeLibrary } = useGameData<any>('TechTreeUpgradeLibrary.json');
     const { data: dayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
+    const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
+
+    const gemSkipCostPerSecond = forgeConfig?.TechTreeGemSkipCostPerSecond || 0.0023;
 
     // 2. State
-    const [timeLimitHours, setTimeLimitHours] = useState(24); // Default 24h
+    const [timeLimitHours, setTimeLimitHours] = useState(() => {
+        const now = new Date();
+        const target = new Date(now);
+        target.setHours(23, 59, 0, 0);
+        if (now.getTime() >= target.getTime()) {
+            target.setDate(target.getDate() + 1);
+        }
+        return (target.getTime() - now.getTime()) / (3600 * 1000);
+    });
     const [potions, setPotions] = useState(profile.misc.techPotions || 0);
 
     // Sync potions to profile
@@ -78,7 +90,6 @@ export function useTreeOptimizer() {
     };
 
     // 4. Optimization Logic
-    const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
 
     const optimization = useMemo(() => {
         if (!mapping || !library || !upgradeLibrary || !dayConfig || !forgeConfig) return null;
@@ -308,6 +319,7 @@ export function useTreeOptimizer() {
         timeLimitHours, setTimeLimitHours,
         potions, setPotions,
         optimization,
-        applyUpgrades
+        applyUpgrades,
+        gemSkipCostPerSecond
     };
 }

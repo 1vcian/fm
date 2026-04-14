@@ -17,6 +17,7 @@ export default function Colors() {
     const [middleColors, setMiddleColors] = useState<ColorStop[]>([]);
     const [mode, setMode] = useState<'chars' | 'words'>('chars');
     const [generatedCode, setGeneratedCode] = useState('');
+    const [useShortHex, setUseShortHex] = useState(true);
     const [nextId, setNextId] = useState(1);
 
     // --- Logic ---
@@ -48,6 +49,14 @@ export default function Colors() {
             return hex.length === 1 ? '0' + hex : hex;
         };
         return '#' + toHex(r) + toHex(g) + toHex(b);
+    };
+
+    const shortenHex = (hex: string) => {
+        const h = hex.replace('#', '').toLowerCase();
+        const r = Math.round(parseInt(h.substring(0, 2), 16) / 17);
+        const g = Math.round(parseInt(h.substring(2, 4), 16) / 17);
+        const b = Math.round(parseInt(h.substring(4, 6), 16) / 17);
+        return r.toString(16) + g.toString(16) + b.toString(16);
     };
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -120,12 +129,15 @@ export default function Colors() {
         // Generate Code
         const code = resultItems.map(item => {
             if (item.isSpace || !item.color) return item.text;
-            return `<#${item.color.replace('#', '').toLowerCase()}>${item.text}`;
+            const hex = useShortHex ? shortenHex(item.color) : item.color.replace('#', '').toLowerCase();
+            return `<#${hex}>${item.text}`;
         }).join('');
 
         setGeneratedCode(code);
 
-    }, [text, startColor, endColor, middleColors, mode, getGradientColors]);
+        setGeneratedCode(code);
+
+    }, [text, startColor, endColor, middleColors, mode, getGradientColors, useShortHex]);
 
     // Helpers for rendering
     const renderPreview = () => {
@@ -156,7 +168,10 @@ export default function Colors() {
             if (seg.isSpace) {
                 return <span key={idx}>{seg.text}</span>;
             }
-            const color = gradientColors[Math.min(colorIndex, gradientColors.length - 1)];
+            let color = gradientColors[Math.min(colorIndex, gradientColors.length - 1)];
+            if (useShortHex) {
+                color = '#' + shortenHex(color);
+            }
             colorIndex++;
             return <span key={idx} style={{ color: color }}>{seg.text}</span>;
         });
@@ -213,6 +228,25 @@ export default function Colors() {
                                         By Word
                                     </button>
                                 </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium">Force Short Hex</span>
+                                    <span className="text-[10px] text-text-muted">Round all colors to 3-digit hex (#RGB) to save characters</span>
+                                </div>
+                                <button
+                                    onClick={() => setUseShortHex(!useShortHex)}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full transition-colors relative",
+                                        useShortHex ? "bg-accent-primary" : "bg-bg-input border border-border"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all",
+                                        useShortHex ? "right-1 bg-black" : "left-1 bg-text-muted"
+                                    )} />
+                                </button>
                             </div>
                         </div>
                     </Card>
