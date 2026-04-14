@@ -378,7 +378,7 @@ export default function Pets() {
                                             <TrendingUp className="w-2.5 h-2.5 text-accent-primary" /> Next Lvl
                                         </div>
                                         <div className="font-mono font-bold text-accent-primary text-xs">
-                                            {(upgradeData[levelIdx]?.Experience || 0).toLocaleString()}
+                                            {globalLevel >= upgradeData.length - 1 ? 'MAX' : (upgradeData[globalLevel]?.Experience || 0).toLocaleString()}
                                         </div>
                                     </div>
                                     <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
@@ -386,7 +386,7 @@ export default function Pets() {
                                             <BookOpen className="w-2.5 h-2.5 text-accent-secondary" /> Total Exp
                                         </div>
                                         <div className="font-mono font-bold text-accent-secondary text-xs">
-                                            {(rarityCumulativeExp[pet.rarity]?.[levelIdx] || 0).toLocaleString()}
+                                            {(rarityCumulativeExp[pet.rarity]?.[globalLevel] || 0).toLocaleString()}
                                         </div>
                                     </div>
                                 </div>
