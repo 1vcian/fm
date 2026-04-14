@@ -287,7 +287,6 @@ export default function Mounts() {
                                 <div className="grid grid-cols-2 gap-2 mb-4">
                                     {(() => {
                                         const upgradeData = mountUpgrades?.[mount.rarity]?.LevelInfo || [];
-                                        const levelIdx = Math.min(Math.max(1, globalLevel) - 1, upgradeData.length - 1);
                                         return (
                                             <>
                                                 <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
