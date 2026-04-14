@@ -117,6 +117,8 @@ export interface UserProfile {
             targetGold: string;
             mode: 'hammers' | 'gold';
             usePlayerItems?: boolean;
+            autoForgeSummons?: number;
+            autoForgeInterval?: number;
         };
         skillCalculatorLevel?: number;
         skillCalculatorTickets?: number;
@@ -190,7 +192,9 @@ export const INITIAL_PROFILE: UserProfile = {
         forgeCalculator: {
             hammers: '0',
             targetGold: '0',
-            mode: 'hammers'
+            mode: 'hammers',
+            autoForgeSummons: 1,
+            autoForgeInterval: 2.43
         },
         skillCalculatorLevel: 1,
         skillCalculatorTickets: 0,

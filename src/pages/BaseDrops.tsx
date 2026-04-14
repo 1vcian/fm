@@ -19,13 +19,11 @@ export default function BaseDrops() {
     const [dataCache, setDataCache] = useState<Record<string, Record<string, any>>>({});
     const [isLoading, setIsLoading] = useState(false);
 
-    const RELEVANT_FILES = {
+    const RELEVANT_FILES: Record<string, string> = {
         forge: 'ItemAgeDropChancesLibrary.json',
         eggs: 'EggSummonConfig.json',
-        mounts: 'MountSummonDropChancesLibrary.json',
-        mountConfig: 'MountSummonConfig.json',
-        skills: 'SkillSummonDropChancesLibrary.json',
-        skillConfig: 'SkillSummonConfig.json'
+        mounts: 'MountSummonConfig.json',
+        skills: 'SkillSummonConfig.json'
     };
 
     // Initial fetch of versions
@@ -183,18 +181,15 @@ export default function BaseDrops() {
 
         // Skills, Mounts, Eggs follow similar structure
         if (activeTab === 'mounts' || activeTab === 'skills' || activeTab === 'eggs') {
-            const isEgg = activeTab === 'eggs';
-            const summonConfigKey = activeTab === 'mounts' ? 'mountConfig' : 'skillConfig';
-            const summonConfigTarget = dataCache[targetVersion]?.[RELEVANT_FILES[summonConfigKey]];
-            const summonConfigBase = isCompareMode ? dataCache[baseVersion]?.[RELEVANT_FILES[summonConfigKey]] : null;
+            const summonConfigTarget = targetData;
+            const summonConfigBase = isCompareMode ? baseData : null;
 
             let levels: any[] = [];
-            if (isEgg) {
-                levels = targetData?.Levels || [];
-            } else if (summonConfigTarget?.Levels) {
-                // Prioritize Config levels (usually 100) over Library keys (sometimes only 50)
+            if (summonConfigTarget?.Levels) {
+                // Config levels (usually 100) are standard format
                 levels = summonConfigTarget.Levels.map((l: any, idx: number) => ({ ...l, key: String(idx) }));
             } else {
+                // Fallback for extremely old legacy versions
                 levels = Object.keys(targetData || {}).sort((a, b) => Number(a) - Number(b)).map(k => ({ ...targetData[k], key: k }));
             }
 
@@ -229,20 +224,15 @@ export default function BaseDrops() {
                         </thead>
                         <tbody>
                             {levels.map((targetRow, i) => {
-                                const lvlIdx = isEgg ? i : Number(targetRow.key);
+                                const lvlIdx = Number(targetRow.key);
                                 const baseRow = isCompareMode ? (
-                                    (isEgg || summonConfigBase?.Levels) 
-                                        ? (isEgg ? baseData?.Levels?.[i] : summonConfigBase?.Levels?.[i])
-                                        : baseData?.[targetRow.key]
+                                    summonConfigBase?.Levels ? summonConfigBase.Levels[lvlIdx] : baseData?.[targetRow.key]
                                 ) : null;
                                 
                                 // Get summons required for next level
                                 let tSummons = 0;
                                 let bSummons = 0;
-                                if (isEgg) {
-                                    tSummons = targetRow.SummonsRequired;
-                                    bSummons = baseRow?.SummonsRequired ?? tSummons;
-                                } else if (summonConfigTarget?.Levels?.[lvlIdx]) {
+                                if (summonConfigTarget?.Levels?.[lvlIdx]) {
                                     tSummons = summonConfigTarget.Levels[lvlIdx].SummonsRequired;
                                     bSummons = isCompareMode ? (summonConfigBase?.Levels?.[lvlIdx]?.SummonsRequired ?? tSummons) : tSummons;
                                 }

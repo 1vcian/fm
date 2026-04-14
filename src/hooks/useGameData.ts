@@ -6,11 +6,19 @@ const dataCache: Record<string, any> = {};
 // Cache to store generic promises for in-flight requests
 const promiseCache: Record<string, Promise<any> | undefined> = {};
 
+const GLOBAL_CONFIG_FILES = [
+    'ManualSpriteMapping.json',
+    'IconsMap.json',
+    'TechTreeMapping.json',
+    'AutoItemMapping.json'
+];
+
 export function useGameData<T>(fileName: string) {
     const { selectedVersion } = useGameDataContext();
     
-    // Create a unique cache key that includes the version
-    const cacheKey = selectedVersion && fileName ? `${selectedVersion}/${fileName}` : null;
+    // Create a unique cache key that includes the version (global for manual files)
+    const isGlobalFile = GLOBAL_CONFIG_FILES.includes(fileName);
+    const cacheKey = isGlobalFile ? `global/${fileName}` : (selectedVersion && fileName ? `${selectedVersion}/${fileName}` : null);
 
     // Initialize from cache if available to prevent flicker
     const [data, setData] = useState<T | null>(() => {
@@ -25,7 +33,8 @@ export function useGameData<T>(fileName: string) {
         if (!selectedVersion || !fileName) return;
 
         // Create a unique cache key that includes the version
-        const cacheKey = `${selectedVersion}/${fileName}`;
+        const isGlobalFile = GLOBAL_CONFIG_FILES.includes(fileName);
+        const cacheKey = isGlobalFile ? `global/${fileName}` : `${selectedVersion}/${fileName}`;
 
         // If data is already in cache, it should have been initialized in useState.
         // But we check again to be safe and avoid unnecessary work.
@@ -55,7 +64,10 @@ export function useGameData<T>(fileName: string) {
 
             // Create the promise and store it in cache
             const fetchPromise = (async () => {
-                const response = await fetch(`${import.meta.env.BASE_URL}parsed_configs/${selectedVersion}/${fileName}`);
+                const url = isGlobalFile 
+                    ? `${import.meta.env.BASE_URL}parsed_configs/${fileName}`
+                    : `${import.meta.env.BASE_URL}parsed_configs/${selectedVersion}/${fileName}`;
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`Failed to load ${fileName}`);
                 }

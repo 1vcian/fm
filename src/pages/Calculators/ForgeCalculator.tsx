@@ -2,8 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useProfile } from '../../context/ProfileContext';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { useGameData } from '../../hooks/useGameData';
-import { GameIcon } from '../../components/UI/GameIcon';
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, HelpCircle, RefreshCw } from 'lucide-react';
 import { cn, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 
@@ -114,6 +113,14 @@ export default function ForgeCalculator() {
     const [hammersInput, setHammersInput] = useState<string>(() => profile.misc.forgeCalculator?.hammers || '0');
     const [goldInput, setGoldInput] = useState<string>(() => profile.misc.forgeCalculator?.targetGold || '0');
 
+    const [autoForgeSummons, setAutoForgeSummons] = useState<number>(() => {
+        return profile.misc.forgeCalculator?.autoForgeSummons || 1;
+    });
+
+    const [autoForgeInterval, setAutoForgeInterval] = useState<string>(() => {
+        return (profile.misc.forgeCalculator?.autoForgeInterval || 2.43).toString();
+    });
+
     // Derived input for calculation
     const inputValue = mode === 'hammers' ? hammersInput : goldInput;
 
@@ -135,7 +142,9 @@ export default function ForgeCalculator() {
                     hammers: hammersInput,
                     targetGold: goldInput,
                     mode: mode,
-                    usePlayerItems: usePlayerItems
+                    usePlayerItems: usePlayerItems,
+                    autoForgeSummons: autoForgeSummons,
+                    autoForgeInterval: parseFloat(autoForgeInterval) || 2.43
                 }
             });
         }, 1000); // 1s debounce
@@ -143,7 +152,7 @@ export default function ForgeCalculator() {
         return () => {
             if (saveTimeout.current) clearTimeout(saveTimeout.current);
         };
-    }, [hammersInput, goldInput, mode, usePlayerItems, updateNestedProfile]);
+    }, [hammersInput, goldInput, mode, usePlayerItems, autoForgeSummons, autoForgeInterval, updateNestedProfile]);
 
     // Load Configs
     const { data: dropChances } = useGameData<ItemAgeDropChances>('ItemAgeDropChancesLibrary.json');
@@ -642,8 +651,24 @@ export default function ForgeCalculator() {
         });
         ages.reverse();
 
-        return { finalHammers, totalForges, freeForges, totalCoins, totalCoinsMin, totalCoinsMax, totalItems, totalWarPoints, ages };
-    }, [inputValue, mode, forgeStats, bonuses, warPointsPerAge, brackets, balancingConfig, usePlayerItems, manualBonuses]);
+        // AutoForge Time Estimation
+        const interval = parseFloat(autoForgeInterval) || 2.43;
+        const cycles = totalForges / autoForgeSummons;
+        const autoForgeSeconds = cycles * interval;
+
+        return { 
+            finalHammers, 
+            totalForges, 
+            freeForges, 
+            totalCoins, 
+            totalCoinsMin, 
+            totalCoinsMax, 
+            totalItems, 
+            totalWarPoints, 
+            ages,
+            autoForgeSeconds 
+        };
+    }, [inputValue, mode, forgeStats, bonuses, warPointsPerAge, brackets, balancingConfig, usePlayerItems, manualBonuses, autoForgeSummons, autoForgeInterval]);
 
     /* getSlotIconIndex removed */
 
@@ -917,6 +942,43 @@ export default function ForgeCalculator() {
                                     </div>
                                 </label>
 
+                                {/* AutoForge Settings */}
+                                <div className="bg-bg-primary/40 border border-white/5 rounded-xl p-4 space-y-4">
+                                    <div className="flex items-center justify-between text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
+                                        <span>AutoForge Estimates</span>
+                                        <HelpCircle className="w-3 h-3 opacity-50" />
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] text-text-muted uppercase font-bold ml-1">Summons / Cycle</label>
+                                            <select 
+                                                value={autoForgeSummons}
+                                                onChange={(e) => setAutoForgeSummons(parseInt(e.target.value))}
+                                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none focus:border-accent-primary"
+                                            >
+                                                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                                                    <option key={n} value={n}>{n} Items</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] text-text-muted uppercase font-bold ml-1">Cycle Time (s)</label>
+                                            <input 
+                                                type="number"
+                                                step="0.01"
+                                                value={autoForgeInterval}
+                                                onChange={(e) => setAutoForgeInterval(e.target.value)}
+                                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none focus:border-accent-primary"
+                                                placeholder="2.43"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] text-text-muted leading-tight opacity-70">
+                                        * Duration is empirical and may vary.
+                                    </p>
+                                </div>
+
                                 {/* Info Box about Level */}
                                 {forgeStats && (
                                     <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-text-secondary space-y-1">
@@ -1006,15 +1068,6 @@ export default function ForgeCalculator() {
                             <img src="./Texture2D/CoinIcon.png" alt="Gold" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
 
-                        <div className="card p-6 bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20 flex flex-col justify-between relative overflow-hidden group">
-                            <div className="absolute right-0 top-0 p-10 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors" />
-                            <div className="relative z-10">
-                                <div className="text-sm font-bold text-purple-500 uppercase tracking-wider mb-1">Total Items Found</div>
-                                {renderPriceWithPrecision(results.totalItems)}
-                            </div>
-                            <GameIcon name="chest" className="text-purple-500/20 w-10 h-10 absolute right-4 bottom-4" />
-                        </div>
-
                         <div className="card p-6 bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20 flex flex-col justify-between relative overflow-hidden group">
                             <div className="absolute right-0 top-0 p-10 bg-red-500/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-colors" />
                             <div className="relative z-10">
@@ -1040,6 +1093,30 @@ export default function ForgeCalculator() {
                                 </div>
                             </div>
                             <img src="./Texture2D/Hammer.png" alt="Hammer" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
+                        </div>
+
+                        {/* Estimated AutoForge Time */}
+                        <div className="card p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20 flex flex-col justify-between relative overflow-hidden group">
+                             <div className="absolute right-0 top-0 p-10 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors" />
+                             <div className="relative z-10">
+                                 <div className="text-sm font-bold text-green-500 uppercase tracking-wider mb-1">Est. AutoForge Time</div>
+                                 <div className="text-2xl lg:text-3xl font-black text-white">
+                                     {(() => {
+                                         const s = results.autoForgeSeconds;
+                                         if (s === Infinity || isNaN(s)) return '-';
+                                         const h = Math.floor(s / 3600);
+                                         const m = Math.floor((s % 3600) / 60);
+                                         const sec = Math.floor(s % 60);
+                                         if (h > 0) return `${h}h ${m}m ${sec}s`;
+                                         if (m > 0) return `${m}m ${sec}s`;
+                                         return `${sec}s`;
+                                     })()}
+                                 </div>
+                                 <div className="text-xs text-green-300/60 mt-1">
+                                     Using {autoForgeSummons} items every {autoForgeInterval}s
+                                 </div>
+                             </div>
+                             <RefreshCw className="w-10 h-10 absolute right-4 bottom-4 opacity-20 text-green-500 animate-[spin_5s_linear_infinite]" />
                         </div>
                     </div>
 
