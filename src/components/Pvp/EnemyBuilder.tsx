@@ -1138,6 +1138,7 @@ export function EnemyBuilder() {
                 slot="Weapon"
                 current={enemy.weapon}
                 isPvp={true}
+                forgeAscensionLevel={enemy.forgeAscensionLevel}
                 onSelect={(item) => {
                     handleWeaponSelect(item);
                     setModalOpen(null);

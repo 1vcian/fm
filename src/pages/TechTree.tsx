@@ -632,7 +632,7 @@ export default function TechTree() {
                                                 </div>
 
                                                 <div className="min-w-0 w-full mb-6">
-                                                    <div className="text-[10px] font-bold text-text-muted uppercase mb-0.5">Tier {node.tier}</div>
+                                                    <div className="text-[10px] font-bold text-text-muted uppercase mb-0.5">Tier {node.tier + 1}</div>
                                                     <h4 className="text-xs font-bold text-text-primary leading-tight line-clamp-2 min-h-[2.5em]">
                                                         {getTechNodeName(node.type)}
                                                     </h4>
@@ -885,7 +885,7 @@ export default function TechTree() {
                                     {upgradeLibrary && upgradeLibrary[selectedNode.tier] && (
                                         <div className="pt-4 mt-4 border-t border-border">
                                             <div className="flex items-center justify-between mb-2">
-                                                <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Upgrade Costs (Tier {selectedNode.tier})</label>
+                                                <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Upgrade Costs (Tier {selectedNode.tier + 1})</label>
                                                 <div className="flex gap-2 text-[9px] font-bold uppercase">
                                                     <span className="text-text-muted">Base</span>
                                                     <span className="text-accent-primary">My Cost</span>

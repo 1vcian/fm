@@ -21,6 +21,7 @@ interface ItemSelectorModalProps {
     slot: string;
     current: ItemSlot | null;
     isPvp?: boolean;
+    forgeAscensionLevel?: number;
 }
 
 const SLOT_MAPPING: Record<string, string> = {
@@ -90,7 +91,7 @@ const SLOT_TO_JSON_TYPE: Record<string, string> = {
 
 type MobileTab = 'age' | 'items' | 'config';
 
-export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, isPvp = false }: ItemSelectorModalProps) {
+export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, isPvp = false, forgeAscensionLevel }: ItemSelectorModalProps) {
     const { profile, updateNestedProfile } = useProfile();
     const stats = useGlobalStats();
     const { data: itemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
@@ -320,7 +321,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
     const numSecondarySlots = useMemo(() => {
         // If the user has at least one forge ascension, all items get 2 secondary stats
-        const currentAscension = profile.misc.forgeAscensionLevel || 0;
+        // Use the passed level (for comparison/pvp) or fallback to profile level
+        const currentAscension = forgeAscensionLevel !== undefined ? forgeAscensionLevel : (profile.misc.forgeAscensionLevel || 0);
         if (currentAscension > 0) return 2;
 
         if (!secondaryData) return 0;
@@ -333,7 +335,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             }
         }
         return secondaryData[String(targetAge)]?.NumberOfSecondStats || 0;
-    }, [secondaryData, ageIdx, selectedItemData, profile.misc.forgeAscensionLevel]);
+    }, [secondaryData, ageIdx, selectedItemData, profile.misc.forgeAscensionLevel, forgeAscensionLevel]);
 
     // Trim manual stats if they exceed the new slot limit
     useEffect(() => {

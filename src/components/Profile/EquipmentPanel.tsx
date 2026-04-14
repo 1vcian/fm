@@ -667,6 +667,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                         onSelect={handleEquip}
                         slot={selectedSlot}
                         current={items[selectedSlot]}
+                        forgeAscensionLevel={globalAscensionLevel}
                     />
                 )
             }
