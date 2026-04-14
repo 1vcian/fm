@@ -4,7 +4,7 @@ import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
-import { Star, Search } from 'lucide-react';
+import { Star, Search, BookOpen, TrendingUp } from 'lucide-react';
 import { AscensionStars } from '../components/UI/AscensionStars';
 
 export default function Mounts() {
@@ -120,6 +120,23 @@ export default function Mounts() {
         if (ascensionLevel === 3) return `${baseUrl}Texture2D/ApexMountIcons.png`;
         return `${baseUrl}Texture2D/MountIcons.png`;
     };
+
+    // Calculate cumulative experience per rarity
+    const rarityCumulativeExp = useMemo(() => {
+        if (!mountUpgrades) return {};
+        const result: Record<string, number[]> = {};
+        Object.keys(mountUpgrades).forEach(rarity => {
+            const levelInfo = mountUpgrades[rarity]?.LevelInfo || [];
+            let sum = 0;
+            const sums = [0]; // Level 1 (index 0) has 0 total exp
+            for (let i = 0; i < levelInfo.length; i++) {
+                sum += levelInfo[i].Experience || 0;
+                sums.push(sum);
+            }
+            result[rarity] = sums;
+        });
+        return result;
+    }, [mountUpgrades]);
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
 
@@ -259,11 +276,39 @@ export default function Mounts() {
                                     })()}
                                 </div>
 
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-between mb-2">
                                     <div className="text-[10px] font-bold text-text-muted uppercase">Skills</div>
                                     <div className="bg-accent-primary/10 text-accent-primary px-2 py-0.5 rounded text-xs font-mono font-bold">
                                         {petUnlockLib?.[mount.rarity]?.NumberOfSecondStats || 0}
                                     </div>
+                                </div>
+
+                                {/* Experience Stats */}
+                                <div className="grid grid-cols-2 gap-2 mb-4">
+                                    {(() => {
+                                        const upgradeData = mountUpgrades?.[mount.rarity]?.LevelInfo || [];
+                                        const levelIdx = Math.min(Math.max(1, globalLevel) - 1, upgradeData.length - 1);
+                                        return (
+                                            <>
+                                                <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
+                                                    <div className="flex items-center gap-1 text-[9px] text-text-muted mb-0.5 uppercase font-bold text-center">
+                                                        <TrendingUp className="w-2.5 h-2.5 text-accent-primary" /> Next Lvl
+                                                    </div>
+                                                    <div className="font-mono font-bold text-accent-primary text-xs">
+                                                        {(upgradeData[levelIdx]?.Experience || 0).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
+                                                    <div className="flex items-center gap-1 text-[9px] text-text-muted mb-0.5 uppercase font-bold text-center">
+                                                        <BookOpen className="w-2.5 h-2.5 text-accent-secondary" /> Total Exp
+                                                    </div>
+                                                    <div className="font-mono font-bold text-accent-secondary text-xs">
+                                                        {(rarityCumulativeExp[mount.rarity]?.[levelIdx] || 0).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* Level Display */}

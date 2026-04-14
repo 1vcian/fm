@@ -4,7 +4,7 @@ import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
-import { Search, Cat, Sword, Heart, Zap, Shield, Star } from 'lucide-react';
+import { Search, Cat, Sword, Heart, Zap, Shield, Star, BookOpen, TrendingUp } from 'lucide-react';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { getAscensionTexturePath } from '../utils/ascensionUtils';
@@ -155,6 +155,23 @@ export default function Pets() {
         return `${baseUrl}Texture2D/Pets.png`;
     };
 
+    // Calculate cumulative experience per rarity
+    const rarityCumulativeExp = useMemo(() => {
+        if (!petUpgrades) return {};
+        const result: Record<string, number[]> = {};
+        Object.keys(petUpgrades).forEach(rarity => {
+            const levelInfo = petUpgrades[rarity]?.LevelInfo || [];
+            let sum = 0;
+            const sums = [0]; // Level 1 (index 0) has 0 total exp
+            for (let i = 0; i < levelInfo.length; i++) {
+                sum += levelInfo[i].Experience || 0;
+                sums.push(sum);
+            }
+            result[rarity] = sums;
+        });
+        return result;
+    }, [petUpgrades]);
+
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
 
     return (
@@ -246,6 +263,9 @@ export default function Pets() {
                             )}>
                                 {rarity}
                             </span>
+                            <div className="text-[10px] font-mono text-text-muted bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                Exp: {(petUpgrades?.[rarity]?.LevelInfo?.[0]?.Experience || 0).toLocaleString()}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -347,6 +367,26 @@ export default function Pets() {
                                         </div>
                                         <div className="text-[9px] text-text-muted mt-0.5">
                                             {Math.round(finalHp).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Experience Stats */}
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
+                                        <div className="flex items-center gap-1 text-[9px] text-text-muted mb-0.5 uppercase font-bold">
+                                            <TrendingUp className="w-2.5 h-2.5 text-accent-primary" /> Next Lvl
+                                        </div>
+                                        <div className="font-mono font-bold text-accent-primary text-xs">
+                                            {(upgradeData[levelIdx]?.Experience || 0).toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
+                                        <div className="flex items-center gap-1 text-[9px] text-text-muted mb-0.5 uppercase font-bold">
+                                            <BookOpen className="w-2.5 h-2.5 text-accent-secondary" /> Total Exp
+                                        </div>
+                                        <div className="font-mono font-bold text-accent-secondary text-xs">
+                                            {(rarityCumulativeExp[pet.rarity]?.[levelIdx] || 0).toLocaleString()}
                                         </div>
                                     </div>
                                 </div>
