@@ -57,7 +57,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Offline', path: '/offline', icon: Coins },
                 { name: 'Dungeons', path: '/dungeons', icon: Key },
                 { name: 'Forge', path: '/forge-calculator', icon: Hammer },
-                { name: 'Tech Tree', path: '/calculators/tree', icon: Cpu },
+                { name: 'Tech Tree - Planner', path: '/calculators/tree', icon: Cpu },
                 { name: 'Eggs', path: '/eggs', icon: Egg },
                 { name: 'Skills', path: '/calculators/skills', icon: Star },
                 { name: 'Mounts', path: '/calculators/mounts', icon: Star },
