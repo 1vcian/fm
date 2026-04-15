@@ -8,7 +8,7 @@ interface GameIconProps extends React.HTMLAttributes<HTMLElement> {
     alt?: string; // For accessibility
 }
 
-export function GameIcon({ name, size = 24, className, alt, ...props }: GameIconProps) {
+export function GameIcon({ name, size, className, alt, ...props }: GameIconProps) {
     const { data: iconsMap } = useGameData<any>('IconsMap.json');
 
     // Case insensitive lookup
@@ -17,10 +17,10 @@ export function GameIcon({ name, size = 24, className, alt, ...props }: GameIcon
         return Object.values(iconsMap.mapping).find((v: any) => v.name.toLowerCase() === name.toLowerCase());
     }, [iconsMap, name]);
 
-    const style = {
+    const style = size ? {
         width: size,
         height: size,
-    } as React.CSSProperties;
+    } : {};
 
     // If we found a sprite mapping, render a div with background image
     if (spriteInfo) {
