@@ -4,7 +4,7 @@ import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
-import { Zap, Search, Star, Clock, Crosshair, Sword, Heart, Package, TrendingUp, BookOpen } from 'lucide-react';
+import { Zap, Search, Star, Clock, Crosshair, Sword, Heart, Package, TrendingUp } from 'lucide-react';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 
