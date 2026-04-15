@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useProfile } from '../../context/ProfileContext';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { useGameData } from '../../hooks/useGameData';
-import { ArrowRightLeft, HelpCircle, RefreshCw } from 'lucide-react';
+import { ArrowRightLeft, HelpCircle, RefreshCw, Trophy } from 'lucide-react';
+import { isWarPointDay } from '../../utils/guildWarUtils';
 import { cn, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 
@@ -812,6 +813,14 @@ export default function ForgeCalculator() {
                     <p className="text-text-secondary">
                         Plan your forging strategy. Switch modes to calculate costs or rewards.
                     </p>
+                    {isWarPointDay(new Date(), 'forge') && (
+                        <div className="flex pt-3 scale-75 origin-left">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-primary/20 text-accent-primary border border-accent-primary/30 text-[10px] font-black uppercase tracking-wider animate-pulse">
+                                <Trophy size={14} />
+                                War Points Active: High Value Day
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

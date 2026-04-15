@@ -3,23 +3,14 @@ import { Link } from 'react-router-dom';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
+import { getWarDayIndex, getWarDayName } from '../utils/guildWarUtils';
 import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const getTodayIdx = () => {
-    const day = new Date().getDay(); // 0 is Sunday
-    const mapping: Record<number, number> = {
-        2: 0, // Tue
-        3: 1, // Wed
-        4: 2, // Thu
-        5: 3, // Fri
-        6: 4, // Sat
-        0: 5, // Sun
-        1: 5  // Mon (Battle Day) -> show Sunday tasks by default
-    };
-    return mapping[day] ?? 0;
+    return getWarDayIndex();
 };
 
 const getInitialDay = () => {
@@ -90,7 +81,7 @@ export default function GuildWar() {
                 <div className="flex flex-col items-end gap-2">
                     <div className="flex items-center gap-2 text-[10px] font-black text-text-muted uppercase tracking-[0.2em] bg-bg-secondary/50 px-3 py-1 rounded-full border border-white/5">
                         <Calendar className="w-3 h-3 text-accent-primary" />
-                        Today: {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+                        Today: {getWarDayName(getWarDayIndex())} (UTC Reset)
                     </div>
                     {/* Day Selector */}
                     <div className="flex gap-1 bg-bg-secondary/30 p-1 rounded-xl border border-border w-full md:w-auto overflow-x-auto no-scrollbar">

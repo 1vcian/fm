@@ -138,6 +138,12 @@ export interface UserProfile {
         gemCount: number;
         useGemsInCalculators: boolean;
         simulateAscensionInCalculators: boolean;
+        techPlanQueue?: { type: 'node' | 'delay'; tree?: string; nodeId?: number; nodeType?: string; delayMinutes?: number }[];
+        techPlanStartDate?: string;
+        plannerSleepStart?: string;
+        plannerSleepEnd?: string;
+        plannerMaxWait?: number;
+        plannerMinWaitBetweenNodes?: number;
     };
 }
 
@@ -210,6 +216,12 @@ export const INITIAL_PROFILE: UserProfile = {
         },
         gemCount: 0,
         useGemsInCalculators: false,
-        simulateAscensionInCalculators: true
+        simulateAscensionInCalculators: true,
+        techPlanQueue: [],
+        techPlanStartDate: '',
+        plannerSleepStart: '23:00',
+        plannerSleepEnd: '07:00',
+        plannerMaxWait: 120,
+        plannerMinWaitBetweenNodes: 1
     }
 };

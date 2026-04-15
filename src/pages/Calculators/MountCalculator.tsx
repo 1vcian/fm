@@ -3,6 +3,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { Trophy, Info, Minus, Plus, RefreshCcw } from 'lucide-react';
+import { isWarPointDay } from '../../utils/guildWarUtils';
 
 export default function MountCalculator() {
     const { profile, updateNestedProfile } = useProfile();
@@ -36,6 +37,14 @@ export default function MountCalculator() {
                     Mount Calculator
                 </h1>
                 <p className="text-text-secondary">Simulate level-ups and rarity drops from your winders.</p>
+                {isWarPointDay(new Date(), 'mounts') && (
+                    <div className="flex justify-center pt-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-primary/20 text-accent-primary border border-accent-primary/30 text-[10px] font-black uppercase tracking-wider animate-pulse">
+                            <Trophy size={14} />
+                            War Points Active: High Value Day
+                        </div>
+                    </div>
+                )}
 
                 {/* Tech Status Tag */}
                 <div className="flex justify-center gap-3 text-xs pt-3">

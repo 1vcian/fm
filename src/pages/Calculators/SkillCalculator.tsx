@@ -3,6 +3,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { Info, Trophy, Zap, Minus, Plus, RefreshCcw } from 'lucide-react';
+import { isWarPointDay } from '../../utils/guildWarUtils';
 
 export default function SkillCalculator() {
     const { profile, updateNestedProfile } = useProfile();
@@ -37,6 +38,16 @@ export default function SkillCalculator() {
                     Skill Calculator
                 </h1>
                 <p className="text-text-secondary">Calculate expected skills and War Points from your tickets.</p>
+
+
+                {isWarPointDay(new Date(), 'skills') && (
+                    <div className="flex justify-center pt-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-primary/20 text-accent-primary border border-accent-primary/30 text-[10px] font-black uppercase tracking-wider animate-pulse">
+                            <Trophy size={14} />
+                            War Points Active: High Value Day
+                        </div>
+                    </div>
+                )}
 
 
                 {techBonuses.extraChance > 0 && (

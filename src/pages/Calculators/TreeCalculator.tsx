@@ -1,15 +1,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTreeOptimizer, TechUpgrade } from '../../hooks/useTreeOptimizer';
+import { useTreePlanner } from '../../hooks/useTreePlanner';
 import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { useGameData } from '../../hooks/useGameData';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
+import { getWarDayIndex } from '../../utils/guildWarUtils';
 
 function SortableItem({ id, children }: { id: string; children: (props: { listeners: any; isDragging: boolean }) => React.ReactNode }) {
     const {
@@ -44,10 +46,31 @@ export default function TreeCalculator() {
         gemSkipCostPerSecond
     } = useTreeOptimizer();
 
+    const planner = useTreePlanner();
+
     const { profile, updateNestedProfile } = useProfile();
 
     const { data: treeMapping } = useGameData<any>('TechTreeMapping.json');
     const NODE_ICON_SIZE = 40;
+
+    // Tab state
+    const [activeTab, setActiveTab] = useState<'optimizer' | 'planner'>('optimizer');
+
+    // Planner UI state
+    const [plannerTreeFilter, setPlannerTreeFilter] = useState<string>('all');
+    const [plannerSearch, setPlannerSearch] = useState('');
+    const [plannerConfirmDone, setPlannerConfirmDone] = useState<number | null>(null);
+
+    // Auto-planner state
+    const [autoPriorities, setAutoPriorities] = useState<Set<string>>(new Set(['war_points']));
+    const [autoMaxSteps, setAutoMaxSteps] = useState(100);
+    const [autoPotionBudget, setAutoPotionBudget] = useState(profile.misc.techPotions || 0);
+    const [autoSleepStart, setAutoSleepStart] = useState(profile.misc.plannerSleepStart || '23:00');
+    const [autoSleepEnd, setAutoSleepEnd] = useState(profile.misc.plannerSleepEnd || '07:00');
+    const [autoMaxWait, setAutoMaxWait] = useState(profile.misc.plannerMaxWait || 120);
+    const [autoMinWait, setAutoMinWait] = useState(profile.misc.plannerMinWaitBetweenNodes || 1);
+    const [autoAllowedTrees, setAutoAllowedTrees] = useState<string[]>(['Forge', 'Power', 'SkillsPetTech']);
+    const [activeId, setActiveId] = useState<string | null>(null);
 
     const toLocalDateTimeString = (date: Date) => {
         const tzOffset = date.getTimezoneOffset() * 60000;
@@ -81,6 +104,18 @@ export default function TreeCalculator() {
             minute: '2-digit'
         }).format(date);
     };
+
+    // Persist auto-planner settings to profile
+    useEffect(() => {
+        updateNestedProfile('misc', {
+            techPotions: autoPotionBudget,
+            plannerMaxSteps: autoMaxSteps,
+            plannerSleepStart: autoSleepStart,
+            plannerSleepEnd: autoSleepEnd,
+            plannerMaxWait: autoMaxWait,
+            plannerMinWaitBetweenNodes: autoMinWait
+        });
+    }, [autoPotionBudget, autoMaxSteps, autoSleepStart, autoSleepEnd, autoMaxWait, autoMinWait]);
 
     // --- REORDERING STATE ---
     const [orderedActions, setOrderedActions] = useState<TechUpgrade[]>([]);
@@ -290,19 +325,29 @@ export default function TreeCalculator() {
     };
 
     const formatTime = (totalSeconds: number) => {
-        const h = Math.floor(totalSeconds / 3600);
+        const d = Math.floor(totalSeconds / 86400);
+        const h = Math.floor((totalSeconds % 86400) / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
-        if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m`;
-        return `${m}m`;
+        const s = Math.floor(totalSeconds % 60);
+        
+        const parts = [];
+        if (d > 0) parts.push(`${d}d`);
+        if (h > 0 || d > 0) parts.push(`${h}h`);
+        if (m > 0 || h > 0 || d > 0) parts.push(`${m}m`);
+        parts.push(`${s}s`);
+        
+        return parts.join(' ');
     };
 
-    const getSpriteStyle = (action: TechUpgrade) => {
-        if (!treeMapping || !action?.sprite_rect) return null;
-        const { x, y, width, height } = action.sprite_rect;
+    const getSpriteStyle = (action: TechUpgrade | { sprite_rect: any }, size?: number) => {
+        const rect = (action as any)?.sprite_rect;
+        if (!treeMapping || !rect) return null;
+        const { x, y, width, height } = rect;
         const sheetW = treeMapping.texture_size?.width || 1024;
         const sheetH = treeMapping.texture_size?.height || 1024;
 
-        const scale = NODE_ICON_SIZE / width;
+        const targetSize = size || NODE_ICON_SIZE;
+        const scale = targetSize / width;
         const cssY = sheetH - y - height;
 
         return {
@@ -310,8 +355,8 @@ export default function TreeCalculator() {
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             backgroundRepeat: 'no-repeat' as const,
-            width: `${NODE_ICON_SIZE}px`,
-            height: `${NODE_ICON_SIZE}px`,
+            width: `${targetSize}px`,
+            height: `${targetSize}px`,
         };
     };
 
@@ -346,6 +391,33 @@ export default function TreeCalculator() {
                 <p className="text-text-secondary">Maximize your Guild War points via optimal tech upgrades.</p>
             </div>
 
+            {/* Tab Toggle */}
+            <div className="flex justify-center mb-6">
+                <div className="flex bg-bg-input rounded-xl p-1 border border-border gap-1">
+                    <button
+                        onClick={() => setActiveTab('optimizer')}
+                        className={cn(
+                            "px-6 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center gap-2",
+                            activeTab === 'optimizer' ? "bg-accent-primary text-black shadow-glow" : "text-text-muted hover:text-text-primary"
+                        )}
+                    >
+                        <Zap size={16} />
+                        Optimizer
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('planner')}
+                        className={cn(
+                            "px-6 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center gap-2",
+                            activeTab === 'planner' ? "bg-accent-primary text-black shadow-glow" : "text-text-muted hover:text-text-primary"
+                        )}
+                    >
+                        <List size={16} />
+                        Planner
+                    </button>
+                </div>
+            </div>
+
+            {activeTab === 'optimizer' && (
             <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
                 {/* INPUTS */}
                 <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
@@ -826,6 +898,638 @@ export default function TreeCalculator() {
                     </div>
                 </Card>
             </div>
+            )}
+
+            {/* ========== PLANNER TAB ========== */}
+            {activeTab === 'planner' && (
+            <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
+                {/* LEFT: Planner Controls */}
+                <div className="space-y-6">
+                    {/* Start Date */}
+                    <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Calendar size={20} className="text-text-tertiary" />
+                                Plan Settings
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[10px] font-bold text-text-secondary uppercase">Start Date</label>
+                                    <button
+                                        onClick={() => {
+                                            const now = new Date();
+                                            now.setSeconds(0, 0);
+                                            planner.setPlanStartDate(toLocalDateTimeString(now));
+                                        }}
+                                        className="text-[9px] font-bold text-accent-primary hover:underline uppercase"
+                                    >Now</button>
+                                </div>
+                                <div className="flex items-center gap-3 bg-bg-input border border-border rounded-lg px-3 py-2.5 group focus-within:border-accent-primary transition-colors min-h-[48px]">
+                                    <Clock size={18} className="text-text-tertiary group-focus-within:text-accent-primary opacity-50 shrink-0" />
+                                    <input
+                                        type="datetime-local"
+                                        value={planner.planStartDate}
+                                        onChange={(e) => planner.setPlanStartDate(e.target.value)}
+                                        onFocus={(e) => (e.target as HTMLInputElement).showPicker()}
+                                        onClick={(e) => (e.target as HTMLInputElement).showPicker()}
+                                        step="60"
+                                        className="w-full bg-transparent border-none text-white text-[15px] outline-none"
+                                        style={{ colorScheme: 'dark' }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Summary */}
+                            <div className="grid grid-cols-3 gap-2 pt-2">
+                                <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-white/5 shadow-inner flex flex-col justify-center">
+                                    <div className="text-[10px] text-text-muted uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest">Points</div>
+                                    <div className="flex flex-col items-center">
+                                        <div className="text-xl font-black text-white leading-none mb-0.5">{planner.summary.totalPoints.toLocaleString()}</div>
+                                        <div className="text-[10px] font-black text-accent-primary flex items-center gap-1 bg-accent-primary/10 px-1.5 py-0.5 rounded-full border border-accent-primary/20" title="Points earned during Guild War days">
+                                            <Trophy size={10} /> {planner.summary.totalWarPoints.toLocaleString()} War
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-accent-primary/10 shadow-glow-sm shadow-accent-primary/5">
+                                    <div className="text-[10px] text-accent-primary uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><Timer size={10} />Time</div>
+                                    <div className="text-xl font-black text-white drop-shadow-sm leading-none">
+                                        {(() => {
+                                            const totalSecs = planner.summary.totalTime;
+                                            const d = Math.floor(totalSecs / 86400);
+                                            const h = Math.floor((totalSecs % 86400) / 3600);
+                                            const m = Math.floor((totalSecs % 3600) / 60);
+                                            return (
+                                                <div className="flex flex-col items-center">
+                                                    <span>{d > 0 ? `${d}d ${h}h` : `${h}h`}</span>
+                                                    <span className="text-[10px] opacity-60 font-bold">{m}m</span>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+                                <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-white/5 shadow-inner">
+                                    <div className="text-[10px] text-text-muted uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><SpriteIcon name="Potion" size={10} className="text-accent-secondary" />Potions</div>
+                                    <div className="text-xl font-black text-accent-secondary drop-shadow-sm">{planner.summary.totalPotions.toLocaleString()}</div>
+                                </div>
+                            </div>
+
+                            {planner.schedule.length > 0 && (
+                                <div className="text-[10px] text-text-muted text-center pt-1 border-t border-white/5">
+                                    Completion: <span className="text-white font-bold ml-1">{planner.summary.completionDate.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })} {planner.summary.completionDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                            )}
+
+                            {planner.planQueue.length > 0 && (
+                                <button
+                                    onClick={() => planner.clearQueue()}
+                                    className="w-full py-2 text-xs font-bold text-red-400 border border-red-400/20 bg-red-400/5 rounded-lg hover:bg-red-400/10 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 size={12} />
+                                    Clear All Steps
+                                </button>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Auto-Planner */}
+                    <Card className="p-6 bg-gradient-to-br from-accent-primary/5 via-bg-secondary to-accent-secondary/5 border-accent-primary/30 shadow-lg shadow-accent-primary/5">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Zap size={20} className="text-accent-primary" />
+                                Auto-Planner
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-[10px] text-text-muted leading-relaxed">
+                                Select one or more priorities and generate an optimized upgrade plan automatically.
+                            </p>
+
+                            {/* Target Trees */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase">Target Trees</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { key: 'Forge', label: 'Forge', icon: <Hammer size={12} /> },
+                                        { key: 'Power', label: 'Power', icon: <Shield size={12} /> },
+                                        { key: 'SkillsPetTech', label: 'SPT', icon: <Sparkles size={12} /> }
+                                    ].map(t => {
+                                        const isActive = autoAllowedTrees.includes(t.key);
+                                        return (
+                                            <button
+                                                key={t.key}
+                                                onClick={() => {
+                                                    setAutoAllowedTrees(prev => {
+                                                        if (prev.includes(t.key)) {
+                                                            if (prev.length <= 1) return prev; // Keep at least one
+                                                            return prev.filter(x => x !== t.key);
+                                                        }
+                                                        return [...prev, t.key];
+                                                    });
+                                                }}
+                                                className={cn(
+                                                    "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg border text-[10px] font-bold transition-all",
+                                                    isActive 
+                                                        ? "border-accent-secondary bg-accent-secondary/10 text-accent-secondary" 
+                                                        : "border-white/5 bg-bg-primary/30 text-text-muted hover:border-white/20"
+                                                )}
+                                            >
+                                                <span>{t.icon}</span>
+                                                {t.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Priority Toggles */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase">Priorities</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { key: 'war_points', label: 'War Points', icon: <Trophy size={18} />, desc: 'Max points/time' },
+                                        { key: 'dps', label: 'DPS / Stats', icon: <Swords size={18} />, desc: 'Combat power' },
+                                        { key: 'speed', label: 'Research Speed', icon: <Gauge size={18} />, desc: 'Faster upgrades' },
+                                        { key: 'time', label: 'Min Time', icon: <Timer size={18} />, desc: 'Short first' },
+                                    ].map(p => {
+                                        const isActive = autoPriorities.has(p.key);
+                                        return (
+                                            <button
+                                                key={p.key}
+                                                onClick={() => {
+                                                    setAutoPriorities(prev => {
+                                                        const next = new Set(prev);
+                                                        if (next.has(p.key)) next.delete(p.key);
+                                                        else next.add(p.key);
+                                                        return next;
+                                                    });
+                                                }}
+                                                className={cn(
+                                                    "flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-center",
+                                                    isActive
+                                                        ? "border-accent-primary bg-accent-primary/10 shadow-glow"
+                                                        : "border-white/10 bg-bg-primary/30 hover:border-white/20"
+                                                )}
+                                            >
+                                                <span className={cn("", isActive ? "text-accent-primary" : "text-text-muted")}>{p.icon}</span>
+                                                <span className={cn("text-[10px] font-bold", isActive ? "text-accent-primary" : "text-text-secondary")}>{p.label}</span>
+                                                <span className="text-[8px] text-text-muted">{p.desc}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Max Steps */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[10px] font-bold text-text-secondary uppercase">Max Steps</label>
+                                    <span className="text-xs font-mono text-accent-primary font-bold">{autoMaxSteps} / {planner.totalRemainingNodes}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="10"
+                                    max={Math.max(10, planner.totalRemainingNodes)}
+                                    step="10"
+                                    value={autoMaxSteps}
+                                    onChange={(e) => setAutoMaxSteps(Number(e.target.value))}
+                                    className="w-full accent-accent-primary h-2 rounded-lg appearance-none cursor-pointer bg-bg-input"
+                                />
+                            </div>
+
+                            {/* Potion Budget */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase flex items-center gap-2">
+                                    <SpriteIcon name="Potion" size={12} />
+                                    Potion Budget
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={autoPotionBudget || ''}
+                                        onChange={(e) => setAutoPotionBudget(Math.max(0, Number(e.target.value)))}
+                                        placeholder="∞ Unlimited"
+                                        min="0"
+                                        className="w-full bg-bg-input border border-border rounded-lg py-2 px-3 text-sm text-white placeholder:text-text-muted font-mono focus:border-accent-primary outline-none transition-colors"
+                                    />
+                                    {autoPotionBudget > 0 && (
+                                        <button
+                                            onClick={() => setAutoPotionBudget(0)}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-text-muted hover:text-accent-primary"
+                                        >∞</button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Schedule Optimization */}
+                            <div className="pt-2 border-t border-white/5 space-y-3">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase flex items-center gap-2">
+                                    <Clock size={12} className="text-accent-secondary" />
+                                    Schedule Optimization
+                                </label>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] text-text-muted uppercase">Sleep Start</label>
+                                        <input
+                                            type="time"
+                                            value={autoSleepStart}
+                                            onChange={(e) => setAutoSleepStart(e.target.value)}
+                                            className="w-full bg-bg-input border border-border rounded-md px-2 py-1 text-xs text-white outline-none focus:border-accent-secondary transition-colors"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] text-text-muted uppercase">Sleep End</label>
+                                        <input
+                                            type="time"
+                                            value={autoSleepEnd}
+                                            onChange={(e) => setAutoSleepEnd(e.target.value)}
+                                            className="w-full bg-bg-input border border-border rounded-md px-2 py-1 text-xs text-white outline-none focus:border-accent-secondary transition-colors"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[9px] text-text-muted uppercase">Max Wait Buffer</label>
+                                        <span className="text-[10px] font-mono text-accent-secondary">{autoMaxWait}m</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1440"
+                                        step="15"
+                                        value={autoMaxWait}
+                                        onChange={(e) => setAutoMaxWait(Number(e.target.value))}
+                                        className="w-full h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-secondary"
+                                    />
+                                    <p className="text-[8px] text-text-muted leading-tight">Max delay to wait for a War Day or align with wake-up time.</p>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[9px] text-text-muted uppercase">Min Wait Between Nodes</label>
+                                        <span className="text-[10px] font-mono text-accent-secondary">{autoMinWait}m</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="60"
+                                        step="1"
+                                        value={autoMinWait}
+                                        onChange={(e) => setAutoMinWait(Number(e.target.value))}
+                                        className="w-full h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-secondary"
+                                    />
+                                    <p className="text-[8px] text-text-muted leading-tight">Safety buffer added between all upgrades.</p>
+                                </div>
+                            </div>
+
+                            {/* Generate Button */}
+                            <button
+                                onClick={() => {
+                                    planner.autoPlan(
+                                        autoPriorities.size > 0 ? autoPriorities : new Set(['war_points']),
+                                        autoMaxSteps,
+                                        autoPotionBudget > 0 ? autoPotionBudget : undefined,
+                                        autoSleepStart,
+                                        autoSleepEnd,
+                                        autoMaxWait,
+                                        autoMinWait,
+                                        autoAllowedTrees
+                                    );
+                                    // Persist settings
+                                    updateNestedProfile('misc', { 
+                                        plannerSleepStart: autoSleepStart, 
+                                        plannerSleepEnd: autoSleepEnd, 
+                                        plannerMaxWait: autoMaxWait,
+                                        plannerMinWaitBetweenNodes: autoMinWait
+                                    });
+                                }}
+                                disabled={autoPriorities.size === 0 || autoAllowedTrees.length === 0}
+                                className="w-full py-3.5 bg-gradient-to-r from-accent-primary to-accent-secondary text-black font-black uppercase tracking-tighter rounded-xl hover:opacity-90 disabled:opacity-30 disabled:grayscale transition-all shadow-xl shadow-accent-primary/20 flex items-center justify-center gap-2 group"
+                            >
+                                <Zap size={18} className="group-hover:scale-110 transition-transform" />
+                                Generate Plan
+                            </button>
+
+                            {autoPriorities.size === 0 && (
+                                <p className="text-[9px] text-red-400 text-center">Select at least one priority</p>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Node Picker */}
+                    <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Plus size={20} className="text-text-tertiary" />
+                                Add Upgrade
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {/* Search */}
+                            <div className="relative">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                                <input
+                                    type="text"
+                                    placeholder="Search nodes..."
+                                    value={plannerSearch}
+                                    onChange={(e) => setPlannerSearch(e.target.value)}
+                                    className="w-full bg-bg-input border border-border rounded-lg py-2 pl-9 pr-3 text-sm text-white placeholder:text-text-muted focus:border-accent-primary outline-none transition-colors"
+                                />
+                            </div>
+
+                            {/* Tree Filter */}
+                            <div className="flex bg-bg-input rounded-lg p-1 border border-border gap-0.5">
+                                {['all', 'Forge', 'Power', 'SkillsPetTech'].map(t => (
+                                    <button key={t} onClick={() => setPlannerTreeFilter(t)}
+                                        className={cn("flex-1 py-1 text-[10px] font-bold rounded transition-all",
+                                            plannerTreeFilter === t ? "bg-accent-primary text-black" : "text-text-muted hover:text-text-primary"
+                                        )}
+                                    >{t === 'all' ? 'All' : t === 'SkillsPetTech' ? 'SPT' : t}</button>
+                                ))}
+                            </div>
+
+                            {/* Node List */}
+                            <div className="max-h-[400px] overflow-y-auto pr-1 custom-scrollbar space-y-1">
+                                {planner.availableNodes
+                                    .filter(n => plannerTreeFilter === 'all' || n.tree === plannerTreeFilter)
+                                    .filter(n => !plannerSearch || n.nodeType.toLowerCase().includes(plannerSearch.toLowerCase()))
+                                    .sort((a, b) => a.tier - b.tier || a.nodeType.localeCompare(b.nodeType))
+                                    .map(node => (
+                                        <button
+                                            key={`${node.tree}-${node.nodeId}-${node.nextLevel}`}
+                                            onClick={() => planner.addStep(node)}
+                                            className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-bg-tertiary/30 border border-white/5 hover:border-accent-primary/30 hover:bg-accent-primary/5 transition-all text-left group"
+                                        >
+                                            <div className="w-8 h-8 shrink-0 rounded overflow-hidden border border-white/5 bg-black/20">
+                                                {node.sprite_rect && treeMapping ? (
+                                                    <div style={getSpriteStyle({ sprite_rect: node.sprite_rect }, 32) || undefined} className="w-full h-full" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center"><Cpu size={16} className="text-text-muted" /></div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold text-white truncate">{node.nodeType}</div>
+                                                <div className="flex items-center gap-2 text-[9px] text-text-muted">
+                                                    <span className="text-accent-primary/70">{node.tree === 'SkillsPetTech' ? 'SPT' : node.tree}</span>
+                                                    <span>T{node.tier + 1}</span>
+                                                    <span>Lv.{node.currentLevel}→{node.nextLevel}/{node.maxLevel}</span>
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0 text-right">
+                                                <div className="text-[10px] font-mono text-accent-secondary">+{node.points.toLocaleString()}</div>
+                                                <div className="text-[9px] text-text-muted">{formatTime(node.duration)}</div>
+                                            </div>
+                                            <Plus size={14} className="text-text-muted group-hover:text-accent-primary transition-colors shrink-0" />
+                                        </button>
+                                    ))
+                                }
+                                {planner.availableNodes.filter(n => plannerTreeFilter === 'all' || n.tree === plannerTreeFilter).filter(n => !plannerSearch || n.nodeType.toLowerCase().includes(plannerSearch.toLowerCase())).length === 0 && (
+                                    <div className="text-center text-text-muted text-xs py-8 opacity-60">No available upgrades</div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* RIGHT: Schedule Queue */}
+                <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden flex flex-col">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-accent-primary">
+                            <Calendar className="w-5 h-5" />
+                            Upgrade Schedule ({planner.schedule.length} steps)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 relative z-10 flex-1 flex flex-col min-h-0">
+                        {planner.schedule.length > 0 ? (
+                            <DndContext 
+                                sensors={sensors} 
+                                collisionDetection={closestCorners} 
+                                onDragStart={(event) => {
+                                    const { active } = event;
+                                    setActiveId(active.id as string);
+                                }}
+                                onDragEnd={(event) => {
+                                    const { active, over } = event;
+                                    setActiveId(null);
+                                    if (!over || active.id === over.id) return;
+                                    const oldIdx = planner.planQueue.findIndex((s) => s.id === active.id);
+                                    const newIdx = planner.planQueue.findIndex((s) => s.id === over.id);
+                                    if (oldIdx !== -1 && newIdx !== -1) planner.moveStep(oldIdx, newIdx);
+                                }}
+                                onDragCancel={() => setActiveId(null)}
+                            >
+                                <SortableContext items={planner.planQueue.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                                    <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                        {planner.schedule.map((entry, idx) => {
+                                            const isFirstInWarBlock = entry.isWarDay && (idx === 0 || !planner.schedule[idx - 1].isWarDay);
+                                            const isLastInWarBlock = entry.isWarDay && (idx === planner.schedule.length - 1 || !planner.schedule[idx + 1].isWarDay);
+                                            
+                                            return (
+                                                <div key={`plan-container-${idx}`} className="space-y-2">
+                                                    {isFirstInWarBlock && (
+                                                        <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
+                                                            <Trophy size={14} className="text-accent-primary animate-pulse" />
+                                                            <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Guild War Event Period</span>
+                                                            <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
+                                                        </div>
+                                                    )}
+                                                    <SortableItem key={entry.step.id} id={entry.step.id}>
+                                                        {({ listeners, isDragging }) => (
+                                                            <div className={cn(
+                                                                "flex gap-3 p-3 rounded-lg border transition-all relative group",
+                                                                isDragging && "shadow-2xl shadow-accent-primary/20 ring-2 ring-accent-primary/30",
+                                                                entry.isWarDay && !isDragging && "border-accent-primary/30 bg-accent-primary/5 shadow-glow-sm shadow-accent-primary/10",
+                                                                entry.isInvalid
+                                                                    ? "bg-red-500/5 border-red-500/20"
+                                                                    : entry.step.type === 'delay'
+                                                                        ? (entry.isWarDay ? "bg-accent-primary/10 border-accent-primary/40" : "bg-yellow-500/5 border-yellow-500/20")
+                                                                        : (!entry.isWarDay && "bg-bg-tertiary/50 border-white/5")
+                                                            )}>
+                                                                {entry.isWarDay && (
+                                                                    <div className="absolute -left-1 top-0 bottom-0 w-1 bg-accent-primary rounded-l-lg shadow-glow shadow-accent-primary/50" />
+                                                                )}
+                                                                {/* Drag Handle */}
+                                                                <div {...listeners} className="flex items-center cursor-grab active:cursor-grabbing text-text-muted/30 hover:text-accent-primary/50 transition-colors touch-none">
+                                                                    <GripVertical size={20} />
+                                                                </div>
+
+                                                                {/* Index + Icon */}
+                                                                <div className="flex flex-col items-center shrink-0 w-8">
+                                                                    <div className={cn(
+                                                                        "text-[10px] font-bold w-full text-center py-0.5 rounded border mb-2",
+                                                                        entry.isInvalid ? "text-red-400 bg-red-500/10 border-red-500/20" : "text-text-muted bg-white/5 border-white/5"
+                                                                    )}>#{idx + 1}</div>
+                                                                    <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-white/5 bg-black/20">
+                                                                        {entry.step.type === 'delay' ? (
+                                                                            <div className="w-full h-full flex items-center justify-center"><Pause size={18} className="text-yellow-400" /></div>
+                                                                        ) : entry.sprite_rect && treeMapping ? (
+                                                                            <div style={getSpriteStyle({ sprite_rect: entry.sprite_rect }, 40) || undefined} className="w-full h-full" />
+                                                                        ) : (
+                                                                            <div className="w-full h-full flex items-center justify-center"><Cpu size={18} className="text-text-muted" /></div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Content */}
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex justify-between items-start mb-1">
+                                                                        <span className={cn("text-sm font-bold truncate pr-2", entry.isInvalid ? "text-red-400 line-through" : "text-white")}>
+                                                                            {entry.step.type === 'delay' ? `Delay (+${formatTime(entry.step.delayMinutes! * 60)})` : entry.nodeName}
+                                                                        </span>
+                                                                        <div className="flex flex-col items-end text-right shrink-0">
+                                                                            <div className="flex items-center gap-1 text-[9px] font-bold text-accent-primary uppercase">
+                                                                                <Clock size={8} />{formatScheduleTime(entry.startDate)}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
+                                                                                <CheckCircle2 size={8} />{formatScheduleTime(entry.endDate)}
+                                                                                {entry.startDate.getDate() !== entry.endDate.getDate() && (
+                                                                                    <span className="text-[8px] text-accent-secondary ml-0.5">+{Math.ceil((entry.endDate.getTime() - entry.startDate.getTime()) / 86400000)}d</span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    {entry.step.type === 'node' && (
+                                                                        <>
+                                                                            <div className="flex items-center gap-2 text-[10px] text-text-muted mb-2">
+                                                                                <span className="bg-white/5 px-1.5 rounded">Lv.{entry.fromLevel} → Lv.{entry.toLevel}</span>
+                                                                                <span>•</span>
+                                                                                <span className="text-accent-primary/80">{entry.step.tree === 'SkillsPetTech' ? 'SPT' : entry.step.tree}</span>
+                                                                                
+                                                                                {entry.startDps > 0 && (
+                                                                                    <div className="flex flex-col gap-0.5 mt-1 bg-accent-primary/5 p-1.5 rounded-lg border border-accent-primary/10">
+                                                                                        <div className="flex items-center justify-between text-[9px] font-bold text-accent-primary uppercase tracking-tighter">
+                                                                                            <span className="flex items-center gap-1"><Swords size={10} /> Linear DPS Progression</span>
+                                                                                            <span className="text-green-400">
+                                                                                                +{(() => {
+                                                                                                    const delta = entry.endDps - entry.startDps;
+                                                                                                    if (delta >= 1e6) return (delta / 1e6).toFixed(2) + 'M';
+                                                                                                    if (delta >= 1e3) return (delta / 1e3).toFixed(1) + 'K';
+                                                                                                    return Math.round(delta).toLocaleString();
+                                                                                                })()}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-white/90">
+                                                                                            <span>{entry.startDps >= 1e6 ? (entry.startDps / 1e6).toFixed(2) + 'M' : entry.startDps.toLocaleString()}</span>
+                                                                                            <span className="text-text-muted">→</span>
+                                                                                            <span className="text-accent-primary">{entry.endDps >= 1e6 ? (entry.endDps / 1e6).toFixed(2) + 'M' : entry.endDps.toLocaleString()}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                <span className="ml-auto font-mono text-accent-secondary">Tier {entry.tier + 1}</span>
+                                                                            </div>
+                                                                            <div className="flex justify-between items-center text-[11px] font-mono border-t border-white/5 pt-2">
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <div className="flex items-center gap-1"><Timer size={10} className="opacity-50" />{formatTime(entry.duration)}</div>
+                                                                                    <div className="flex items-center gap-1"><SpriteIcon name="Potion" size={10} />{entry.potionCost}</div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    {(() => {
+                                                                                        const isWarDay = planner.warPointDays.includes(getWarDayIndex(entry.endDate));
+                                                                                        return isWarDay && (
+                                                                                            <div className="flex items-center gap-0.5 text-[8px] bg-accent-primary/20 text-accent-primary px-1 rounded animate-pulse" title="Completes during War Point day!">
+                                                                                                <Trophy size={8} />WAR
+                                                                                            </div>
+                                                                                        );
+                                                                                    })()}
+                                                                                    <div className="text-accent-primary font-bold">+{entry.points.toLocaleString()} pts</div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Actions */}
+                                                                <div className="flex flex-col gap-1 shrink-0 justify-center">
+                                                                    <button
+                                                                        onClick={() => setPlannerConfirmDone(idx)}
+                                                                        className="p-1 hover:bg-green-500/20 rounded transition-colors" title="Mark done up to here"
+                                                                    ><Play size={14} className="text-green-400" /></button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const mins = prompt('Delay in minutes:');
+                                                                            if (mins && !isNaN(Number(mins))) planner.addDelay(idx, Number(mins));
+                                                                        }}
+                                                                        className="p-1 hover:bg-yellow-500/20 rounded transition-colors" title="Add delay after"
+                                                                    ><Pause size={14} className="text-yellow-400" /></button>
+                                                                    <button
+                                                                        onClick={() => planner.removeStep(idx)}
+                                                                        className="p-1 hover:bg-red-500/20 rounded transition-colors" title="Remove"
+                                                                    ><Trash2 size={14} className="text-red-400" /></button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </SortableItem>
+                                                    {isLastInWarBlock && (
+                                                        <div className="flex justify-end pr-1 pb-2">
+                                                            <div className="h-px w-24 bg-gradient-to-l from-accent-primary/30 to-transparent" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </SortableContext>
+                                
+                                <DragOverlay dropAnimation={{
+                                    sideEffects: defaultDropAnimationSideEffects({
+                                        styles: {
+                                            active: {
+                                                opacity: '0.5',
+                                            },
+                                        },
+                                    }),
+                                }}>
+                                    {activeId ? (() => {
+                                        const activeEntry = planner.schedule.find(e => e.step.id === activeId);
+                                        if (!activeEntry) return null;
+                                        return (
+                                            <div className="flex gap-3 p-3 rounded-lg border border-accent-primary/50 bg-bg-secondary shadow-2xl ring-2 ring-accent-primary/50 opacity-90 scale-105 transition-transform">
+                                                <div className="flex items-center text-accent-primary">
+                                                    <GripVertical size={20} />
+                                                </div>
+                                                <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-white/5 bg-black/20">
+                                                    {activeEntry.step.type === 'delay' ? (
+                                                        <div className="w-full h-full flex items-center justify-center"><Pause size={18} className="text-yellow-400" /></div>
+                                                    ) : activeEntry.sprite_rect ? (
+                                                        <div style={getSpriteStyle({ sprite_rect: activeEntry.sprite_rect }, 40) || undefined} className="w-full h-full" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center"><Cpu size={18} className="text-text-muted" /></div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-bold text-white truncate">
+                                                        {activeEntry.step.type === 'delay' ? `Delay (+${formatTime(activeEntry.step.delayMinutes! * 60)})` : activeEntry.nodeName}
+                                                    </div>
+                                                    <div className="text-[10px] text-text-muted">
+                                                        {activeEntry.isWarDay ? "War Point Day" : "Standard Day"}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })() : null}
+                                </DragOverlay>
+                            </DndContext>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3 text-center px-6">
+                                <Info className="w-10 h-10 opacity-20" />
+                                <div>
+                                    <p className="font-bold">No upgrades queued</p>
+                                    <p className="text-sm opacity-60 mt-1">Use the node picker on the left to add upgrades to your plan.</p>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+
+                    <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="" className="w-64 h-64 object-contain grayscale" />
+                    </div>
+                </Card>
+            </div>
+            )}
 
             <ConfirmModal
                 isOpen={showConfirmModal}
@@ -834,6 +1538,20 @@ export default function TreeCalculator() {
                 onConfirm={confirmApply}
                 onCancel={() => setShowConfirmModal(false)}
                 confirmText="Apply"
+            />
+
+            <ConfirmModal
+                isOpen={plannerConfirmDone !== null}
+                title="Mark Done"
+                message={`Mark steps 1-${(plannerConfirmDone ?? 0) + 1} as completed? This will apply the upgrades to your profile and remove them from the queue.`}
+                onConfirm={() => {
+                    if (plannerConfirmDone !== null) {
+                        planner.markDone(plannerConfirmDone);
+                        setPlannerConfirmDone(null);
+                    }
+                }}
+                onCancel={() => setPlannerConfirmDone(null)}
+                confirmText="Complete"
             />
         </div>
     );
