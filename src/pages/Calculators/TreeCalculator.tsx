@@ -11,6 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
+import { InputModal } from '../../components/UI/InputModal';
 import { getWarDayIndex, isWarPointDay } from '../../utils/guildWarUtils';
 
 function SortableItem({ id, children }: { id: string; children: (props: { listeners: any; isDragging: boolean }) => React.ReactNode }) {
@@ -60,6 +61,8 @@ export default function TreeCalculator() {
     const [plannerTreeFilter, setPlannerTreeFilter] = useState<string>('all');
     const [plannerSearch, setPlannerSearch] = useState('');
     const [plannerConfirmDone, setPlannerConfirmDone] = useState<number | null>(null);
+    const [delayModalIdx, setDelayModalIdx] = useState<number | null>(null);
+    const [delayModalValue, setDelayModalValue] = useState<string>('60');
 
     // Auto-planner state
     const [autoPriorities, setAutoPriorities] = useState<Set<string>>(new Set(['war_points']));
@@ -1483,8 +1486,8 @@ export default function TreeCalculator() {
                                                                                     <Play size={14} className="text-green-400" />
                                                                                 </button>
                                                                                 <button onClick={() => {
-                                                                                    const mins = prompt('Delay in minutes:');
-                                                                                    if (mins && !isNaN(Number(mins))) planner.addDelay(idx, Number(mins));
+                                                                                    setDelayModalIdx(idx);
+                                                                                    setDelayModalValue('60');
                                                                                 }} className="p-1 hover:bg-yellow-500/20 rounded-md transition-colors" title="Add delay after">
                                                                                     <Pause size={14} className="text-yellow-400" />
                                                                                 </button>
@@ -1604,6 +1607,23 @@ export default function TreeCalculator() {
                 }}
                 onCancel={() => setPlannerConfirmDone(null)}
                 confirmText="Complete"
+            />
+
+            <InputModal
+                isOpen={delayModalIdx !== null}
+                title="Add Delay After Step"
+                label="Minutes of delay"
+                initialValue={delayModalValue}
+                placeholder="60"
+                onConfirm={(val) => {
+                    const mins = Number(val);
+                    if (!isNaN(mins) && delayModalIdx !== null) {
+                        planner.addDelay(delayModalIdx, mins);
+                    }
+                    setDelayModalIdx(null);
+                }}
+                onCancel={() => setDelayModalIdx(null)}
+                confirmText="Add Delay"
             />
         </div>
     );
