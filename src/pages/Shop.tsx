@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
-import { ShoppingCart, Search, Tag, Sparkles, TrendingUp, Gem, Coins, Package, Info, Lock, Zap, Clock } from 'lucide-react';
+import { Search, Sparkles, TrendingUp, Package, Info, Lock, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getItemImage, getItemName } from '../utils/itemAssets';
 
@@ -123,7 +123,7 @@ export default function Shop() {
         return () => clearInterval(timer);
     }, []);
 
-    const dayNames = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun/Mon'];
+
 
     const getUTCDayInfo = useMemo(() => {
         const day = currentTime.getUTCDay();
@@ -464,7 +464,7 @@ export default function Shop() {
 function ProductCard({ product, variant, unlockData, autoMapping, isWarActive }: {
     product: any;
     variant: 'primary' | 'secondary';
-    unlockData?: Record<string, UnlockCondition>;
+    unlockData?: Record<string, UnlockCondition> | null;
     autoMapping?: any;
     isWarActive?: boolean;
 }) {
