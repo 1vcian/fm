@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeMode } from '../context/TreeModeContext';
+import { isWarPointDay } from '../utils/guildWarUtils';
 
 export interface TechUpgrade {
     tree: string;
@@ -13,9 +14,12 @@ export interface TechUpgrade {
     cost: number;
     duration: number;
     points: number;
+    warPoints: number;
     tier: number;
     sprite_rect?: { x: number; y: number; width: number; height: number };
     gemCost?: number;
+    isWarDay?: boolean;
+    endDate?: Date;
 }
 
 
@@ -142,7 +146,9 @@ export function useTreeOptimizer() {
         }
 
         let totalPoints = 0;
+        let totalWarPoints = 0;
         const baseTimeLimitSeconds = timeLimitHours * 3600;
+        const planStartMs = new Date().getTime(); // Use current time as plan start for war day calculation
 
         // Track resources
         let accumulatedTimeSeconds = 0;
@@ -194,13 +200,14 @@ export function useTreeOptimizer() {
                                     possibleUpgrades.push({
                                         tree: treeName,
                                         nodeId: node.id,
-                                        nodeName: nodeType, // Using type as name for now
+                                        nodeName: nodeType,
                                         type: nodeType,
                                         fromLevel: currentLvl,
                                         toLevel: currentLvl + 1,
                                         cost: finalCost,
                                         duration: finalDuration,
                                         points: tierPoints[tier] || 0,
+                                        warPoints: 0, // Calculated on selection based on completion date
                                         tier,
                                         sprite_rect: node.sprite_rect
                                     });
@@ -216,18 +223,21 @@ export function useTreeOptimizer() {
             // Sort by efficiency (Points / Duration)
             possibleUpgrades.sort((a, b) => (b.points / (b.duration || 1)) - (a.points / (a.duration || 1)));
 
-            // Find first one that fits budget (Potions AND Gems)
+            // Find first one that fits budget (Potions, Gems, and Time)
             const best = possibleUpgrades.find(upg => {
                 // Check Potion Cost
                 if (upg.cost > potionsRemaining) return false;
 
-                // Check Gem Cost
-                const startTime = accumulatedTimeSeconds;
-                const endTime = startTime + upg.duration;
+                // Check Time + Gem Cost
+                const startTimeSec = accumulatedTimeSeconds;
+                const endTimeSec = startTimeSec + upg.duration;
                 let neededGems = 0;
 
-                if (endTime > baseTimeLimitSeconds) {
-                    const overlap = Math.min(upg.duration, endTime - Math.max(startTime, baseTimeLimitSeconds));
+                if (endTimeSec > baseTimeLimitSeconds) {
+                    // If no gems allowed, this node doesn't fit
+                    if (gemLimit <= 0) return false;
+                    
+                    const overlap = Math.min(upg.duration, endTimeSec - Math.max(startTimeSec, baseTimeLimitSeconds));
                     if (overlap > 0) {
                         neededGems = Math.ceil(overlap * gemCostPerSecond);
                     }
@@ -239,20 +249,26 @@ export function useTreeOptimizer() {
             });
 
             if (best) {
-                // Re-calculate gem cost to attach (could optimize by returning it from find, but this is cheap)
-                const startTime = accumulatedTimeSeconds;
-                const endTime = startTime + best.duration;
+                // Re-calculate gem cost to attach
+                const startTimeSec = accumulatedTimeSeconds;
+                const endTimeSec = startTimeSec + best.duration;
                 let gemCost = 0;
-                if (endTime > baseTimeLimitSeconds) {
-                    const overlap = Math.min(best.duration, endTime - Math.max(startTime, baseTimeLimitSeconds));
+                if (endTimeSec > baseTimeLimitSeconds) {
+                    const overlap = Math.min(best.duration, endTimeSec - Math.max(startTimeSec, baseTimeLimitSeconds));
                     if (overlap > 0) {
                         gemCost = Math.ceil(overlap * gemCostPerSecond);
                     }
                 }
 
-                actions.push({ ...best, gemCost });
+                // Calculate completion date for war point check
+                const endDate = new Date(planStartMs + endTimeSec * 1000);
+                const isWar = isWarPointDay(endDate, 'tech');
+                const warPts = isWar ? best.points : 0;
+
+                actions.push({ ...best, gemCost, warPoints: warPts, isWarDay: isWar, endDate });
 
                 totalPoints += best.points;
+                totalWarPoints += warPts;
                 potionsRemaining -= best.cost;
                 accumulatedTimeSeconds += best.duration;
                 accumulatedGemCost += gemCost;
@@ -273,6 +289,7 @@ export function useTreeOptimizer() {
 
         return {
             totalPoints,
+            totalWarPoints,
             actions,
             timeUsed: usedSeconds / 3600,
             baseTimeUsed: baseTimeSeconds / 3600,

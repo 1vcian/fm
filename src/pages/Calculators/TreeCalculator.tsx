@@ -11,7 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
-import { getWarDayIndex } from '../../utils/guildWarUtils';
+import { getWarDayIndex, isWarPointDay } from '../../utils/guildWarUtils';
 
 function SortableItem({ id, children }: { id: string; children: (props: { listeners: any; isDragging: boolean }) => React.ReactNode }) {
     const {
@@ -71,6 +71,12 @@ export default function TreeCalculator() {
     const [autoMinWait, setAutoMinWait] = useState(profile.misc.plannerMinWaitBetweenNodes || 1);
     const [autoAllowedTrees, setAutoAllowedTrees] = useState<string[]>(['Forge', 'Power', 'SkillsPetTech']);
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(new Date()), 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     const toLocalDateTimeString = (date: Date) => {
         const tzOffset = date.getTimezoneOffset() * 60000;
@@ -100,6 +106,8 @@ export default function TreeCalculator() {
 
     const formatScheduleTime = (date: Date) => {
         return new Intl.DateTimeFormat('it-IT', {
+            day: '2-digit',
+            month: '2-digit',
             hour: '2-digit',
             minute: '2-digit'
         }).format(date);
@@ -145,6 +153,7 @@ export default function TreeCalculator() {
         if (!orderedActions.length) return [];
         let accumulatedTimeSeconds = 0;
         const baseTimeLimitSeconds = timeLimitHours * 3600;
+        const startTimestamp = new Date(startTime).getTime();
 
         return orderedActions.map(action => {
             const currentStartTime = accumulatedTimeSeconds;
@@ -158,15 +167,23 @@ export default function TreeCalculator() {
 
             const skipSeconds = recalculatedGemCost ? recalculatedGemCost / gemSkipCostPerSecond : 0;
             const effectiveDuration = Math.max(0, action.duration - skipSeconds);
-            accumulatedTimeSeconds += effectiveDuration;
+            
+            // Recalculate if it lands on a war day based on NEW completion time after reordering/gems
+            const endObj = new Date(startTimestamp + (accumulatedTimeSeconds + effectiveDuration) * 1000);
+            const isWarDayCurrent = isWarPointDay(endObj, 'tech');
 
-            return {
+            const result = {
                 ...action,
                 gemCost: recalculatedGemCost,
-                effectiveDuration // handy for rendering
+                effectiveDuration,
+                isWarDay: isWarDayCurrent,
+                warPoints: isWarDayCurrent ? action.points : 0
             };
+
+            accumulatedTimeSeconds += effectiveDuration;
+            return result;
         });
-    }, [orderedActions, timeLimitHours, profile.misc.useGemsInCalculators]);
+    }, [orderedActions, timeLimitHours, profile.misc.useGemsInCalculators, startTime, gemSkipCostPerSecond]);
 
     // Dependency Logic
     const isPrerequisite = (potentialReq: TechUpgrade, target: TechUpgrade) => {
@@ -378,6 +395,12 @@ export default function TreeCalculator() {
         return actionsWithGemCosts
             .filter(a => selectedIds.has(getActionId(a)))
             .reduce((sum, a) => sum + a.points, 0);
+    }, [actionsWithGemCosts, selectedIds]);
+
+    const selectedWarPoints = useMemo(() => {
+        return actionsWithGemCosts
+            .filter(a => selectedIds.has(getActionId(a)))
+            .reduce((sum, a) => sum + (a.warPoints || 0), 0);
     }, [actionsWithGemCosts, selectedIds]);
 
     return (
@@ -654,17 +677,23 @@ export default function TreeCalculator() {
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 lg:gap-4">
                                     <div className="p-4 bg-bg-primary rounded-xl border border-accent-primary/20 md:col-span-2 shadow-lg shadow-accent-primary/5">
                                         <div className="text-[10px] text-accent-primary font-black uppercase tracking-widest mb-1 flex items-center justify-between">
-                                            <span>Selected War Points</span>
+                                            <span>War Points (Completion)</span>
                                             <Trophy size={14} />
                                         </div>
                                         <div className="flex items-baseline gap-2">
                                             <div className="text-3xl font-black text-white">
-                                                {Math.floor(selectedPoints).toLocaleString()}
+                                                {Math.floor(selectedWarPoints).toLocaleString()}
                                             </div>
-                                            {selectedPoints < optimization.totalPoints && (
+                                            {selectedWarPoints < (optimization.totalWarPoints || 0) && (
                                                 <div className="text-[10px] text-text-muted font-bold">
-                                                    / {Math.floor(optimization.totalPoints).toLocaleString()}
+                                                    / {Math.floor(optimization.totalWarPoints || 0).toLocaleString()}
                                                 </div>
+                                            )}
+                                        </div>
+                                        <div className="text-[9px] text-text-muted mt-1">
+                                            Tree Points: {Math.floor(selectedPoints).toLocaleString()}
+                                            {selectedPoints < optimization.totalPoints && (
+                                                <span> / {Math.floor(optimization.totalPoints).toLocaleString()}</span>
                                             )}
                                         </div>
                                     </div>
@@ -752,6 +781,8 @@ export default function TreeCalculator() {
 
                                                         const isDifferentDay = startObj.getDate() !== endObj.getDate();
                                                         const id = getActionId(action);
+                                                        // Recalculate war day based on actual completion time (after reordering)
+                                                        const isWarDayNow = isWarPointDay(endObj, 'tech');
 
                                                         return (
                                                             <SortableItem key={id} id={id}>
@@ -839,8 +870,9 @@ export default function TreeCalculator() {
                                                                                         {action.cost}
                                                                                     </div>
                                                                                 </div>
-                                                                                <div className="text-accent-primary font-bold">
+                                                                                <div className={cn("font-bold flex items-center gap-1", isWarDayNow ? "text-accent-primary" : "text-text-muted")}>
                                                                                     +{action.points.toLocaleString()} pts
+                                                                                    {isWarDayNow && <span className="text-[7px] bg-accent-primary/20 text-accent-primary px-1 py-0.5 rounded font-black uppercase">WAR</span>}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1328,7 +1360,24 @@ export default function TreeCalculator() {
                                             const isLastInWarBlock = entry.isWarDay && (idx === planner.schedule.length - 1 || !planner.schedule[idx + 1].isWarDay);
                                             
                                             return (
-                                                <div key={`plan-container-${idx}`} className="space-y-2">
+                                                <div key={`plan-container-${idx}`} className="relative">
+                                                    {/* NOW Marker */}
+                                                    {(() => {
+                                                        const isFirstFuture = now < entry.startDate && (idx === 0 || now >= (planner.schedule[idx-1]?.endDate || new Date(0)));
+                                                        const isOverdue = now > entry.endDate && idx === planner.schedule.length - 1;
+                                                        
+                                                        if (isFirstFuture || isOverdue) {
+                                                            return (
+                                                                <div className="absolute -top-1 left-0 right-0 z-20 flex items-center gap-2 pointer-events-none">
+                                                                    <div className="h-0.5 flex-1 bg-accent-primary shadow-glow shadow-accent-primary/50" />
+                                                                    <span className="text-[9px] font-black bg-accent-primary text-black px-1.5 py-0.5 rounded shadow-glow shrink-0 animate-pulse">NOW</span>
+                                                                    <div className="h-0.5 w-4 bg-accent-primary shadow-glow shadow-accent-primary/50" />
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
+
                                                     {isFirstInWarBlock && (
                                                         <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
                                                             <Trophy size={14} className="text-accent-primary animate-pulse" />
@@ -1336,132 +1385,135 @@ export default function TreeCalculator() {
                                                             <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
                                                         </div>
                                                     )}
+                                                    
                                                     <SortableItem key={entry.step.id} id={entry.step.id}>
-                                                        {({ listeners, isDragging }) => (
-                                                            <div className={cn(
-                                                                "flex gap-3 p-3 rounded-lg border transition-all relative group",
-                                                                isDragging && "shadow-2xl shadow-accent-primary/20 ring-2 ring-accent-primary/30",
-                                                                entry.isWarDay && !isDragging && "border-accent-primary/30 bg-accent-primary/5 shadow-glow-sm shadow-accent-primary/10",
-                                                                entry.isInvalid
-                                                                    ? "bg-red-500/5 border-red-500/20"
-                                                                    : entry.step.type === 'delay'
-                                                                        ? (entry.isWarDay ? "bg-accent-primary/10 border-accent-primary/40" : "bg-yellow-500/5 border-yellow-500/20")
-                                                                        : (!entry.isWarDay && "bg-bg-tertiary/50 border-white/5")
-                                                            )}>
-                                                                {entry.isWarDay && (
-                                                                    <div className="absolute -left-1 top-0 bottom-0 w-1 bg-accent-primary rounded-l-lg shadow-glow shadow-accent-primary/50" />
-                                                                )}
-                                                                {/* Drag Handle */}
-                                                                <div {...listeners} className="flex items-center cursor-grab active:cursor-grabbing text-text-muted/30 hover:text-accent-primary/50 transition-colors touch-none">
-                                                                    <GripVertical size={20} />
-                                                                </div>
+                                                        {({ listeners, isDragging }) => {
+                                                            const isRunning = now >= entry.startDate && now <= entry.endDate;
+                                                            const isStartWar = isWarPointDay(entry.startDate, 'tech');
+                                                            const isStopWar = isWarPointDay(entry.endDate, 'tech');
 
-                                                                {/* Index + Icon */}
-                                                                <div className="flex flex-col items-center shrink-0 w-8">
+                                                            return (
+                                                                <div className={cn(
+                                                                    "group relative flex flex-col sm:flex-row rounded-xl border transition-all overflow-hidden",
+                                                                    isDragging && "shadow-2xl shadow-accent-primary/20 ring-2 ring-accent-primary/30 z-50",
+                                                                    isRunning ? "ring-2 ring-accent-primary ring-offset-2 ring-offset-bg-primary" : "border-white/5",
+                                                                    entry.isInvalid && "opacity-50 grayscale"
+                                                                )}>
+                                                                    {/* LEFT HALF: START */}
                                                                     <div className={cn(
-                                                                        "text-[10px] font-bold w-full text-center py-0.5 rounded border mb-2",
-                                                                        entry.isInvalid ? "text-red-400 bg-red-500/10 border-red-500/20" : "text-text-muted bg-white/5 border-white/5"
-                                                                    )}>#{idx + 1}</div>
-                                                                    <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-white/5 bg-black/20">
-                                                                        {entry.step.type === 'delay' ? (
-                                                                            <div className="w-full h-full flex items-center justify-center"><Pause size={18} className="text-yellow-400" /></div>
-                                                                        ) : entry.sprite_rect && treeMapping ? (
-                                                                            <div style={getSpriteStyle({ sprite_rect: entry.sprite_rect }, 40) || undefined} className="w-full h-full" />
-                                                                        ) : (
-                                                                            <div className="w-full h-full flex items-center justify-center"><Cpu size={18} className="text-text-muted" /></div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
+                                                                        "flex-1 flex gap-3 p-3 transition-colors relative",
+                                                                        isStartWar ? "bg-accent-primary/10 border-r border-accent-primary/20" : "bg-bg-tertiary/40 border-r border-white/5"
+                                                                    )}>
+                                                                        {/* Drag Handle */}
+                                                                        <div {...listeners} className="flex items-center cursor-grab active:cursor-grabbing text-text-muted/30 hover:text-accent-primary/50 transition-colors touch-none">
+                                                                            <GripVertical size={20} />
+                                                                        </div>
 
-                                                                {/* Content */}
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex justify-between items-start mb-1">
-                                                                        <span className={cn("text-sm font-bold truncate pr-2", entry.isInvalid ? "text-red-400 line-through" : "text-white")}>
-                                                                            {entry.step.type === 'delay' ? `Delay (+${formatTime(entry.step.delayMinutes! * 60)})` : entry.nodeName}
-                                                                        </span>
-                                                                        <div className="flex flex-col items-end text-right shrink-0">
-                                                                            <div className="flex items-center gap-1 text-[9px] font-bold text-accent-primary uppercase">
-                                                                                <Clock size={8} />{formatScheduleTime(entry.startDate)}
-                                                                            </div>
-                                                                            <div className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
-                                                                                <CheckCircle2 size={8} />{formatScheduleTime(entry.endDate)}
-                                                                                {entry.startDate.getDate() !== entry.endDate.getDate() && (
-                                                                                    <span className="text-[8px] text-accent-secondary ml-0.5">+{Math.ceil((entry.endDate.getTime() - entry.startDate.getTime()) / 86400000)}d</span>
+                                                                        <div className="flex flex-col items-center shrink-0 w-8">
+                                                                            <div className={cn(
+                                                                                "text-[10px] font-bold w-full text-center py-0.5 rounded border mb-2",
+                                                                                entry.isInvalid ? "text-red-400 bg-red-500/10 border-red-500/20" : "text-text-muted bg-white/5 border-white/5"
+                                                                            )}>#{idx + 1}</div>
+                                                                            <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-white/5 bg-black/20">
+                                                                                {entry.step.type === 'delay' ? (
+                                                                                    <div className="w-full h-full flex items-center justify-center"><Pause size={18} className="text-yellow-400" /></div>
+                                                                                ) : entry.sprite_rect && treeMapping ? (
+                                                                                    <div style={getSpriteStyle({ sprite_rect: entry.sprite_rect }, 40) || undefined} className="w-full h-full" />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center"><Cpu size={18} className="text-text-muted" /></div>
                                                                                 )}
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                    {entry.step.type === 'node' && (
-                                                                        <>
-                                                                            <div className="flex items-center gap-2 text-[10px] text-text-muted mb-2">
-                                                                                <span className="bg-white/5 px-1.5 rounded">Lv.{entry.fromLevel} → Lv.{entry.toLevel}</span>
-                                                                                <span>•</span>
-                                                                                <span className="text-accent-primary/80">{entry.step.tree === 'SkillsPetTech' ? 'SPT' : entry.step.tree}</span>
-                                                                                
-                                                                                {entry.startDps > 0 && (
-                                                                                    <div className="flex flex-col gap-0.5 mt-1 bg-accent-primary/5 p-1.5 rounded-lg border border-accent-primary/10">
-                                                                                        <div className="flex items-center justify-between text-[9px] font-bold text-accent-primary uppercase tracking-tighter">
-                                                                                            <span className="flex items-center gap-1"><Swords size={10} /> Linear DPS Progression</span>
-                                                                                            <span className="text-green-400">
-                                                                                                +{(() => {
-                                                                                                    const delta = entry.endDps - entry.startDps;
-                                                                                                    if (delta >= 1e6) return (delta / 1e6).toFixed(2) + 'M';
-                                                                                                    if (delta >= 1e3) return (delta / 1e3).toFixed(1) + 'K';
-                                                                                                    return Math.round(delta).toLocaleString();
-                                                                                                })()}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                        <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-white/90">
-                                                                                            <span>{entry.startDps >= 1e6 ? (entry.startDps / 1e6).toFixed(2) + 'M' : entry.startDps.toLocaleString()}</span>
-                                                                                            <span className="text-text-muted">→</span>
-                                                                                            <span className="text-accent-primary">{entry.endDps >= 1e6 ? (entry.endDps / 1e6).toFixed(2) + 'M' : entry.endDps.toLocaleString()}</span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
 
-                                                                                <span className="ml-auto font-mono text-accent-secondary">Tier {entry.tier + 1}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between items-center text-[11px] font-mono border-t border-white/5 pt-2">
-                                                                                <div className="flex items-center gap-3">
-                                                                                    <div className="flex items-center gap-1"><Timer size={10} className="opacity-50" />{formatTime(entry.duration)}</div>
-                                                                                    <div className="flex items-center gap-1"><SpriteIcon name="Potion" size={10} />{entry.potionCost}</div>
-                                                                                </div>
-                                                                                <div className="flex items-center gap-1.5">
-                                                                                    {(() => {
-                                                                                        const isWarDay = planner.warPointDays.includes(getWarDayIndex(entry.endDate));
-                                                                                        return isWarDay && (
-                                                                                            <div className="flex items-center gap-0.5 text-[8px] bg-accent-primary/20 text-accent-primary px-1 rounded animate-pulse" title="Completes during War Point day!">
-                                                                                                <Trophy size={8} />WAR
-                                                                                            </div>
-                                                                                        );
-                                                                                    })()}
-                                                                                    <div className="text-accent-primary font-bold">+{entry.points.toLocaleString()} pts</div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex justify-between items-start mb-0.5">
+                                                                                <span className={cn("text-xs font-black uppercase tracking-tight", isStartWar ? "text-accent-primary" : "text-text-muted")}>START</span>
+                                                                                <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-white bg-black/30 px-1.5 rounded">
+                                                                                    <Clock size={10} className="text-accent-primary" />
+                                                                                    {formatScheduleTime(entry.startDate)}
                                                                                 </div>
                                                                             </div>
-                                                                        </>
+                                                                            <div className={cn("text-sm font-bold truncate", entry.isInvalid ? "text-red-400 line-through" : "text-white")}>
+                                                                                {entry.step.type === 'delay' ? `Delay (+${formatTime(entry.step.delayMinutes! * 60)})` : entry.nodeName}
+                                                                            </div>
+                                                                            {entry.step.type === 'node' && (
+                                                                                <div className="text-[9px] text-text-muted flex items-center gap-1 mt-1">
+                                                                                    <span className="bg-white/5 px-1 rounded">Lv.{entry.fromLevel} → {entry.toLevel}</span>
+                                                                                    <span>•</span>
+                                                                                    <span className="truncate">{entry.step.tree === 'SkillsPetTech' ? 'SPT' : entry.step.tree}</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* RIGHT HALF: STOP / PROGRESS */}
+                                                                    <div className={cn(
+                                                                        "flex-1 flex flex-col p-3 transition-colors relative",
+                                                                        isStopWar ? "bg-accent-primary/20" : "bg-bg-secondary/60"
+                                                                    )}>
+                                                                        <div className="flex justify-between items-start mb-2">
+                                                                            <div className="flex flex-col">
+                                                                                <span className={cn("text-[10px] font-black uppercase tracking-tight", isStopWar ? "text-accent-primary" : "text-text-muted")}>FINISH</span>
+                                                                                <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-white bg-black/30 px-1.5 rounded w-fit">
+                                                                                    <CheckCircle2 size={10} className="text-accent-secondary" />
+                                                                                    {formatScheduleTime(entry.endDate)}
+                                                                                    {entry.startDate.getDate() !== entry.endDate.getDate() && (
+                                                                                        <span className="text-[8px] text-accent-secondary ml-0.5">+{Math.ceil((entry.endDate.getTime() - entry.startDate.getTime()) / 86400000)}d</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                            
+                                                                            <div className="flex flex-col items-end">
+                                                                                <div className={cn("text-xs font-black flex items-center gap-1", isStopWar ? "text-accent-primary shadow-glow-sm" : "text-white/60")}>
+                                                                                    +{entry.points.toLocaleString()} pts
+                                                                                    {isStopWar && <Trophy size={12} className="animate-bounce" />}
+                                                                                </div>
+                                                                                {isStopWar && <span className="text-[7px] font-black bg-accent-primary text-black px-1 rounded uppercase tracking-tighter">WAR BONUS</span>}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="mt-auto flex justify-between items-center gap-4">
+                                                                            <div className="flex items-center gap-2 text-[10px] font-mono text-text-muted">
+                                                                                <div className="flex items-center gap-1"><Timer size={10} />{formatTime(entry.duration || entry.delaySeconds)}</div>
+                                                                                {entry.potionCost > 0 && <div className="flex items-center gap-1"><SpriteIcon name="Potion" size={10} />{entry.potionCost}</div>}
+                                                                            </div>
+
+                                                                            <div className="flex gap-1">
+                                                                                <button onClick={() => setPlannerConfirmDone(idx)} className="p-1 hover:bg-green-500/20 rounded-md transition-colors" title="Mark done up to here">
+                                                                                    <Play size={14} className="text-green-400" />
+                                                                                </button>
+                                                                                <button onClick={() => {
+                                                                                    const mins = prompt('Delay in minutes:');
+                                                                                    if (mins && !isNaN(Number(mins))) planner.addDelay(idx, Number(mins));
+                                                                                }} className="p-1 hover:bg-yellow-500/20 rounded-md transition-colors" title="Add delay after">
+                                                                                    <Pause size={14} className="text-yellow-400" />
+                                                                                </button>
+                                                                                <button onClick={() => planner.removeStep(idx)} className="p-1 hover:bg-red-500/20 rounded-md transition-colors" title="Remove">
+                                                                                    <Trash2 size={14} className="text-red-400" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Running Progress Bar Overlay */}
+                                                                        {isRunning && (
+                                                                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 overflow-hidden">
+                                                                                <div 
+                                                                                    className="h-full bg-accent-primary shadow-glow transition-all duration-1000"
+                                                                                    style={{ width: `${Math.min(100, Math.max(0, ((now.getTime() - entry.startDate.getTime()) / (entry.endDate.getTime() - entry.startDate.getTime())) * 100))}%` }}
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Running Badge */}
+                                                                    {isRunning && (
+                                                                        <div className="absolute top-0 right-0 z-10 px-2 py-0.5 bg-accent-primary text-black text-[8px] font-black uppercase rounded-bl-lg shadow-glow">
+                                                                            RUNNING
+                                                                        </div>
                                                                     )}
                                                                 </div>
-
-                                                                {/* Actions */}
-                                                                <div className="flex flex-col gap-1 shrink-0 justify-center">
-                                                                    <button
-                                                                        onClick={() => setPlannerConfirmDone(idx)}
-                                                                        className="p-1 hover:bg-green-500/20 rounded transition-colors" title="Mark done up to here"
-                                                                    ><Play size={14} className="text-green-400" /></button>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const mins = prompt('Delay in minutes:');
-                                                                            if (mins && !isNaN(Number(mins))) planner.addDelay(idx, Number(mins));
-                                                                        }}
-                                                                        className="p-1 hover:bg-yellow-500/20 rounded transition-colors" title="Add delay after"
-                                                                    ><Pause size={14} className="text-yellow-400" /></button>
-                                                                    <button
-                                                                        onClick={() => planner.removeStep(idx)}
-                                                                        className="p-1 hover:bg-red-500/20 rounded transition-colors" title="Remove"
-                                                                    ><Trash2 size={14} className="text-red-400" /></button>
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                            );
+                                                        }}
                                                     </SortableItem>
                                                     {isLastInWarBlock && (
                                                         <div className="flex justify-end pr-1 pb-2">

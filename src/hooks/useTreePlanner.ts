@@ -641,18 +641,19 @@ export function useTreePlanner() {
                     };
 
                     if (priorities.has('war_points') && !checkWarDay(finishTime)) {
-                        // See if we can delay to next war day start (00:00)
-                        const nextWarDayStart = new Date(finishTime);
-                        nextWarDayStart.setHours(0, 0, 0, 0);
-                        // This is crude, find the actual next war day
+                        // Find the next war day and delay so the node COMPLETES during it
                         for (let d = 1; d <= 7; d++) {
-                            const test = new Date(finishTime.getTime() + d * 86400000);
-                            test.setHours(0, 0, 0, 0);
-                            if (checkWarDay(test)) {
-                                const delayNeeded = (test.getTime() - finishTime.getTime()) / 60000;
+                            const candidateWarDay = new Date(finishTime.getTime() + d * 86400000);
+                            candidateWarDay.setHours(0, 0, 0, 0);
+                            if (checkWarDay(candidateWarDay)) {
+                                // We want finish to land on this war day.
+                                // Delay the start so that: newStart + duration = candidateWarDay + some margin
+                                // simplest: delay so finishTime moves to candidateWarDay (same time of day)
+                                const delayNeeded = (candidateWarDay.getTime() - finishTime.getTime()) / 60000;
                                 if (delayNeeded > 0 && delayNeeded <= maxWaitMinutes) {
                                     bestDelay = delayNeeded;
-                                    finishTime = test;
+                                    // New finish = current simClock + delay + duration
+                                    finishTime = new Date(simClockMs + (bestDelay * 60000) + (finalDuration * 1000));
                                 }
                                 break;
                             }
@@ -672,7 +673,7 @@ export function useTreePlanner() {
                         const delayToWake = (wakeTime.getTime() - finishTime.getTime()) / 60000;
                         if (delayToWake > 0 && delayToWake <= maxWaitMinutes) {
                             bestDelay = delayToWake;
-                            finishTime = wakeTime;
+                            finishTime = new Date(simClockMs + (bestDelay * 60000) + (finalDuration * 1000));
                         }
                     }
 
