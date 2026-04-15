@@ -93,7 +93,10 @@ export default function Colors() {
 
     const getGradientColors = useCallback((colors: { hex: string; alpha: number }[], steps: number) => {
         if (steps <= 0) return [];
-        if (steps === 1) return [rgbaToHex(...Object.values(hexToRgba(colors[0].hex)) as [number, number, number, number], colors[0].alpha)];
+        if (steps === 1) {
+            const { r, g, b } = hexToRgba(colors[0].hex);
+            return [rgbaToHex(r, g, b, colors[0].alpha)];
+        }
 
         const result: string[] = [];
         const segmentCount = colors.length - 1;
