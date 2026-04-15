@@ -12,7 +12,7 @@ import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calend
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
 import { InputModal } from '../../components/UI/InputModal';
-import { getWarDayIndex, isWarPointDay } from '../../utils/guildWarUtils';
+import { isWarPointDay } from '../../utils/guildWarUtils';
 
 function SortableItem({ id, children }: { id: string; children: (props: { listeners: any; isDragging: boolean }) => React.ReactNode }) {
     const {
