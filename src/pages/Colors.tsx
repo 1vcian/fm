@@ -8,12 +8,15 @@ import { cn } from '../lib/utils';
 interface ColorStop {
     id: number;
     hex: string;
+    alpha: number;
 }
 
 export default function Colors() {
     const [text, setText] = useState('1vcian.me/fm');
     const [startColor, setStartColor] = useState('#ff0000');
+    const [startAlpha, setStartAlpha] = useState(255);
     const [endColor, setEndColor] = useState('#FFD700');
+    const [endAlpha, setEndAlpha] = useState(255);
     const [middleColors, setMiddleColors] = useState<ColorStop[]>([]);
     const [mode, setMode] = useState<'chars' | 'words'>('chars');
     const [generatedCode, setGeneratedCode] = useState('');
@@ -23,7 +26,7 @@ export default function Colors() {
     // --- Logic ---
 
     const addMiddleColor = () => {
-        setMiddleColors([...middleColors, { id: nextId, hex: '#00FF00' }]);
+        setMiddleColors([...middleColors, { id: nextId, hex: '#00FF00', alpha: 255 }]);
         setNextId(nextId + 1);
     };
 
@@ -35,35 +38,62 @@ export default function Colors() {
         setMiddleColors(middleColors.map(c => c.id === id ? { ...c, hex } : c));
     };
 
-    const hexToRgb = (hex: string) => {
-        const h = hex.replace('#', '');
-        const r = parseInt(h.substring(0, 2), 16);
-        const g = parseInt(h.substring(2, 4), 16);
-        const b = parseInt(h.substring(4, 6), 16);
-        return { r, g, b };
+    const updateMiddleAlpha = (id: number, alpha: number) => {
+        setMiddleColors(middleColors.map(c => c.id === id ? { ...c, alpha } : c));
     };
 
-    const rgbToHex = (r: number, g: number, b: number) => {
+    const hexToRgba = (hex: string) => {
+        const h = hex.replace('#', '');
+        if (h.length === 8) {
+            return {
+                r: parseInt(h.substring(0, 2), 16),
+                g: parseInt(h.substring(2, 4), 16),
+                b: parseInt(h.substring(4, 6), 16),
+                a: parseInt(h.substring(6, 8), 16)
+            };
+        }
+        return {
+            r: parseInt(h.substring(0, 2), 16),
+            g: parseInt(h.substring(2, 4), 16),
+            b: parseInt(h.substring(4, 6), 16),
+            a: 255
+        };
+    };
+
+    const rgbaToHex = (r: number, g: number, b: number, a: number = 255) => {
         const toHex = (c: number) => {
             const hex = Math.round(c).toString(16);
             return hex.length === 1 ? '0' + hex : hex;
         };
-        return '#' + toHex(r) + toHex(g) + toHex(b);
+        const hex = '#' + toHex(r) + toHex(g) + toHex(b);
+        return a < 255 ? hex + toHex(a) : hex;
+    };
+
+    const tryShortenHex = (hex: string) => {
+        const h = hex.replace('#', '').toLowerCase();
+        if (h.length !== 6 && h.length !== 8) return h;
+        
+        const pairs = h.match(/.{2}/g) || [];
+        if (pairs.every(p => p[0] === p[1])) {
+            return pairs.map(p => p[0]).join('');
+        }
+        return h;
     };
 
     const shortenHex = (hex: string) => {
         const h = hex.replace('#', '').toLowerCase();
-        const r = Math.round(parseInt(h.substring(0, 2), 16) / 17);
-        const g = Math.round(parseInt(h.substring(2, 4), 16) / 17);
-        const b = Math.round(parseInt(h.substring(4, 6), 16) / 17);
-        return r.toString(16) + g.toString(16) + b.toString(16);
+        const pairs = h.match(/.{2}/g) || [];
+        return pairs.map(p => {
+            const val = Math.round(parseInt(p, 16) / 17);
+            return val.toString(16);
+        }).join('');
     };
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-    const getGradientColors = useCallback((colors: string[], steps: number) => {
+    const getGradientColors = useCallback((colors: { hex: string; alpha: number }[], steps: number) => {
         if (steps <= 0) return [];
-        if (steps === 1) return [colors[0]];
+        if (steps === 1) return [rgbaToHex(...Object.values(hexToRgba(colors[0].hex)) as [number, number, number, number], colors[0].alpha)];
 
         const result: string[] = [];
         const segmentCount = colors.length - 1;
@@ -74,14 +104,17 @@ export default function Colors() {
             const segmentIdx = Math.min(Math.floor(segmentPos), segmentCount - 1);
             const segmentProgress = segmentPos - segmentIdx;
 
-            const c1 = hexToRgb(colors[segmentIdx]);
-            const c2 = hexToRgb(colors[segmentIdx + 1]);
+            const c1 = hexToRgba(colors[segmentIdx].hex);
+            c1.a = colors[segmentIdx].alpha;
+            const c2 = hexToRgba(colors[segmentIdx + 1].hex);
+            c2.a = colors[segmentIdx + 1].alpha;
 
             const r = lerp(c1.r, c2.r, segmentProgress);
             const g = lerp(c1.g, c2.g, segmentProgress);
             const b = lerp(c1.b, c2.b, segmentProgress);
+            const a = lerp(c1.a, c2.a, segmentProgress);
 
-            result.push(rgbToHex(r, g, b));
+            result.push(rgbaToHex(r, g, b, a));
         }
         return result;
     }, []);
@@ -92,7 +125,11 @@ export default function Colors() {
             return;
         }
 
-        const allColors = [startColor, ...middleColors.map(c => c.hex), endColor];
+        const allColors = [
+            { hex: startColor, alpha: startAlpha },
+            ...middleColors.map(c => ({ hex: c.hex, alpha: c.alpha })),
+            { hex: endColor, alpha: endAlpha }
+        ];
 
         let segments: { text: string; isSpace: boolean }[] = [];
 
@@ -129,7 +166,7 @@ export default function Colors() {
         // Generate Code
         const code = resultItems.map(item => {
             if (item.isSpace || !item.color) return item.text;
-            const hex = useShortHex ? shortenHex(item.color) : item.color.replace('#', '').toLowerCase();
+            const hex = useShortHex ? shortenHex(item.color) : tryShortenHex(item.color);
             return `<#${hex}>${item.text}`;
         }).join('');
 
@@ -137,15 +174,17 @@ export default function Colors() {
 
         setGeneratedCode(code);
 
-    }, [text, startColor, endColor, middleColors, mode, getGradientColors, useShortHex]);
+    }, [text, startColor, startAlpha, endColor, endAlpha, middleColors, mode, getGradientColors, useShortHex]);
 
     // Helpers for rendering
     const renderPreview = () => {
-        // We replicate logic here or store it in state? 
-        // Let's re-run logic briefly since it's cheap or use Memo
         if (!text) return <span className="text-text-muted italic">Type something...</span>;
 
-        const allColors = [startColor, ...middleColors.map(c => c.hex), endColor];
+        const allColors = [
+            { hex: startColor, alpha: startAlpha },
+            ...middleColors.map(c => ({ hex: c.hex, alpha: c.alpha })),
+            { hex: endColor, alpha: endAlpha }
+        ];
         let segments: { text: string; isSpace: boolean }[] = [];
 
         if (mode === 'chars') {
@@ -168,12 +207,10 @@ export default function Colors() {
             if (seg.isSpace) {
                 return <span key={idx}>{seg.text}</span>;
             }
-            let color = gradientColors[Math.min(colorIndex, gradientColors.length - 1)];
-            if (useShortHex) {
-                color = '#' + shortenHex(color);
-            }
+            const color = gradientColors[Math.min(colorIndex, gradientColors.length - 1)];
+            // Apply opacity via styles too
             colorIndex++;
-            return <span key={idx} style={{ color: color }}>{seg.text}</span>;
+            return <span key={idx} style={{ color }}>{seg.text}</span>;
         });
     };
 
@@ -204,6 +241,7 @@ export default function Colors() {
                                 label="Text to color"
                                 value={text}
                                 onChange={(e) => setText(e.target.value)}
+                                helperText="Max 280 characters in the final output"
                             />
 
                             <div className="flex flex-col gap-2">
@@ -261,58 +299,97 @@ export default function Colors() {
 
                         <div className="space-y-3">
                             {/* Start */}
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="color"
-                                    value={startColor}
-                                    onChange={(e) => setStartColor(e.target.value)}
-                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
-                                />
-                                <Input
-                                    value={startColor}
-                                    onChange={(e) => setStartColor(e.target.value)}
-                                    className="flex-1 font-mono"
-                                />
-                                <span className="text-xs text-text-muted w-16 text-right">Start</span>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="color"
+                                        value={startColor}
+                                        onChange={(e) => setStartColor(e.target.value)}
+                                        className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
+                                    />
+                                    <Input
+                                        value={startColor}
+                                        onChange={(e) => setStartColor(e.target.value)}
+                                        className="flex-1 font-mono"
+                                    />
+                                    <span className="text-xs text-text-muted w-16 text-right font-bold">Start</span>
+                                </div>
+                                <div className="flex items-center gap-3 px-1">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="255"
+                                        value={startAlpha}
+                                        onChange={(e) => setStartAlpha(parseInt(e.target.value))}
+                                        className="flex-1 h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                    />
+                                    <span className="text-[10px] font-mono w-8 text-right text-text-muted">{Math.round((startAlpha / 255) * 100)}%</span>
+                                </div>
                             </div>
 
                             {/* Middle */}
                             {middleColors.map((c) => (
-                                <div key={c.id} className="flex items-center gap-3">
-                                    <input
-                                        type="color"
-                                        value={c.hex}
-                                        onChange={(e) => updateMiddleColor(c.id, e.target.value)}
-                                        className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
-                                    />
-                                    <Input
-                                        value={c.hex}
-                                        onChange={(e) => updateMiddleColor(c.id, e.target.value)}
-                                        className="flex-1 font-mono"
-                                    />
-                                    <button
-                                        onClick={() => removeMiddleColor(c.id)}
-                                        className="w-16 flex justify-end text-red-400 hover:text-red-300 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                <div key={c.id} className="flex flex-col gap-3 p-3 rounded-lg bg-bg-secondary/30 border border-border/50">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="color"
+                                            value={c.hex}
+                                            onChange={(e) => updateMiddleColor(c.id, e.target.value)}
+                                            className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
+                                        />
+                                        <Input
+                                            value={c.hex}
+                                            onChange={(e) => updateMiddleColor(c.id, e.target.value)}
+                                            className="flex-1 font-mono"
+                                        />
+                                        <button
+                                            onClick={() => removeMiddleColor(c.id)}
+                                            className="w-8 flex justify-end text-red-400 hover:text-red-300 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center gap-3 px-1">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="255"
+                                            value={c.alpha}
+                                            onChange={(e) => updateMiddleAlpha(c.id, parseInt(e.target.value))}
+                                            className="flex-1 h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                        />
+                                        <span className="text-[10px] font-mono w-8 text-right text-text-muted">{Math.round((c.alpha / 255) * 100)}%</span>
+                                    </div>
                                 </div>
                             ))}
 
                             {/* End */}
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="color"
-                                    value={endColor}
-                                    onChange={(e) => setEndColor(e.target.value)}
-                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
-                                />
-                                <Input
-                                    value={endColor}
-                                    onChange={(e) => setEndColor(e.target.value)}
-                                    className="flex-1 font-mono"
-                                />
-                                <span className="text-xs text-text-muted w-16 text-right">End</span>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="color"
+                                        value={endColor}
+                                        onChange={(e) => setEndColor(e.target.value)}
+                                        className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
+                                    />
+                                    <Input
+                                        value={endColor}
+                                        onChange={(e) => setEndColor(e.target.value)}
+                                        className="flex-1 font-mono"
+                                    />
+                                    <span className="text-xs text-text-muted w-16 text-right font-bold">End</span>
+                                </div>
+                                <div className="flex items-center gap-3 px-1">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="255"
+                                        value={endAlpha}
+                                        onChange={(e) => setEndAlpha(parseInt(e.target.value))}
+                                        className="flex-1 h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                    />
+                                    <span className="text-[10px] font-mono w-8 text-right text-text-muted">{Math.round((endAlpha / 255) * 100)}%</span>
+                                </div>
                             </div>
                         </div>
                     </Card>
@@ -332,8 +409,22 @@ export default function Colors() {
                         <textarea
                             readOnly
                             value={generatedCode}
-                            className="w-full h-32 bg-bg-input border border-border rounded-lg p-3 font-mono text-sm text-text-primary focus:border-accent-primary outline-none resize-none"
+                            className={cn(
+                                "w-full h-32 bg-bg-input border rounded-lg p-3 font-mono text-sm text-text-primary focus:border-accent-primary outline-none resize-none transition-colors",
+                                generatedCode.length > 280 ? "border-red-500" : "border-border"
+                            )}
                         />
+                        <div className="flex justify-between items-center mt-2">
+                            <span className={cn(
+                                "text-xs font-bold",
+                                generatedCode.length > 280 ? "text-red-500 animate-pulse" : "text-text-muted"
+                            )}>
+                                {generatedCode.length} / 280 characters
+                            </span>
+                            {generatedCode.length > 280 && (
+                                <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Too long for chat!</span>
+                            )}
+                        </div>
                         <div className="mt-4 flex justify-end">
                             <Button onClick={copyToClipboard} className="gap-2">
                                 <Copy className="w-4 h-4" /> Copy Code
