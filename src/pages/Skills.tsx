@@ -4,7 +4,7 @@ import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
-import { Zap, Search, Star, Clock, Crosshair, Sword, Heart } from 'lucide-react';
+import { Zap, Search, Star, Clock, Crosshair, Sword, Heart, Package, TrendingUp, BookOpen } from 'lucide-react';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 
@@ -46,6 +46,26 @@ export default function Skills() {
         }
         return { activeDmg, activeHp, passiveDmg, passiveHp };
     }, [ascensionLevel, ascensionConfigs]);
+
+    // Calculate total shards (copies) needed for the selected globalLevel
+    // Logic: 1 (Discovery) + sum(Shards for upgrades 1 to L-1)
+    // Example: Lvl 2 = 1 (Lvl 1) + Shards["1"] (upgrade to Lvl 2)
+    const totalCardsRequired = useMemo(() => {
+        if (!skillUpgrades) return 1;
+        let sum = 1; // Discovery cost (Level 1)
+        for (let i = 1; i < globalLevel; i++) {
+            const upgrade = skillUpgrades[i.toString()];
+            if (upgrade) {
+                sum += upgrade.Shards;
+            }
+        }
+        return sum;
+    }, [skillUpgrades, globalLevel]);
+
+    const nextLevelCost = useMemo(() => {
+        if (!skillUpgrades) return 0;
+        return skillUpgrades[globalLevel.toString()]?.Shards || 0;
+    }, [skillUpgrades, globalLevel]);
 
     // Build sprite lookup
     const spriteLookup = useMemo(() => {
@@ -317,6 +337,26 @@ export default function Skills() {
                                             </div>
                                         </div>
                                     )}
+                                </div>
+
+                                {/* Progression Stats matching Pet/Mount Wiki style */}
+                                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/5">
+                                    <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
+                                        <div className="flex items-center gap-1 text-[9px] text-text-muted mb-0.5 uppercase font-bold text-center">
+                                            <TrendingUp className="w-2.5 h-2.5 text-accent-primary" /> Next Level
+                                        </div>
+                                        <div className="font-mono font-bold text-accent-primary text-xs">
+                                            {nextLevelCost > 0 ? formatNumber(nextLevelCost) : 'MAX'}
+                                        </div>
+                                    </div>
+                                    <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
+                                        <div className="flex items-center gap-1 text-[9px] text-text-muted mb-0.5 uppercase font-bold text-center">
+                                            <Package className="w-2.5 h-2.5 text-accent-secondary" /> Total Copies
+                                        </div>
+                                        <div className="font-mono font-bold text-accent-secondary text-xs">
+                                            {formatNumber(totalCardsRequired)}
+                                        </div>
+                                    </div>
                                 </div>
                             </Card>
                         );
