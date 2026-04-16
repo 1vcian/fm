@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Menu, ChevronDown, Copy, Trash2, Check, Share2, Save, TrendingUp } from 'lucide-react';
-import { toast } from 'react-toastify';
 import LZString from 'lz-string';
 import { Button } from '../UI/Button';
-import { useTreeMode, TreeMode } from '../../context/TreeModeContext';
+import { useTreeMode } from '../../context/TreeModeContext';
 import { useProfile } from '../../context/ProfileContext';
 import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
 import { ConfirmModal } from '../UI/ConfirmModal';
@@ -15,18 +14,6 @@ interface HeaderProps {
     onMenuToggle: () => void;
     onStatsToggle: () => void;
 }
-
-const treeModeLabels: Record<TreeMode, string> = {
-    empty: 'Empty Tree',
-    my: 'My Tree',
-    max: 'Max Tree'
-};
-
-const treeModeColors: Record<TreeMode, string> = {
-    empty: 'bg-gray-600 text-gray-200',
-    my: 'bg-blue-600 text-blue-100',
-    max: 'bg-emerald-600 text-emerald-100'
-};
 
 export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
     const { treeMode } = useTreeMode();

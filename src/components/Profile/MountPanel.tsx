@@ -4,7 +4,7 @@ import { Bike as MountIcon, Plus, Minus, X, Recycle, Bookmark } from 'lucide-rea
 import { Button } from '../UI/Button';
 import { MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
-import { cn, getRarityBgStyle, getInventoryIconStyle } from '../../lib/utils';
+import { cn, getRarityBgStyle } from '../../lib/utils';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSelectorModal } from './MountSelectorModal';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
@@ -29,14 +29,18 @@ export function MountPanel() {
     const mountDamageBonus = techModifiers['MountDamage'] || 0;
     const mountHealthBonus = techModifiers['MountHealth'] || 0;
 
-    const handleSelectMount = (rarity: string, id: number, level: number, secondaryStats: { statId: string; value: number }[]) => {
+    const handleSelectMount = (rarity: string | null, id?: number, level?: number, secondaryStats?: { statId: string; value: number }[]) => {
+        if (!rarity) {
+            updateNestedProfile('mount', { active: null });
+            return;
+        }
         const newMount: MountSlot = {
             rarity,
-            id,
-            level,
+            id: id || 0,
+            level: level || 1,
             evolution: 0,
             skills: [],
-            secondaryStats // Save manual passives
+            secondaryStats: secondaryStats || []
         };
         updateNestedProfile('mount', { active: newMount });
     };

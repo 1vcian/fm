@@ -270,6 +270,8 @@ export function useSkillsCalculator() {
             breakdown: breakdown.filter(b => b.count > 0 || b.percentage > 0),
             totalSkills,
             totalPoints: grandTotalPoints,
+            normalPoints: phases.filter(p => p.startAscension === 0).reduce((sum, p) => sum + p.points, 0),
+            ascensionPoints: phases.filter(p => p.startAscension > 0).reduce((sum, p) => sum + p.points, 0),
             phases,
             numSummons: totalPaidSummons,
             finalCost: finalCostPerSummon,

@@ -1,11 +1,11 @@
 import { memo, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../UI/Button';
-import { X, Swords, Zap, TrendingUp, Sparkles, HelpCircle, Hash } from 'lucide-react';
+import { X, TrendingUp } from 'lucide-react';
 import { AggregatedStats } from '../../utils/statEngine';
 import { UserProfile } from '../../types/Profile';
 import { formatPercent, formatCompactNumber } from '../../utils/statsCalculator';
-import { SKILL_MECHANICS, AGES } from '../../utils/constants';
+import { SKILL_MECHANICS } from '../../utils/constants';
 import { BreakpointTables, BreakpointExplanation } from './BreakpointTables';
 import { cn } from '../../lib/utils';
 

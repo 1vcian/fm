@@ -374,7 +374,7 @@ export default function Eggs() {
                                                                 {item.count.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                                             </span>
                                                             
-                                                            {eggSummon.results.simulateAscension && eggSummon.results.phases && eggSummon.results.phases.length > 1 && (
+                                                            {eggSummon.results?.simulateAscension && eggSummon.results?.phases && eggSummon.results?.phases.length > 1 && (
                                                                 <div className="flex flex-wrap gap-1 justify-end max-w-[150px] mt-1">
                                                                     {(item.phaseCounts || []).map((p, pIdx) => (
                                                                         <div key={pIdx} className={`px-1 rounded border ${p.ascension > 0 ? 'bg-amber-500/5 border-amber-500/10' : 'bg-white/5 border-white/5'}`}>

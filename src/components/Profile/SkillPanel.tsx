@@ -3,7 +3,7 @@ import { useComparison } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
-import { Zap, Plus, X, Minus } from 'lucide-react';
+import { Zap, Plus, X, Minus, Sword } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
 import { SkillSlot } from '../../types/Profile';
@@ -16,7 +16,6 @@ import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
-import { Sword } from 'lucide-react';
 
 // Helper for truncation (sync with StatEngine)
 const truncate = (value: number, decimals: number): number => {
@@ -221,7 +220,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                     <div className="flex items-center gap-1.5 ml-4">
                         <Button 
                             variant="outline" 
-                            size="xs" 
+                            size="sm" 
                             className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all"
                             onClick={handleAutoOptimize}
                             disabled={!isReady || !skillLibrary || Object.keys(skillLibrary).length < 1}

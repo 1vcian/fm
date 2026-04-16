@@ -845,14 +845,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                 icon={<Swords className="w-4 h-4" />}
                                 label="Total Damage"
                                 value={formatValue(stats.totalDamage)}
-                                subValue={`${formatMultiplier(stats.damageMultiplier, 2)} (Sub: ${formatPercent(stats.damageBreakdown.substats, 2)}, Asc: x${(stats.damageBreakdown.ascension + 1).toFixed(2)})`}
+                                subValue={`${formatMultiplier(stats.damageMultiplier || 1, 2)} (Sub: ${formatPercent(stats.damageBreakdown?.substats || 0, 2)}, Asc: x${((stats.damageBreakdown?.ascension || 0) + 1).toFixed(2)})`}
                                 color="text-red-400"
                             />
                             <StatRow
                                 icon={<Heart className="w-4 h-4" />}
                                 label="Total Health"
                                 value={formatValue(stats.totalHealth)}
-                                subValue={`${formatMultiplier(stats.healthMultiplier, 2)} (Sub: ${formatPercent(stats.healthBreakdown.substats, 2)}, Asc: x${(stats.healthBreakdown.ascension + 1).toFixed(2)})`}
+                                subValue={`${formatMultiplier(stats.healthMultiplier || 1, 2)} (Sub: ${formatPercent(stats.healthBreakdown?.substats || 0, 2)}, Asc: x${((stats.healthBreakdown?.ascension || 0) + 1).toFixed(2)})`}
                                 color="text-green-400"
                             />
                             <StatRow
@@ -882,10 +882,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                         >
                             <div className="space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
-                                    <CompactStat icon={<Star className="w-3 h-3" />} label="Crit %" value={formatPercent(stats.criticalChance)} color="text-yellow-400" />
-                                    <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Crit x" value={`${stats.criticalDamage.toFixed(2)}x`} color="text-yellow-500" />
-                                    <CompactStat icon={<Shield className="w-3 h-3" />} label="Block %" value={formatPercent(stats.blockChance)} color="text-blue-400" />
-                                    <CompactStat icon={<Zap className="w-3 h-3" />} label="Double %" value={formatPercent(stats.doubleDamageChance)} color="text-purple-400" />
+                                    <CompactStat icon={<Star className="w-3 h-3" />} label="Crit %" value={formatPercent(stats.criticalChance || 0)} color="text-yellow-400" />
+                                    <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Crit x" value={`${(stats.criticalDamage || 0).toFixed(2)}x`} color="text-yellow-500" />
+                                    <CompactStat icon={<Shield className="w-3 h-3" />} label="Block %" value={formatPercent(stats.blockChance || 0)} color="text-blue-400" />
+                                    <CompactStat icon={<Zap className="w-3 h-3" />} label="Double %" value={formatPercent(stats.doubleDamageChance || 0)} color="text-purple-400" />
                                 </div>
                                 <StatRow
                                     icon={<TrendingUp className="w-4 h-4 text-text-primary" />}

@@ -13,6 +13,7 @@ import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
 import { InputModal } from '../../components/UI/InputModal';
 import { isWarPointDay } from '../../utils/guildWarUtils';
+import { UserProfile } from '../../types/Profile';
 
 function SortableItem({ id, children }: { id: string; children: (props: { listeners: any; isDragging: boolean }) => React.ReactNode }) {
     const {

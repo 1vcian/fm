@@ -16,12 +16,12 @@ import { useProfile } from '../../context/ProfileContext';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 
-type MobileTab = 'mounts' | 'config';
+type MobileTab = 'rarity' | 'mounts' | 'config';
 
 interface MountSelectorModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (rarity: string, id: number, level: number, secondaryStats: { statId: string; value: number }[]) => void;
+    onSelect: (rarity: string | null, id?: number, level?: number, secondaryStats?: { statId: string; value: number }[]) => void;
     context?: 'profile' | 'pvp';
     currentMount?: MountSlot | null;
 }
@@ -448,13 +448,13 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                     sheetWidth={mountsConfig.texture_size.width}
                                                     sheetHeight={mountsConfig.texture_size.height}
-                                                    iconIndex={Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedMountId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedMountId && v.rarity === selectedRarity)![0]) : 0}
+                                                    iconIndex={Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)![0]) : 0}
                                                     className="w-20 h-20"
                                                 />
                                             )}
                                         </div>
                                         <h2 className="text-xl font-bold text-text-primary leading-tight">
-                                            {Object.values(mountsConfig?.mapping || {}).find((m: any) => m.id === selectedMountId && m.rarity === selectedRarity)?.name || `Mount #${selectedMountId}`}
+                                            {(Object.values(mountsConfig?.mapping || {}) as any[]).find((m: any) => m.id === selectedMountId && m.rarity === selectedRarity)?.name || `Mount #${selectedMountId}`}
                                         </h2>
                                         <div className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
                                             {selectedRarity} Mount

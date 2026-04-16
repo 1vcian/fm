@@ -352,6 +352,9 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                         return (
                                             <ItemSelectionCard
                                                 key={skill.id}
+                                                item={{ id: skill.id, rarity: skill.rarity, level } as any}
+                                                slotKey="Skill"
+                                                slotLabel="Skill"
                                                 itemName={skill.id}
                                                 itemImage={null}
                                                 variant="compact"

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { Coffee, ExternalLink, Github, TrendingUp } from 'lucide-react';
+import { Coffee, ExternalLink, Github } from 'lucide-react';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
 import { cn } from '../../lib/utils';

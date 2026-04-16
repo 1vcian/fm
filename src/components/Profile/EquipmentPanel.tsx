@@ -2,7 +2,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
-import { X, Bookmark, GitCompare, Minus, Plus } from 'lucide-react';
+import { GitCompare } from 'lucide-react';
 import { ItemSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';

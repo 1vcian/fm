@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils';
-import { Ban } from 'lucide-react';
+
 
 interface AscensionStarsProps {
     value: number;

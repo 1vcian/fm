@@ -1,7 +1,7 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
-import { Cat, Plus, X, Minus, Pencil, Bookmark } from 'lucide-react';
+import { Zap as PowerIcon, Plus, X, Minus, Cat, Pencil, Bookmark, Sword } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { PetSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
@@ -17,7 +17,6 @@ import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
-import { Sword, TrendingUp as PowerIcon } from 'lucide-react';
 
 interface PetPanelProps {
     variant?: 'default' | 'original' | 'test';
@@ -133,13 +132,22 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         updatePets(newPets);
     };
 
-    const handleAdd = (pet: PetSlot) => {
+    const handleAdd = (pet: PetSlot | null) => {
+        if (!pet) {
+            setIsModalOpen(false);
+            return;
+        }
         if (activePets.length >= MAX_ACTIVE_PETS) return;
         updatePets([...activePets, pet]);
         setIsModalOpen(false);
     };
 
-    const handleEditPet = (index: number, pet: PetSlot) => {
+    const handleEditPet = (index: number, pet: PetSlot | null) => {
+        if (!pet) {
+            handleRemove(index);
+            setEditingPetIdx(null);
+            return;
+        }
         const newPets = [...activePets];
         newPets[index] = pet;
         updatePets(newPets);
@@ -272,7 +280,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                 <div className="flex items-center gap-1.5 ml-4">
                     <Button 
                         variant="outline" 
-                        size="xs" 
+                        size="sm" 
                         className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all"
                         onClick={() => handleAutoOptimize('dps')}
                         disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
@@ -283,7 +291,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                     </Button>
                     <Button 
                         variant="outline" 
-                        size="xs" 
+                        size="sm" 
                         className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all"
                         onClick={() => handleAutoOptimize('power')}
                         disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}

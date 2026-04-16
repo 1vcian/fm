@@ -92,7 +92,7 @@ export function ItemSelectionCard({
                 !isSelected ? (
                     hideAgeStyles 
                         ? (rarity ? { background: getRarityBgStyle(rarity).background?.toString().replace('0.3', '0.1').replace('0.1', '0.05') } : { backgroundColor: 'var(--bg-secondary)' })
-                        : { background: getAgeBgStyle((item as ItemSlot)?.age || 'Primitive').background?.toString().replace('0.3', '0.1').replace('0.1', '0.05') }
+                        : { background: getAgeBgStyle((item as ItemSlot)?.age || 0).background?.toString().replace('0.3', '0.1').replace('0.1', '0.05') }
                 ) : {}
             }
         >

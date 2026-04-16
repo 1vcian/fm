@@ -22,7 +22,7 @@ type MobileTab = 'rarity' | 'pets' | 'config';
 interface PetSelectorModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (pet: PetSlot) => void;
+    onSelect: (pet: PetSlot | null) => void;
     currentPet?: PetSlot; // Optional: for editing existing pet
     context?: 'profile' | 'pvp';
 }
@@ -531,13 +531,13 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                 spriteHeight={petsConfig.sprite_size.height}
                                                 sheetWidth={petsConfig.texture_size.width}
                                                 sheetHeight={petsConfig.texture_size.height}
-                                                iconIndex={Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedPetId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedPetId && v.rarity === selectedRarity)![0]) : 0}
+                                                iconIndex={Object.entries(petsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedPetId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(petsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedPetId && v.rarity === selectedRarity)![0]) : 0}
                                                 className="w-20 h-20"
                                             />
                                         )}
                                     </div>
                                     <h2 className="text-xl font-bold text-text-primary leading-tight">
-                                        {Object.values(petsConfig?.mapping || {}).find((p: any) => p.id === selectedPetId && p.rarity === selectedRarity)?.name || `Pet #${selectedPetId}`}
+                                        {(Object.values(petsConfig?.mapping || {}) as any[]).find((p: any) => p.id === selectedPetId && p.rarity === selectedRarity)?.name || `Pet #${selectedPetId}`}
                                     </h2>
                                     <div className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
                                         {selectedRarity} Pet

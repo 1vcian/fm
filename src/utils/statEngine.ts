@@ -130,6 +130,7 @@ export interface AggregatedStats {
     damageBreakdown: StatBreakdown;
     healthBreakdown: StatBreakdown;
     skillDamageBreakdown: StatBreakdown;
+    skillHealthBreakdown: StatBreakdown;
 
     // Source breakdowns for secondary stats (for detailed UI display)
     critChanceBreakdown: StatBreakdown;
@@ -140,6 +141,10 @@ export interface AggregatedStats {
 
     // Source tracking
     statCounts: Record<string, number>;
+
+    // Calculation temporary properties
+    equipDamageMultiplier: number;
+    equipHealthMultiplier: number;
 }
 
 export type StatMap = Record<string, any>;
@@ -222,12 +227,15 @@ export const DEFAULT_STATS: AggregatedStats = {
     damageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     healthBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     skillDamageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
+    skillHealthBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     critChanceBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     critDamageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     doubleDamageBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     attackSpeedBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
     skillCooldownBreakdown: { substats: 0, tree: 0, ascension: 0, other: 0 },
-    statCounts: {}
+    statCounts: {},
+    equipDamageMultiplier: 1,
+    equipHealthMultiplier: 1,
 };
 
 export interface LibraryData {
@@ -300,6 +308,7 @@ export class StatEngine {
         blockChance: 0,
         skillCooldownMulti: 0,
         skillDamageMulti: 0,
+        skillHealthMulti: 0,
         moveSpeed: 0,
     };
 

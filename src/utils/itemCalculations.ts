@@ -89,7 +89,7 @@ export const getItemStats = (
         forgeAscensionMulti: number;
     }
 ): ItemStatsResult => {
-    const defaultResult = { damage: 0, health: 0, bonus: 0, skinBonuses: { damage: 0, health: 0 }, isMelee: true };
+    const defaultResult = { damage: 0, health: 0, bonus: 0, damageMulti: 0, healthMulti: 0, skinBonuses: { damage: 0, health: 0 }, isMelee: true };
     if (!item || !libraries.itemBalancingLibrary || !libraries.itemBalancingConfig) return defaultResult;
 
     const { itemBalancingLibrary, itemBalancingConfig, weaponLibrary } = libraries;

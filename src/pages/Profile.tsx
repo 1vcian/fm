@@ -94,8 +94,21 @@ export default function Profile() {
 
                     {isComparing ? (
                         <div className="space-y-6">
-                            {/* Horizontal Stats Strip - Sticky Header */}
-                            <div className="sticky top-0 z-40 py-2 -mx-4 px-4">
+                            {/* Comparison Controls & Stats Strip - Sticky Header */}
+                            <div className="sticky top-0 z-40 py-2 -mx-4 px-4 bg-bg-primary/80 backdrop-blur-md border-b border-border shadow-lg space-y-2">
+                                <div className="flex flex-wrap justify-between items-center gap-3">
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" onClick={keepOriginal} className="text-emerald-400 hover:text-emerald-300">
+                                            Keep Equipped
+                                        </Button>
+                                        <Button variant="primary" size="sm" onClick={applyTestBuild}>
+                                            Apply Test Build
+                                        </Button>
+                                    </div>
+                                    <Button variant="ghost" size="sm" onClick={exitCompareMode} className="text-red-400 hover:text-red-300">
+                                        <X className="w-4 h-4 mr-2" /> Exit Comparison
+                                    </Button>
+                                </div>
                                 <StatsSummaryPanel variant="horizontal-strip" />
                             </div>
 
