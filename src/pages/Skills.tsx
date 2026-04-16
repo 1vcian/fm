@@ -8,6 +8,8 @@ import { Zap, Search, Star, Clock, Crosshair, Sword, Heart, Package, TrendingUp 
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 
+import { usePersistentState } from '../hooks/usePersistentState';
+
 export default function Skills() {
     const { profile } = useProfile();
     const { data: skillLibrary, loading: l1 } = useGameData<any>('SkillLibrary.json');
@@ -17,9 +19,9 @@ export default function Skills() {
     const { data: ascensionConfigs, loading: l3 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterRarity, setFilterRarity] = useState<string | null>(null);
-    const [globalLevel, setGlobalLevel] = useState(50);
-    const [ascensionLevel, setAscensionLevel] = useState(0);
+    const [filterRarity, setFilterRarity] = usePersistentState<string | null>('wiki_skills_filter_rarity', null);
+    const [globalLevel, setGlobalLevel] = usePersistentState<number>('wiki_skills_global_level', 50);
+    const [ascensionLevel, setAscensionLevel] = usePersistentState<number>('wiki_skills_ascension_level', 0);
 
     const loading = l1 || l1b || l1c || l2 || l3;
     const skillsConfig = spriteMapping?.skills;

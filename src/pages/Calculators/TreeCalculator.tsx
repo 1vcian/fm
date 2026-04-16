@@ -38,6 +38,8 @@ function SortableItem({ id, children }: { id: string; children: (props: { listen
     );
 }
 
+import { usePersistentState } from '../../hooks/usePersistentState';
+
 export default function TreeCalculator() {
     const {
         timeLimitHours, setTimeLimitHours,
@@ -55,7 +57,7 @@ export default function TreeCalculator() {
     const NODE_ICON_SIZE = 40;
 
     // Tab state
-    const [activeTab, setActiveTab] = useState<'optimizer' | 'planner'>('optimizer');
+    const [activeTab, setActiveTab] = usePersistentState<'optimizer' | 'planner'>('tree_calc_active_tab', 'optimizer');
 
     // Planner UI state
     const [plannerTreeFilter, setPlannerTreeFilter] = useState<string>('all');

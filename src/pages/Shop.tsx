@@ -106,6 +106,8 @@ function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any): s
     return type;
 }
 
+import { usePersistentState } from '../hooks/usePersistentState';
+
 export default function Shop() {
     const { data: dailyDeals } = useGameData<Record<string, DailyDeal>>('DailyDealLibrary.json');
     const { data: iapProducts } = useGameData<Record<string, IAPProduct>>('InAppProducts.json');
@@ -114,7 +116,7 @@ export default function Shop() {
     const { data: guildWarConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
 
-    const [activeTab, setActiveTab] = useState<'daily' | 'iap' | 'offers'>('daily');
+    const [activeTab, setActiveTab] = usePersistentState<'daily' | 'iap' | 'offers'>('shop_active_tab', 'daily');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentTime, setCurrentTime] = useState(new Date());
 

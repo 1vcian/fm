@@ -7,6 +7,8 @@ import { cn, getRarityBgStyle } from '../lib/utils';
 import { Star, Search, BookOpen, TrendingUp } from 'lucide-react';
 import { AscensionStars } from '../components/UI/AscensionStars';
 
+import { usePersistentState } from '../hooks/usePersistentState';
+
 export default function Mounts() {
     const { profile } = useProfile();
     const { data: mountLibrary, loading: l1 } = useGameData<any>('MountLibrary.json');
@@ -16,9 +18,9 @@ export default function Mounts() {
     const { data: ascensionConfigs, loading: l3 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterRarity, setFilterRarity] = useState<string | null>(null);
-    const [globalLevel, setGlobalLevel] = useState(50);
-    const [ascensionLevel, setAscensionLevel] = useState(0);
+    const [filterRarity, setFilterRarity] = usePersistentState<string | null>('wiki_mounts_filter_rarity', null);
+    const [globalLevel, setGlobalLevel] = usePersistentState<number>('wiki_mounts_global_level', 50);
+    const [ascensionLevel, setAscensionLevel] = usePersistentState<number>('wiki_mounts_ascension_level', 0);
 
     const loading = l1 || l1b || l1c || l2 || l3;
     const mountsConfig = spriteMapping?.mounts;

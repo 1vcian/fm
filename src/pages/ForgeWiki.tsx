@@ -108,7 +108,7 @@ export default function ForgeWiki() {
             };
         });
 
-    }, [upgradeData, forgeCostReduction, forgeTimerSpeed, freeForgeChance]);
+    }, [upgradeData, dropData, forgeCostReduction, forgeTimerSpeed, freeForgeChance]);
 
     const formatTime = (seconds: number) => {
         if (seconds < 60) return `${Math.ceil(seconds)}s`;
@@ -119,6 +119,15 @@ export default function ForgeWiki() {
         const days = Math.floor(hours / 24);
         return `${days}d ${hours % 24}h`;
     };
+
+    if (!upgradeData || !dropData) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 text-text-muted animate-pulse">
+                <Hammer className="w-12 h-12 mb-4 opacity-20" />
+                <p>Loading Forge configurations...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">

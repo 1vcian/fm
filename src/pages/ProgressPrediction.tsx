@@ -150,8 +150,6 @@ function WaveBreakdownCompact({ result }: { result: BattleResult }) {
 
 // --- MAIN BATTLE VIEW ---
 
-// --- MAIN BATTLE VIEW ---
-
 function MainBattleView({
     simulate,
     findMaxBeatable,
@@ -161,7 +159,12 @@ function MainBattleView({
     getBattleCountForAge,
     debugConfig,
     recalcTrigger,
-    maxAgeIdx
+    maxAgeIdx,
+    isSimulating,
+    setIsSimulating,
+    simProgress,
+    setSimProgress,
+    resultsCache
 }: {
     simulate: any;
     findMaxBeatable: any;
@@ -172,6 +175,11 @@ function MainBattleView({
     debugConfig?: DebugConfig;
     recalcTrigger?: number;
     maxAgeIdx: number;
+    isSimulating: boolean;
+    setIsSimulating: (s: boolean) => void;
+    simProgress: { current: number; total: number };
+    setSimProgress: (p: { current: number; total: number }) => void;
+    resultsCache: React.MutableRefObject<Map<string, BattleResult>>;
 }) {
     const [selectedAge, setSelectedAge] = useState(0);
     const [selectedLevel, setSelectedLevel] = useState(0);
@@ -180,10 +188,6 @@ function MainBattleView({
     const [maxBeatable, setMaxBeatable] = useState<{ ageIdx: number; battleIdx: number; difficulty: number } | null>(null);
     const [autoScrollDone, setAutoScrollDone] = useState(false);
     const [isRecalculating, setIsRecalculating] = useState(false);
-    const resultsCache = useRef<Map<string, BattleResult>>(new Map());
-
-    // Optimization: Use Ref for grid statuses to allow frequent updates without re-render spam, 
-    // then trigger re-render once with tick.
     const [levelStatuses, setLevelStatuses] = useState<Map<string, number>>(new Map());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -276,6 +280,10 @@ function MainBattleView({
             // Clear previous state before starting new simulations
             resultsCache.current.clear();
             setLevelStatuses(new Map());
+            setSimProgress({ current: 0, total: tasks.length });
+            
+            // Allow UI to mount and animation to start
+            await new Promise(r => setTimeout(r, 100));
 
 
             // Tracking consecutive failures for Early Stop
@@ -292,6 +300,7 @@ function MainBattleView({
 
             for (const task of tasks) {
                 if (isCancelled) return;
+                setSimProgress({ current: tasks.indexOf(task) + 1, total: tasks.length });
 
                 // Reset failure count if difficulty changes (Treat Normal/Hard as separate runs)
                 if (task.diff !== currentDiff) {
@@ -366,13 +375,16 @@ function MainBattleView({
 
                 await new Promise(r => setTimeout(r, 0));
             }
+
+            if (!isCancelled) {
+                setIsSimulating(false);
+            }
         };
 
+        setIsSimulating(true);
         runSimulations();
 
-        runSimulations();
-
-        return () => { isCancelled = true; };
+        return () => { isCancelled = true; setIsSimulating(false); };
     }, [simulate, playerStats, getBattleCountForAge, debugConfig, recalcTrigger]);
     // Clear cache when stats change
     // Merged into main effect
@@ -477,8 +489,16 @@ function MainBattleView({
                         <TrendingUp className="w-5 h-5 text-accent-primary" />
                         Full Progression Path
                     </h2>
-                    <div className="text-xs text-gray-400">
-                        {maxBeatable ? `Max: ${maxBeatable.difficulty === 1 ? 'Hard' : 'Normal'} ${maxBeatable.ageIdx + 1}-${maxBeatable.battleIdx + 1}` : 'Calculating...'}
+                    <div className="flex items-center gap-4">
+                        {isSimulating && (
+                            <div className="flex items-center gap-2 text-[10px] text-accent-primary animate-pulse bg-surface-secondary px-2 py-1 rounded-full border border-accent-primary/20">
+                                <div className="w-2 h-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                {Math.round((simProgress.current / simProgress.total) * 100)}%
+                            </div>
+                        )}
+                        <div className="text-xs text-gray-400">
+                            {maxBeatable ? `Max: ${maxBeatable.difficulty === 1 ? 'Hard' : 'Normal'} ${maxBeatable.ageIdx + 1}-${maxBeatable.battleIdx + 1}` : 'Calculating...'}
+                        </div>
                     </div>
                 </div>
 
@@ -546,7 +566,12 @@ function DungeonView({
     onDebug,
     debugConfig,
     recalcTrigger,
-    maxDungeonLevel
+    maxDungeonLevel,
+    isSimulating,
+    setIsSimulating,
+    simProgress,
+    setSimProgress,
+    resultsCache
 }: {
     dungeonType: 'hammer' | 'skill' | 'egg' | 'potion';
     simulateDungeon: any;
@@ -557,14 +582,17 @@ function DungeonView({
     debugConfig?: DebugConfig;
     recalcTrigger?: number;
     maxDungeonLevel: number;
+    isSimulating: boolean;
+    setIsSimulating: (s: boolean) => void;
+    simProgress: { current: number; total: number };
+    setSimProgress: (p: { current: number; total: number }) => void;
+    resultsCache: React.MutableRefObject<Map<string, BattleResult>>;
 }) {
     const totalLevels = maxDungeonLevel + 1;
     const [selectedLevel, setSelectedLevel] = useState(0); // 0 to maxDungeonLevel
     const [result, setResult] = useState<BattleResult | null>(null);
     const [maxLevel, setMaxLevel] = useState<number>(-1);
-    const resultsCache = useRef<Map<string, BattleResult>>(new Map());
     const [levelStatuses, setLevelStatuses] = useState<Map<number, number>>(new Map()); // Level -> Progress %
-    const [isSimulating, setIsSimulating] = useState(false);
     const [isRecalculating, setIsRecalculating] = useState(false);
 
     // Find max level on mount
@@ -602,8 +630,13 @@ function DungeonView({
                 });
             };
 
+            setSimProgress({ current: 0, total: totalLevels });
+            // Allow UI to mount
+            await new Promise(r => setTimeout(r, 100));
+
             for (let l = 0; l < totalLevels; l++) {
                 if (isCancelled) break;
+                setSimProgress({ current: l + 1, total: totalLevels });
 
                 // Early Stop Check
                 if (consecutiveFailures >= 3) {
@@ -634,6 +667,7 @@ function DungeonView({
 
                     updateStatus(l, res10.winProbability);
                     consecutiveFailures = 0;
+                    setSimProgress({ current: l + 1, total: totalLevels });
                     await new Promise(r => setTimeout(r, 0));
                     continue;
                 }
@@ -646,6 +680,7 @@ function DungeonView({
 
                     updateStatus(l, res100.winProbability);
                     consecutiveFailures = 0;
+                    setSimProgress({ current: l + 1, total: totalLevels });
                     await new Promise(r => setTimeout(r, 0));
                     continue;
                 }
@@ -671,8 +706,6 @@ function DungeonView({
                 setIsSimulating(false);
             }
         };
-
-        runSimulations();
 
         runSimulations();
 
@@ -955,6 +988,9 @@ export default function ProgressPrediction() {
     }, []);
 
     const [recalcVersion, setRecalcVersion] = useState(0);
+    const [isSimulating, setIsSimulating] = useState(false);
+    const [simProgress, setSimProgress] = useState({ current: 0, total: 0 });
+    const resultsCache = useRef<Map<string, BattleResult>>(new Map());
 
     const [debugTarget, setDebugTarget] = useState<{ age: number, battle: number, diff: number, dungeon?: string } | null>(null);
 
@@ -1113,6 +1149,38 @@ export default function ProgressPrediction() {
                         <p className="text-text-secondary text-sm mt-1">
                             Your Power: <span className="text-accent-primary font-semibold">{formatNumber(playerStats.power)}</span>
                         </p>
+                    </div>
+
+                    {/* Simulation Status Overlay */}
+                    {isSimulating && (
+                        <div className="flex-1 flex justify-center px-4">
+                            <div className="bg-accent-primary/10 border border-accent-primary/40 rounded-2xl px-6 py-3 flex items-center gap-6 shadow-[0_0_20px_rgba(var(--accent-primary-rgb),0.2)] animate-pulse">
+                                <div className="relative">
+                                    <div className="w-10 h-10 rounded-full border-4 border-accent-primary/30 border-t-accent-primary animate-spin" />
+                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-accent-primary">
+                                        {Math.round((simProgress.current / simProgress.total) * 100)}%
+                                    </div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2 text-accent-primary font-bold text-lg leading-tight">
+                                        Calculating Predictions...
+                                    </div>
+                                    <div className="w-64 h-2 bg-surface-tertiary rounded-full mt-2 overflow-hidden border border-white/5">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-accent-primary to-accent-secondary transition-all duration-300"
+                                            style={{ width: `${(simProgress.current / simProgress.total) * 100}%` }}
+                                        />
+                                    </div>
+                                    <div className="text-[10px] text-text-muted mt-1.5 uppercase font-bold tracking-widest flex justify-between">
+                                        <span>Analyzing strategy...</span>
+                                        <span>{simProgress.current} / {simProgress.total}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col items-end">
                         <p className="text-text-muted text-xs mt-1 italic">
                             Empirical tool based on observations and uncertain deductions. Predictions may not be 100% accurate.
                         </p>
@@ -1173,6 +1241,11 @@ export default function ProgressPrediction() {
                     debugConfig={debugConfig}
                     recalcTrigger={recalcVersion}
                     maxAgeIdx={maxAgeIdx}
+                    isSimulating={isSimulating}
+                    setIsSimulating={setIsSimulating}
+                    simProgress={simProgress}
+                    setSimProgress={setSimProgress}
+                    resultsCache={resultsCache}
                 />
             ) : (
                 <DungeonView
@@ -1185,6 +1258,11 @@ export default function ProgressPrediction() {
                     debugConfig={debugConfig}
                     recalcTrigger={recalcVersion}
                     maxDungeonLevel={maxDungeonLevel}
+                    isSimulating={isSimulating}
+                    setIsSimulating={setIsSimulating}
+                    simProgress={simProgress}
+                    setSimProgress={setSimProgress}
+                    resultsCache={resultsCache}
                 />
             )}
         </div>

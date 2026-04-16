@@ -32,8 +32,10 @@ const DUNGEON_TABS: TabConfig[] = [
 
 
 
+import { usePersistentState } from '../hooks/usePersistentState';
+
 export default function Dungeons() {
-    const [selectedTab, setSelectedTab] = useState<DungeonType>('Hammer');
+    const [selectedTab, setSelectedTab] = usePersistentState<DungeonType>('dungeon_selected_tab', 'Hammer');
 
     // Initialize levels for ALL tabs from LocalStorage
     const [levels, setLevels] = useState<Record<DungeonType, number>>(() => {

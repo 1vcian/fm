@@ -41,6 +41,8 @@ function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity:
     );
 }
 
+import { usePersistentState } from '../hooks/usePersistentState';
+
 export default function Pets() {
     const { profile } = useProfile();
     const { data: petLibrary, loading: l1 } = useGameData<any>('PetLibrary.json');
@@ -51,9 +53,9 @@ export default function Pets() {
     const { data: ascensionConfigs, loading: l5 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterRarity, setFilterRarity] = useState<string | null>(null);
-    const [globalLevel, setGlobalLevel] = useState(50);
-    const [ascensionLevel, setAscensionLevel] = useState(0);
+    const [filterRarity, setFilterRarity] = usePersistentState<string | null>('wiki_pets_filter_rarity', null);
+    const [globalLevel, setGlobalLevel] = usePersistentState<number>('wiki_pets_global_level', 50);
+    const [ascensionLevel, setAscensionLevel] = usePersistentState<number>('wiki_pets_ascension_level', 0);
 
     const loading = l1 || l2 || l3 || l3b || l4 || l5;
     const petsConfig = spriteMapping?.pets;

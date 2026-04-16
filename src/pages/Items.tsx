@@ -11,6 +11,7 @@ import { AGES } from '../utils/constants';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
+import { usePersistentState } from '../hooks/usePersistentState';
 
 const SLOTS = ['Weapon', 'Helmet', 'Armour', 'Gloves', 'Shoes', 'Necklace', 'Ring', 'Belt'];
 
@@ -25,10 +26,10 @@ export default function Items() {
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const techModifiers = useTreeModifiers();
 
-    // Default to first age (Primitive)
-    const [selectedAgeIdx, setSelectedAgeIdx] = useState<number>(0);
-    const [selectedSlot, setSelectedSlot] = useState<string>('Weapon');
-    const [selectedLevel, setSelectedLevel] = useState<number>(1);
+    // Persist selections
+    const [selectedAgeIdx, setSelectedAgeIdx] = usePersistentState<number>('wiki_items_selected_age', 0);
+    const [selectedSlot, setSelectedSlot] = usePersistentState<string>('wiki_items_selected_slot', 'Weapon');
+    const [selectedLevel, setSelectedLevel] = usePersistentState<number>('wiki_items_selected_level', 1);
     const [ascensionLevel, setAscensionLevel] = useState<number>(profile.misc.forgeAscensionLevel || 0);
     const [breakpointModal, setBreakpointModal] = useState<{ isOpen: boolean; weapon?: any }>({ isOpen: false });
 
