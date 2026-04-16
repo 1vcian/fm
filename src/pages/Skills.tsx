@@ -214,9 +214,16 @@ export default function Skills() {
                         const spriteStyle = getSpriteStyle(skill.spriteIndex);
 
                         // Stats at global level
-                        const levelIdx = Math.min(Math.max(1, globalLevel) - 1, skill.damagePerLevel.length - 1);
-                        const dmgAtLevel = (skill.damagePerLevel[levelIdx] || 0) * (1 + ascensionMulti.activeDmg);
-                        const hpAtLevel = (skill.healthPerLevel[levelIdx] || 0) * (1 + ascensionMulti.activeHp);
+                        const dmgIdx = Math.min(Math.max(1, globalLevel) - 1, skill.damagePerLevel.length - 1);
+                        const hpIdx = Math.min(Math.max(1, globalLevel) - 1, skill.healthPerLevel.length - 1);
+
+                        const dmgAtLevel = dmgIdx >= 0
+                            ? (skill.damagePerLevel[dmgIdx] || 0) * (1 + ascensionMulti.activeDmg)
+                            : 0;
+
+                        const hpAtLevel = hpIdx >= 0
+                            ? (skill.healthPerLevel[hpIdx] || 0) * (1 + ascensionMulti.activeHp)
+                            : 0;
 
                         return (
                             <Card key={skill.type} variant="hover" className={cn(
