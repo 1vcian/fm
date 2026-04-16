@@ -569,7 +569,6 @@ function DungeonView({
     maxDungeonLevel,
     isSimulating,
     setIsSimulating,
-    simProgress,
     setSimProgress,
     resultsCache
 }: {
@@ -584,7 +583,6 @@ function DungeonView({
     maxDungeonLevel: number;
     isSimulating: boolean;
     setIsSimulating: (s: boolean) => void;
-    simProgress: { current: number; total: number };
     setSimProgress: (p: { current: number; total: number }) => void;
     resultsCache: React.MutableRefObject<Map<string, BattleResult>>;
 }) {
@@ -1260,7 +1258,6 @@ export default function ProgressPrediction() {
                     maxDungeonLevel={maxDungeonLevel}
                     isSimulating={isSimulating}
                     setIsSimulating={setIsSimulating}
-                    simProgress={simProgress}
                     setSimProgress={setSimProgress}
                     resultsCache={resultsCache}
                 />
