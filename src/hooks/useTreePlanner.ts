@@ -122,10 +122,18 @@ export function useTreePlanner() {
         return new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
     });
 
+    const [planMetadata, setPlanMetadata] = useState<{ isAuto: boolean, config?: any }>(() => {
+        return profile.misc.techPlanMetadata || { isAuto: false };
+    });
+
     // Persist to profile
     useEffect(() => {
-        updateNestedProfile('misc', { techPlanQueue: planQueue, techPlanStartDate: planStartDate });
-    }, [planQueue, planStartDate]);
+        updateNestedProfile('misc', { 
+            techPlanQueue: planQueue, 
+            techPlanStartDate: planStartDate,
+            techPlanMetadata: planMetadata
+        });
+    }, [planQueue, planStartDate, planMetadata]);
 
     // Tier -> War Points
     const tierPoints = useMemo(() => {
@@ -367,6 +375,8 @@ export function useTreePlanner() {
             totalPotions: valid.reduce((s, e) => s + e.potionCost, 0),
             totalPoints: valid.reduce((s, e) => s + e.points, 0),
             totalWarPoints: valid.reduce((s, e) => s + (e.isWarDay ? e.points : 0), 0),
+            nodeCount: valid.filter(e => e.step.type === 'node').length,
+            delayCount: valid.filter(e => e.step.type === 'delay').length,
             invalidCount: schedule.filter(e => e.isInvalid).length,
             completionDate: schedule.length > 0 ? schedule[schedule.length - 1].endDate : new Date(planStartDate)
         };
@@ -447,12 +457,12 @@ export function useTreePlanner() {
             treeDef.nodes.forEach((node: any) => {
                 const nodeConfig = techTreeLibrary[node.type];
                 if (!nodeConfig) return;
-                const currentLvl = profile.techTree[treeName as keyof UserProfile['techTree']]?.[node.id] || 0;
+                const currentLvl = treeMode === 'empty' ? 0 : (profile.techTree[treeName as keyof UserProfile['techTree']]?.[node.id] || 0);
                 total += Math.max(0, nodeConfig.MaxLevel - currentLvl);
             });
         });
         return total;
-    }, [mapping, techTreeLibrary, profile.techTree]);
+    }, [mapping, techTreeLibrary, profile.techTree, treeMode]);
 
     // DPS-related node types for auto-planner scoring
     const DPS_NODE_TYPES = useMemo(() => new Set([
@@ -504,7 +514,7 @@ export function useTreePlanner() {
     // Auto-Planner: generates an optimized plan queue
     const autoPlan = useCallback((
         priorities: Set<string>,
-        maxSteps: number = 200,
+        numNodes: number = 200,
         potionBudget?: number,
         sleepStart: string = profile.misc.plannerSleepStart || '23:00',
         sleepEnd: string = profile.misc.plannerSleepEnd || '07:00',
@@ -586,7 +596,7 @@ export function useTreePlanner() {
         });
         // ------------------------------------------
 
-        while (iter < maxSteps) {
+        while (iter < numNodes) {
             iter++;
 
             const bonuses = calculateTechBonuses(virtualTree);
@@ -768,6 +778,7 @@ export function useTreePlanner() {
         }
 
         setPlanQueue(newQueue);
+        setPlanMetadata({ isAuto: true, config: options });
     }, [mapping, techTreeLibrary, upgradeLibrary, treeMode, profile.techTree, profile.misc, tierPoints, calculateTechBonuses, warPointDays, DPS_NODE_TYPES, SPEED_NODE_TYPES, planStartDate, isSleepTime, updateProfile]);
 
     // Actions
@@ -779,10 +790,12 @@ export function useTreePlanner() {
             else next.push(step);
             return next;
         });
+        setPlanMetadata({ isAuto: false });
     }, []);
 
     const removeStep = useCallback((index: number) => {
         setPlanQueue(prev => prev.filter((_, i) => i !== index));
+        setPlanMetadata({ isAuto: false });
     }, []);
 
     const addDelay = useCallback((afterIndex: number, minutes: number) => {
@@ -792,6 +805,13 @@ export function useTreePlanner() {
             next.splice(afterIndex + 1, 0, step);
             return next;
         });
+        setPlanMetadata({ isAuto: false });
+    }, []);
+
+    const appendDelay = useCallback((minutes: number) => {
+        const step: PlanStep = { id: generateId(), type: 'delay', delayMinutes: minutes };
+        setPlanQueue(prev => [...prev, step]);
+        setPlanMetadata({ isAuto: false });
     }, []);
 
     const moveStep = useCallback((from: number, to: number) => {
@@ -801,10 +821,12 @@ export function useTreePlanner() {
             next.splice(to, 0, item);
             return next;
         });
+        setPlanMetadata({ isAuto: false });
     }, []);
 
     const clearQueue = useCallback(() => {
         setPlanQueue([]);
+        setPlanMetadata({ isAuto: false });
     }, []);
 
     const markDone = useCallback((upToIndex: number) => {
@@ -863,6 +885,8 @@ export function useTreePlanner() {
         clearQueue,
         markDone,
         autoPlan,
+        appendDelay,
+        planMetadata,
         warPointDays,
         tierPoints,
         totalRemainingNodes
