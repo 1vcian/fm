@@ -55,8 +55,10 @@ export interface AvailableNode {
     duration: number;
     potionCost: number;
     points: number;
-    sprite_rect?: { x: number; y: number; width: number; height: number };
+    sprite_rect: any;
 }
+
+
 
 export function useTreePlanner() {
     const { profile, updateProfile, updateNestedProfile } = useProfile();
@@ -778,7 +780,10 @@ export function useTreePlanner() {
         }
 
         setPlanQueue(newQueue);
-        setPlanMetadata({ isAuto: true, config: options });
+        setPlanMetadata({ 
+            isAuto: true, 
+            config: { priorities: Array.from(priorities), numNodes, potionBudget, sleepStart, sleepEnd, maxWaitMinutes, minWaitMinutes, allowedTrees } 
+        });
     }, [mapping, techTreeLibrary, upgradeLibrary, treeMode, profile.techTree, profile.misc, tierPoints, calculateTechBonuses, warPointDays, DPS_NODE_TYPES, SPEED_NODE_TYPES, planStartDate, isSleepTime, updateProfile]);
 
     // Actions

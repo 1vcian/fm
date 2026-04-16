@@ -259,7 +259,7 @@ const ScheduleItem = React.memo(({
 const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: { 
     planner: any, 
     profile: any, 
-    updateNestedProfile: (category: string, data: any) => void 
+    updateNestedProfile: (category: keyof UserProfile, data: any) => void 
 }) => {
     // Local Auto-planner state - isolated from parent to avoid lag
     const [autoPriorities, setAutoPriorities] = useState<Set<string>>(new Set(['war_points']));
