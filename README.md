@@ -6,6 +6,7 @@ A comprehensive, **100% Fanmade** toolkit and encyclopedia for Forge Master play
 
 ## 🚀 Project Links
 - **Live Tool**: [1vcian.me/fm](https://1vcian.me/fm)
+- **AI DeepWiki of the repo**:[DeepWiki](https://deepwiki.com/1vcian/fm)
 - **GitHub Repository**: [1vcian/fm](https://github.com/1vcian/fm)
 - **Support the Project**: [Buy Me a Coffee](https://www.buymeacoffee.com/1vcian)
 
