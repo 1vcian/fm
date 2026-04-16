@@ -1,26 +1,22 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { X, Bike as MountIcon, Save, Info, Plus, Minus, Trash2, Star, Grid, Settings } from 'lucide-react';
+import { X, Bike as MountIcon, Save, Info, Plus, Minus, Trash2, Star, Grid, Settings, Bookmark, Search, Unlock } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
+import { ModalLevelSelector } from '../UI/ModalLevelSelector';
+import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
-import { getStatName } from '../../utils/statNames';
+import { getStatName, formatSecondaryStat } from '../../utils/statNames';
 import { useProfile } from '../../context/ProfileContext';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 
-type MobileTab = 'rarity' | 'mounts' | 'config';
-
-const STAT_TYPES = [
-    'CriticalChance', 'CriticalMulti', 'BlockChance', 'HealthRegen', 'LifeSteal',
-    'DoubleDamageChance', 'DamageMulti', 'MeleeDamageMulti', 'RangedDamageMulti',
-    'AttackSpeed', 'SkillDamageMulti', 'SkillCooldownMulti', 'HealthMulti'
-    //,'MovementSpeed' , 'BossDamageMulti'
-];
+type MobileTab = 'mounts' | 'config';
 
 interface MountSelectorModalProps {
     isOpen: boolean;
@@ -30,20 +26,26 @@ interface MountSelectorModalProps {
     currentMount?: MountSlot | null;
 }
 
+const STAT_TYPES = [
+    'CriticalChance', 'CriticalMulti', 'BlockChance', 'HealthRegen', 'LifeSteal',
+    'DoubleDamageChance', 'DamageMulti', 'MeleeDamageMulti', 'RangedDamageMulti',
+    'AttackSpeed', 'SkillDamageMulti', 'SkillCooldownMulti', 'HealthMulti'
+];
+
 export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, context = 'profile' }: MountSelectorModalProps) {
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mountUpgradeLib } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { profile, updateNestedProfile } = useProfile();
-
     const { data: petUnlockLib } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
 
     const [activeTab, setActiveTab] = useState<'library' | 'saved'>('library');
-    const [mobileTab, setMobileTab] = useState<MobileTab>('rarity');
+    const [mobileTab, setMobileTab] = useState<'mounts' | 'config'>('mounts');
     const [selectedRarity, setSelectedRarity] = useState<string>('Common');
     const [selectedMountId, setSelectedMountId] = useState<number | null>(null);
     const [mountLevel, setMountLevel] = useState<number>(1);
     const [manualStats, setManualStats] = useState<{ statId: string; value: number }[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Reset state when opening or populate from currentMount
     useEffect(() => {
@@ -52,7 +54,6 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                 setSelectedRarity(currentMount.rarity);
                 setSelectedMountId(currentMount.id);
                 setMountLevel(currentMount.level);
-                // Secondary stats are now stored as percentage points (e.g., 1.3)
                 setManualStats(currentMount.secondaryStats || []);
             } else {
                 setSelectedRarity('Common');
@@ -60,17 +61,13 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                 setMountLevel(1);
                 setManualStats([]);
             }
-
-            // Default to library tab unless editing
+            setSearchTerm('');
             if (!currentMount) setActiveTab('library');
             if (context === 'pvp') setActiveTab('library');
-
-            setMobileTab('rarity');
+            setMobileTab('mounts');
         }
-    }
-        , [isOpen, currentMount, context]);
+    }, [isOpen, currentMount, context]);
 
-    // Calculate max slots based on rarity (using Pet logic as requested)
     const maxSlots = useMemo(() => {
         if (!petUnlockLib || !selectedRarity) return 0;
         return petUnlockLib[selectedRarity]?.NumberOfSecondStats || 0;
@@ -81,14 +78,12 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
         return mountUpgradeLib[selectedRarity]?.LevelInfo?.length || 100;
     }, [mountUpgradeLib, selectedRarity]);
 
-    // Trim manual stats if they exceed the new slot limit
     useEffect(() => {
         if (manualStats.length > maxSlots) {
             setManualStats(prev => prev.slice(0, maxSlots));
         }
     }, [maxSlots, manualStats.length]);
 
-    // Get stat range for display
     const getStatRange = (statType: string): { min: number; max: number } | null => {
         if (!secondaryStatLibrary) return null;
         const statData = secondaryStatLibrary[statType];
@@ -99,12 +94,34 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
         };
     };
 
+    const getStatPerfection = (statIdx: string, value: number): number | null => {
+        if (!secondaryStatLibrary) return null;
+        const libStat = secondaryStatLibrary[statIdx];
+        if (libStat && libStat.UpperRange > 0) {
+            return Math.min(100, (value / (libStat.UpperRange * 100)) * 100);
+        }
+        return null;
+    };
+
+    const getPerfection = (item: MountSlot): number | null => {
+        if (!item.secondaryStats || item.secondaryStats.length === 0 || !secondaryStatLibrary) return null;
+        let totalPercent = 0;
+        let count = 0;
+        for (const stat of item.secondaryStats) {
+            const perf = getStatPerfection(stat.statId, stat.value);
+            if (perf !== null) {
+                totalPercent += perf;
+                count++;
+            }
+        }
+        return count > 0 ? totalPercent / count : null;
+    };
+
     const addStat = () => {
         if (manualStats.length < maxSlots) {
             const existingTypes = new Set(manualStats.map(s => s.statId));
             const nextType = STAT_TYPES.find(t => !existingTypes.has(t)) || STAT_TYPES[0];
             const range = getStatRange(nextType);
-
             setManualStats([...manualStats, {
                 statId: nextType,
                 value: range ? parseFloat((range.min * 100).toFixed(2)) : 0
@@ -114,58 +131,39 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
 
     const updateStat = (index: number, field: 'statId' | 'value', value: any) => {
         const newStats = [...manualStats];
-
         if (field === 'statId') {
             const range = getStatRange(value);
             let currentValue = newStats[index].value;
-
-            // Value is already in percentage here
-            if (range && currentValue > (range.max * 100)) {
-                currentValue = parseFloat((range.max * 100).toFixed(2));
-            }
-
+            if (range && currentValue > (range.max * 100)) currentValue = parseFloat((range.max * 100).toFixed(2));
             newStats[index] = { ...newStats[index], statId: value, value: currentValue };
         } else {
             newStats[index] = { ...newStats[index], [field]: value };
         }
-
         setManualStats(newStats);
     };
 
-
-
-    const removeStat = (index: number) => {
-        setManualStats(manualStats.filter((_, i) => i !== index));
-    };
+    const removeStat = (index: number) => setManualStats(manualStats.filter((_, i) => i !== index));
 
     const mountsConfig = spriteMapping?.mounts;
-
     const filteredMounts = useMemo(() => {
         if (!mountsConfig?.mapping) return [];
         return Object.entries(mountsConfig.mapping)
-            .map(([idx, info]: [string, any]) => ({
-                spriteIndex: parseInt(idx),
-                ...info
-            }))
-            .filter((m: any) => m.rarity === selectedRarity);
-    }, [mountsConfig, selectedRarity]);
+            .map(([idx, info]: [string, any]) => ({ spriteIndex: parseInt(idx), ...info }))
+            .filter((m: any) => m.rarity === selectedRarity)
+            .filter((m: any) => !searchTerm || m.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+    }, [mountsConfig, selectedRarity, searchTerm]);
 
     const handleSave = () => {
         if (selectedMountId !== null) {
-            // Stats are now stored as percentage points (e.g., 1.3)
             onSelect(selectedRarity, selectedMountId, mountLevel, manualStats);
             onClose();
         }
     };
 
-    // Helper to get stats for selected mount
     const getMountStats = () => {
         if (!mountUpgradeLib || !selectedRarity) return null;
         const rarityData = mountUpgradeLib[selectedRarity];
         if (!rarityData?.LevelInfo) return null;
-
-        // Find stats for current level
-        // Find stats for current level (User Level 1 -> JSON Level 0)
         const targetLevel = Math.max(0, mountLevel - 1);
         const levelInfo = rarityData.LevelInfo.find((l: any) => l.Level === targetLevel);
         return levelInfo?.MountStats;
@@ -176,50 +174,36 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
-            <div className="bg-bg-primary w-full max-w-5xl h-[85vh] rounded-2xl border border-border shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
+            <div className="bg-bg-primary w-full max-w-5xl h-[85vh] rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-accent-primary/10 rounded-lg">
-                            <SpriteSheetIcon
-                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
-                                spriteWidth={256}
-                                spriteHeight={256}
-                                sheetWidth={2048}
-                                sheetHeight={2048}
-                                iconIndex={28}
-                                className="w-8 h-8"
-                            />
+                        <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
+                            <MountIcon className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-bold">Select Mount</h3>
+                        <div>
+                            <h3 className="text-xl font-bold">{currentMount ? 'Edit Mount' : 'Select Mount'}</h3>
+                            <p className="text-xs text-text-muted">Choose a mount and configure stats</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors"><X className="w-6 h-6" /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-text-muted hover:text-white">
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex border-b border-border">
-                    <button
-                        onClick={() => setActiveTab('library')}
-                        className={cn(
-                            "flex-1 py-3 text-sm font-bold border-b-2 transition-colors",
-                            activeTab === 'library' ? "border-accent-primary text-accent-primary bg-accent-primary/5" : "border-transparent text-text-muted hover:text-text-primary"
-                        )}
-                    >
-                        Mount Library
-                    </button>
-                    {context !== 'pvp' && (
-                        <button
-                            onClick={() => setActiveTab('saved')}
-                            className={cn(
-                                "flex-1 py-3 text-sm font-bold border-b-2 transition-colors",
-                                activeTab === 'saved' ? "border-accent-primary text-accent-primary bg-accent-primary/5" : "border-transparent text-text-muted hover:text-text-primary"
-                            )}
+                {/* Mobile Unequip Button */}
+                {currentMount && (
+                    <div className="px-4 py-2 border-b border-border bg-red-500/10 md:hidden">
+                        <Button
+                            variant="ghost"
+                            className="w-full border-red-500/30 text-red-400 hover:bg-red-500/20 py-2 h-auto"
+                            onClick={() => { onSelect(null); onClose(); }}
                         >
-                            Saved Builds ({profile.mount.savedBuilds?.length || 0})
-                        </button>
-                    )}
-                </div>
+                            <Trash2 className="w-4 h-4 mr-2" /> Unequip Mount
+                        </Button>
+                    </div>
+                )}
 
                 {/* Mobile Tab Navigation */}
                 <div className="flex md:hidden border-b border-border bg-bg-secondary/10">
@@ -232,7 +216,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                 : "border-transparent text-text-muted hover:text-text-primary"
                         )}
                     >
-                        <Star className="w-4 h-4" />
+                        <Unlock className="w-4 h-4" />
                         Rarity
                     </button>
                     <button
@@ -245,7 +229,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                         )}
                     >
                         <Grid className="w-4 h-4" />
-                        Mounts
+                        Library
                     </button>
                     <button
                         onClick={() => setMobileTab('config')}
@@ -261,45 +245,95 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                     </button>
                 </div>
 
-                {/* Mobile Content */}
-                <div className="flex-1 overflow-hidden md:hidden">
-                    {/* Mobile Rarity Selection */}
-                    {mobileTab === 'rarity' && activeTab === 'library' && (
-                        <div className="p-3 space-y-2 overflow-y-auto h-full">
-                            <div className="text-xs font-bold text-text-muted uppercase mb-3">Select Rarity</div>
+                <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                    {/* Sidebar */}
+                    <div className={cn(
+                        "w-full md:w-52 border-b md:border-b-0 md:border-r border-border flex flex-col bg-bg-secondary/10 flex-shrink-0",
+                        mobileTab !== 'rarity' && "hidden md:flex"
+                    )}>
+                        <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar md:no-scrollbar p-3 md:p-0 space-y-2 md:space-y-0">
+                            {/* Saved Builds */}
+                            {context === 'profile' && (
+                                <button
+                                    onClick={() => { setActiveTab('saved'); setMobileTab('mounts'); }}
+                                    className={cn(
+                                        "flex items-center justify-start gap-3 p-3 md:px-4 md:py-3.5 text-xs font-bold uppercase transition-all rounded-xl md:rounded-lg border-2",
+                                        activeTab === 'saved' ? "bg-accent-primary/20 text-accent-primary border-accent-primary shadow-md" : "text-text-muted hover:bg-white/5 border-transparent bg-bg-input/20 md:bg-transparent"
+                                    )}
+                                >
+                                    <div className="w-8 h-8 rounded bg-bg-secondary flex items-center justify-center shrink-0 md:hidden">
+                                        <Bookmark className={cn("w-5 h-5", activeTab === 'saved' && "fill-accent-primary")} />
+                                    </div>
+                                    <Bookmark className={cn("hidden md:block w-4 h-4", activeTab === 'saved' && "fill-accent-primary")} />
+                                    <div className="flex-1 text-left">
+                                        <span className="block">Saved Builds</span>
+                                        <span className="text-[10px] text-text-muted normal-case font-normal md:hidden">
+                                            {profile.mount.savedBuilds?.length || 0} items
+                                        </span>
+                                    </div>
+                                    <span className="hidden md:block ml-auto bg-black/20 px-1.5 rounded-full text-[10px]">
+                                        {profile.mount.savedBuilds?.length || 0}
+                                    </span>
+                                </button>
+                            )}
+
+                            <div className="hidden md:block px-4 py-2 text-[10px] font-bold text-text-muted/60 uppercase tracking-widest mt-2">
+                                Mount Library
+                            </div>
                             {RARITIES.map((rarity) => (
                                 <button
                                     key={rarity}
                                     onClick={() => {
+                                        setActiveTab('library');
                                         setSelectedRarity(rarity);
                                         setSelectedMountId(null);
                                         setManualStats([]);
                                         setMobileTab('mounts');
                                     }}
                                     className={cn(
-                                        "w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition-all border-2",
-                                        selectedRarity === rarity
-                                            ? `bg-rarity-${rarity.toLowerCase()}/20 border-rarity-${rarity.toLowerCase()} text-white`
-                                            : "border-transparent text-text-muted hover:bg-white/5"
+                                        "flex items-center gap-3 p-3 md:px-4 md:py-2.5 text-xs font-bold transition-all rounded-xl md:rounded-lg border-2",
+                                        activeTab === 'library' && selectedRarity === rarity
+                                            ? `bg-rarity-${rarity.toLowerCase()}/20 text-rarity-${rarity.toLowerCase()} border-rarity-${rarity.toLowerCase()} shadow-md`
+                                            : "text-text-muted hover:bg-white/5 border-transparent bg-bg-input/20 md:bg-transparent"
                                     )}
                                 >
-                                    {rarity}
+                                    <div className="shrink-0 flex items-center justify-center">
+                                        <div className={cn("w-3 h-3 md:w-2 md:h-2 rounded-full", `bg-rarity-${rarity.toLowerCase()}`)} />
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <span className="block">{rarity}</span>
+                                        <span className="text-[10px] text-text-muted font-normal md:hidden">
+                                            Library Selection
+                                        </span>
+                                    </div>
                                 </button>
                             ))}
                         </div>
-                    )}
-                    {mobileTab === 'rarity' && activeTab === 'saved' && (
-                        <div className="p-4 text-center text-text-muted">
-                            <p className="text-sm">Switch to Mounts tab to view saved builds.</p>
-                        </div>
-                    )}
+                    </div>
 
-                    {/* Mobile Mounts Grid */}
-                    {mobileTab === 'mounts' && (
-                        <div className="p-3 overflow-y-auto h-full">
+
+
+                    {/* Content Area */}
+                    <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                        {/* Grid */}
+                        <div className={cn(
+                            "flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 bg-bg-primary/30",
+                            mobileTab !== 'mounts' && "hidden md:block"
+                        )}>
+                            <div className="relative mb-4">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                                <input
+                                    placeholder={activeTab === 'library' ? "Search mount library..." : "Search saved builds..."}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full bg-bg-input border border-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary transition-all"
+                                    onFocus={(e) => e.target.select()}
+                                />
+                            </div>
+
                             {activeTab === 'library' ? (
-                                <div className="grid grid-cols-3 min-[400px]:grid-cols-4 gap-3">
-                                    {filteredMounts.length > 0 ? filteredMounts.map((mount: any) => (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                                    {filteredMounts.map((mount: any) => (
                                         <button
                                             key={mount.id}
                                             onClick={() => {
@@ -307,47 +341,57 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                 setMobileTab('config');
                                             }}
                                             className={cn(
-                                                "rounded-xl border p-2 flex flex-col items-center gap-2 transition-all",
+                                                "relative aspect-square rounded-xl border-2 transition-all p-2 flex flex-col items-center justify-center gap-1 group overflow-hidden bg-bg-secondary/40",
                                                 selectedMountId === mount.id
-                                                    ? "bg-accent-primary/20 border-accent-primary"
-                                                    : "bg-bg-secondary/40 border-border hover:border-accent-primary/50"
+                                                    ? `border-rarity-${selectedRarity.toLowerCase()} shadow-lg shadow-rarity-${selectedRarity.toLowerCase()}/20`
+                                                    : "border-border hover:border-white/20"
                                             )}
                                         >
-                                            {mountsConfig && (
-                                                <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={getRarityBgStyle(selectedRarity)}>
+                                            <div className="w-full h-full rounded-lg overflow-hidden flex items-center justify-center transition-transform group-hover:scale-110" style={getRarityBgStyle(selectedRarity)}>
+                                                {mountsConfig && (
                                                     <SpriteSheetIcon
-                                                        textureSrc={`${import.meta.env.BASE_URL}icons/game/MountIcons.png`}
+                                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
                                                         spriteWidth={mountsConfig.sprite_size.width}
                                                         spriteHeight={mountsConfig.sprite_size.height}
                                                         sheetWidth={mountsConfig.texture_size.width}
                                                         sheetHeight={mountsConfig.texture_size.height}
                                                         iconIndex={mount.spriteIndex}
-                                                        className="w-12 h-12"
+                                                        className="w-full h-full p-2"
                                                     />
-                                                </div>
-                                            )}
-                                            <span className="text-[10px] font-medium text-center truncate w-full">{mount.name}</span>
+                                                )}
+                                            </div>
+                                            <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-0.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-[9px] text-white truncate block text-center font-bold">{mount.name}</span>
+                                            </div>
                                         </button>
-                                    )) : (
-                                        <div className="col-span-full text-center text-text-muted py-8">No mounts found</div>
-                                    )}
+                                    ))}
                                 </div>
                             ) : (
-                                <div className="w-full">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     {profile.mount.savedBuilds && profile.mount.savedBuilds.length > 0 ? (
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {profile.mount.savedBuilds.map((savedMount, idx) => {
+                                        profile.mount.savedBuilds
+                                            .filter(saved => !searchTerm || (saved.customName || `Mount #${saved.id}`).toLowerCase().includes(searchTerm.toLowerCase()))
+                                            .map((savedMount, idx) => {
                                                 const spriteInfo = mountsConfig?.mapping ?
                                                     Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedMount.id && v.rarity === savedMount.rarity)
                                                     : null;
-
                                                 const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
-                                                const mountName = (spriteInfo?.[1] as any)?.name || `Mount #${savedMount.id}`;
+                                                const isSelected = selectedMountId === savedMount.id && selectedRarity === savedMount.rarity && JSON.stringify(manualStats) === JSON.stringify(savedMount.secondaryStats);
 
                                                 return (
-                                                    <div
+                                                    <ItemSelectionCard
                                                         key={idx}
-                                                        className="relative rounded-xl border border-border bg-bg-secondary p-2 hover:border-accent-primary transition-colors cursor-pointer group"
+                                                        item={savedMount}
+                                                        slotKey="mount-saved"
+                                                        slotLabel="Saved Mount"
+                                                        itemName={savedMount.customName || (spriteInfo?.[1] as any)?.name || `Mount #${savedMount.id}`}
+                                                        itemImage={null}
+                                                        rarity={savedMount.rarity}
+                                                        isSaved={true}
+                                                        isSelected={isSelected}
+                                                        hideAgeStyles={true}
+                                                        perfection={getPerfection(savedMount)}
+                                                        getStatPerfection={getStatPerfection}
                                                         onClick={() => {
                                                             setSelectedRarity(savedMount.rarity);
                                                             setSelectedMountId(savedMount.id);
@@ -355,456 +399,158 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                             setManualStats(savedMount.secondaryStats || []);
                                                             setMobileTab('config');
                                                         }}
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <div
-                                                                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border"
-                                                                style={getRarityBgStyle(savedMount.rarity)}
-                                                            >
-                                                                {mountsConfig && (
-                                                                    <SpriteSheetIcon
-                                                                        textureSrc={`${import.meta.env.BASE_URL}icons/game/MountIcons.png`}
-                                                                        spriteWidth={mountsConfig.sprite_size.width}
-                                                                        spriteHeight={mountsConfig.sprite_size.height}
-                                                                        sheetWidth={mountsConfig.texture_size.width}
-                                                                        sheetHeight={mountsConfig.texture_size.height}
-                                                                        iconIndex={spriteIndex}
-                                                                        className="w-8 h-8"
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="font-bold text-xs truncate">{savedMount.customName || mountName}</div>
-                                                                <div className="text-[10px] text-text-muted">Lv {savedMount.level}</div>
-                                                            </div>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    const newSaved = [...(profile.mount.savedBuilds || [])];
-                                                                    newSaved.splice(idx, 1);
-                                                                    updateNestedProfile('mount', { savedBuilds: newSaved });
-                                                                }}
-                                                                className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded transition-colors"
-                                                            >
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                                        onDelete={(e) => {
+                                                            e.stopPropagation();
+                                                            const newSaved = [...(profile.mount.savedBuilds || [])];
+                                                            newSaved.splice(idx, 1);
+                                                            updateNestedProfile('mount', { savedBuilds: newSaved });
+                                                        }}
+                                                        renderIcon={() => (
+                                                            <SpriteSheetIcon
+                                                                textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
+                                                                spriteWidth={mountsConfig!.sprite_size.width}
+                                                                spriteHeight={mountsConfig!.sprite_size.height}
+                                                                sheetWidth={mountsConfig!.texture_size.width}
+                                                                sheetHeight={mountsConfig!.texture_size.height}
+                                                                iconIndex={spriteIndex}
+                                                                className="w-10 h-10"
+                                                            />
+                                                        )}
+                                                    />
                                                 );
-                                            })}
-                                        </div>
+                                            })
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-                                            <Save className="w-12 h-12 opacity-20 mb-4" />
-                                            <p>No saved mount builds found.</p>
+                                        <div className="col-span-full flex flex-col items-center justify-center py-20 text-text-muted">
+                                            <Bookmark className="w-12 h-12 opacity-20 mb-4" />
+                                            <p className="font-bold">No saved mounts</p>
                                         </div>
                                     )}
                                 </div>
                             )}
                         </div>
-                    )}
 
-                    {/* Mobile Config */}
-                    {mobileTab === 'config' && (
-                        <div className="p-4 overflow-y-auto h-full space-y-4">
+                        {/* Config Panel */}
+                        <div className={cn(
+                            "w-full md:w-80 bg-bg-secondary/20 p-4 border-t md:border-t-0 md:border-l border-border overflow-y-auto custom-scrollbar flex flex-col gap-6",
+                            mobileTab !== 'config' && "hidden md:flex"
+                        )}>
                             {selectedMountId !== null ? (
                                 <>
-                                    <div className="text-center pb-4 border-b border-border">
-                                        <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-3" style={getRarityBgStyle(selectedRarity)}>
+                                    <div className="text-center">
+                                        <div
+                                            className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
+                                            style={{ ...getRarityBgStyle(selectedRarity), borderColor: `var(--rarity-${selectedRarity.toLowerCase()})` }}
+                                        >
                                             {mountsConfig && (
-                                                <SpriteSheetIcon
-                                                    textureSrc={`${import.meta.env.BASE_URL}icons/game/MountIcons.png`}
-                                                    spriteWidth={mountsConfig.sprite_size.width}
-                                                    spriteHeight={mountsConfig.sprite_size.height}
-                                                    sheetWidth={mountsConfig.texture_size.width}
-                                                    sheetHeight={mountsConfig.texture_size.height}
-                                                    iconIndex={filteredMounts.find((m: any) => m.id === selectedMountId)?.spriteIndex || 0}
-                                                    className="w-16 h-16"
-                                                />
-                                            )}
-                                        </div>
-                                        <h2 className="text-lg font-bold">{filteredMounts.find((m: any) => m.id === selectedMountId)?.name || `Mount #${selectedMountId}`}</h2>
-                                        <p className={cn("text-xs font-bold uppercase", `text-rarity-${selectedRarity.toLowerCase()}`)}>{selectedRarity}</p>
-                                    </div>
-                                    {context !== 'pvp' && (
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold uppercase text-text-muted">Level (Max {maxMountLevel})</label>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.max(1, mountLevel - 1))}><Minus className="w-4 h-4" /></Button>
-                                                <Input type="number" value={mountLevel} onChange={(e) => setMountLevel(Math.max(1, Math.min(maxMountLevel, parseInt(e.target.value) || 1)))} className="text-center font-mono font-bold" />
-                                                <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.min(maxMountLevel, mountLevel + 1))}><Plus className="w-4 h-4" /></Button>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {context !== 'pvp' && (
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-xs font-bold uppercase text-text-muted">Passive Stats ({manualStats.length}/{maxSlots})</label>
-                                                <Button variant="ghost" size="sm" onClick={addStat} disabled={manualStats.length >= maxSlots}><Plus className="w-3 h-3 mr-1" />Add</Button>
-                                            </div>
-                                            {manualStats.map((stat, i) => {
-                                                const range = getStatRange(stat.statId);
-                                                return (
-                                                    <div key={i} className="flex flex-col gap-1">
-                                                        <div className="flex gap-2 items-center">
-                                                            <select
-                                                                value={stat.statId}
-                                                                onChange={(e) => updateStat(i, 'statId', e.target.value)}
-                                                                className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                                            >
-                                                                {STAT_TYPES.filter(t =>
-                                                                    t === stat.statId || !manualStats.some(s => s.statId === t)
-                                                                ).map(t => (
-                                                                    <option key={t} value={t}>{getStatName(t)}</option>
-                                                                ))}
-                                                            </select>
-                                                            <SecondaryStatInput
-                                                                value={stat.value as number}
-                                                                onChange={(val) => updateStat(i, 'value', val)}
-                                                                min={(range?.min || 0) * 100}
-                                                                max={(range?.max || 1) * 100}
-                                                            />
-                                                            <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                        {range && (
-                                                            <div className="text-[10px] text-text-muted px-1">
-                                                                Range: {(range.min * 100).toFixed(1)}% - {(range.max * 100).toFixed(1)}%
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                    <Button variant="primary" className="w-full gap-2" onClick={handleSave}><Save className="w-4 h-4" />Confirm</Button>
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-50 space-y-4">
-                                    <Info className="w-12 h-12" />
-                                    <div className="text-sm text-center">Select a mount first</div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Desktop Content */}
-                <div className="flex-1 overflow-hidden hidden md:flex md:flex-row divide-x divide-border">
-                    {/* Column 1: Rarity (Left) - Library Only */}
-                    {activeTab === 'library' && (
-                        <div className="w-48 bg-bg-secondary/10 overflow-y-auto p-2 space-y-1">
-                            {RARITIES.map((rarity) => (
-                                <button
-                                    key={rarity}
-                                    onClick={() => {
-                                        setSelectedRarity(rarity);
-                                        setSelectedMountId(null);
-                                        setManualStats([]);
-                                    }}
-                                    className={cn(
-                                        "w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition-all border",
-                                        selectedRarity === rarity
-                                            ? `bg-rarity-${rarity.toLowerCase()}/20 border-rarity-${rarity.toLowerCase()} text-white shadow-lg`
-                                            : "bg-transparent border-transparent text-text-muted hover:bg-white/5 hover:text-text-secondary"
-                                    )}
-                                >
-                                    {rarity}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Column 2: Mount Grid (Middle) */}
-                    <div className="flex-1 overflow-y-auto p-4 bg-bg-primary/50 relative">
-                        {activeTab === 'library' ? (
-                            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                                {filteredMounts.length > 0 ? filteredMounts.map((mount: any) => (
-                                    <button
-                                        key={mount.id}
-                                        onClick={() => setSelectedMountId(mount.id)}
-                                        className={cn(
-                                            "rounded-xl border p-2 flex flex-col items-center gap-2 transition-all hover:scale-105 group relative overflow-hidden",
-                                            selectedMountId === mount.id
-                                                ? "bg-accent-primary/20 border-accent-primary shadow-[0_0_15px_rgba(255,166,0,0.3)]"
-                                                : "bg-bg-secondary/40 border-border hover:border-accent-primary/50"
-                                        )}
-                                    >
-                                        {mountsConfig && (
-                                            <div
-                                                className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0"
-                                                style={getRarityBgStyle(selectedRarity)}
-                                            >
                                                 <SpriteSheetIcon
                                                     textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
                                                     spriteWidth={mountsConfig.sprite_size.width}
                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                     sheetWidth={mountsConfig.texture_size.width}
                                                     sheetHeight={mountsConfig.texture_size.height}
-                                                    iconIndex={mount.spriteIndex}
-                                                    className="w-14 h-14"
+                                                    iconIndex={Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedMountId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedMountId && v.rarity === selectedRarity)![0]) : 0}
+                                                    className="w-20 h-20"
                                                 />
-                                            </div>
-                                        )}
-                                        <span className="text-[10px] font-medium text-center truncate w-full">{mount.name}</span>
-                                    </button>
-                                )) : (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-text-muted opacity-50">
-                                        <MountIcon className="w-16 h-16 mb-4" />
-                                        <span>No mounts found using this filter</span>
+                                            )}
+                                        </div>
+                                        <h2 className="text-xl font-bold text-text-primary leading-tight">
+                                            {Object.values(mountsConfig?.mapping || {}).find((m: any) => m.id === selectedMountId && m.rarity === selectedRarity)?.name || `Mount #${selectedMountId}`}
+                                        </h2>
+                                        <div className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
+                                            {selectedRarity} Mount
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        ) : (
-                            // SAVE TAB
-                            <div className="w-full">
-                                {profile.mount.savedBuilds && profile.mount.savedBuilds.length > 0 ? (
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {profile.mount.savedBuilds.map((savedMount, idx) => {
-                                            // Find sprite info
-                                            const spriteInfo = mountsConfig?.mapping ?
-                                                Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedMount.id && v.rarity === savedMount.rarity)
-                                                : null;
 
-                                            // Note: Mount IDs might override rarity in filtering, but usually ID is unique.
-                                            const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
-                                            const mountName = (spriteInfo?.[1] as any)?.name || `Mount #${savedMount.id}`;
-
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    className="relative rounded-xl border border-border bg-bg-secondary p-3 hover:border-accent-primary transition-colors cursor-pointer group"
-                                                    onClick={() => {
-                                                        setSelectedRarity(savedMount.rarity);
-                                                        setSelectedMountId(savedMount.id);
-                                                        setMountLevel(savedMount.level);
-                                                        setManualStats(savedMount.secondaryStats || []);
-                                                    }}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div
-                                                            className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border"
-                                                            style={getRarityBgStyle(savedMount.rarity)}
-                                                        >
-                                                            {mountsConfig && (
-                                                                <SpriteSheetIcon
-                                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
-                                                                    spriteWidth={mountsConfig.sprite_size.width}
-                                                                    spriteHeight={mountsConfig.sprite_size.height}
-                                                                    sheetWidth={mountsConfig.texture_size.width}
-                                                                    sheetHeight={mountsConfig.texture_size.height}
-                                                                    iconIndex={spriteIndex}
-                                                                    className="w-12 h-12"
-                                                                />
-                                                            )}
+                                    <div className="space-y-3">
+                                        <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Base Attributes</h4>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {mountStats && mountStats.Stats && (
+                                                <div className="bg-black/20 rounded-xl p-3 border border-white/5 space-y-2">
+                                                    {mountStats.Stats.map((stat: any, idx: number) => (
+                                                        <div key={idx} className="flex justify-between items-center text-xs">
+                                                            <span className="text-text-muted">{getStatName(stat.StatNode?.UniqueStat?.StatType || '')}</span>
+                                                            <span className="text-accent-primary font-mono font-bold">
+                                                                {(() => {
+                                                                    const val = stat.Value;
+                                                                    const type = stat.StatNode?.UniqueStat?.StatType;
+                                                                    if (type === 'Damage' || type === 'Health') {
+                                                                        if (val >= 1000000) return `+${(val / 1000000).toFixed(2)}M`;
+                                                                        if (val >= 1000) return `+${(val / 1000).toFixed(2)}K`;
+                                                                        return `+${val.toFixed(0)}`;
+                                                                    }
+                                                                    return `+${(val * 100).toFixed(2)}%`;
+                                                                })()}
+                                                            </span>
                                                         </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="font-bold text-sm truncate">{savedMount.customName || mountName}</div>
-                                                            <div className="text-xs text-text-muted">Lv {savedMount.level} • {savedMount.rarity}</div>
-                                                        </div>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const newSaved = [...(profile.mount.savedBuilds || [])];
-                                                                newSaved.splice(idx, 1);
-                                                                updateNestedProfile('mount', { savedBuilds: newSaved });
-                                                            }}
-                                                            className="p-1 hover:bg-red-500/20 text-text-muted hover:text-red-500 rounded transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
+                                                    ))}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-                                        <Save className="w-12 h-12 opacity-20 mb-4" />
-                                        <p>No saved mount builds found.</p>
-                                        <p className="text-xs opacity-70 mt-2">Configure a mount in the main panel and save it to see it here.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                            )}
 
-                    {/* Column 3: Config (Right) - Desktop */}
-                    <div className="w-80 bg-bg-secondary/5 p-4 overflow-y-auto flex flex-col gap-6">
-                        {selectedMountId !== null ? (
-                            <>
-                                <div className="text-center pb-4 border-b border-border">
-                                    <div
-                                        className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner border border-white/10 overflow-hidden"
-                                        style={getRarityBgStyle(selectedRarity)}
-                                    >
-                                        {(() => {
-                                            const displayMount = filteredMounts.find((m: any) => m.id === selectedMountId);
-                                            if (displayMount && mountsConfig) {
+                                            <ModalLevelSelector
+                                                level={mountLevel}
+                                                maxLevel={maxMountLevel}
+                                                onChange={setMountLevel}
+                                                label="Mount Level"
+                                                className="bg-black/20 rounded-xl p-3 border border-white/5"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3 flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Secondary Stats</h4>
+                                            <div className="bg-bg-input px-2 py-0.5 rounded text-[10px] border border-white/10 font-bold text-accent-primary">
+                                                {manualStats.length} / {maxSlots}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {manualStats.map((stat, idx) => {
+                                                const range = getStatRange(stat.statId);
+                                                const statOptions = STAT_TYPES.filter(t =>
+                                                    t === stat.statId || !manualStats.some(s => s.statId === t)
+                                                ).map(t => ({ id: t, name: getStatName(t) }));
+
                                                 return (
-                                                    <SpriteSheetIcon
-                                                        textureSrc={`${import.meta.env.BASE_URL}icons/game/MountIcons.png`}
-                                                        spriteWidth={mountsConfig.sprite_size.width}
-                                                        spriteHeight={mountsConfig.sprite_size.height}
-                                                        sheetWidth={mountsConfig.texture_size.width}
-                                                        sheetHeight={mountsConfig.texture_size.height}
-                                                        iconIndex={displayMount.spriteIndex}
-                                                        className="w-20 h-20"
+                                                    <SecondaryStatCard
+                                                        key={idx}
+                                                        statId={stat.statId}
+                                                        value={stat.value as number}
+                                                        options={statOptions}
+                                                        onStatIdChange={(newId) => updateStat(idx, 'statId', newId)}
+                                                        onValueChange={(newVal) => updateStat(idx, 'value', newVal)}
+                                                        onRemove={() => removeStat(idx)}
+                                                        range={range}
                                                     />
                                                 );
-                                            }
-                                            return (
-                                                <SpriteSheetIcon
-                                                    textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
-                                                    spriteWidth={256}
-                                                    spriteHeight={256}
-                                                    sheetWidth={2048}
-                                                    sheetHeight={2048}
-                                                    iconIndex={28}
-                                                    className="w-10 h-10"
-                                                />
-                                            );
-                                        })()}
-                                    </div>
-                                    <h2 className="text-xl font-bold text-text-primary">
-                                        {filteredMounts.find((m: any) => m.id === selectedMountId)?.name || `Mount #${selectedMountId}`}
-                                    </h2>
-                                    <p className={cn("text-xs font-bold uppercase mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
-                                        {selectedRarity}
-                                    </p>
-
-                                    {/* Stats Display */}
-                                    {mountStats && mountStats.Stats && (
-                                        <div className="mt-3 w-full p-3 bg-bg-input/50 rounded-lg border border-border/50 text-xs space-y-2">
-                                            {mountStats.Stats.map((stat: any, idx: number) => (
-                                                <div key={idx} className="flex justify-between items-center">
-                                                    <span className="text-text-muted">
-                                                        {getStatName(stat.StatNode?.UniqueStat?.StatType || '')}
-                                                    </span>
-                                                    <span className="font-mono text-accent-primary font-bold">
-                                                        {(() => {
-                                                            const statType = stat.StatNode?.UniqueStat?.StatType;
-                                                            const isFlat = statType === 'Damage' || statType === 'Health';
-                                                            const isMultiplier = !isFlat && (
-                                                                stat.StatNode?.UniqueStat?.StatNature === 'Multiplier' ||
-                                                                stat.StatNode?.UniqueStat?.StatNature === 'OneMinusMultiplier'
-                                                            );
-                                                            
-                                                            if (isFlat) {
-                                                                const val = stat.Value;
-                                                                let formatted = '';
-                                                                if (val >= 1000000) formatted = (val / 1000000).toFixed(2) + 'M';
-                                                                else if (val >= 1000) formatted = (val / 1000).toFixed(2) + 'K';
-                                                                else formatted = val.toFixed(2);
-                                                                return `+${formatted}`;
-                                                            }
-                                                            
-                                                            return isMultiplier
-                                                                ? `+${(stat.Value * 100).toFixed(2)}%`
-                                                                : stat.Value;
-                                                        })()}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {context !== 'pvp' && (
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase text-text-muted flex items-center gap-2">
-                                            Level (Max {maxMountLevel})
-                                        </label>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.max(1, mountLevel - 1))}>
-                                                <Minus className="w-4 h-4" />
-                                            </Button>
-                                            <Input
-                                                type="number"
-                                                value={mountLevel}
-                                                onChange={(e) => setMountLevel(Math.max(1, Math.min(maxMountLevel, parseInt(e.target.value) || 1)))}
-                                                className="text-center font-mono font-bold"
-                                            />
-                                            <Button variant="ghost" size="sm" onClick={() => setMountLevel(Math.min(maxMountLevel, mountLevel + 1))}>
-                                                <Plus className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {context !== 'pvp' && (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-xs font-bold uppercase text-text-muted">
-                                                Passive Stats ({manualStats.length}/{maxSlots})
-                                            </label>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={addStat}
-                                                disabled={manualStats.length >= maxSlots}
-                                                className={manualStats.length >= maxSlots ? "opacity-50 cursor-not-allowed" : ""}
-                                            >
-                                                <Plus className="w-3 h-3 mr-1" /> Add
-                                            </Button>
-                                        </div>
-
-                                        <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar p-1">
-                                            {manualStats.map((stat, i) => {
-                                                const range = getStatRange(stat.statId);
-                                                return (
-                                                    <div key={i} className="flex flex-col gap-1">
-                                                        <div className="flex gap-2 items-center">
-                                                            <select
-                                                                value={stat.statId}
-                                                                onChange={(e) => updateStat(i, 'statId', e.target.value)}
-                                                                className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                                            >
-                                                                {STAT_TYPES.filter(t =>
-                                                                    t === stat.statId || !manualStats.some(s => s.statId === t)
-                                                                ).map(t => (
-                                                                    <option key={t} value={t}>{getStatName(t)}</option>
-                                                                ))}
-                                                            </select>
-                                                            <SecondaryStatInput
-                                                                value={stat.value as number}
-                                                                onChange={(val) => updateStat(i, 'value', val)}
-                                                                min={(range?.min || 0) * 100}
-                                                                max={(range?.max || 1) * 100}
-                                                            />
-                                                            <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                        {range && (
-                                                            <div className="text-[10px] text-text-muted px-1">
-                                                                Range: {(range.min * 100).toFixed(1)}% - {(range.max * 100).toFixed(1)}%
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
                                             })}
+                                            {manualStats.length < maxSlots && (
+                                                <button onClick={addStat} className="w-full py-4 border-2 border-dashed border-white/5 hover:border-accent-primary/30 rounded-xl flex items-center justify-center gap-2 text-xs text-text-muted hover:text-accent-primary transition-all group">
+                                                    <Plus className="w-4 h-4 group-hover:scale-125 transition-transform" />
+                                                    <span className="font-bold">ADD STAT SLOT</span>
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
-                                )}
 
-                                <div className="pt-4 mt-auto">
-                                    <Button variant="primary" className="w-full gap-2" onClick={handleSave}>
-                                        <Save className="w-4 h-4" /> Confirm Selection
-                                    </Button>
+                                    <div className="pt-4 border-t border-white/10 mt-auto">
+                                        <Button variant="primary" className="w-full py-4 rounded-xl font-bold text-sm gap-2 shadow-lg shadow-accent-primary/20" onClick={handleSave}>
+                                            <Save className="w-5 h-5" /> Equip Mount
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-text-muted opacity-30 text-center px-6">
+                                    <div className="p-4 bg-white/5 rounded-full mb-4">
+                                        <Info className="w-12 h-12" />
+                                    </div>
+                                    <p className="font-bold uppercase tracking-widest text-xs">Configuration</p>
+                                    <p className="text-[10px] mt-2 leading-relaxed">Select a mount from the library to configure stats.</p>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-50 space-y-4">
-                                <Info className="w-12 h-12" />
-                                <div className="text-sm text-center px-4">Select a mount from the grid</div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>,
-        document.body
+        </div>, document.body
     );
 }

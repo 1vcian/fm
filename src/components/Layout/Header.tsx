@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, Copy, Trash2, Check, Share2, Save } from 'lucide-react';
+import { Menu, ChevronDown, Copy, Trash2, Check, Share2, Save, TrendingUp } from 'lucide-react';
 import { toast } from 'react-toastify';
 import LZString from 'lz-string';
 import { Button } from '../UI/Button';
@@ -13,6 +13,7 @@ import { formatCompactNumber } from '../../utils/statsCalculator';
 
 interface HeaderProps {
     onMenuToggle: () => void;
+    onStatsToggle: () => void;
 }
 
 const treeModeLabels: Record<TreeMode, string> = {
@@ -27,8 +28,8 @@ const treeModeColors: Record<TreeMode, string> = {
     max: 'bg-emerald-600 text-emerald-100'
 };
 
-export function Header({ onMenuToggle }: HeaderProps) {
-    const { treeMode, cycleTreeMode } = useTreeMode();
+export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
+    const { treeMode } = useTreeMode();
     const { profile, profiles, activeProfileId, switchProfile, createProfile, cloneProfile, deleteProfile, saveSharedProfile } = useProfile();
     const stats = useGlobalStats();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -234,22 +235,21 @@ export function Header({ onMenuToggle }: HeaderProps) {
                     </Button>
                 )}
 
-                {/* Tree Mode Toggle */}
-                <button
-                    onClick={() => {
-                        cycleTreeMode();
-                        // Show toast with next mode (cycleTreeMode goes empty->my->max->empty)
-                        const nextMode = treeMode === 'empty' ? 'my' : treeMode === 'my' ? 'max' : 'empty';
-                        toast(treeModeLabels[nextMode], {
-                            icon: () => <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="" className="w-5 h-5" />,
-                        });
-                    }}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${treeModeColors[treeMode]} hover:opacity-90`}
-                    title="Click to cycle: Empty → My → Max Tree"
+                {/* Stats Drawer Toggle */}
+                <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onStatsToggle}
+                    className={cn(
+                        "gap-2 shadow-lg transition-all duration-300",
+                        treeMode === 'my' 
+                            ? "from-emerald-600 to-green-700 shadow-emerald-500/20" 
+                            : "from-red-600 to-rose-700 shadow-red-500/20"
+                    )}
                 >
-                    <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Tree Mode" className="w-5 h-5 object-contain" />
-                    <span className="hidden sm:inline">{treeModeLabels[treeMode]}</span>
-                </button>
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="hidden sm:inline">Stats & Tree</span>
+                </Button>
 
             </div>
 

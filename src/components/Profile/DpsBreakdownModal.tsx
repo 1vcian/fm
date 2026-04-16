@@ -5,8 +5,9 @@ import { X, Swords, Zap, TrendingUp, Sparkles, HelpCircle, Hash } from 'lucide-r
 import { AggregatedStats } from '../../utils/statEngine';
 import { UserProfile } from '../../types/Profile';
 import { formatPercent, formatCompactNumber } from '../../utils/statsCalculator';
-import { SKILL_MECHANICS } from '../../utils/constants';
+import { SKILL_MECHANICS, AGES } from '../../utils/constants';
 import { BreakpointTables, BreakpointExplanation } from './BreakpointTables';
+import { cn } from '../../lib/utils';
 
 interface DpsBreakdownModalProps {
     isOpen: boolean;
@@ -135,50 +136,75 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-[2px] p-2 md:p-4" onClick={onClose}>
             <div className="bg-bg-primary w-full max-w-[calc(100vw-1rem)] md:max-w-4xl max-h-[95vh] rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-300" onClick={e => e.stopPropagation()}>
                 {/* Header */}
-                <div className="flex items-center justify-between p-3 md:p-4 border-b border-border bg-bg-secondary/40">
-                    <div className="flex items-center gap-2 md:gap-3">
-                        <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-orange-400" />
-                        <div>
-                            <h3 className="text-lg md:text-xl font-bold text-white tracking-tight">DPS Breakdown</h3>
-                            <p className="text-[9px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em]">Mathematical Formula Analysis</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 border-b border-border bg-bg-secondary/40 gap-4">
+                    <div className="flex items-center justify-between w-full sm:w-auto shrink min-w-0">
+                        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                            <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-orange-400 shrink-0" />
+                            <div className="min-w-0">
+                                <h3 className="text-base md:text-xl font-bold text-white tracking-tight truncate">DPS Breakdown</h3>
+                                <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] truncate">Math Analysis</p>
+                            </div>
                         </div>
+                        
+                        {/* Mobile-only close to keep header balanced */}
+                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-all text-white/60 hover:text-white sm:hidden shrink-0">
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                    <div className="flex items-center gap-1 md:gap-2">
-                        <div className="flex items-center bg-bg-secondary rounded-lg p-1 mr-2 border border-border/40">
+
+                    <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto sm:justify-end overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+                        <div className="flex items-center bg-bg-secondary rounded-lg p-1 border border-border/40 shrink-0">
                              <button 
                                 onClick={() => setShowBreakpoints(!showBreakpoints)}
-                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-2 ${showBreakpoints ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shrink-0",
+                                    showBreakpoints ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
+                                )}
                                 title="View Attack Speed Thresholds"
                             >
                                 <Zap className="w-3 h-3" />
-                                Breakpoints
+                                <span>Breakpoints</span>
                             </button>
-                            <div className="w-px h-4 bg-border/40 mx-1" />
+                            <div className="w-px h-4 bg-border/40 mx-1 shrink-0" />
                             <button 
                                 onClick={() => setUseRealTime(false)}
-                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${!useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all shrink-0",
+                                    !useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
+                                )}
                             >
-                                Theoretical
+                                <span>Theoretical</span>
                             </button>
                             <button 
                                 onClick={() => setUseRealTime(true)}
-                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all shrink-0",
+                                    useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
+                                )}
                             >
-                                Real-Time
+                                <span>Real-Time</span>
                             </button>
                         </div>
-                        <button 
-                            onClick={() => setShowFullNumbers(!showFullNumbers)} 
-                            className={`p-2 rounded-lg transition-all flex items-center gap-2 ${showFullNumbers ? 'bg-orange-500/20 text-orange-400 ring-1 ring-orange-500/30' : 'hover:bg-white/5 text-white/40 hover:text-white/60'}`}
-                            title={showFullNumbers ? "Switch to Compact Numbers" : "Show Full Numbers"}
-                        >
-                            <Hash className="w-4 h-4 md:w-5 md:h-5" />
-                            <span className="hidden sm:inline text-[10px] uppercase font-bold tracking-wider">{showFullNumbers ? 'Full' : 'Compact'}</span>
-                        </button>
-                        <div className="w-px h-6 bg-border mx-1 md:mx-2" />
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-all text-white/60 hover:text-white">
-                            <X className="w-5 h-5 md:w-6 md:h-6" />
-                        </button>
+
+                        <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                            <button 
+                                onClick={() => setShowFullNumbers(!showFullNumbers)} 
+                                className={cn(
+                                    "p-2 rounded-lg transition-all flex items-center gap-2",
+                                    showFullNumbers ? 'bg-orange-500/20 text-orange-400 ring-1 ring-orange-500/30' : 'hover:bg-white/5 text-white/40 hover:text-white/60'
+                                )}
+                                title={showFullNumbers ? "Switch to Compact Numbers" : "Show Full Numbers"}
+                            >
+                                <Hash className="w-4 h-4 md:w-5 md:h-5" />
+                                <span className={cn(showFullNumbers ? "inline" : "hidden lg:inline", "text-[10px] uppercase font-bold tracking-wider")}>
+                                    {showFullNumbers ? 'Full' : 'Compact'}
+                                </span>
+                            </button>
+                            <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+                            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-all text-white/60 hover:text-white hidden sm:block">
+                                <X className="w-5 h-5 md:w-6 md:h-6" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 

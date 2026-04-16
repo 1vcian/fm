@@ -1,4 +1,5 @@
 import { useProfile } from '../../context/ProfileContext';
+import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Cat, Plus, X, Minus, Pencil, Bookmark } from 'lucide-react';
 import { Button } from '../UI/Button';
@@ -14,10 +15,45 @@ import { formatSecondaryStat } from '../../utils/statNames';
 import { InputModal } from '../UI/InputModal';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { ItemSelectionCard } from '../UI/ItemSelectionCard';
+import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { Sword, TrendingUp as PowerIcon } from 'lucide-react';
 
-export function PetPanel() {
+interface PetPanelProps {
+    variant?: 'default' | 'original' | 'test';
+    title?: string;
+    comparePets?: PetSlot[] | null;
+}
+
+export function PetPanel({ variant = 'default', title, comparePets }: PetPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
-    const activePets = profile.pets.active;
+    const { 
+        isComparing, 
+        originalPets, 
+        testPets, 
+        originalPetAscension, 
+        testPetAscension,
+        updateOriginalPet,
+        updateTestPet,
+        updateOriginalPetAscension,
+        updateTestPetAscension
+    } = useComparison();
+    const { optimizePets, isReady } = useProfileOptimizer();
+    
+    const activePets = useMemo(() => {
+        if (variant === 'original' && originalPets) return originalPets;
+        if (variant === 'test' && testPets) return testPets;
+        return profile.pets.active;
+    }, [variant, originalPets, testPets, profile.pets.active]);
+
+    const petAscensionLevel = useMemo(() => {
+        if (isComparing) {
+            if (variant === 'original' && originalPetAscension !== null) return originalPetAscension;
+            if (variant === 'test' && testPetAscension !== null) return testPetAscension;
+        }
+        return profile.misc.petAscensionLevel || 0;
+    }, [isComparing, variant, originalPetAscension, testPetAscension, profile.misc.petAscensionLevel]);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPetIdx, setEditingPetIdx] = useState<number | null>(null);
     const [petToSave, setPetToSave] = useState<PetSlot | null>(null);
@@ -67,7 +103,6 @@ export function PetPanel() {
 
     // Pet Ascension multipliers
     const { ascensionDmgMulti, ascensionHpMulti } = useMemo(() => {
-        const petAscensionLevel = profile.misc.petAscensionLevel || 0;
         let dMulti = 0;
         let hMulti = 0;
 
@@ -84,24 +119,30 @@ export function PetPanel() {
             }
         }
         return { ascensionDmgMulti: dMulti, ascensionHpMulti: hMulti };
-    }, [profile.misc.petAscensionLevel, ascensionConfigsLibrary]);
+    }, [petAscensionLevel, ascensionConfigsLibrary]);
+
+    const updatePets = (newPets: PetSlot[]) => {
+        if (variant === 'original') updateOriginalPet(newPets);
+        else if (variant === 'test') updateTestPet(newPets);
+        else updateNestedProfile('pets', { active: newPets });
+    };
 
     const handleRemove = (index: number) => {
         const newPets = [...activePets];
         newPets.splice(index, 1);
-        updateNestedProfile('pets', { active: newPets });
+        updatePets(newPets);
     };
 
     const handleAdd = (pet: PetSlot) => {
         if (activePets.length >= MAX_ACTIVE_PETS) return;
-        updateNestedProfile('pets', { active: [...activePets, pet] });
+        updatePets([...activePets, pet]);
         setIsModalOpen(false);
     };
 
     const handleEditPet = (index: number, pet: PetSlot) => {
         const newPets = [...activePets];
         newPets[index] = pet;
-        updateNestedProfile('pets', { active: newPets });
+        updatePets(newPets);
         setEditingPetIdx(null);
     };
 
@@ -111,10 +152,22 @@ export function PetPanel() {
         const newLevel = Math.max(1, Math.min(maxLevel, pet.level + delta));
         const newPets = [...activePets];
         newPets[index] = { ...pet, level: newLevel };
-        updateNestedProfile('pets', { active: newPets });
+        updatePets(newPets);
     };
 
-    const petAscensionLevel = profile.misc.petAscensionLevel || 0;
+    const handleAscensionChange = (val: number) => {
+        if (isComparing) {
+            if (variant === 'original') updateOriginalPetAscension(val);
+            else if (variant === 'test') updateTestPetAscension(val);
+        } else {
+            updateNestedProfile('misc', { petAscensionLevel: val });
+        }
+    };
+
+    const handleAutoOptimize = (metric: 'dps' | 'power') => {
+        const best = optimizePets(metric);
+        if (best) updatePets(best);
+    };
 
     const handleConfirmSave = (name: string) => {
         if (!petToSave) return;
@@ -151,8 +204,6 @@ export function PetPanel() {
 
     const getSpriteInfo = (petId: number, rarity: string) => {
         if (!spriteMapping?.pets?.mapping) return null;
-        // Mapping is index (string) -> { id: number, ... }
-        // Find entry with id === petId AND rarity === rarity
         const entry = Object.entries(spriteMapping.pets.mapping).find(([_, val]: [string, any]) => val.id === petId && val.rarity === rarity);
         if (entry) {
             return {
@@ -164,7 +215,6 @@ export function PetPanel() {
         return null;
     };
 
-    // Determine modal props based on whether we are updating or creating
     const getModalProps = () => {
         if (!petToSave) return { title: '', label: '', initialValue: '' };
 
@@ -174,7 +224,6 @@ export function PetPanel() {
             JSON.stringify(s.secondaryStats) === JSON.stringify(petToSave.secondaryStats)
         );
 
-        // Use getSpriteInfo to get the pet name
         const petSpriteInfo = getSpriteInfo(petToSave.id, petToSave.rarity);
         const baseName = petSpriteInfo?.name || `${petToSave.rarity} Pet #${petToSave.id}`;
 
@@ -193,6 +242,16 @@ export function PetPanel() {
     };
 
     const modalProps = getModalProps();
+    const panelTitle = title || 'Active Pets';
+
+    const checkDiff = (index: number) => {
+        if (variant !== 'test' || !comparePets) return false;
+        const current = activePets[index];
+        const original = comparePets[index];
+        if (!current && !original) return false;
+        if (!current || !original) return true;
+        return current.id !== original.id || current.rarity !== original.rarity || current.level !== original.level || JSON.stringify(current.secondaryStats) !== JSON.stringify(original.secondaryStats);
+    };
 
     return (
         <Card className="p-6">
@@ -208,237 +267,153 @@ export function PetPanel() {
                         className="w-8 h-8"
                     />
                 </div>
-                Active Pets
+                {panelTitle}
+                
+                <div className="flex items-center gap-1.5 ml-4">
+                    <Button 
+                        variant="outline" 
+                        size="xs" 
+                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all"
+                        onClick={() => handleAutoOptimize('dps')}
+                        disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
+                        title="Select best 3 saved pets for Max DPS"
+                    >
+                        <Sword className="w-3 h-3" />
+                        AUTO DPS
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        size="xs" 
+                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all"
+                        onClick={() => handleAutoOptimize('power')}
+                        disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
+                        title="Select best 3 saved pets for Max Power"
+                    >
+                        <PowerIcon className="w-3 h-3" />
+                        AUTO POWER
+                    </Button>
+                </div>
+
                 <div className="ml-auto">
                     <AscensionStars 
                         value={petAscensionLevel}
-                        onChange={(val) => updateNestedProfile('misc', { petAscensionLevel: val })}
+                        onChange={handleAscensionChange}
                     />
                 </div>
             </h2>
 
-            <div className="space-y-3">
-                {activePets.map((pet, idx) => {
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {Array.from({ length: MAX_ACTIVE_PETS }).map((_, idx) => {
+                    const pet = activePets[idx];
+                    const hasDiff = checkDiff(idx);
+                    
+                    if (!pet) {
+                        return (
+                            <div 
+                                key={`empty-${idx}`}
+                                onClick={() => setIsModalOpen(true)}
+                                className={cn(
+                                    "h-full min-h-[180px] rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-all relative flex flex-col items-center justify-center p-3 bg-bg-input/10 group",
+                                    hasDiff && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
+                                )}
+                            >
+                                <div className="p-3 bg-bg-secondary/50 rounded-full mb-2 group-hover:scale-110 transition-transform border border-white/5">
+                                    <Plus className="w-6 h-6 text-text-muted opacity-50" />
+                                </div>
+                                <span className="text-sm text-text-muted font-bold">Empty Slot</span>
+                                <span className="text-[10px] text-text-muted/40 uppercase tracking-widest mt-1">Click to equip</span>
+                            </div>
+                        );
+                    }
+
                     const petType = getPetType(pet);
                     const typeMultipliers = petBalancing?.[petType] || { DamageMultiplier: 1, HealthMultiplier: 1 };
                     const spriteInfo = getSpriteInfo(pet.id, pet.rarity);
-
                     const isSaved = (profile.pets.savedBuilds || []).some(s =>
                         s.id === pet.id && s.rarity === pet.rarity && s.level === pet.level &&
                         JSON.stringify(s.secondaryStats) === JSON.stringify(pet.secondaryStats)
                     );
 
+                    const upgradeData = petUpgradeLib?.[pet.rarity];
+                    const targetLevel = Math.max(0, pet.level - 1);
+                    const levelInfo = upgradeData?.LevelInfo?.find((l: any) => l.Level === targetLevel) || (upgradeData?.LevelInfo?.[0]);
+
+                    let damage = 0;
+                    let health = 0;
+
+                    if (levelInfo?.PetStats?.Stats) {
+                        for (const stat of levelInfo.PetStats.Stats) {
+                            const val = stat.Value || 0;
+                            if (stat.StatNode?.UniqueStat?.StatType === 'Damage') {
+                                damage = val * typeMultipliers.DamageMultiplier * (1 + petDamageBonus + ascensionDmgMulti);
+                            }
+                            if (stat.StatNode?.UniqueStat?.StatType === 'Health') {
+                                health = val * typeMultipliers.HealthMultiplier * (1 + petHealthBonus + ascensionHpMulti);
+                            }
+                        }
+                    }
+
                     return (
-                        <div key={idx} className="p-3 bg-bg-secondary rounded-lg border border-border">
-                            {/* Header: Icon, Name, Type */}
-                            <div className="flex items-center gap-3 mb-2">
-                                <div
-                                    className={cn(
-                                        "w-12 h-12 rounded-xl flex items-center justify-center border-2 overflow-hidden shrink-0",
-                                        `border-rarity-${pet.rarity.toLowerCase()}`
-                                    )}
-                                    style={getRarityBgStyle(pet.rarity)}
-                                >
-                                    {spriteInfo ? (
-                                        <SpriteSheetIcon
-                                            textureSrc={getAscensionTexturePath('Pets', petAscensionLevel)}
-                                            spriteWidth={spriteInfo.config.sprite_size.width}
-                                            spriteHeight={spriteInfo.config.sprite_size.height}
-                                            sheetWidth={spriteInfo.config.texture_size.width}
-                                            sheetHeight={spriteInfo.config.texture_size.height}
-                                            iconIndex={spriteInfo.spriteIndex}
-                                            className="w-12 h-12"
-                                        />
-                                    ) : (
-                                        <Cat className={cn("w-6 h-6", `text-rarity-${pet.rarity.toLowerCase()}`)} />
-                                    )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <div className="font-bold text-sm truncate">{spriteInfo?.name || `${pet.rarity} Pet #${pet.id}`}</div>
-                                    <div className="text-xs text-text-muted truncate">
-                                        Type: <span className={cn(
-                                            petType === 'Damage' ? 'text-red-400' :
-                                                petType === 'Health' ? 'text-green-400' : 'text-blue-400'
-                                        )}>{petType}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Stats */}
-                            <div className="mb-3">
-                                <div className="text-xs text-text-muted">
-                                    {(() => {
-                                        const upgradeData = petUpgradeLib?.[pet.rarity];
-                                        if (upgradeData?.LevelInfo) {
-                                            const targetLevel = Math.max(0, pet.level - 1);
-                                            const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === targetLevel) || upgradeData.LevelInfo[0];
-
-                                            let damage = 0;
-                                            let health = 0;
-
-                                            if (levelInfo?.PetStats?.Stats) {
-                                                for (const stat of levelInfo.PetStats.Stats) {
-                                                    const val = stat.Value || 0;
-                                                    if (stat.StatNode?.UniqueStat?.StatType === 'Damage') {
-                                                        damage = val * typeMultipliers.DamageMultiplier * (1 + petDamageBonus + ascensionDmgMulti);
-                                                    }
-                                                    if (stat.StatNode?.UniqueStat?.StatType === 'Health') {
-                                                        health = val * typeMultipliers.HealthMultiplier * (1 + petHealthBonus + ascensionHpMulti);
-                                                    }
-                                                }
-                                            }
-
-                                            return (
-                                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
-                                                    <span className="text-red-400 font-mono whitespace-nowrap">
-                                                        DMG: {Math.round(damage).toLocaleString()}
-                                                            <span className="text-green-400 ml-1">(x{( (petDamageBonus + ascensionDmgMulti) + 1).toFixed(1)} [+{ ( (petDamageBonus + ascensionDmgMulti) * 100).toFixed(0) }%])</span>
-                                                    </span>
-                                                    <span className="text-green-400 font-mono">
-                                                        HP: {Math.round(health).toLocaleString()}
-                                                            <span className="text-green-400 ml-1">(x{( (petHealthBonus + ascensionHpMulti) + 1).toFixed(1)} [+{ ( (petHealthBonus + ascensionHpMulti) * 100).toFixed(0) }%])</span>
-                                                    </span>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    })()}
-                                </div>
-                            </div>
-
-                            {/* Controls Columns */}
-                            <div className="flex flex-col gap-2 pt-2 border-t border-border/30">
-                                {/* Level Controls - Centered */}
-                                <div className="flex items-center justify-center w-full">
-                                    <div className="flex items-center gap-4 bg-bg-input/50 rounded-lg px-2 py-1 border border-border/30 w-full justify-between">
-                                        <span className="text-xs font-mono font-bold text-text-muted">Level</span>
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => handleLevelChange(idx, -1)}
-                                                className="w-6 h-6 flex items-center justify-center bg-bg-input hover:bg-bg-secondary rounded text-text-muted hover:text-text-primary transition-colors border border-border/20"
-                                            >
-                                                <Minus className="w-3 h-3" />
-                                            </button>
-                                            <span className="text-xs font-mono font-bold w-8 text-center bg-transparent">
-                                                {pet.level}
-                                            </span>
-                                            <button
-                                                onClick={() => handleLevelChange(idx, 1)}
-                                                className="w-6 h-6 flex items-center justify-center bg-bg-input hover:bg-bg-secondary rounded text-text-muted hover:text-text-primary transition-colors border border-border/20"
-                                            >
-                                                <Plus className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Action Buttons - Full Width Row */}
-                                <div className="flex items-center gap-1 w-full">
-                                    <button
-                                        onClick={() => setEditingPetIdx(idx)}
-                                        className="flex-1 min-w-0 flex items-center justify-center gap-1 text-xs font-bold text-text-muted hover:text-accent-primary py-1.5 px-1 bg-bg-input hover:bg-bg-input/80 rounded-lg transition-colors border border-border/20"
-                                        title="Edit passives"
-                                    >
-                                        <Pencil className="w-3.5 h-3.5 shrink-0" />
-                                        <span className="hidden xl:inline whitespace-nowrap">Edit</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => setPetToSave(pet)}
-                                        className={cn(
-                                            "flex-1 min-w-0 flex items-center justify-center gap-1 text-xs font-bold py-1.5 px-1 rounded-lg transition-colors border border-border/20 bg-bg-input hover:bg-bg-input/80",
-                                            isSaved ? "text-accent-primary" : "text-text-muted hover:text-green-400"
-                                        )}
-                                        title={isSaved ? "Update Preset Name" : "Save as Preset"}
-                                    >
-                                        <Bookmark className={cn("w-3.5 h-3.5 shrink-0", isSaved && "fill-accent-primary")} />
-                                        <span className="hidden xl:inline whitespace-nowrap">{isSaved ? "Saved" : "Save"}</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => handleRemove(idx)}
-                                        className="flex-1 min-w-0 flex items-center justify-center gap-1 text-xs font-bold text-text-muted hover:text-red-400 py-1.5 px-1 bg-bg-input hover:bg-bg-input/80 rounded-lg transition-colors border border-border/20"
-                                    >
-                                        <X className="w-3.5 h-3.5 shrink-0" />
-                                        <span className="hidden xl:inline whitespace-nowrap">Remove</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Show passives if any */}
-                            {pet.secondaryStats && pet.secondaryStats.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-border/50 flex flex-col gap-1">
-                                    <div className="flex flex-wrap gap-1">
-                                        {pet.secondaryStats.map((stat, sIdx) => {
-                                            const formatted = formatSecondaryStat(stat.statId, stat.value);
-                                            const statPerf = getStatPerfection(stat.statId, stat.value);
-                                            return (
-                                                <span key={sIdx} className={cn("text-xs bg-bg-input px-2 py-0.5 rounded flex items-center gap-1", formatted.color)}>
-                                                    <span>{formatted.name}:</span>
-                                                    <span className="font-mono font-bold">{formatted.formattedValue}</span>
-                                                    {statPerf !== null && (
-                                                        <span className={cn(
-                                                            "text-[9px] opacity-80",
-                                                            statPerf >= 100 ? "text-yellow-400" :
-                                                                statPerf >= 80 ? "text-green-500" :
-                                                                    statPerf >= 50 ? "text-blue-400" : "text-gray-500"
-                                                        )}>
-                                                            ({statPerf.toFixed(0)}%)
-                                                        </span>
-                                                    )}
-                                                </span>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Perfection Bar */}
-                                    {(() => {
-                                        const perfection = getPerfection(pet);
-                                        if (perfection !== null) {
-                                            const colorClass = perfection >= 100 ? 'bg-yellow-400' :
-                                                perfection >= 80 ? 'bg-green-500' :
-                                                    perfection >= 50 ? 'bg-blue-500' : 'bg-gray-500';
-
-                                            return (
-                                                <div className="w-full mt-1 flex flex-col gap-0.5" title={`Perfection: ${perfection.toFixed(1)}%`}>
-                                                    <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full ${colorClass}`}
-                                                            style={{ width: `${Math.min(100, perfection)}%` }}
-                                                        />
-                                                    </div>
-                                                    <div className="text-[7px] text-right text-text-muted leading-none">
-                                                        {perfection.toFixed(0)}% Perfect
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    })()}
-                                </div>
+                        <ItemSelectionCard
+                            key={idx}
+                            item={pet}
+                            slotKey={`pet-${idx}`}
+                            slotLabel={`Pet Slot ${idx + 1}`}
+                            itemName={spriteInfo?.name || `${pet.rarity} Pet`}
+                            itemImage={null}
+                            rarity={pet.rarity}
+                            hideAgeStyles={true}
+                            hasDiff={hasDiff}
+                            isSaved={isSaved}
+                            globalAscensionLevel={petAscensionLevel}
+                            onAscensionChange={handleAscensionChange}
+                            stats={{
+                                damage: damage,
+                                health: health,
+                                damageMulti: 1 + petDamageBonus + ascensionDmgMulti,
+                                healthMulti: 1 + petHealthBonus + ascensionHpMulti,
+                                isMelee: false
+                            }}
+                            customStats={(
+                                <div className={cn(
+                                    "text-[9px] font-black uppercase tracking-widest text-center w-full mt-1 px-2 py-0.5 rounded bg-black/20 border border-white/5",
+                                    petType === 'Damage' ? 'text-red-400 border-red-400/20' :
+                                        petType === 'Health' ? 'text-green-400 border-green-400/20' : 'text-blue-400 border-blue-400/20'
+                                )}>{petType}</div>
                             )}
-                        </div>
+                            perfection={getPerfection(pet)}
+                            getStatPerfection={getStatPerfection}
+                            spriteMapping={spriteMapping}
+                            renderIcon={() => (
+                                spriteInfo ? (
+                                    <SpriteSheetIcon
+                                        textureSrc={getAscensionTexturePath('Pets', petAscensionLevel)}
+                                        spriteWidth={spriteInfo.config.sprite_size.width}
+                                        spriteHeight={spriteInfo.config.sprite_size.height}
+                                        sheetWidth={spriteInfo.config.texture_size.width}
+                                        sheetHeight={spriteInfo.config.texture_size.height}
+                                        iconIndex={spriteInfo.spriteIndex}
+                                        className="w-10 h-10"
+                                    />
+                                ) : (
+                                    <Cat className={cn("w-8 h-8 opacity-50", `text-rarity-${pet.rarity.toLowerCase()}`)} />
+                                )
+                            )}
+                            onClick={() => setEditingPetIdx(idx)}
+                            onUnequip={(e) => { e.stopPropagation(); handleRemove(idx); }}
+                            onSave={(e) => { e.stopPropagation(); setPetToSave(pet); }}
+                            onLevelChange={(delta, e) => { e.stopPropagation(); handleLevelChange(idx, delta); }}
+                        />
                     );
                 })}
-
-                {activePets.length < MAX_ACTIVE_PETS && (
-                    <Button variant="outline" className="w-full border-dashed py-8 hover:bg-bg-secondary/50 group" onClick={() => setIsModalOpen(true)}>
-                        <div className="flex flex-col items-center gap-2 text-text-muted group-hover:text-accent-primary transition-colors">
-                            <Plus className="w-8 h-8" />
-                            <span>Add Active Pet</span>
-                        </div>
-                    </Button>
-                )}
             </div>
 
-            {/* Add new pet modal */}
             <PetSelectorModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSelect={handleAdd}
             />
 
-            {/* Edit existing pet modal */}
             {
                 editingPetIdx !== null && (
                     <PetSelectorModal

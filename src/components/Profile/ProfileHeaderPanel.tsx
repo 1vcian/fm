@@ -64,7 +64,7 @@ function IconSelectorModal({ isOpen, onClose, onSelect, currentIndex }: IconSele
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div className="bg-bg-primary w-full max-w-md rounded-2xl border border-border shadow-2xl animate-in zoom-in-95 duration-200">

@@ -1,17 +1,21 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { Plus, Trash2, Save, Info, Minus, X, Search, Star, Grid, Settings } from 'lucide-react';
+import { Plus, Trash2, Save, Info, Minus, X, Search, Star, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
+import { formatSecondaryStat, getStatColor } from '../../utils/statNames';
 import { useGameData } from '../../hooks/useGameData';
 import { PetSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
+import { ModalLevelSelector } from '../UI/ModalLevelSelector';
+import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { RARITIES } from '../../utils/constants';
 import { getStatName } from '../../utils/statNames';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 
 type MobileTab = 'rarity' | 'pets' | 'config';
 
@@ -121,6 +125,29 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
         };
     };
 
+    const getStatPerfection = (statIdx: string, value: number): number | null => {
+        if (!secondaryStatLibrary) return null;
+        const libStat = secondaryStatLibrary[statIdx];
+        if (libStat && libStat.UpperRange > 0) {
+            return Math.min(100, (value / (libStat.UpperRange * 100)) * 100);
+        }
+        return null;
+    };
+
+    const getPerfection = (item: PetSlot): number | null => {
+        if (!item.secondaryStats || item.secondaryStats.length === 0 || !secondaryStatLibrary) return null;
+        let totalPercent = 0;
+        let count = 0;
+        for (const stat of item.secondaryStats) {
+            const perf = getStatPerfection(stat.statId, stat.value);
+            if (perf !== null) {
+                totalPercent += perf;
+                count++;
+            }
+        }
+        return count > 0 ? totalPercent / count : null;
+    };
+
     const handleAddStat = () => {
         if (manualStats.length < maxSecondaryStats) {
             const existingTypes = new Set(manualStats.map(s => s.statId));
@@ -195,7 +222,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
             <div className="bg-bg-primary w-full max-w-5xl h-[85vh] rounded-2xl border border-border shadow-2xl flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
@@ -221,27 +248,16 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     </button>
                 </div>
 
-                {/* Tabs */}
-                {context === 'profile' && (
-                    <div className="flex border-b border-border">
-                        <button
-                            onClick={() => setActiveTab('library')}
-                            className={cn(
-                                "flex-1 py-3 text-sm font-bold border-b-2 transition-colors",
-                                activeTab === 'library' ? "border-accent-primary text-accent-primary bg-accent-primary/5" : "border-transparent text-text-muted hover:text-text-primary"
-                            )}
+                {/* Mobile Unequip Button */}
+                {currentPet && (
+                    <div className="px-4 py-2 border-b border-border bg-red-500/10 md:hidden">
+                        <Button
+                            variant="ghost"
+                            className="w-full border-red-500/30 text-red-400 hover:bg-red-500/20 py-2 h-auto"
+                            onClick={() => { onSelect(null); onClose(); }}
                         >
-                            Pet Library
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('saved')}
-                            className={cn(
-                                "flex-1 py-3 text-sm font-bold border-b-2 transition-colors",
-                                activeTab === 'saved' ? "border-accent-primary text-accent-primary bg-accent-primary/5" : "border-transparent text-text-muted hover:text-text-primary"
-                            )}
-                        >
-                            Saved Builds ({profile.pets.savedBuilds?.length || 0})
-                        </button>
+                            <Trash2 className="w-4 h-4 mr-2" /> Unequip Pet
+                        </Button>
                     </div>
                 )}
 
@@ -256,7 +272,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                 : "border-transparent text-text-muted hover:text-text-primary"
                         )}
                     >
-                        <Star className="w-4 h-4" />
+                        <Unlock className="w-4 h-4" />
                         Rarity
                     </button>
                     <button
@@ -269,7 +285,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                         )}
                     >
                         <Grid className="w-4 h-4" />
-                        Pets
+                        Library
                     </button>
                     <button
                         onClick={() => setMobileTab('config')}
@@ -285,316 +301,122 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     </button>
                 </div>
 
-                {/* Mobile Content */}
-                <div className="flex-1 overflow-hidden md:hidden">
-                    {/* Mobile Rarity Selection */}
-                    {mobileTab === 'rarity' && activeTab === 'library' && (
-                        <div className="p-3 space-y-2 overflow-y-auto h-full">
-                            <div className="text-xs font-bold text-text-muted uppercase mb-3">Select Rarity</div>
+                {/* Modal Layout - Desktop/Mobile Flex */}
+                <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                    {/* Sidebar: Rarity Selection & Saved Tab */}
+                    <div className={cn(
+                        "w-full md:w-52 border-b md:border-b-0 md:border-r border-border flex flex-col bg-bg-secondary/10 flex-shrink-0",
+                        mobileTab !== 'rarity' && "hidden md:flex"
+                    )}>
+                        <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar md:no-scrollbar p-3 md:p-0 space-y-2 md:space-y-0">
+                            {/* Saved Tab Button */}
+                            <button
+                                onClick={() => {
+                                    setActiveTab('saved');
+                                    setMobileTab('pets');
+                                }}
+                                className={cn(
+                                    "flex items-center justify-start gap-3 p-3 md:px-4 md:py-3.5 text-xs font-bold uppercase transition-all rounded-xl md:rounded-lg border-2",
+                                    activeTab === 'saved'
+                                        ? "bg-accent-primary/20 text-accent-primary border-accent-primary shadow-md"
+                                        : "text-text-muted hover:bg-white/5 border-transparent bg-bg-input/20 md:bg-transparent"
+                                )}
+                            >
+                                <div className="w-8 h-8 rounded bg-bg-secondary flex items-center justify-center shrink-0 md:hidden">
+                                    <Bookmark className={cn("w-5 h-5", activeTab === 'saved' && "fill-accent-primary")} />
+                                </div>
+                                <Bookmark className={cn("hidden md:block w-4 h-4", activeTab === 'saved' && "fill-accent-primary")} />
+                                <div className="flex-1 text-left">
+                                    <span className="block">Saved Builds</span>
+                                    <span className="text-[10px] text-text-muted normal-case font-normal md:hidden">
+                                        {profile.pets.savedBuilds?.length || 0} items
+                                    </span>
+                                </div>
+                                <span className="hidden md:block ml-auto bg-black/20 px-1.5 rounded-full text-[10px]">
+                                    {profile.pets.savedBuilds?.length || 0}
+                                </span>
+                            </button>
+
+                            <div className="hidden md:block px-4 py-2 text-[10px] font-bold text-text-muted/60 uppercase tracking-widest mt-2">
+                                Pet Library
+                            </div>
                             {RARITIES.map((rarity) => (
                                 <button
                                     key={rarity}
                                     onClick={() => {
+                                        setActiveTab('library');
                                         setSelectedRarity(rarity);
                                         setSelectedPetId(null);
                                         setManualStats([]);
                                         setMobileTab('pets');
                                     }}
                                     className={cn(
-                                        "w-full text-left px-4 py-3 rounded-lg transition-all text-sm font-bold border-2",
-                                        selectedRarity === rarity
-                                            ? `bg-rarity-${rarity.toLowerCase()}/20 text-rarity-${rarity.toLowerCase()} border-rarity-${rarity.toLowerCase()}/50`
-                                            : "hover:bg-white/5 text-text-secondary border-transparent"
+                                        "flex items-center gap-3 p-3 md:px-4 md:py-2.5 text-xs font-bold transition-all rounded-xl md:rounded-lg border-2",
+                                        activeTab === 'library' && selectedRarity === rarity
+                                            ? `bg-rarity-${rarity.toLowerCase()}/20 text-rarity-${rarity.toLowerCase()} border-rarity-${rarity.toLowerCase()} shadow-md`
+                                            : "text-text-muted hover:bg-white/5 border-transparent bg-bg-input/20 md:bg-transparent"
                                     )}
                                 >
-                                    {rarity}
+                                    <div className="shrink-0 md:bg-black/20 md:p-1 md:rounded">
+                                        <SpriteSheetIcon
+                                            textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0)}
+                                            spriteWidth={256}
+                                            spriteHeight={256}
+                                            sheetWidth={1024}
+                                            sheetHeight={1024}
+                                            iconIndex={RARITIES.indexOf(rarity)}
+                                            className="w-8 h-8 md:w-5 md:h-5"
+                                        />
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <span className="block">{rarity}</span>
+                                        <span className="text-[10px] text-text-muted font-normal md:hidden">
+                                            Library Selection
+                                        </span>
+                                    </div>
                                 </button>
                             ))}
                         </div>
-                    )}
-                    {mobileTab === 'rarity' && activeTab === 'saved' && (
-                        <div className="p-4 text-center text-text-muted">
-                            <p className="text-sm">Switch to the Pets tab to view saved builds.</p>
-                        </div>
-                    )}
+                    </div>
 
-                    {/* Mobile Pets Grid */}
-                    {mobileTab === 'pets' && (
-                        <div className="p-3 overflow-y-auto h-full">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
-                                    <input
-                                        placeholder="Search pets..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary"
-                                        onFocus={(e) => e.target.select()}
-                                    />
-                                </div>
-                            </div>
-                            {activeTab === 'library' ? (
-                                filteredPets.length > 0 ? (
-                                    <div className="grid grid-cols-3 min-[400px]:grid-cols-4 gap-3">
-                                        {filteredPets.map((pet: any) => (
-                                            <button
-                                                key={pet.id}
-                                                onClick={() => {
-                                                    setSelectedPetId(pet.id);
-                                                    setMobileTab('config');
-                                                }}
-                                                className={cn(
-                                                    "relative rounded-xl border-2 transition-all p-2 flex flex-col items-center gap-1",
-                                                    selectedPetId === pet.id
-                                                        ? `border-rarity-${selectedRarity.toLowerCase()} shadow-lg`
-                                                        : "border-border hover:border-accent-primary/50 bg-bg-input/30"
-                                                )}
-                                            >
-                                                <div
-                                                    className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center"
-                                                    style={getRarityBgStyle(selectedRarity)}
-                                                >
-                                                    {petsConfig && (
-                                                        <SpriteSheetIcon
-                                                            textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
-                                                            spriteWidth={petsConfig.sprite_size.width}
-                                                            spriteHeight={petsConfig.sprite_size.height}
-                                                            sheetWidth={petsConfig.texture_size.width}
-                                                            sheetHeight={petsConfig.texture_size.height}
-                                                            iconIndex={pet.spriteIndex}
-                                                            className="w-12 h-12"
-                                                        />
-                                                    )}
-                                                </div>
-                                                <span className="text-[10px] text-center text-text-secondary truncate w-full">
-                                                    {pet.name || `Pet #${pet.id}`}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center text-text-muted py-8">No pets found</div>
-                                )
-                            ) : (
-                                <div className="w-full">
-                                    {profile.pets.savedBuilds && profile.pets.savedBuilds.length > 0 ? (
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {profile.pets.savedBuilds.map((savedPet, idx) => {
-                                                const spriteInfo = petsConfig?.mapping ?
-                                                    Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedPet.id && v.rarity === savedPet.rarity)
-                                                    : null;
 
-                                                const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
 
-                                                return (
-                                                    <div
-                                                        key={idx}
-                                                        className="relative rounded-xl border border-border bg-bg-secondary p-2 hover:border-accent-primary transition-colors cursor-pointer group"
-                                                        onClick={() => {
-                                                            setSelectedRarity(savedPet.rarity);
-                                                            setSelectedPetId(savedPet.id);
-                                                            setPetLevel(savedPet.level);
-                                                            setManualStats(savedPet.secondaryStats || []);
-                                                            setMobileTab('config');
-                                                        }}
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <div
-                                                                className="w-10 h-10 rounded-lg flex items-center justify-center border shrink-0 overflow-hidden"
-                                                                style={getRarityBgStyle(savedPet.rarity)}
-                                                            >
-                                                                {petsConfig && (
-                                                                    <SpriteSheetIcon
-                                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
-                                                                        spriteWidth={petsConfig.sprite_size.width}
-                                                                        spriteHeight={petsConfig.sprite_size.height}
-                                                                        sheetWidth={petsConfig.texture_size.width}
-                                                                        sheetHeight={petsConfig.texture_size.height}
-                                                                        iconIndex={spriteIndex}
-                                                                        className="w-8 h-8"
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="font-bold text-xs truncate">{savedPet.customName || `Pet #${savedPet.id}`}</div>
-                                                                <div className="text-[10px] text-text-muted">Lv {savedPet.level}</div>
-                                                            </div>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    const newSaved = [...(profile.pets.savedBuilds || [])];
-                                                                    newSaved.splice(idx, 1);
-                                                                    updateNestedProfile('pets', { savedBuilds: newSaved });
-                                                                }}
-                                                                className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded transition-colors"
-                                                            >
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-                                            <Save className="w-12 h-12 opacity-20 mb-4" />
-                                            <p>No saved pet builds found.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Mobile Config */}
-                    {mobileTab === 'config' && (
-                        <div className="p-4 overflow-y-auto h-full space-y-4">
-                            {selectedPetId !== null ? (
-                                <>
-                                    <div className="text-center pb-4 border-b border-border">
-                                        <div
-                                            className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-3"
-                                            style={getRarityBgStyle(selectedRarity)}
-                                        >
-                                            {petsConfig && (
-                                                <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
-                                                    spriteWidth={petsConfig.sprite_size.width}
-                                                    spriteHeight={petsConfig.sprite_size.height}
-                                                    sheetWidth={petsConfig.texture_size.width}
-                                                    sheetHeight={petsConfig.texture_size.height}
-                                                    iconIndex={filteredPets.find((p: any) => p.id === selectedPetId)?.spriteIndex || 0}
-                                                    className="w-16 h-16"
-                                                />
-                                            )}
-                                        </div>
-                                        <h2 className="text-lg font-bold">{filteredPets.find((p: any) => p.id === selectedPetId)?.name || `Pet #${selectedPetId}`}</h2>
-                                        <p className={cn("text-xs font-bold uppercase", `text-rarity-${selectedRarity.toLowerCase()}`)}>{selectedRarity}</p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase text-text-muted">Level (Max {maxPetLevel})</label>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.max(1, petLevel - 1))}><Minus className="w-4 h-4" /></Button>
-                                            <Input type="number" value={petLevel} onChange={(e) => setPetLevel(Math.max(1, Math.min(maxPetLevel, parseInt(e.target.value) || 1)))} className="text-center font-mono font-bold" />
-                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.min(maxPetLevel, petLevel + 1))}><Plus className="w-4 h-4" /></Button>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-xs font-bold uppercase text-text-muted">Passive Stats ({manualStats.length}/{maxSecondaryStats})</label>
-                                            <Button variant="ghost" size="sm" onClick={handleAddStat} disabled={manualStats.length >= maxSecondaryStats}><Plus className="w-3 h-3 mr-1" />Add</Button>
-                                        </div>
-                                        {manualStats.map((stat, idx) => {
-                                            const range = getStatRange(stat.statId);
-                                            return (
-                                                <div key={idx} className="flex flex-col gap-1">
-                                                    <div className="flex gap-2 items-center">
-                                                        <select
-                                                            className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                                            value={stat.statId}
-                                                            onChange={(e) => handleUpdateStat(idx, 'statId', e.target.value)}
-                                                        >
-                                                            {STAT_TYPES.filter(t =>
-                                                                t === stat.statId || !manualStats.some(s => s.statId === t)
-                                                            ).map(t => (
-                                                                <option key={t} value={t}>{getStatName(t)}</option>
-                                                            ))}
-                                                        </select>
-                                                        <SecondaryStatInput
-                                                            value={stat.value as number}
-                                                            onChange={(val) => handleUpdateStat(idx, 'value', val)}
-                                                            min={(range?.min || 0) * 100}
-                                                            max={(range?.max || 1) * 100}
-                                                        />
-                                                        <button
-                                                            onClick={() => handleRemoveStat(idx)}
-                                                            className="text-red-400 hover:text-red-300 transition-colors"
-                                                        >
-                                                            <Trash2 className="w-3 h-3" />
-                                                        </button>
-                                                    </div>
-                                                    {range && (
-                                                        <div className="text-[10px] text-text-muted px-1">
-                                                            Range: {(range.min * 100).toFixed(1)}% - {(range.max * 100).toFixed(1)}%
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <Button variant="primary" className="w-full gap-2" onClick={handleSave}><Save className="w-4 h-4" />Confirm</Button>
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-50 space-y-4">
-                                    <Info className="w-12 h-12" />
-                                    <div className="text-sm text-center">Select a pet first</div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Desktop Content */}
-                <div className="flex-1 overflow-hidden hidden md:flex md:flex-row divide-x divide-border">
-                    {/* Column 1: Rarity Selection (Only for Library) - Desktop only */}
-                    {activeTab === 'library' && (
-                        <div className="hidden md:block md:w-40 p-3 overflow-y-auto bg-bg-secondary/10">
-                            <div className="text-xs font-bold text-text-muted uppercase mb-2">Rarity</div>
-                            <div className="space-y-1">
-                                {RARITIES.map((rarity) => (
-                                    <button
-                                        key={rarity}
-                                        onClick={() => {
-                                            setSelectedRarity(rarity);
-                                            setSelectedPetId(null);
-                                            setManualStats([]);
-                                        }}
-                                        className={cn(
-                                            "w-full text-left px-3 py-2 rounded-lg transition-all text-sm font-medium",
-                                            selectedRarity === rarity
-                                                ? `bg-rarity-${rarity.toLowerCase()}/20 text-rarity-${rarity.toLowerCase()} border border-rarity-${rarity.toLowerCase()}/50`
-                                                : "hover:bg-white/5 text-text-secondary"
-                                        )}
-                                    >
-                                        {rarity}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Column 2: Pet Grid - Desktop */}
-                    <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
-                                <input
-                                    placeholder="Search pets..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary"
-                                    onFocus={(e) => e.target.select()}
-                                />
-                            </div>
+                    {/* Column 2: Pet Grid / Saved List */}
+                    <div className={cn(
+                        "flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 bg-bg-primary/30",
+                        mobileTab !== 'pets' && "hidden md:block" 
+                    )}>
+                        {/* Search Bar */}
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                            <input
+                                placeholder={activeTab === 'library' ? "Search pet library..." : "Search saved builds..."}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full bg-bg-input border border-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary transition-all"
+                                onFocus={(e) => e.target.select()}
+                            />
                         </div>
 
                         {activeTab === 'library' ? (
                             filteredPets.length > 0 ? (
-                                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                                     {filteredPets.map((pet: any) => (
                                         <button
                                             key={pet.id}
-                                            onClick={() => setSelectedPetId(pet.id)}
+                                            onClick={() => {
+                                                setSelectedPetId(pet.id);
+                                                setMobileTab('config');
+                                            }}
                                             className={cn(
-                                                "relative rounded-xl border-2 transition-all p-2 flex flex-col items-center gap-1 group overflow-hidden",
+                                                "relative aspect-square rounded-xl border-2 transition-all p-2 flex flex-col items-center justify-center gap-1 group overflow-hidden bg-bg-secondary/40",
                                                 selectedPetId === pet.id
-                                                    ? `border-rarity-${selectedRarity.toLowerCase()} shadow-lg`
-                                                    : "border-border hover:border-accent-primary/50 bg-bg-input/30"
+                                                    ? `border-rarity-${selectedRarity.toLowerCase()} shadow-lg shadow-rarity-${selectedRarity.toLowerCase()}/20`
+                                                    : "border-border hover:border-white/20"
                                             )}
                                         >
                                             <div
-                                                className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
+                                                className="w-full h-full rounded-lg overflow-hidden flex items-center justify-center transition-transform group-hover:scale-110"
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
                                                 {petsConfig && (
@@ -605,270 +427,228 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                         sheetWidth={petsConfig.texture_size.width}
                                                         sheetHeight={petsConfig.texture_size.height}
                                                         iconIndex={pet.spriteIndex}
-                                                        className="w-12 h-12"
+                                                        className="w-full h-full p-1"
                                                     />
                                                 )}
                                             </div>
-                                            <span className="text-[10px] text-center text-text-secondary truncate w-full">
-                                                {pet.name || `Pet #${pet.id}`}
-                                            </span>
+                                            <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-0.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-[9px] text-white truncate block text-center font-bold">
+                                                    {pet.name || `Pet #${pet.id}`}
+                                                </span>
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center text-text-muted py-8">
-                                    No pets found for {selectedRarity}
+                                <div className="flex flex-col items-center justify-center py-20 text-text-muted">
+                                    <Search className="w-12 h-12 opacity-20 mb-4" />
+                                    <p className="font-bold">No pets found</p>
+                                    <p className="text-xs opacity-60">Try a different name or rarity</p>
                                 </div>
                             )
                         ) : (
-                            // SAVE TAB CONTENT
-                            <div className="w-full">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {profile.pets.savedBuilds && profile.pets.savedBuilds.length > 0 ? (
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {profile.pets.savedBuilds.map((savedPet, idx) => {
-                                            // Find sprite info for saved pet
+                                    profile.pets.savedBuilds
+                                        .filter(saved => !searchTerm || (saved.customName || `Pet #${saved.id}`).toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .map((savedPet, idx) => {
                                             const spriteInfo = petsConfig?.mapping ?
                                                 Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedPet.id && v.rarity === savedPet.rarity)
                                                 : null;
 
                                             const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
+                                            const isSelected = selectedPetId === savedPet.id && selectedRarity === savedPet.rarity && JSON.stringify(manualStats) === JSON.stringify(savedPet.secondaryStats);
 
                                             return (
-                                                <div
+                                                <ItemSelectionCard
                                                     key={idx}
-                                                    className="relative rounded-xl border border-border bg-bg-secondary p-3 hover:border-accent-primary transition-colors cursor-pointer group"
+                                                    item={savedPet}
+                                                    slotKey="pet-saved"
+                                                    slotLabel="Saved Pet"
+                                                    itemName={savedPet.customName || `Pet #${savedPet.id}`}
+                                                    itemImage={null}
+                                                    rarity={savedPet.rarity}
+                                                    isSaved={true}
+                                                    isSelected={isSelected}
+                                                    hideAgeStyles={true}
+                                                    perfection={getPerfection(savedPet)}
+                                                    getStatPerfection={getStatPerfection}
                                                     onClick={() => {
                                                         setSelectedRarity(savedPet.rarity);
                                                         setSelectedPetId(savedPet.id);
                                                         setPetLevel(savedPet.level);
                                                         setManualStats(savedPet.secondaryStats || []);
+                                                        setMobileTab('config');
                                                     }}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div
-                                                            className="w-10 h-10 rounded-lg flex items-center justify-center border shrink-0 overflow-hidden"
-                                                            style={getRarityBgStyle(savedPet.rarity)}
-                                                        >
-                                                            {petsConfig && spriteInfo && (
-                                                                <SpriteSheetIcon
-                                                                    textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
-                                                                    spriteWidth={petsConfig.sprite_size.width}
-                                                                    spriteHeight={petsConfig.sprite_size.height}
-                                                                    sheetWidth={petsConfig.texture_size.width}
-                                                                    sheetHeight={petsConfig.texture_size.height}
-                                                                    iconIndex={spriteIndex}
-                                                                    className="w-10 h-10"
-                                                                />
-                                                            )}
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="font-bold text-sm truncate">{savedPet.customName || `Pet #${savedPet.id}`}</div>
-                                                            <div className="text-xs text-text-muted">Lv {savedPet.level} • {savedPet.rarity}</div>
-                                                        </div>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const newSaved = [...(profile.pets.savedBuilds || [])];
-                                                                newSaved.splice(idx, 1);
-                                                                updateNestedProfile('pets', { savedBuilds: newSaved });
-                                                            }}
-                                                            className="p-1 hover:bg-red-500/20 text-text-muted hover:text-red-500 rounded transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                                    onDelete={(e) => {
+                                                        e.stopPropagation();
+                                                        const newSaved = [...(profile.pets.savedBuilds || [])];
+                                                        newSaved.splice(idx, 1);
+                                                        updateNestedProfile('pets', { savedBuilds: newSaved });
+                                                    }}
+                                                    renderIcon={() => (
+                                                        <SpriteSheetIcon
+                                                            textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
+                                                            spriteWidth={petsConfig!.sprite_size.width}
+                                                            spriteHeight={petsConfig!.sprite_size.height}
+                                                            sheetWidth={petsConfig!.texture_size.width}
+                                                            sheetHeight={petsConfig!.texture_size.height}
+                                                            iconIndex={spriteIndex}
+                                                            className="w-10 h-10"
+                                                        />
+                                                    )}
+                                                />
                                             );
-                                        })}
-                                    </div>
+                                        })
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-                                        <Save className="w-12 h-12 opacity-20 mb-4" />
-                                        <p>No saved pet builds found.</p>
-                                        <p className="text-xs opacity-70 mt-2">Configure a pet in the main panel and save it to see it here.</p>
+                                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-text-muted">
+                                        <Bookmark className="w-12 h-12 opacity-20 mb-4" />
+                                        <p className="font-bold">No saved pets</p>
+                                        <p className="text-xs opacity-60">Presets will appear here after you save them in the main panel</p>
                                     </div>
                                 )}
                             </div>
                         )}
                     </div>
 
-                    {/* Column 3: Config & Stats (Right) - Desktop */}
-                    <div className="w-80 bg-bg-secondary/5 p-4 overflow-y-auto flex flex-col gap-6">
+                    {/* Column 3: Configuration Panel */}
+                    <div className={cn(
+                        "w-full md:w-80 bg-bg-secondary/20 p-4 border-t md:border-t-0 md:border-l border-border overflow-y-auto custom-scrollbar flex flex-col gap-6",
+                        mobileTab !== 'config' && "hidden md:flex"
+                    )}>
                         {selectedPetId !== null ? (
                             <>
-                                <div className="text-center pb-4 border-b border-border">
+                                {/* Item Preview */}
+                                <div className="text-center">
                                     <div
-                                        className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner border border-white/5 overflow-hidden"
-                                        style={getRarityBgStyle(selectedRarity)}
+                                        className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
+                                        style={{ ...getRarityBgStyle(selectedRarity), borderColor: `var(--rarity-${selectedRarity.toLowerCase()})` }}
                                     >
-                                        {(() => {
-                                            const displayPet = filteredPets.find((p: any) => p.id === selectedPetId);
-                                            if (displayPet && petsConfig) {
-                                                return (
-                                                    <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
-                                                        spriteWidth={petsConfig.sprite_size.width}
-                                                        spriteHeight={petsConfig.sprite_size.height}
-                                                        sheetWidth={petsConfig.texture_size.width}
-                                                        sheetHeight={petsConfig.texture_size.height}
-                                                        iconIndex={displayPet.spriteIndex}
-                                                        className="w-20 h-20"
-                                                    />
-                                                );
-                                            }
-                                            return (
-                                                <SpriteSheetIcon
-                                                    textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
-                                                    spriteWidth={256}
-                                                    spriteHeight={256}
-                                                    sheetWidth={2048}
-                                                    sheetHeight={2048}
-                                                    iconIndex={14}
-                                                    className="w-10 h-10"
-                                                />
-                                            );
-                                        })()}
+                                        {petsConfig && (
+                                            <SpriteSheetIcon
+                                                textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
+                                                spriteWidth={petsConfig.sprite_size.width}
+                                                spriteHeight={petsConfig.sprite_size.height}
+                                                sheetWidth={petsConfig.texture_size.width}
+                                                sheetHeight={petsConfig.texture_size.height}
+                                                iconIndex={Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedPetId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === selectedPetId && v.rarity === selectedRarity)![0]) : 0}
+                                                className="w-20 h-20"
+                                            />
+                                        )}
                                     </div>
-                                    <h2 className="text-xl font-bold text-text-primary">
-                                        {filteredPets.find((p: any) => p.id === selectedPetId)?.name || `Pet #${selectedPetId}`}
+                                    <h2 className="text-xl font-bold text-text-primary leading-tight">
+                                        {Object.values(petsConfig?.mapping || {}).find((p: any) => p.id === selectedPetId && p.rarity === selectedRarity)?.name || `Pet #${selectedPetId}`}
                                     </h2>
-                                    <p className={cn("text-xs font-bold uppercase mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
-                                        {selectedRarity}
-                                    </p>
-
-                                    {/* Stats Display */}
-                                    {petStats && (
-                                        <div className="mt-3 p-2 bg-bg-input/50 rounded-lg border border-border/50 text-xs">
-                                            <div className="flex justify-between mb-1">
-                                                <span className="text-text-muted">Type</span>
-                                                <span className={cn(
-                                                    "font-bold",
-                                                    petStats.type === 'Damage' ? 'text-red-400' :
-                                                        petStats.type === 'Health' ? 'text-green-400' : 'text-blue-400'
-                                                )}>{petStats.type}</span>
-                                            </div>
-                                            {petStats.DamageMultiplier && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-text-muted">Damage Multi</span>
-                                                    <span className="text-accent-primary font-mono">{petStats.DamageMultiplier}x</span>
-                                                </div>
-                                            )}
-                                            {petStats.HealthMultiplier && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-text-muted">Health Multi</span>
-                                                    <span className="text-green-400 font-mono">{petStats.HealthMultiplier}x</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                    <div className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
+                                        {selectedRarity} Pet
+                                    </div>
                                 </div>
 
-                                {context !== 'pvp' && (
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase text-text-muted flex items-center gap-2">
-                                            Level (Max {maxPetLevel})
-                                        </label>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.max(1, petLevel - 1))}>
-                                                <Minus className="w-4 h-4" />
-                                            </Button>
-                                            <Input
-                                                type="number"
-                                                value={petLevel}
-                                                onChange={(e) => setPetLevel(Math.max(1, Math.min(maxPetLevel, parseInt(e.target.value) || 1)))}
-                                                className="text-center font-mono font-bold"
-                                            />
-                                            <Button variant="ghost" size="sm" onClick={() => setPetLevel(Math.min(maxPetLevel, petLevel + 1))}>
-                                                <Plus className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {context !== 'pvp' && (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-xs font-bold uppercase text-text-muted flex items-center gap-2">
-                                                Passive Stats
-                                                <span className="bg-bg-input px-1.5 rounded text-[10px] border border-white/10">
-                                                    {manualStats.length}/{maxSecondaryStats}
-                                                </span>
-                                            </label>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 px-2 text-[10px]"
-                                                onClick={handleAddStat}
-                                                disabled={manualStats.length >= maxSecondaryStats}
-                                            >
-                                                <Plus className="w-3 h-3 mr-1" /> Add
-                                            </Button>
-                                        </div>
-
-                                        {manualStats.length === 0 && (
-                                            <div className="text-xs text-text-muted italic text-center py-4 border border-dashed border-border rounded-lg bg-white/5">
-                                                No passive stats configured
+                                {/* Base Stats Section */}
+                                <div className="space-y-3">
+                                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Base Attributes</h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {petStats && (
+                                            <div className="bg-black/20 rounded-xl p-3 border border-white/5 space-y-2">
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-text-muted">Type</span>
+                                                    <span className={cn(
+                                                        "font-bold uppercase",
+                                                        petStats.type === 'Damage' ? 'text-red-400' :
+                                                            petStats.type === 'Health' ? 'text-green-400' : 'text-blue-400'
+                                                    )}>{petStats.type}</span>
+                                                </div>
+                                                <div className="h-px bg-white/5 w-full" />
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-text-muted">Damage Multi</span>
+                                                    <span className="text-red-400 font-mono font-bold">x{petStats.DamageMultiplier || 1}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-text-muted">Health Multi</span>
+                                                    <span className="text-green-400 font-mono font-bold">x{petStats.HealthMultiplier || 1}</span>
+                                                </div>
                                             </div>
                                         )}
 
-                                        <div className="space-y-2">
-                                            {manualStats.map((stat, idx) => {
-                                                const range = getStatRange(stat.statId);
-                                                return (
-                                                    <div key={idx} className="flex flex-col gap-1">
-                                                        <div className="flex gap-2 items-center">
-                                                            <select
-                                                                className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                                                value={stat.statId}
-                                                                onChange={(e) => handleUpdateStat(idx, 'statId', e.target.value)}
-                                                            >
-                                                                {STAT_TYPES.filter(t =>
-                                                                    t === stat.statId || !manualStats.some(s => s.statId === t)
-                                                                ).map(t => (
-                                                                    <option key={t} value={t}>{getStatName(t)}</option>
-                                                                ))}
-                                                            </select>
-                                                            <SecondaryStatInput
-                                                                value={stat.value as number}
-                                                                onChange={(val) => handleUpdateStat(idx, 'value', val)}
-                                                                min={(range?.min || 0) * 100}
-                                                                max={(range?.max || 1) * 100}
-                                                            />
-                                                            <button
-                                                                onClick={() => handleRemoveStat(idx)}
-                                                                className="text-red-400 hover:text-red-300 transition-colors"
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                        {range && (
-                                                            <div className="text-[10px] text-text-muted px-1">
-                                                                Range: {(range.min * 100).toFixed(1)}% - {(range.max * 100).toFixed(1)}%
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                        <ModalLevelSelector
+                                            level={petLevel}
+                                            maxLevel={maxPetLevel}
+                                            onChange={setPetLevel}
+                                            label="Pet Level"
+                                            className="bg-black/20 rounded-xl p-3 border border-white/5"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Secondary Stats Section */}
+                                <div className="space-y-3 flex-1">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Secondary Stats</h4>
+                                        <div className="bg-bg-input px-2 py-0.5 rounded text-[10px] border border-white/10 font-bold text-accent-primary">
+                                            {manualStats.length} / {maxSecondaryStats}
                                         </div>
                                     </div>
-                                )}
+                                    
+                                    <div className="space-y-2">
+                                        {manualStats.map((stat, idx) => {
+                                            const range = getStatRange(stat.statId);
+                                            const statOptions = STAT_TYPES.filter(t =>
+                                                t === stat.statId || !manualStats.some(s => s.statId === t)
+                                            ).map(t => ({ id: t, name: getStatName(t) }));
 
-                                <div className="pt-4 mt-auto">
-                                    <Button variant="primary" className="w-full gap-2" onClick={handleSave}>
-                                        <Save className="w-4 h-4" /> Confirm Selection
+                                            return (
+                                                <SecondaryStatCard
+                                                    key={idx}
+                                                    statId={stat.statId}
+                                                    value={stat.value as number}
+                                                    options={statOptions}
+                                                    onStatIdChange={(newId) => handleUpdateStat(idx, 'statId', newId)}
+                                                    onValueChange={(newVal) => handleUpdateStat(idx, 'value', newVal)}
+                                                    onRemove={() => handleRemoveStat(idx)}
+                                                    range={range}
+                                                />
+                                            );
+                                        })}
+
+                                        {manualStats.length < maxSecondaryStats && (
+                                            <button
+                                                onClick={handleAddStat}
+                                                className="w-full py-4 border-2 border-dashed border-white/5 hover:border-accent-primary/30 rounded-xl flex items-center justify-center gap-2 text-xs text-text-muted hover:text-accent-primary transition-all group"
+                                            >
+                                                <Plus className="w-4 h-4 group-hover:scale-125 transition-transform" />
+                                                <span className="font-bold">ADD STAT SLOT</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Footer Action */}
+                                <div className="pt-4 border-t border-white/10 mt-auto">
+                                    <Button 
+                                        variant="primary" 
+                                        className="w-full py-4 rounded-xl font-bold text-sm gap-2 shadow-lg shadow-accent-primary/20"
+                                        onClick={handleSave}
+                                    >
+                                        <Save className="w-5 h-5" />
+                                        Equip Pet
                                     </Button>
+                                    <p className="text-[9px] text-center text-text-muted mt-2 px-4 leading-tight">
+                                        Stats are applied immediately after equipping.
+                                    </p>
                                 </div>
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-50 space-y-4">
-                                <Info className="w-12 h-12" />
-                                <div className="text-sm text-center px-4">Select a pet from the grid to configure stats</div>
+                            <div className="flex-1 flex flex-col items-center justify-center text-text-muted opacity-30 text-center px-6">
+                                <div className="p-4 bg-white/5 rounded-full mb-4">
+                                    <Info className="w-12 h-12" />
+                                </div>
+                                <p className="font-bold uppercase tracking-widest text-xs">Configuration</p>
+                                <p className="text-[10px] mt-2 leading-relaxed">Select a pet from the library to configure its level and secondary statistics.</p>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
-        </div>,
-        document.body
+        </div>, document.body
     );
 }

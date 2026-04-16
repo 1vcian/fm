@@ -149,15 +149,50 @@ export function useSkillsCalculator() {
         let ascensionLevel = profile?.misc?.skillAscensionLevel || 0;
         let summonsToMax: number | null = null;
 
-        const breakdown: { rarity: string; count: number; percentage: number; pointsPerUnit: number; totalPoints: number; }[] = [];
         const countsByRarity: Record<string, number> = {};
-        let grandTotalPoints = 0;
+        
+        interface PhaseData {
+            label: string;
+            startLevel: number;
+            startAscension: number;
+            endLevel: number;
+            endAscension: number;
+            points: number;
+            counts: Record<string, number>;
+        }
+        
+        const phases: PhaseData[] = [];
+        
+        const createPhase = (lvl: number, asc: number): PhaseData => ({
+            label: asc === 0 ? "Normal" : `Ascension ${asc}`,
+            startLevel: lvl,
+            startAscension: asc,
+            endLevel: lvl,
+            endAscension: asc,
+            points: 0,
+            counts: {
+                Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0
+            }
+        });
 
-        // Initialize counts
-        ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].forEach(r => { countsByRarity[r] = 0; });
+        let currentPhase = createPhase(currentLevel, ascensionLevel);
+        let grandTotalPoints = 0;
 
         // Perform simulation summons one by one to track level progression
         for (let i = 0; i < totalPaidSummons; i++) {
+            // Immediate Ascension Check: If we are at max level, we can ascend for free (no summons required)
+            if (simulateAscension && ascensionLevel < 3 && currentLevel >= maxPossibleLevel) {
+                if (summonsToMax === null) summonsToMax = i; // Already reached previously if it's start of summon
+                
+                currentPhase.endLevel = maxPossibleLevel;
+                currentPhase.endAscension = ascensionLevel;
+                phases.push(currentPhase);
+
+                currentLevel = 1;
+                ascensionLevel++;
+                currentPhase = createPhase(currentLevel, ascensionLevel);
+            }
+
             const levelIdx = Math.min(currentLevel - 1, levels.length - 1);
             const probabilities = levels[levelIdx];
 
@@ -165,6 +200,14 @@ export function useSkillsCalculator() {
                 ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].forEach(rarity => {
                     const chance = probabilities[rarity] || 0;
                     const expectedCount = chance * SKILLS_PER_SUMMON * (1 + techBonuses.extraChance);
+                    const unitPoints = warPointsPerSummonSkill[rarity] || 0;
+                    const pts = expectedCount * unitPoints;
+
+                    currentPhase.counts[rarity] += expectedCount;
+                    currentPhase.points += pts;
+                    grandTotalPoints += pts;
+                    
+                    if (!countsByRarity[rarity]) countsByRarity[rarity] = 0;
                     countsByRarity[rarity] += expectedCount;
                 });
             }
@@ -177,43 +220,48 @@ export function useSkillsCalculator() {
                 currentProgress -= threshold;
                 currentLevel++;
                 
-                // Ascension check: if we go past maxLevel, handle based on toggle
-                if (currentLevel > maxPossibleLevel) {
-                    if (summonsToMax === null) {
-                        summonsToMax = i + 1;
-                    }
+                // If we just reached max level, check if we should immediately ascend
+                if (simulateAscension && ascensionLevel < 3 && currentLevel >= maxPossibleLevel) {
+                    if (summonsToMax === null) summonsToMax = i + 1;
                     
-                    if (simulateAscension) {
-                        currentLevel = 1;
-                        ascensionLevel++;
-                    } else {
-                        currentLevel = maxPossibleLevel;
-                        // Break the while loop since we won't progress further
-                        break;
-                    }
+                    currentPhase.endLevel = maxPossibleLevel;
+                    currentPhase.endAscension = ascensionLevel;
+                    phases.push(currentPhase);
+
+                    currentLevel = 1;
+                    ascensionLevel++;
+                    currentPhase = createPhase(currentLevel, ascensionLevel);
+                    // Update threshold for the new Level 1
+                    threshold = levels[0]?.SummonsRequired;
+                } else if (currentLevel > maxPossibleLevel) {
+                    currentLevel = maxPossibleLevel;
+                    break;
+                } else {
+                    threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
                 }
-                
-                threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
             }
         }
 
-        // Build breakdown
-        ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].forEach(rarity => {
+        // Finalize last phase
+        currentPhase.endLevel = currentLevel;
+        currentPhase.endAscension = ascensionLevel;
+        phases.push(currentPhase);
+
+        // Build total breakdown
+        const breakdown = Object.keys(countsByRarity).map(rarity => {
             const count = countsByRarity[rarity];
             const unitPoints = warPointsPerSummonSkill[rarity] || 0;
             const points = count * unitPoints;
             const endLevelIdx = Math.min(currentLevel - 1, levels.length - 1);
             const endProbs = levels[endLevelIdx] || {};
 
-            breakdown.push({
+            return {
                 rarity,
                 count,
                 percentage: ((endProbs[rarity] || 0) * 100),
                 pointsPerUnit: unitPoints,
                 totalPoints: points
-            });
-
-            grandTotalPoints += points;
+            };
         });
 
         const totalSkills = Object.values(countsByRarity).reduce((a, b) => a + b, 0);
@@ -222,6 +270,7 @@ export function useSkillsCalculator() {
             breakdown: breakdown.filter(b => b.count > 0 || b.percentage > 0),
             totalSkills,
             totalPoints: grandTotalPoints,
+            phases,
             numSummons: totalPaidSummons,
             finalCost: finalCostPerSummon,
             baseCost: BASE_SUMMON_COST,

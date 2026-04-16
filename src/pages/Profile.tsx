@@ -12,6 +12,7 @@ import { TechTreePanel } from '../components/Profile/TechTreePanel';
 import { StatsSummaryPanel } from '../components/Profile/StatsSummaryPanel';
 import { ProfileHeaderPanel } from '../components/Profile/ProfileHeaderPanel';
 import { SkillsPassivesPanel } from '../components/Profile/SkillsPassivesPanel';
+import { cn } from '../lib/utils';
 
 export default function Profile() {
     const {
@@ -26,6 +27,8 @@ export default function Profile() {
         isComparing,
         originalItems,
         originalMount,
+        originalPets,
+        originalSkills,
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
@@ -86,70 +89,77 @@ export default function Profile() {
             </div>
 
             {/* Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6">
                     <MiscPanel />
 
                     {isComparing ? (
                         <div className="space-y-6">
+                            {/* Horizontal Stats Strip - Sticky Header */}
+                            <div className="sticky top-0 z-40 py-2 -mx-4 px-4">
+                                <StatsSummaryPanel variant="horizontal-strip" />
+                            </div>
+
                             {/* Comparison Equipment Panels */}
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                                 <EquipmentPanel
                                     variant="original"
-                                    title="Equipped"
+                                    title="Equipped Items"
                                     showCompareButton={false}
                                 />
                                 <EquipmentPanel
                                     variant="test"
-                                    title="Test Build"
+                                    title="Test Build Items"
                                     showCompareButton={false}
                                     compareItems={originalItems}
                                     compareMount={originalMount}
                                 />
                             </div>
 
-                            {/* Comparison Action Buttons */}
-                            <div className="flex flex-wrap items-center justify-center gap-3 p-4 bg-bg-secondary rounded-xl border border-border">
-                                <Button variant="ghost" onClick={exitCompareMode}>
-                                    <X className="w-4 h-4 mr-2" />
-                                    Exit Compare
-                                </Button>
-                                <Button variant="secondary" onClick={keepOriginal}>
-                                    <Check className="w-4 h-4 mr-2" />
-                                    Keep Equipped
-                                </Button>
-                                <Button variant="primary" onClick={applyTestBuild}>
-                                    <ArrowRight className="w-4 h-4 mr-2" />
-                                    Apply Test Build
-                                </Button>
+                            {/* Comparison Pet Panels */}
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                <PetPanel 
+                                    variant="original" 
+                                    title="Equipped Pets" 
+                                />
+                                <PetPanel 
+                                    variant="test" 
+                                    title="Test Build Pets" 
+                                    comparePets={originalPets}
+                                />
+                            </div>
+
+                            {/* Comparison Skill Panels */}
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                <SkillPanel 
+                                    variant="original" 
+                                    title="Equipped Skills" 
+                                    considerAnimation={considerAnimation} 
+                                    setConsiderAnimation={setConsiderAnimation} 
+                                />
+                                <SkillPanel 
+                                    variant="test" 
+                                    title="Test Build Skills" 
+                                    compareSkills={originalSkills}
+                                    considerAnimation={considerAnimation} 
+                                />
                             </div>
                         </div>
                     ) : (
-                        <EquipmentPanel />
+                        <>
+                            <EquipmentPanel />
+                            <PetPanel />
+                            <SkillPanel considerAnimation={considerAnimation} setConsiderAnimation={setConsiderAnimation} />
+                        </>
                     )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <PetPanel />
-                        <SkillPanel considerAnimation={considerAnimation} setConsiderAnimation={setConsiderAnimation} />
-                    </div>
 
                     <SkillsPassivesPanel considerAnimation={considerAnimation} />
 
                     <TechTreePanel />
                 </div>
 
-                <div className="space-y-6">
-                    <div className="sticky top-6 h-[calc(100vh-10.5rem)] overflow-y-auto overscroll-y-auto custom-scrollbar">
-                        <div className="pb-6">
-                            <StatsSummaryPanel />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Import JSON Modal */}
             {showImportModal && createPortal(
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
                     onClick={(e) => e.target === e.currentTarget && setShowImportModal(false)}>
                     <div className="bg-bg-primary w-full max-w-2xl rounded-2xl border border-border shadow-2xl p-6 space-y-4">
                         <h3 className="text-xl font-bold">Import Profile JSON</h3>

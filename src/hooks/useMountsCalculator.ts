@@ -119,11 +119,53 @@ export function useMountsCalculator() {
             Mythic: { count: 0, summonPoints: 0, mergePoints: 0 }
         };
 
+        interface PhaseData {
+            label: string;
+            startLevel: number;
+            startAscension: number;
+            endLevel: number;
+            endAscension: number;
+            summonPoints: number;
+            mergePoints: number;
+            totalPoints: number;
+            counts: Record<string, number>;
+        }
+        
+        const phases: PhaseData[] = [];
+        
+        const createPhase = (lvl: number, asc: number): PhaseData => ({
+            label: asc === 0 ? "Normal" : `Ascension ${asc}`,
+            startLevel: lvl,
+            startAscension: asc,
+            endLevel: lvl,
+            endAscension: asc,
+            summonPoints: 0,
+            mergePoints: 0,
+            totalPoints: 0,
+            counts: {
+                Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0
+            }
+        });
+
+        let currentPhase = createPhase(currentLevel, ascensionLevel);
         let totalSummonPoints = 0;
         let totalMergePoints = 0;
 
         // Perform simulation summons one by one to track level progression
         for (let i = 0; i < totalPaidSummons; i++) {
+            // Immediate Ascension Check: If we are at max level, we can ascend for free (no summons required)
+            if (simulateAscension && ascensionLevel < 3 && currentLevel >= maxPossibleLevel) {
+                if (summonsToMax === null) summonsToMax = i;
+
+                currentPhase.endLevel = maxPossibleLevel;
+                currentPhase.endAscension = ascensionLevel;
+                phases.push(currentPhase);
+
+                currentLevel = 1;
+                ascensionLevel++;
+                currentPhase = createPhase(currentLevel, ascensionLevel);
+            }
+
             // Level index is 0-based, our level is 1-based
             const levelIdx = Math.min(currentLevel - 1, levels.length - 1);
             const probabilities = levels[levelIdx];
@@ -138,60 +180,78 @@ export function useMountsCalculator() {
                     breakdown[rarity].count += expectedCount;
                     breakdown[rarity].summonPoints += sPts;
                     breakdown[rarity].mergePoints += mPts;
+                    
+                    currentPhase.counts[rarity] += expectedCount;
+                    currentPhase.summonPoints += sPts;
+                    currentPhase.mergePoints += mPts;
+                    currentPhase.totalPoints += (sPts + mPts);
+
                     totalSummonPoints += sPts;
                     totalMergePoints += mPts;
                 });
             }
 
-            // Progress Level - each summon produces MOUNTS_PER_SUMMON mounts
+            // Progress level
             currentProgress += MOUNTS_PER_SUMMON;
-            // Check for level ups (may level up multiple times if MOUNTS_PER_SUMMON is high)
             let threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
+            
             while (threshold && currentProgress >= threshold) {
                 currentProgress -= threshold;
                 currentLevel++;
-
-                // Ascension check
-                if (currentLevel > maxPossibleLevel) {
-                    if (summonsToMax === null) {
-                        summonsToMax = i + 1;
-                    }
+                
+                // If we just reached max level, check if we should immediately ascend
+                if (simulateAscension && ascensionLevel < 3 && currentLevel >= maxPossibleLevel) {
+                    if (summonsToMax === null) summonsToMax = i + 1;
                     
-                    if (simulateAscension) {
-                        currentLevel = 1;
-                        ascensionLevel++;
-                    } else {
-                        currentLevel = maxPossibleLevel;
-                        // Break the while loop since we won't progress further
-                        break;
-                    }
-                }
+                    currentPhase.endLevel = maxPossibleLevel;
+                    currentPhase.endAscension = ascensionLevel;
+                    phases.push(currentPhase);
 
-                threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
+                    currentLevel = 1;
+                    ascensionLevel++;
+                    currentPhase = createPhase(currentLevel, ascensionLevel);
+                    // Update threshold for the new Level 1
+                    threshold = levels[0]?.SummonsRequired;
+                } else if (currentLevel > maxPossibleLevel) {
+                    currentLevel = maxPossibleLevel;
+                    break;
+                } else {
+                    threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
+                }
             }
         }
 
+        // Finalize last phase
+        currentPhase.endLevel = currentLevel;
+        currentPhase.endAscension = ascensionLevel;
+        phases.push(currentPhase);
+
         return {
-            totalSummons: totalPaidSummons,
-            endLevel: currentLevel,
-            endProgress: Math.round(currentProgress),
-            endAscensionLevel: ascensionLevel,
-            summonsToMax,
             simulateAscension,
             totalPoints: totalSummonPoints + totalMergePoints,
             totalSummonPoints,
             totalMergePoints,
+            phases,
             breakdown: Object.entries(breakdown)
                 .map(([rarity, data]) => ({
                     rarity,
                     ...data,
                     percentage: (getCurrentProbs(currentLevel)[rarity] || 0) * 100,
-                    pointsPerUnit: pointsBreakdown[rarity]
+                    pointsPerUnit: pointsBreakdown[rarity],
+                    phaseCounts: phases.map(p => ({
+                        ascension: p.startAscension,
+                        count: p.counts[rarity] || 0
+                    }))
                 }))
                 .filter(b => b.count > 0 || b.percentage > 0),
             finalCost: finalCostPerSummon,
             baseCost: BASE_COST,
-            costReduction: techBonuses.costReduction
+            costReduction: techBonuses.costReduction,
+            totalSummons: totalPaidSummons,
+            endLevel: currentLevel,
+            endProgress: Math.round(currentProgress),
+            endAscensionLevel: ascensionLevel,
+            summonsToMax
         };
 
         function getCurrentProbs(lvl: number) {

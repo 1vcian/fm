@@ -8,11 +8,16 @@ import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { ItemSlot } from '../../types/Profile';
 import { Input } from '../UI/Input';
 import { Button } from '../UI/Button';
+import { ModalLevelSelector } from '../UI/ModalLevelSelector';
+import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getAgeBgStyle, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 import { getItemImage, getItemName } from '../../utils/itemAssets';
 import { getStatName } from '../../utils/statNames';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
+import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { ItemSelectionCard } from '../UI/ItemSelectionCard';
+import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 
 interface ItemSelectorModalProps {
     isOpen: boolean;
@@ -103,6 +108,28 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
+    const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
+
+    const techModifiers = useTreeModifiers();
+
+    // Calculated forge ascension multiplier
+    const forgeAscensionMulti = useMemo(() => {
+        let total = 0;
+        const ascLevel = forgeAscensionLevel || profile.misc.forgeAscensionLevel || 0;
+
+        if (ascLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
+            const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
+            for (let i = 0; i < ascLevel && i < configs.length; i++) {
+                const contributions = configs[i].StatContributions || [];
+                for (const stat of contributions) {
+                    total += stat.Value;
+                    break;
+                }
+            }
+        }
+        return total;
+    }, [forgeAscensionLevel, profile.misc.forgeAscensionLevel, ascensionConfigs]);
 
     const jsonType = SLOT_MAPPING[slot] || slot;
     const [unlockAll, setUnlockAll] = useState(false);
@@ -110,6 +137,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
     // Skin State
     const [skinIdx, setSkinIdx] = useState<number | null>(null);
+    const [skinStatsList, setSkinStatsList] = useState<{ type: string; value: number }[]>([]);
 
     // Get unlocked ages based on drop chances (age is unlocked if drop chance > 0 OR unlockAll is true)
     const unlockedAges = useMemo(() => {
@@ -460,7 +488,6 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     };
 
     // Skin Stats Management
-    const [skinStatsList, setSkinStatsList] = useState<{ type: string; value: number }[]>([]);
 
     const addSkinStat = (possibleStats: any[]) => {
         if (skinStatsList.length < (possibleStats.length || 0)) {
@@ -570,53 +597,34 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         )}
                                     </div>
 
-                                    {skinStatsList.map((stat, i) => {
-                                        // Get constraints for this stat type
-                                        const statDef = possibleStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === stat.type);
-                                        const min = statDef?.MinValue || 0;
-                                        const max = statDef?.MaxValue || 1;
+                                    <div className="flex flex-col gap-3">
+                                        {skinStatsList.map((stat, i) => {
+                                            // Get constraints for this stat type
+                                            const statDef = possibleStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === stat.type);
+                                            const min = statDef?.MinValue || 0;
+                                            const max = statDef?.MaxValue || 1;
+                                            
+                                            const statOptions = possibleStats
+                                                .filter((s: any) => s.StatNode.UniqueStat.StatType === stat.type || !skinStatsList.some(existing => existing.type === s.StatNode.UniqueStat.StatType))
+                                                .map((s: any) => ({ 
+                                                    id: s.StatNode.UniqueStat.StatType, 
+                                                    name: s.StatNode.UniqueStat.StatType 
+                                                }));
 
-                                        return (
-                                            <div key={i} className="flex flex-col gap-1 bg-bg-secondary/50 p-1.5 rounded border border-border/50">
-                                                <div className="flex gap-2 items-center">
-                                                    <select
-                                                        value={stat.type}
-                                                        onChange={(e) => updateSkinStat(i, 'type', e.target.value, possibleStats)}
-                                                        className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                                    >
-                                                        {possibleStats
-                                                            // Filter options: show current value OR options not already selected
-                                                            .filter((s: any) => s.StatNode.UniqueStat.StatType === stat.type || !skinStatsList.some(existing => existing.type === s.StatNode.UniqueStat.StatType))
-                                                            .map((s: any) => (
-                                                                <option key={s.StatNode.UniqueStat.StatType} value={s.StatNode.UniqueStat.StatType}>
-                                                                    {s.StatNode.UniqueStat.StatType}
-                                                                </option>
-                                                            ))}
-                                                    </select>
-                                                    <Button variant="ghost" size="sm" onClick={() => removeSkinStat(i)} className="h-6 w-6 text-text-muted hover:text-red-400 p-0">
-                                                        <X className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-
-                                                <div className="flex items-center gap-2">
-                                                    <DecimalInput
-                                                        value={parseFloat((stat.value * 100).toFixed(2))}
-                                                        onChange={(val) => updateSkinStat(i, 'value', val / 100, possibleStats)}
-                                                        min={min * 100}
-                                                        max={max * 100}
-                                                        className="w-full bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                                    />
-                                                    <span className="text-[10px] text-text-muted w-6 text-right shrink-0">
-                                                        %
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between text-[10px] text-text-muted px-1">
-                                                    <span>Min: {(min * 100).toFixed(0)}%</span>
-                                                    <span>Max: {(max * 100).toFixed(0)}%</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                            return (
+                                                <SecondaryStatCard
+                                                    key={i}
+                                                    statId={stat.type}
+                                                    value={parseFloat((stat.value * 100).toFixed(2))}
+                                                    options={statOptions}
+                                                    onStatIdChange={(newId) => updateSkinStat(i, 'type', newId, possibleStats)}
+                                                    onValueChange={(newVal) => updateSkinStat(i, 'value', newVal / 100, possibleStats)}
+                                                    onRemove={() => removeSkinStat(i)}
+                                                    range={{ min, max }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
 
                                     {skinStatsList.length === 0 && (
                                         <div className="text-center text-xs text-text-muted py-2 italic opacity-50">
@@ -978,7 +986,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
             <div className="bg-bg-primary w-full max-w-5xl h-[90vh] md:h-[85vh] rounded-2xl border border-border shadow-2xl relative flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
@@ -1150,47 +1158,71 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         </div>
 
                         {activeList.length > 0 ? (
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            <div className={cn(
+                                "grid gap-2",
+                                ageIdx === -1 
+                                    ? "grid-cols-2 lg:grid-cols-3" // Larger cards for saved presets
+                                    : "grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4" // Compact for age list
+                            )}>
                                 {activeList.map((item: any, listIdx: number) => {
-                                    // Determine properties based on list type
-                                    let idx = 0;
-                                    let itemName = "";
-                                    let imgPath = "";
-                                    let ageForBg = 0;
-                                    let isSelected = false;
-
                                     if (ageIdx === -1) {
-                                        // Saved Item
+                                        // Saved Item - Use the detailed Card
                                         const saved = item as ItemSlot & { customName?: string };
-                                        idx = saved.idx;
-                                        ageForBg = saved.age;
                                         const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
-                                        imgPath = getItemImage(AGES[saved.age], fileSlot, saved.idx, autoMapping) || "";
-                                        itemName = saved.customName || getItemName(AGES[saved.age], fileSlot, saved.idx, autoMapping) || `Item #${idx}`;
-                                        isSelected = selectedSavedItemIndex === listIdx;
-                                    } else {
-                                        // Library Item
-                                        idx = item.ItemId?.Idx || 0;
-                                        ageForBg = ageIdx;
-                                        const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
-                                        imgPath = getItemImage(AGES[ageIdx], fileSlot, idx, autoMapping) || "";
-                                        itemName = getItemName(AGES[ageIdx], fileSlot, idx, autoMapping) || `Item #${idx}`;
-                                        isSelected = selectedItemIdx === idx;
+                                        const itemName = saved.customName || getItemName(AGES[saved.age], fileSlot, saved.idx, autoMapping) || `Item #${saved.idx}`;
+                                        const imgPath = getItemImage(AGES[saved.age], fileSlot, saved.idx, autoMapping) || "";
+
+                                        return (
+                                            <ItemSelectionCard
+                                                key={listIdx}
+                                                item={saved}
+                                                slotKey={slot}
+                                                slotLabel={slot}
+                                                isSelected={selectedSavedItemIndex === listIdx}
+                                                isSaved={true}
+                                                itemName={itemName}
+                                                itemImage={imgPath}
+                                                variant="compact"
+                                                stats={getItemStats(
+                                                    saved, 
+                                                    slot, 
+                                                    { itemBalancingLibrary: itemLibrary, itemBalancingConfig, weaponLibrary }, 
+                                                    { techModifiers, forgeAscensionMulti }
+                                                )}
+                                                perfection={getPerfection(saved, secondaryStatLibrary)}
+                                                getStatPerfection={(sId, val) => getStatPerfection(sId, val, secondaryStatLibrary)}
+                                                spriteMapping={spriteMapping}
+                                                onClick={() => {
+                                                    setSelectedSavedItemIndex(listIdx);
+                                                    setLevel(saved.level);
+                                                    setManualStats(saved.secondaryStats?.map(s => ({ type: s.statId, value: s.value })) || []);
+                                                    if (saved.skin) {
+                                                        setSkinIdx(saved.skin.idx);
+                                                        setSkinStatsList(Object.entries(saved.skin.stats).map(([k, v]) => ({ type: k, value: Number(v) })));
+                                                    } else {
+                                                        setSkinIdx(null);
+                                                        setSkinStatsList([]);
+                                                    }
+                                                }}
+                                                onDelete={(e) => handleDeleteSavedItem(listIdx, e)}
+                                            />
+                                        );
                                     }
+
+                                    // Library Item - Keep original simple look
+                                    const idx = item.ItemId?.Idx || 0;
+                                    const ageForBg = ageIdx;
+                                    const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
+                                    const imgPath = getItemImage(AGES[ageIdx], fileSlot, idx, autoMapping) || "";
+                                    const itemName = getItemName(AGES[ageIdx], fileSlot, idx, autoMapping) || `Item #${idx}`;
+                                    const isSelected = selectedItemIdx === idx;
 
                                     return (
                                         <div
                                             key={listIdx}
                                             onClick={() => {
-                                                if (ageIdx === -1) {
-                                                    setSelectedSavedItemIndex(listIdx);
-                                                    const saved = item as ItemSlot;
-                                                    setLevel(saved.level);
-                                                    setManualStats(saved.secondaryStats?.map(s => ({ type: s.statId, value: s.value })) || []);
-                                                } else {
-                                                    setSelectedItemIdx(idx);
-                                                    setManualStats([]);
-                                                }
+                                                setSelectedItemIdx(idx);
+                                                setManualStats([]);
                                             }}
                                             className={cn(
                                                 "relative rounded-xl border-2 transition-all p-1.5 flex flex-col items-center gap-1 group overflow-hidden cursor-pointer",
@@ -1199,15 +1231,6 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     : "border-border hover:border-accent-primary/50"
                                             )}
                                         >
-                                            {ageIdx === -1 && (
-                                                <button
-                                                    onClick={(e) => handleDeleteSavedItem(listIdx, e)}
-                                                    className="absolute top-1 right-1 z-20 p-1.5 bg-red-500 hover:bg-red-600 rounded-md text-white shadow-sm transition-opacity"
-                                                    title="Delete Preset"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            )}
                                             <div
                                                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center pointer-events-none"
                                                 style={getAgeBgStyle(ageForBg)}
@@ -1312,69 +1335,52 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
                         {/* Level - Hidden in PVP */}
                         {!isPvp && (
-                            <div className="mb-4">
-                                <label className="text-xs font-bold text-text-muted block mb-2">
-                                    ITEM LEVEL (MAX {maxLevelCap})
-                                </label>
-                                <Input
-                                    type="number"
-                                    min={1}
-                                    max={maxLevelCap}
-                                    value={level}
-                                    onChange={(e) => setLevel(Math.max(1, Math.min(maxLevelCap, parseInt(e.target.value) || 1)))}
-                                    className="w-full"
-                                />
-                            </div>
+                            <ModalLevelSelector
+                                level={level}
+                                maxLevel={maxLevelCap}
+                                onChange={setLevel}
+                                label="Item Level"
+                                className="mb-6"
+                            />
                         )}
 
                         {/* Secondary Stats - Hidden in PVP */}
                         {!isPvp && (
-                            <div className="mb-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-bold text-text-muted">
-                                        PASSIVE STATS ({manualStats.length}/{numSecondarySlots})
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-3 px-1">
+                                    <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
+                                        Passive Stats ({manualStats.length}/{numSecondarySlots})
                                     </span>
                                     {manualStats.length < numSecondarySlots && (
-                                        <Button variant="ghost" size="sm" onClick={addStat}>
-                                            <Plus className="w-3 h-3 mr-1" /> Add
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={addStat}
+                                            className="h-7 text-xs text-accent-primary hover:bg-accent-primary/10"
+                                        >
+                                            <Plus className="w-3.5 h-3.5 mr-1" /> Add Stat
                                         </Button>
                                     )}
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="flex flex-col gap-3">
                                     {manualStats.map((stat, i) => {
                                         const range = getStatRange(stat.type);
+                                        const statOptions = STAT_TYPES.filter(t =>
+                                            t === stat.type || !manualStats.some(s => s.type === t)
+                                        ).map(t => ({ id: t, name: getStatName(t) }));
+
                                         return (
-                                            <div key={i} className="flex flex-col gap-1">
-                                                <div className="flex gap-2 items-center">
-                                                    <select
-                                                        value={stat.type}
-                                                        onChange={(e) => updateStat(i, 'type', e.target.value)}
-                                                        className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs"
-                                                    >
-                                                        {STAT_TYPES.filter(t =>
-                                                            // Allow if it's the current value of this row OR if it's not selected in any other row
-                                                            t === stat.type || !manualStats.some(s => s.type === t)
-                                                        ).map(t => (
-                                                            <option key={t} value={t}>{getStatName(t)}</option>
-                                                        ))}
-                                                    </select>
-                                                    <SecondaryStatInput
-                                                        value={stat.value as number}
-                                                        onChange={(val) => updateStat(i, 'value', val)}
-                                                        min={(range?.min || 0) * 100}
-                                                        max={(range?.max || 1) * 100}
-                                                    />
-                                                    <button onClick={() => removeStat(i)} className="text-red-400 hover:text-red-300">
-                                                        <Trash2 className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                                {range && (
-                                                    <div className="text-[10px] text-text-muted px-1">
-                                                        Range: {(range.min * 100).toFixed(3).replace(/\.?0+$/, '')}% - {(range.max * 100).toFixed(3).replace(/\.?0+$/, '')}%
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <SecondaryStatCard
+                                                key={i}
+                                                statId={stat.type}
+                                                value={stat.value as number}
+                                                options={statOptions}
+                                                onStatIdChange={(newId) => updateStat(i, 'type', newId)}
+                                                onValueChange={(newVal) => updateStat(i, 'value', newVal)}
+                                                onRemove={() => removeStat(i)}
+                                                range={range}
+                                            />
                                         );
                                     })}
                                 </div>

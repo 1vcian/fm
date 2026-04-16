@@ -1,4 +1,5 @@
 import { useProfile } from '../../context/ProfileContext';
+import { useComparison } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
@@ -7,35 +8,77 @@ import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
 import { SkillSlot } from '../../types/Profile';
 import { cn, getRarityBgStyle } from '../../lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MAX_ACTIVE_SKILLS, SKILL_MECHANICS } from '../../utils/constants';
 import { SkillSelectorModal } from './SkillSelectorModal';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { ItemSelectionCard } from '../UI/ItemSelectionCard';
+import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { Sword } from 'lucide-react';
+
+// Helper for truncation (sync with StatEngine)
+const truncate = (value: number, decimals: number): number => {
+    const factor = Math.pow(10, decimals);
+    return Math.floor(value * factor) / factor;
+};
 
 interface SkillPanelProps {
+    variant?: 'default' | 'original' | 'test';
+    title?: string;
+    compareSkills?: SkillSlot[] | null;
     considerAnimation?: boolean;
     setConsiderAnimation?: (value: boolean) => void;
 }
 
-export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: SkillPanelProps) {
+export function SkillPanel({ variant = 'default', title, compareSkills, considerAnimation = false, setConsiderAnimation }: SkillPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
+    const { 
+        isComparing, 
+        originalSkills, 
+        testSkills, 
+        originalSkillAscension, 
+        testSkillAscension,
+        updateOriginalSkill,
+        updateTestSkill,
+        updateOriginalSkillAscension,
+        updateTestSkillAscension
+    } = useComparison();
+    const { optimizeSkills, isReady } = useProfileOptimizer();
+    
+    const equippedSkills = useMemo(() => {
+        if (variant === 'original' && originalSkills) return originalSkills;
+        if (variant === 'test' && testSkills) return testSkills;
+        return profile.skills.equipped;
+    }, [variant, originalSkills, testSkills, profile.skills.equipped]);
+
+    const skillAscensionLevel = useMemo(() => {
+        if (isComparing) {
+            if (variant === 'original' && originalSkillAscension !== null) return originalSkillAscension;
+            if (variant === 'test' && testSkillAscension !== null) return testSkillAscension;
+        }
+        return profile.misc.skillAscensionLevel || 0;
+    }, [isComparing, variant, originalSkillAscension, testSkillAscension, profile.misc.skillAscensionLevel]);
+
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const globalStats = useGlobalStats();
-    const equippedSkills = profile.skills.equipped;
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [frequencyWindow, setFrequencyWindow] = useState(60);
 
-    // Tech tree bonuses for skills (Now handled via globalStats)
-    // SkillDamage affects active skill damage/health
-    // SkillPassiveDamage/SkillPassiveHealth affects passive skill damage/health
+    const updateSkills = (newSkills: SkillSlot[]) => {
+        if (variant === 'original') updateOriginalSkill(newSkills);
+        else if (variant === 'test') updateTestSkill(newSkills);
+        else updateNestedProfile('skills', { equipped: newSkills });
+    };
 
     const handleRemove = (index: number) => {
         const newSkills = [...equippedSkills];
         newSkills.splice(index, 1);
-        updateNestedProfile('skills', { equipped: newSkills });
+        updateSkills(newSkills);
     };
 
     const handleUpdateLevel = (index: number, newLevel: number) => {
@@ -51,45 +94,61 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
         const newSkills = [...equippedSkills];
         newSkills[index] = { ...skill, level: clampedLevel };
 
-        // Sync with passives
-        const currentPassives = profile.skills.passives || {};
-        const updates: any = {
-            equipped: newSkills,
-            passives: { ...currentPassives, [skill.id]: clampedLevel }
-        };
-        updateNestedProfile('skills', updates);
+        if (variant === 'default') {
+            // Sync with passives only in default mode
+            const currentPassives = profile.skills.passives || {};
+            const updates: any = {
+                equipped: newSkills,
+                passives: { ...currentPassives, [skill.id]: clampedLevel }
+            };
+            updateNestedProfile('skills', updates);
+        } else {
+            updateSkills(newSkills);
+        }
     };
 
-    const skillAscensionLevel = profile.misc.skillAscensionLevel || 0;
-
-    const handleAdd = (skill: SkillSlot) => {
-        if (equippedSkills.length >= MAX_ACTIVE_SKILLS) return;
-
-        // Ensure level is at least 1
+    const handleSelectSkill = (skill: SkillSlot) => {
         const level = Math.max(1, skill.level);
         const skillToAdd = { ...skill, level };
+        const updates: any = {};
 
-        // Update equipped AND ensure passive level is updated if it was lower
-        const currentPassives = profile.skills.passives || {};
-        const currentPassiveLevel = currentPassives[skill.id] || 0;
-
-        const updates: any = {
-            equipped: [...equippedSkills, skillToAdd]
-        };
-
-        // Only update passive if the new active level is higher (or it was 0)
-        if (level > currentPassiveLevel) {
-            updates.passives = { ...currentPassives, [skill.id]: level };
+        if (editingIdx !== null) {
+            const newSkills = [...equippedSkills];
+            newSkills[editingIdx] = skillToAdd;
+            updateSkills(newSkills);
+        } else {
+            if (equippedSkills.length >= MAX_ACTIVE_SKILLS) return;
+            updateSkills([...equippedSkills, skillToAdd]);
         }
 
-        updateNestedProfile('skills', updates);
+        // Sync passives only in default mode
+        if (variant === 'default') {
+            const currentPassives = profile.skills.passives || {};
+            const currentPassiveLevel = currentPassives[skill.id] || 0;
+            if (level > currentPassiveLevel) {
+                updateNestedProfile('skills', {
+                    passives: { ...currentPassives, [skill.id]: level }
+                });
+            }
+        }
+
         setIsModalOpen(false);
+        setEditingIdx(null);
     };
 
-    // --- Skill Configuration Overrides (Manual from C# Analysis) ---
-    // Make sure this matches BattleSimulator!
-    // SKILL_MECHANICS now imported from constants
+    const handleAscensionChange = (val: number) => {
+        if (isComparing) {
+            if (variant === 'original') updateOriginalSkillAscension(val);
+            else if (variant === 'test') updateTestSkillAscension(val);
+        } else {
+            updateNestedProfile('misc', { skillAscensionLevel: val });
+        }
+    };
 
+    const handleAutoOptimize = () => {
+        const best = optimizeSkills();
+        if (best) updateSkills(best);
+    };
 
     const getSkillStats = (skill: SkillSlot) => {
         if (!skillLibrary) return null;
@@ -102,39 +161,28 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
         const duration = skillData.ActiveDuration || 0;
         const cooldown = skillData.Cooldown || 0;
 
-        // Apply Global Multipliers (Aggregated from Items, Pets, Tech Tree)
         const skillFactor = globalStats?.skillDamageMultiplier || 1;
         const globalFactor = globalStats?.damageMultiplier || 1;
-        // Total Damage Multiplier for Active Skills
-        // User Requirement: Exclude Mount Damage (it's now flat and added to base anyway)
-        const totalDamageMulti = skillFactor + globalFactor - 1;
-
-        // Health Formula (Skill Healing):
-        // User Request: Healing should match Damage Logic (include Generic Damage from Pets/Items, exclude Innate Mount).
+        const totalDamageMulti = truncate(skillFactor + globalFactor - 1, 4);
         const totalHealthMulti = totalDamageMulti;
 
         damage = damage * totalDamageMulti;
         health = health * totalHealthMulti;
 
-        // Apply Multi-Hit Logic for Display
         const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
-
-        // User Request: Multi-hit skills in library ALREADY contain TOTAL damage.
-        // So 'damage' variable here is the Total Damage.
-        // UNLESS specific exception (e.g. StrafeRun defined as per-hit in SKILL_MECHANICS)
         const totalDamageDisplay = mechanics.damageIsPerHit ? damage * mechanics.count : damage;
-
         const damagePerHit = mechanics.damageIsPerHit
             ? damage
             : (mechanics.count > 1 ? damage / mechanics.count : damage);
 
         return {
-            damage: damagePerHit, // Returning per-hit as 'damage' to maintain prop semantic if used elsewhere as "base"
+            damage: damagePerHit,
             totalDamage: totalDamageDisplay,
             count: mechanics.count,
             health,
             duration,
             cooldown,
+            multi: totalDamageMulti,
             damageBonus: totalDamageMulti - 1,
             healthBonus: totalHealthMulti - 1
         };
@@ -142,8 +190,6 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
 
     const getSpriteInfo = (skillId: string) => {
         if (!spriteMapping?.skills?.mapping) return null;
-        // Mapping is index -> { name: "Meat" ... }
-        // Find entry with name === skillId
         const entry = Object.entries(spriteMapping.skills.mapping).find(([_, val]: [string, any]) => val.name === skillId);
         if (entry) {
             return {
@@ -154,20 +200,43 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
         return null;
     };
 
+    const checkDiff = (index: number) => {
+        if (variant !== 'test' || !compareSkills) return false;
+        const current = equippedSkills[index];
+        const original = compareSkills[index];
+        if (!current && !original) return false;
+        if (!current || !original) return true;
+        return current.id !== original.id || current.level !== original.level;
+    };
 
+    const panelTitle = title || 'Active Skills';
 
     return (
         <Card className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
                     <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Active Skills" className="w-8 h-8 object-contain" />
-                    Active Skills
+                    {panelTitle}
+
+                    <div className="flex items-center gap-1.5 ml-4">
+                        <Button 
+                            variant="outline" 
+                            size="xs" 
+                            className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all"
+                            onClick={handleAutoOptimize}
+                            disabled={!isReady || !skillLibrary || Object.keys(skillLibrary).length < 1}
+                            title="Select best 3 active skills for Max DPS"
+                        >
+                            <Sword className="w-3 h-3" />
+                            AUTO DPS
+                        </Button>
+                    </div>
                 </h2>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                     <div className="scale-90 sm:scale-100 origin-right">
                         <AscensionStars
                             value={skillAscensionLevel}
-                            onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
+                            onChange={handleAscensionChange}
                         />
                     </div>
                 </div>
@@ -189,130 +258,132 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                 <div className="flex items-center gap-2 bg-bg-input/50 p-1.5 rounded border border-border/30">
                     <span className="text-xs text-text-muted whitespace-nowrap px-1">Window:</span>
                     <Input
-                        type="text"
-                        step="0.1"
+                        type="number"
+                        step="1"
+                        min="1"
                         value={frequencyWindow}
-                        onChange={(e) => setFrequencyWindow(parseFloat(e.target.value.replace(',', '.')) || 60)}
-                        className="w-20 sm:w-24 text-center h-8 font-mono font-bold text-xs bg-bg-secondary/50"
+                        onChange={(e) => setFrequencyWindow(parseFloat(e.target.value) || 1)}
+                        className="w-16 h-8 text-center font-mono font-bold text-xs bg-bg-secondary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                 </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {equippedSkills.map((skill, idx) => {
                     const stats = getSkillStats(skill);
+                    if (!stats) return null;
                     const spriteInfo = getSpriteInfo(skill.id);
+                    const hasDiff = checkDiff(idx);
 
                     return (
-                        <div key={idx} className="bg-bg-secondary/40 rounded-xl border border-border p-3 flex flex-col gap-3">
-                            {/* Header: Icon & Info */}
-                            <div className="flex items-start gap-3">
-                                <div
-                                    className={cn(
-                                        "w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center border-2 shadow-sm overflow-hidden shrink-0 bg-bg-primary/50",
-                                        `border-rarity-${skill.rarity.toLowerCase()}`
-                                    )}
-                                    style={getRarityBgStyle(skill.rarity)}
-                                >
-                                    {spriteInfo ? (
-                                        <SpriteSheetIcon
-                                            textureSrc={getAscensionTexturePath('SkillIcons', skillAscensionLevel)}
-                                            spriteWidth={spriteInfo.config.sprite_size.width}
-                                            spriteHeight={spriteInfo.config.sprite_size.height}
-                                            sheetWidth={spriteInfo.config.texture_size.width}
-                                            sheetHeight={spriteInfo.config.texture_size.height}
-                                            iconIndex={spriteInfo.spriteIndex}
-                                            className="w-10 h-10 sm:w-12 sm:h-12"
-                                        />
-                                    ) : (
-                                        <Zap className={cn("w-6 h-6", `text-rarity-${skill.rarity.toLowerCase()}`)} />
-                                    )}
-                                </div>
-                                <div className="min-w-0 flex-1 flex flex-col justify-center min-h-[3rem]">
-                                    <div className="font-bold text-sm sm:text-base leading-tight break-words">{skill.id}</div>
-                                    <div className={cn("text-[10px] sm:text-xs font-bold uppercase", `text-rarity-${skill.rarity.toLowerCase()}`)}>
-                                        {skill.rarity}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Level Controls */}
-                            <div className="flex items-center justify-between bg-bg-input/50 p-1.5 rounded-lg border border-border/50">
-                                <span className="text-[10px] mobile-s:text-xs font-bold uppercase text-text-muted pl-1">Level</span>
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-7 sm:w-7 p-0" onClick={() => handleUpdateLevel(idx, skill.level - 1)}>
-                                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    </Button>
-                                    <Input
-                                        type="number"
-                                        value={skill.level}
-                                        onChange={(e) => handleUpdateLevel(idx, parseInt(e.target.value) || 1)}
-                                        className="w-12 sm:w-16 text-center h-6 sm:h-7 font-mono font-bold text-xs sm:text-sm bg-bg-secondary p-0"
-                                        onFocus={(e) => e.target.select()}
+                        <ItemSelectionCard
+                            key={idx}
+                            item={skill}
+                            slotKey="ActiveSkill"
+                            slotLabel="Skill"
+                            itemName={skill.id}
+                            itemImage={null}
+                            rarity={skill.rarity}
+                            hideAgeStyles={true}
+                            hasDiff={hasDiff}
+                            globalAscensionLevel={skillAscensionLevel}
+                            onUnequip={(e) => {
+                                e.stopPropagation();
+                                handleRemove(idx);
+                            }}
+                            onLevelChange={(delta, e) => {
+                                e.stopPropagation();
+                                handleUpdateLevel(idx, skill.level + delta);
+                            }}
+                            onAscensionChange={handleAscensionChange}
+                            onClick={() => setEditingIdx(idx)}
+                            renderIcon={() => (
+                                spriteInfo ? (
+                                    <SpriteSheetIcon
+                                        textureSrc={getAscensionTexturePath('SkillIcons', skillAscensionLevel)}
+                                        spriteWidth={spriteInfo.config.sprite_size.width}
+                                        spriteHeight={spriteInfo.config.sprite_size.height}
+                                        sheetWidth={spriteInfo.config.texture_size.width}
+                                        sheetHeight={spriteInfo.config.texture_size.height}
+                                        iconIndex={spriteInfo.spriteIndex}
+                                        className="w-10 h-10"
                                     />
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-7 sm:w-7 p-0" onClick={() => handleUpdateLevel(idx, skill.level + 1)}>
-                                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* Stats & Metrics */}
-                            {stats && (
-                                <div className="space-y-2 text-xs">
-                                    {/* Primary Stats */}
-                                    <div className={cn("grid grid-cols-1 gap-2", stats.damage > 0 && stats.health > 0 ? "sm:grid-cols-2" : "")}>
+                                ) : (
+                                    <Zap className={cn("w-6 h-6", `text-rarity-${skill.rarity.toLowerCase()}`)} />
+                                )
+                            )}
+                            stats={{
+                                damage: stats.damage,
+                                health: stats.health,
+                                isMelee: false
+                            }}
+                            perfection={null}
+                            getStatPerfection={() => null}
+                            rarity={skill.rarity}
+                            customStats={
+                                <div className="w-full flex flex-col gap-1.5 mt-1">
+                                    <div className="flex flex-col gap-1 w-full">
                                         {stats.damage > 0 && (
-                                            <div className="bg-bg-input rounded p-2 border border-border/30 flex flex-col gap-0.5">
-                                                <span className="text-text-muted text-[10px] uppercase">Damage {stats.count > 1 && <span className="text-accent-primary">(x{stats.count})</span>}</span>
-                                                <div className="flex flex-wrap items-baseline gap-1">
-                                                    <span className="font-mono font-bold text-accent-primary break-all leading-tight">
-                                                        {Math.round(stats.totalDamage).toLocaleString()}
-                                                    </span>
-                                                    {stats.damageBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.damageBonus + 1).toFixed(1)} [+{(stats.damageBonus * 100).toFixed(0)}%])</span>}
+                                            <div className="bg-red-400/10 rounded p-1 border border-red-400/20 flex flex-col items-center">
+                                                <div className="flex items-center gap-1 text-red-400">
+                                                    <span className="text-[10px] font-bold uppercase">Damage</span>
+                                                    {stats.count > 1 && <span className="text-[9px] font-bold opacity-80">(x{stats.count})</span>}
+                                                    {(() => {
+                                                        const mech = SKILL_MECHANICS[skill.id];
+                                                        if (mech?.count === 0) {
+                                                            return (
+                                                                <span className="text-[8px] bg-green-500/20 px-1 rounded border border-green-500/30 ml-1 text-green-400">CONTINUOUS</span>
+                                                            );
+                                                        }
+                                                        return mech?.isAOE ? (
+                                                            <span className="text-[8px] bg-red-500/20 px-1 rounded border border-red-500/30 ml-1">AOE</span>
+                                                        ) : (
+                                                            <span className="text-[8px] bg-blue-500/20 px-1 rounded border border-blue-500/30 ml-1 text-blue-400">SINGLE</span>
+                                                        );
+                                                    })()}
+                                                </div>
+                                                <div className="text-sm font-mono font-bold text-red-400 leading-tight">
+                                                    {Math.round(stats.totalDamage).toLocaleString()}
                                                 </div>
                                                 {stats.count > 1 && (
-                                                    <div className="text-[10px] text-text-muted mt-0.5">
+                                                    <div className="text-[8px] text-red-400/60 font-mono italic">
                                                         ({Math.round(stats.damage).toLocaleString()} / hit)
                                                     </div>
                                                 )}
+                                                <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center gap-1 mt-0.5">
+                                                    <span>x{stats.multi.toFixed(2)}</span>
+                                                    <span className="text-green-400/80">({((stats.multi - 1) * 100).toFixed(1)}%)</span>
+                                                </div>
                                             </div>
                                         )}
                                         {stats.health > 0 && (
-                                            <div className="bg-bg-input rounded p-2 border border-border/30 flex flex-col gap-0.5">
-                                                <span className="text-text-muted text-[10px] uppercase">Health</span>
-                                                <div className="flex flex-wrap items-baseline gap-1">
-                                                    <span className="font-mono font-bold text-green-400 break-all leading-tight">
-                                                        {Math.round(stats.health).toLocaleString()}
-                                                    </span>
-                                                    {stats.healthBonus > 0 && <span className="text-green-400 text-[10px] whitespace-nowrap">(x{(stats.healthBonus + 1).toFixed(1)} [+{(stats.healthBonus * 100).toFixed(0)}%])</span>}
+                                            <div className="bg-green-400/10 rounded p-1 border border-green-400/20 flex flex-col items-center">
+                                                <div className="text-[10px] text-green-400 uppercase font-bold">Healing</div>
+                                                <div className="text-sm font-mono font-bold text-green-400 leading-tight">
+                                                    {Math.round(stats.health).toLocaleString()}
+                                                </div>
+                                                <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center gap-1">
+                                                    <span>x{stats.multi.toFixed(2)}</span>
+                                                    <span className="text-green-400/80">({((stats.multi - 1) * 100).toFixed(1)}%)</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Secondary Stats */}
-                                    <div className="bg-bg-input rounded p-2 border border-border/30 flex items-center justify-between gap-2">
-                                        <div className="flex flex-col min-w-0">
-                                            <span className="text-text-muted text-[10px] uppercase truncate">Cooldown</span>
-                                            <div className="flex flex-wrap items-baseline gap-1">
-                                                <span className="font-mono font-bold leading-tight">
-                                                    {(stats.cooldown * Math.max(0.1, 1 - (globalStats?.skillCooldownReduction ?? 0))).toFixed(2)}s
-                                                </span>
-                                                {(globalStats?.skillCooldownReduction ?? 0) > 0 && (
-                                                    <span className="text-green-400 text-[10px] whitespace-nowrap">
-                                                        (-{(globalStats!.skillCooldownReduction * 100).toFixed(0)}%)
-                                                    </span>
-                                                )}
-                                            </div>
+                                    <div className="bg-bg-input/50 rounded p-1 flex items-center justify-between text-[10px]">
+                                        <div className="flex flex-col">
+                                            <span className="text-text-muted text-[8px] uppercase">CD</span>
+                                            <span className="font-mono font-bold">
+                                                {(stats.cooldown * Math.max(0.1, 1 - (globalStats?.skillCooldownReduction ?? 0))).toFixed(1)}s
+                                            </span>
                                         </div>
-                                        <div className="h-6 w-px bg-border/50 shrink-0" />
-                                        <div className="flex flex-col text-right min-w-0">
-                                            <span className="text-text-muted text-[10px] uppercase truncate">Duration</span>
-                                            <span className="font-mono font-bold leading-tight">{stats.duration}s</span>
+                                        <div className="h-4 w-px bg-border/30" />
+                                        <div className="flex flex-col text-right">
+                                            <span className="text-text-muted text-[8px] uppercase">DUR</span>
+                                            <span className="font-mono font-bold">{stats.duration}s</span>
                                         </div>
                                     </div>
 
-                                    {/* Advanced CD Metrics (Full Width) */}
                                     {(() => {
                                         const reduction = globalStats?.skillCooldownReduction || 0;
                                         const activeDuration = stats.duration || 0;
@@ -328,7 +399,6 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
 
                                         if (WINDOW >= START_TIME) {
                                             const firstHitTime = START_TIME + ANIM_DURATION;
-
                                             if (firstHitTime <= WINDOW) {
                                                 const availableTime = WINDOW - firstHitTime;
                                                 const additionalActivations = Math.floor(availableTime / effCd);
@@ -345,58 +415,59 @@ export function SkillPanel({ considerAnimation = false, setConsiderAnimation }: 
                                         const diff = cdComponent - targetCd;
 
                                         return (
-                                            <div className="bg-bg-secondary/30 rounded p-2 border border-border/30 space-y-2">
-                                                <div className="flex justify-between items-center text-[10px] text-text-muted uppercase tracking-wider">
-                                                    <span>Metrics ({WINDOW}s Window)</span>
+                                            <div className="grid grid-cols-3 gap-1 text-[9px]">
+                                                <div className="bg-bg-input/30 rounded flex flex-col items-center py-0.5" title="Activations in window">
+                                                    <span className="text-[7px] text-text-muted uppercase">Hits</span>
+                                                    <span className="font-bold">{activations}</span>
                                                 </div>
-                                                <div className="grid grid-cols-3 gap-2 text-center">
-                                                    <div className="bg-bg-input/50 rounded p-1 flex flex-col justify-center min-h-[3rem]">
-                                                        <div className="text-[9px] text-text-muted uppercase mb-1">Hits</div>
-                                                        <div className="font-mono font-bold text-sm text-text-primary leading-none">{activations}</div>
-                                                    </div>
-                                                    <div className="bg-bg-input/50 rounded p-1 flex flex-col justify-center min-h-[3rem]">
-                                                        <div className="text-[9px] text-text-muted uppercase mb-1">Last Hit</div>
-                                                        <div className="font-mono font-bold text-sm text-text-primary leading-none break-all">{lastHit.toFixed(1)}s</div>
-                                                    </div>
-                                                    <div className="bg-bg-input/50 rounded p-1 flex flex-col justify-center min-h-[3rem] outline outline-1 outline-accent-primary/20 bg-accent-primary/5">
-                                                        <div className="text-[9px] text-accent-primary uppercase mb-1">To +1 Hit</div>
-                                                        <div className="font-mono font-bold text-xs text-accent-primary leading-none">{diff < 0 ? "-" : "+"}{Math.abs(diff).toFixed(2)}s</div>
+                                                <div className="bg-bg-input/30 rounded flex flex-col items-center py-0.5" title="Time of last activation">
+                                                    <span className="text-[7px] text-text-muted uppercase">Last</span>
+                                                    <span className="font-bold">{lastHit.toFixed(1)}s</span>
+                                                </div>
+                                                <div 
+                                                    className={cn(
+                                                        "rounded flex flex-col items-center py-0.5",
+                                                        diff < 0 ? "bg-red-400/10 text-red-400" : "bg-accent-primary/10 text-accent-primary"
+                                                    )} 
+                                                    title={`Needed CDR change: ${((Math.abs(diff) / stats.cooldown) * 100).toFixed(2)}%`}
+                                                >
+                                                    <span className="text-[7px] uppercase">To+1</span>
+                                                    <div className="flex flex-col items-center leading-none">
+                                                        <span className="font-bold">{Math.abs(diff).toFixed(2)}s</span>
+                                                        <span className="text-[7px] opacity-80">({((Math.abs(diff) / stats.cooldown) * 100).toFixed(1)}%)</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })()}
                                 </div>
-                            )}
-
-                            {/* Footer: Actions */}
-                            <div className="pt-2 mt-1 border-t border-border/30 flex justify-end">
-                                <button
-                                    onClick={() => handleRemove(idx)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded-lg border border-red-400/20 transition-colors w-full sm:w-auto justify-center"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                    <span>Remove</span>
-                                </button>
-                            </div>
-                        </div>
+                            }
+                        />
                     );
                 })}
 
                 {equippedSkills.length < MAX_ACTIVE_SKILLS && (
-                    <Button variant="outline" className="w-full border-dashed py-8 hover:bg-bg-secondary/50 group" onClick={() => setIsModalOpen(true)}>
-                        <div className="flex flex-col items-center gap-2 text-text-muted group-hover:text-accent-primary transition-colors">
-                            <Plus className="w-8 h-8" />
-                            <span>Add Active Skill</span>
-                        </div>
-                    </Button>
+                    <div
+                        onClick={() => setIsModalOpen(true)}
+                        className={cn(
+                            "h-full rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col items-center justify-center p-3 gap-2 group bg-bg-input/30 min-h-[160px]",
+                            variant === 'test' && compareSkills && equippedSkills.length !== compareSkills.length && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
+                        )}
+                    >
+                        <Plus className="w-8 h-8 text-text-muted group-hover:text-accent-primary transition-colors" />
+                        <span className="text-sm text-text-muted group-hover:text-accent-primary transition-colors font-bold">Add Skill</span>
+                    </div>
                 )}
             </div>
 
             <SkillSelectorModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSelect={handleAdd}
+                isOpen={isModalOpen || editingIdx !== null}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingIdx(null);
+                }}
+                onSelect={handleSelectSkill}
+                currentSkill={editingIdx !== null ? equippedSkills[editingIdx] : undefined}
             />
         </Card >
     );

@@ -217,14 +217,53 @@ export function MountPanel() {
             </h2>
 
             {activeMount ? (
-                <div className="space-y-4">
-                    {/* Active Mount Display */}
-                    <div className="p-4 bg-bg-secondary rounded-lg border border-border">
-                        {/* Header */}
-                        <div className="flex items-center gap-3 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {/* Active Mount Slot */}
+                    <div 
+                        onClick={() => setIsModalOpen(true)}
+                        className={cn(
+                            "h-full min-h-[180px] rounded-xl border-2 bg-bg-secondary/50 relative flex flex-col items-center p-2 gap-1 group transition-all cursor-pointer",
+                            `border-rarity-${activeMount.rarity.toLowerCase()}/50 hover:border-rarity-${activeMount.rarity.toLowerCase()} hover:bg-bg-secondary/50 hover:scale-[1.02]`
+                        )}
+                        style={getRarityBgStyle(activeMount.rarity)}
+                    >
+                        {/* Top Badges */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                            <span className="bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 shadow-sm">
+                                Lv {activeMount.level}
+                            </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="absolute top-2 right-2 flex items-center gap-1 z-20">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setIsSaveModalOpen(true); }}
+                                className={cn(
+                                    "p-1.5 rounded-lg transition-all shadow-sm border border-white/5",
+                                    isSaved ? "bg-accent-primary text-white" : "bg-black/40 text-text-muted hover:text-white"
+                                )}
+                            >
+                                <Bookmark className={cn("w-3 h-3", isSaved && "fill-white")} />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
+                                className="p-1.5 bg-black/40 hover:bg-black/60 text-text-muted hover:text-white rounded-lg transition-all border border-white/5"
+                            >
+                                <Recycle className="w-3 h-3" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleRemove(); }}
+                                className="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-all shadow-sm"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        </div>
+
+                        {/* Icon Container */}
+                        <div className="mt-6 mb-1 shrink-0">
                             <div
                                 className={cn(
-                                    "w-12 h-12 rounded-full flex items-center justify-center border-2 overflow-hidden shrink-0",
+                                    "w-16 h-16 rounded-xl flex items-center justify-center border-2 shrink-0 bg-bg-primary/40 shadow-inner group-hover:scale-110 transition-transform",
                                     `border-rarity-${activeMount.rarity.toLowerCase()}`
                                 )}
                                 style={getRarityBgStyle(activeMount.rarity)}
@@ -240,124 +279,98 @@ export function MountPanel() {
                                         className="w-12 h-12"
                                     />
                                 ) : (
-                                    <MountIcon className="w-6 h-6 text-text-muted" />
+                                    <MountIcon className={cn("w-8 h-8 opacity-50", `text-rarity-${activeMount.rarity.toLowerCase()}`)} />
                                 )}
                             </div>
-                                <div className="flex flex-col gap-2 w-full">
-                                    <div className="flex items-center justify-between">
-                                        <div className="font-bold truncate text-lg text-accent-primary">{activeSprite?.name || `${activeMount.rarity} Mount #${activeMount.id}`}</div>
-                                        <div className="text-xs text-text-muted">Level {activeMount.level}</div>
-                                    </div>
-                                    <div className="bg-bg-input/50 p-3 rounded-xl border border-border/50 flex flex-col items-center gap-2">
-                                        <AscensionStars 
-                                            value={profile.misc.mountAscensionLevel || 0}
-                                            onChange={(val: number) => updateNestedProfile('misc', { mountAscensionLevel: val })}
-                                        />
-                                    </div>
-                                </div>
                         </div>
 
-                        {/* Mount Stats */}
-                        {combinedStats.length > 0 && (
-                            <div className="mb-3">
-                                <div className="flex flex-wrap gap-2">
-                                    {combinedStats.map((stat, idx) => {
-                                        const label = stat.label.toLowerCase();
-                                        const isFlat = label === 'damage' || label === 'health' || label === 'dmg' || label === 'hp';
-                                        const formatValue = (val: number) => {
-                                            if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
-                                            if (val >= 1000) return (val / 1000).toFixed(2) + 'K';
-                                            return val.toFixed(0); // No decimals for flat stats unless < 1000
-                                        };
-
-                                        return (
-                                            <span key={idx} className={cn(
-                                                "text-xs bg-bg-input px-2 py-1 rounded",
-                                                stat.isManual && "border border-accent-primary/30",
-                                                getStatColor(stat.label)
-                                            )}>
-                                                {getStatName(stat.label)}: <span className="font-mono font-bold">
-                                                {stat.isMultiplier || isFlat ? '+' : ''}
-                                                {isFlat ? formatValue(stat.value) : (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(2)}
-                                                {stat.isMultiplier ? '%' : ''}
-                                                </span>
-                                                {stat.techBonus > 0 && (
-                                                    <span className="text-green-400 ml-1 text-[10px]">(+{(stat.techBonus * 100).toFixed(0)}%)</span>
-                                                )}
-                                                {stat.ascensionBonus > 0 && (
-                                                    <span className="text-yellow-400 ml-1 text-[10px]">(+{(stat.ascensionBonus * 100).toFixed(0)}%)</span>
-                                                )}
-                                            </span>
-                                        );
-                                    })}
-                                </div>
+                        {/* Name & Evolution */}
+                        <div className="w-full text-center mb-1">
+                            <div className="font-bold text-xs leading-tight px-2 text-text-primary">
+                                {activeSprite?.name || `${activeMount.rarity} Mount`}
                             </div>
-                        )}
+                            <div className="text-[9px] font-black uppercase tracking-widest text-accent-primary opacity-80">
+                                {activeMount.rarity} Mount
+                            </div>
+                        </div>
 
-                        {/* Controls (New Line) */}
-                        <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                            <div />
-                            <div className="flex items-center gap-2">
-                                {/* Level controls */}
-                                <div className="flex items-center gap-1 bg-bg-input rounded-lg px-1">
-                                    <button
-                                        onClick={() => handleLevelChange(-1)}
-                                        className="w-6 h-6 flex items-center justify-center text-text-muted hover:text-text-primary"
-                                    >
-                                        <Minus className="w-3 h-3" />
-                                    </button>
-                                    <span className="text-sm font-mono font-bold w-8 text-center">{activeMount.level}</span>
-                                    <button
-                                        onClick={() => handleLevelChange(1)}
-                                        className="w-6 h-6 flex items-center justify-center text-text-muted hover:text-text-primary"
-                                    >
-                                        <Plus className="w-3 h-3" />
-                                    </button>
+                        {/* Core Stats */}
+                        <div className="w-full bg-black/30 rounded-lg p-2 flex flex-col gap-1.5 border border-white/5">
+                            {combinedStats.slice(0, 2).map((stat, idx) => {
+                                const label = stat.label.toLowerCase();
+                                const isFlat = label === 'damage' || label === 'health' || label === 'dmg' || label === 'hp';
+                                const formatValue = (val: number) => {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+                                    return val.toFixed(0);
+                                };
+
+                                return (
+                                    <div key={idx} className={cn("flex justify-between items-center text-[10px] font-mono", getStatColor(stat.label))}>
+                                        <span className="opacity-70">{getStatName(stat.label)}</span>
+                                        <span className="font-bold">
+                                            {stat.isMultiplier || isFlat ? '+' : ''}
+                                            {isFlat ? formatValue(stat.value) : (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(1)}
+                                            {stat.isMultiplier ? '%' : ''}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Secondary/Inherent Combo */}
+                        <div className="w-full mt-auto pt-2 border-t border-white/10 flex flex-col gap-1">
+                            {combinedStats.slice(2, 5).map((stat, idx) => (
+                                <div key={idx} className={cn("flex justify-between items-center text-[9px] leading-none", stat.isManual ? "text-accent-primary" : "text-text-muted/80")}>
+                                    <span className="truncate mr-1">{getStatName(stat.label)}</span>
+                                    <span className="font-bold shrink-0">
+                                        +{ (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(1) }%
+                                    </span>
                                 </div>
-
-                                <button onClick={() => setIsModalOpen(true)} className="text-text-muted hover:text-accent-primary p-1 bg-bg-input rounded-lg" title="Change">
-                                    <Recycle className="w-4 h-4" />
-                                </button>
-
-                                <button
-                                    onClick={() => setIsSaveModalOpen(true)}
-                                    className={cn(
-                                        "p-1 transition-colors rounded-lg bg-bg-input",
-                                        isSaved ? "text-accent-primary hover:text-accent-primary" : "text-text-muted hover:text-green-400"
-                                    )}
-                                    title={isSaved ? "Update Saved Preset" : "Save as Preset"}
-                                >
-                                    <Bookmark className={cn("w-4 h-4", isSaved && "fill-accent-primary")} />
-                                </button>
-
-                                <button onClick={handleRemove} className="text-text-muted hover:text-red-400 p-1 bg-bg-input rounded-lg">
-                                    <X className="w-4 h-4" />
-                                </button>
+                            ))}
+                            
+                            {/* Ascension & Level Controls */}
+                            <div className="mt-1 flex items-center justify-between gap-1">
+                                <div className="flex bg-black/40 rounded-md p-0.5 border border-white/5 scale-90 origin-left">
+                                    <button onClick={() => handleLevelChange(-1)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded">-</button>
+                                    <span className="px-1.5 text-[10px] font-bold self-center">{activeMount.level}</span>
+                                    <button onClick={() => handleLevelChange(1)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded">+</button>
+                                </div>
+                                <div className="scale-75 origin-right">
+                                    <AscensionStars 
+                                        value={profile.misc.mountAscensionLevel || 0}
+                                        onChange={(val: number) => updateNestedProfile('misc', { mountAscensionLevel: val })}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
-                        Change Mount
-                    </Button>
+                    {/* Change Button Placeholder for empty space */}
+                    <div 
+                        onClick={() => setIsModalOpen(true)}
+                        className="h-full min-h-[180px] rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-all flex flex-col items-center justify-center p-4 bg-bg-input/10 group opacity-50 hover:opacity-100"
+                    >
+                        <div className="p-3 bg-bg-secondary/50 rounded-full mb-2 group-hover:scale-110 transition-transform">
+                            <Recycle className="w-6 h-6 text-text-muted" />
+                        </div>
+                        <span className="text-xs font-bold text-text-muted">Change Mount</span>
+                    </div>
                 </div>
             ) : (
                 <div
-                    className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-border rounded-xl space-y-4 cursor-pointer hover:border-accent-primary/50 transition-colors"
+                    className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-xl space-y-4 cursor-pointer hover:border-accent-primary/50 transition-all bg-bg-input/10 group"
                     onClick={() => setIsModalOpen(true)}
                 >
-                    {/* Mount icon from InventoryTextures.png (index 8 = row 3, col 1) */}
-                    <div
-                        style={getInventoryIconStyle('Mount', 48) || {}}
-                        className="opacity-30"
-                    />
-                    <p className="text-text-muted text-sm">No mount equipped</p>
-                    <Button variant="primary" onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}>
-                        <Plus className="w-4 h-4 mr-2" /> Select Mount
-                    </Button>
+                    <div className="p-4 bg-bg-secondary/50 rounded-full mb-2 group-hover:scale-110 transition-transform border border-white/5">
+                        <Plus className="w-8 h-8 text-text-muted opacity-50" />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-text-primary font-bold">No Mount Equipped</p>
+                        <p className="text-text-muted text-xs uppercase tracking-widest mt-1">Click to select</p>
+                    </div>
                 </div>
-            )
-            }
+            )}
 
             <MountSelectorModal
                 isOpen={isModalOpen}

@@ -205,25 +205,34 @@ export default function Eggs() {
                                             <button
                                                 onClick={() => eggSummon.setProgress(Math.max(0, eggSummon.progress - 1))}
                                                 className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
-                                                disabled={eggSummon.progress <= 0}
+                                                disabled={eggSummon.progress <= 0 || eggSummon.level >= eggSummon.maxPossibleLevel}
                                             >
                                                 <Minus className="w-3 h-3 text-text-primary" />
                                             </button>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={eggSummon.progress}
-                                                onChange={(e) => eggSummon.setProgress(Number(e.target.value))}
-                                                className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
-                                            />
+                                            <div className="flex-1 text-center">
+                                                {eggSummon.level >= eggSummon.maxPossibleLevel ? (
+                                                    <span className="text-2xl font-black text-amber-500">MAX</span>
+                                                ) : (
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={eggSummon.progress}
+                                                        onChange={(e) => eggSummon.setProgress(Number(e.target.value))}
+                                                        className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
+                                                    />
+                                                )}
+                                            </div>
                                             <button
                                                 onClick={() => eggSummon.setProgress(eggSummon.progress + 1)}
-                                                className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors flex items-center justify-center shrink-0 w-8 h-8"
+                                                className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
+                                                disabled={eggSummon.level >= eggSummon.maxPossibleLevel}
                                             >
                                                 <Plus className="w-3 h-3 text-text-primary" />
                                             </button>
                                         </div>
-                                        <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Next: {eggSummon.levels[Math.min(eggSummon.level - 1, eggSummon.levels.length - 1)]?.SummonsRequired || '?'}</div>
+                                        <div className="text-[10px] text-text-muted text-center font-mono opacity-50">
+                                            Next: {eggSummon.level >= eggSummon.maxPossibleLevel ? 'MAX' : (eggSummon.levels[Math.min(eggSummon.level - 1, eggSummon.levels.length - 1)]?.SummonsRequired?.toLocaleString() || '?')}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -362,9 +371,23 @@ export default function Eggs() {
                                                         </div>
                                                         <div className="flex flex-col items-end gap-1">
                                                             <span className="font-mono font-bold text-accent-primary leading-none">
-                                                                {Math.floor(item.count).toLocaleString()}
+                                                                {item.count.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                                             </span>
-
+                                                            
+                                                            {eggSummon.results.simulateAscension && eggSummon.results.phases && eggSummon.results.phases.length > 1 && (
+                                                                <div className="flex flex-wrap gap-1 justify-end max-w-[150px] mt-1">
+                                                                    {(item.phaseCounts || []).map((p, pIdx) => (
+                                                                        <div key={pIdx} className={`px-1 rounded border ${p.ascension > 0 ? 'bg-amber-500/5 border-amber-500/10' : 'bg-white/5 border-white/5'}`}>
+                                                                            <div className="flex items-center gap-0.5 text-[8px] font-mono leading-tight">
+                                                                                <span className={p.ascension > 0 ? 'text-amber-500/80 font-bold' : 'text-text-muted'}>
+                                                                                    {p.ascension === 0 ? 'N' : `A${p.ascension}`}:
+                                                                                </span>
+                                                                                <span className="text-white/90">{p.count.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}

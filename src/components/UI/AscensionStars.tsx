@@ -17,14 +17,14 @@ export function AscensionStars({ value, onChange, maxLevel = 3, className }: Asc
                 <button
                     onClick={() => onChange(0)}
                     className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110 border",
+                        "w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110 border text-[10px] font-black tabular-nums",
                         value === 0
-                            ? "bg-bg-input border-text-muted/50 text-text-primary"
-                            : "bg-bg-input/30 border-transparent text-text-muted/40 hover:text-text-muted hover:bg-bg-input/50"
+                            ? "bg-red-500/20 border-red-500/40 text-red-500 shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                            : "bg-bg-input/30 border-transparent text-text-muted/40 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20"
                     )}
-                    title="No Ascension"
+                    title="Reset to 0 stars"
                 >
-                    <Ban className="w-3.5 h-3.5" />
+                    0
                 </button>
                 {/* Star levels */}
                 {Array.from({ length: maxLevel }).map((_, idx) => {

@@ -2,13 +2,14 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
-import { X, Bookmark, GitCompare } from 'lucide-react';
+import { X, Bookmark, GitCompare, Minus, Plus } from 'lucide-react';
 import { ItemSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
 import { MountSelectorModal } from './MountSelectorModal';
 import { InputModal } from '../UI/InputModal';
 import { AscensionStars } from '../UI/AscensionStars';
+import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getInventoryIconStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
@@ -18,7 +19,7 @@ import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { formatSecondaryStat } from '../../utils/statNames';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
-
+import { getItemStats, getPerfection, getStatPerfection, SLOT_TO_JSON_TYPE } from '../../utils/itemCalculations';
 
 // InventoryTextures.png is a 4x4 sprite sheet (512x512, each icon 128x128)
 // Row 1: Helmet(0), Armor(1), Gloves(2), Necklace(3)
@@ -50,31 +51,6 @@ const SLOT_TO_FILE_MAP: Record<string, string> = {
     'Shoe': 'Foot',
 };
 
-
-// Slot to tech bonus mapping
-const SLOT_TO_TECH_BONUS: Record<string, string> = {
-    'Weapon': 'WeaponBonus',
-    'Helmet': 'HelmetBonus',
-    'Body': 'BodyBonus',
-    'Gloves': 'GloveBonus',
-    'Belt': 'BeltBonus',
-    'Necklace': 'NecklaceBonus',
-    'Ring': 'RingBonus',
-    'Shoe': 'ShoeBonus'
-};
-
-// Slot to JSON type for ItemBalancingLibrary
-const SLOT_TO_JSON_TYPE: Record<string, string> = {
-    'Weapon': 'Weapon',
-    'Helmet': 'Helmet',
-    'Body': 'Armour',
-    'Gloves': 'Gloves',
-    'Belt': 'Belt',
-    'Necklace': 'Necklace',
-    'Ring': 'Ring',
-    'Shoe': 'Shoes'
-};
-
 const SLOT_TYPE_ID_MAP: Record<string, number> = {
     'Helmet': 0,
     'Body': 1,
@@ -86,18 +62,16 @@ const SLOT_TYPE_ID_MAP: Record<string, number> = {
     'Belt': 7
 };
 
-// Map Set IDs to Icon filenames (same as Skins.tsx)
-
-
 interface EquipmentPanelProps {
     variant?: 'default' | 'original' | 'test';
     title?: string;
     showCompareButton?: boolean;
     compareItems?: UserProfile['items'] | null;
     compareMount?: MountSlot | null;
+    isPvp?: boolean;
 }
 
-export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems, compareMount }: EquipmentPanelProps) {
+export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems, compareMount, isPvp = false }: EquipmentPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
     const { isComparing, originalItems, testItems,
         originalForgeAscension,
@@ -165,50 +139,10 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
-    useGameData<any>('SkinsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
 
-    // Helper to calculate item perfection (avg of secondary stats vs max)
-    const getPerfection = (item: ItemSlot): number | null => {
-        if (!item.secondaryStats || item.secondaryStats.length === 0 || !secondaryStatLibrary) return null;
-
-        let totalPercent = 0;
-        let count = 0;
-
-        for (const stat of item.secondaryStats) {
-            const libStat = secondaryStatLibrary[stat.statId];
-            if (libStat && libStat.UpperRange > 0) {
-                // Determine scale: simple check
-                // If library UpperRange is small (e.g. 0.25) and stored value is large (e.g. 25), assume stored is %.
-                // Based on ItemSelectorModal logic, stored values are % (0-100).
-                const maxVal = libStat.UpperRange * 100;
-
-                // Avoid division by zero
-                if (maxVal > 0) {
-                    const percent = (stat.value / maxVal) * 100;
-                    totalPercent += Math.min(100, percent); // Cap at 100% just in case
-                    count++;
-                }
-            }
-        }
-
-        return count > 0 ? totalPercent / count : null;
-    };
-
-    // Helper for individual stat perfection
-    const getStatPerfection = (statIdx: string, value: number): number | null => {
-        if (!secondaryStatLibrary) return null;
-        const libStat = secondaryStatLibrary[statIdx];
-        if (libStat && libStat.UpperRange > 0) {
-            return Math.min(100, (value / (libStat.UpperRange * 100)) * 100);
-        }
-        return null;
-    };
-
-    // Get tech tree modifiers
+    // Tech tree bonuses
     const techModifiers = useTreeModifiers();
-    const levelScaling = itemBalancingConfig?.LevelScalingBase || 1.01;
-    const meleeBaseMulti = itemBalancingConfig?.PlayerMeleeDamageMultiplier || 1.6;
 
     // Ascension Multiplier calculation
     const forgeAscensionMulti = useMemo(() => {
@@ -226,12 +160,8 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
             for (let i = 0; i < ascLevel && i < configs.length; i++) {
                 const contributions = configs[i].StatContributions || [];
                 for (const stat of contributions) {
-                    // For now we assume they are Damage or Health which share the same value context
-                    // and apply to the card's display. We take the max of available contributions 
-                    // because Forge Ascension usually applies the same % to both.
-                    // Forge Ascension values use direct multipliers (no division)
                     total += stat.Value;
-                    break; // Keep the same result as before for now but more robust structure
+                    break; 
                 }
             }
         }
@@ -245,75 +175,6 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         }
         return profile.misc.forgeAscensionLevel || 0;
     }, [isComparing, variant, originalForgeAscension, testForgeAscension, profile.misc.forgeAscensionLevel]);
-
-    // Calculate item stats with tech tree bonus
-    // For weapons: includes melee base multiplier (1.6x) to match in-game display
-    const getItemStats = (item: ItemSlot | null, slotKey: string) => {
-        if (!item || !itemBalancingLibrary) return { damage: 0, health: 0, bonus: 0, skinBonuses: { damage: 0, health: 0 }, isMelee: true };
-
-        const jsonType = SLOT_TO_JSON_TYPE[slotKey] || slotKey;
-        const key = `{'Age': ${item.age}, 'Type': '${jsonType}', 'Idx': ${item.idx}}`;
-        const itemData = itemBalancingLibrary[key];
-
-        if (!itemData?.EquipmentStats) return { damage: 0, health: 0, bonus: 0, skinBonuses: { damage: 0, health: 0 }, isMelee: true };
-
-        // Check if weapon is melee (for applying melee base multiplier)
-        // Melee = AttackRange < 1, Ranged = AttackRange >= 1
-        let isMelee = false; // Default to false until confirmed
-        if (slotKey === 'Weapon' && weaponLibrary) {
-            const weaponKey = `{'Age': ${item.age}, 'Type': 'Weapon', 'Idx': ${item.idx}}`;
-            const weaponData = weaponLibrary[weaponKey];
-            // Melee if AttackRange < 1
-            if (weaponData && (weaponData.AttackRange ?? 0) < 1) {
-                isMelee = true;
-            }
-        }
-
-        const bonusKey = SLOT_TO_TECH_BONUS[slotKey];
-        const bonus = techModifiers[bonusKey] || 0;
-
-        let damage = 0;
-        let health = 0;
-
-        for (const stat of itemData.EquipmentStats) {
-            const statType = stat.StatNode?.UniqueStat?.StatType;
-            let value = stat.Value || 0;
-
-            // Level scaling
-            const levelExp = Math.max(0, item.level - 1);
-            value = value * Math.pow(levelScaling, levelExp);
-
-            // Tech tree bonus
-            value = value * (1 + bonus);
-
-            // Forge Ascension bonus
-            value = value * (1 + forgeAscensionMulti);
-
-            if (statType === 'Damage') damage += value;
-            if (statType === 'Health') health += value;
-        }
-
-        if (slotKey === 'Weapon' && isMelee && damage > 0) {
-            damage = damage * meleeBaseMulti;
-        }
-
-        // Apply Skin Multipliers
-        let skinBonuses = { damage: 0, health: 0 };
-        if (item.skin && item.skin.stats) {
-            const skinDamage = item.skin.stats['Damage'] || 0;
-            const skinHealth = item.skin.stats['Health'] || 0;
-
-            if (skinDamage) {
-                damage *= (1 + skinDamage);
-            }
-            if (skinHealth) {
-                health *= (1 + skinHealth);
-            }
-            skinBonuses = { damage: skinDamage, health: skinHealth };
-        }
-
-        return { damage, health, bonus, skinBonuses, isMelee };
-    };
 
     const getEquippedImage = (slotKey: string, item: ItemSlot | null): string | null => {
         if (!item) return null;
@@ -389,259 +250,67 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     };
 
     const saveModalProps = getSaveModalProps();
-
     const panelTitle = title || 'Equipment';
 
     return (
-        <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                    <img src={`${import.meta.env.BASE_URL}Texture2D/IconDivineArmorPaladinarmor.png`} alt="Equipment" className="w-8 h-8 object-contain" />
-                    {panelTitle}
-                </h2>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-bg-input/50 px-3 py-1.5 rounded-lg border border-border/50">
-                        <AscensionStars
-                            value={globalAscensionLevel}
-                            onChange={(val) => {
-                                if (isComparing) {
-                                    if (variant === 'original') updateOriginalForgeAscension(val);
-                                    else if (variant === 'test') updateTestForgeAscension(val);
-                                } else {
-                                    updateNestedProfile('misc', { forgeAscensionLevel: val });
-                                }
-                            }}
-                            className="scale-90 origin-right"
-                        />
-                        {forgeAscensionMulti > 0 && (
-                            <div className="hidden sm:block text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
-                                x{(forgeAscensionMulti + 1).toFixed(1)} (+{(forgeAscensionMulti * 100).toLocaleString()}%)
-                            </div>
+        <>
+            <Card className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/IconDivineArmorPaladinarmor.png`} alt="Equipment" className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
+                        {panelTitle}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                        <div className="flex items-center gap-2 bg-bg-input/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/50">
+                            <AscensionStars
+                                value={globalAscensionLevel}
+                                onChange={(val) => {
+                                    if (isComparing) {
+                                        if (variant === 'original') updateOriginalForgeAscension(val);
+                                        else if (variant === 'test') updateTestForgeAscension(val);
+                                    } else {
+                                        updateNestedProfile('misc', { forgeAscensionLevel: val });
+                                    }
+                                }}
+                                className="scale-75 sm:scale-90 origin-left sm:origin-right"
+                            />
+                            {forgeAscensionMulti > 0 && (
+                                <div className="hidden xs:block text-[9px] sm:text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1 sm:px-1.5 py-0.5 rounded border border-amber-400/20">
+                                    x{(forgeAscensionMulti + 1).toFixed(1)}
+                                </div>
+                            )}
+                        </div>
+                        {showCompareButton && !isComparing && variant === 'default' && (
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={enterCompareMode}
+                                className="shadow-lg shadow-accent-primary/20 animate-pulse-subtle flex-1 sm:flex-none py-1.5"
+                            >
+                                <GitCompare className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Compare Build</span>
+                            </Button>
                         )}
                     </div>
-                    {showCompareButton && !isComparing && variant === 'default' && (
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={enterCompareMode}
-                            className="shadow-lg shadow-accent-primary/20 animate-pulse-subtle"
-                        >
-                            <GitCompare className="w-4 h-4 mr-2" />
-                            Compare Build
-                        </Button>
-                    )}
                 </div>
-            </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {SLOTS.map((slot) => {
-                    const equipped = items[slot.key];
-                    const itemImage = getEquippedImage(slot.key, equipped);
-                    const inventoryStyle = getInventoryIconStyle(slot.key, 48);
-                    const hasDiff = itemsDiffer(slot.key);
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {SLOTS.map((slot) => {
+                        const equipped = items[slot.key];
+                        const itemImage = getEquippedImage(slot.key, equipped);
+                        const inventoryStyle = getInventoryIconStyle(slot.key, 48);
+                        const hasDiff = itemsDiffer(slot.key);
 
-                    return (
-                        <div
-                            key={slot.key}
-                            onClick={() => setSelectedSlot(slot.key)}
-                            className={cn(
-                                "h-full min-h-[160px] rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col items-center p-1.5 gap-1 group",
-                                equipped ? "border-solid bg-bg-secondary" : "bg-bg-input/30 justify-center",
-                                hasDiff && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
-                            )}
-                        >
-                            {equipped ? (
-                                <>
-                                    {/* Top Row: Level (Left) and Unequip (Right) */}
-                                    <div className="absolute top-1 left-1 z-10 flex flex-col gap-0.5">
-                                        <span className="bg-black/60 text-white text-[11px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
-                                            Lv{equipped.level}
-                                        </span>
-                                        {globalAscensionLevel > 0 && (
-                                            <div className="flex gap-0.5">
-                                                {Array.from({ length: globalAscensionLevel }).map((_, i) => (
-                                                    <img key={i} src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-2.5 h-2.5 object-contain drop-shadow-sm" />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <button
-                                        onClick={(e) => handleUnequip(slot.key, e)}
-                                        className="absolute top-1 right-1 z-20 p-1 bg-red-500/80 hover:bg-red-500 rounded-lg transition-opacity shadow-sm"
-                                        title="Unequip"
-                                    >
-                                        <X className="w-3 h-3 text-white" />
-                                    </button>
-
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setItemToSave({ slot: slot.key, item: equipped });
-                                        }}
-                                        className={cn(
-                                            "absolute top-1 right-6 z-20 p-1 rounded-lg transition-opacity shadow-sm border border-transparent hover:border-border",
-                                            isItemSaved(slot.key, equipped) ? "bg-accent-primary text-white" : "bg-bg-input text-text-muted hover:text-text-primary"
-                                        )}
-                                        title={isItemSaved(slot.key, equipped) ? "Update Saved Preset" : "Save as Preset"}
-                                    >
-                                        <Bookmark className={cn("w-3 h-3", isItemSaved(slot.key, equipped) && "fill-white")} />
-                                    </button>
-
-                                    {/* Icon - Centered with top margin for badges */}
-                                    <div className="mt-4 shrink-0 relative">
-                                        <div
-                                            className="w-12 h-12 rounded-lg flex items-center justify-center border-2 shrink-0 bg-bg-primary/50"
-                                            style={{ ...getAgeBgStyle(equipped.age), ...getAgeBorderStyle(equipped.age) }}
-                                        >
-                                            {itemImage ? (
-                                                <img
-                                                    src={itemImage}
-                                                    alt={slot.label}
-                                                    className="w-10 h-10 object-contain drop-shadow"
-                                                    onError={(e) => {
-                                                        e.currentTarget.style.display = 'none';
-                                                    }}
-                                                />
-                                            ) : (
-                                                inventoryStyle && (
-                                                    <div style={inventoryStyle} className="opacity-70 scale-90" />
-                                                )
-                                            )}
-                                        </div>
-                                        {equipped.skin ? (
-                                            <div className="absolute -bottom-2 -right-2 z-20 w-8 h-8 rounded-md bg-bg-secondary border border-accent-primary shadow-sm overflow-hidden" title={`Skin ID: ${equipped.skin.idx}`}>
-                                                {(() => {
-                                                    // Calculate sprite position for skin icon
-                                                    // This logic mimics ItemSelectorModal and Skins.tsx
-
-                                                    // We need a helper or context to get global sorted index for precise sprite pos,
-                                                    // but for now, let's try to map it if possible or just use the generic icon.
-                                                    // Actually, without the full sorted list context, accurate sprite mapping is hard locally.
-                                                    // Let's use a simplified approach or generic skin icon if specific mapping is complex.
-                                                    // Ideally we should export getVisualOrder/sortedGlobalSkins logic.
-
-                                                    // For now, let's display a styled indicator that looks better than "S"
-                                                    // Or better: Show the Skin Icon if we can calculate the background position.
-                                                    // Since we don't have the SkinsLibrary here easily without extra fetch, 
-                                                    // let's stick to a robust visual indicator or fetch it.
-                                                    // Wait, we can use the same logic if we pass the mapping or use a helper.
-
-                                                    return (
-                                                        <div className="w-full h-full flex items-center justify-center bg-accent-primary/20">
-                                                            <div
-                                                                className="w-full h-full opacity-80"
-                                                                style={getSkinSpriteStyle({
-                                                                    SkinId: {
-                                                                        Idx: equipped.skin!.idx,
-                                                                        Type: equipped.skin!.type || SLOT_TO_JSON_TYPE[slot.key] || slot.key
-                                                                    }
-                                                                }, spriteMapping?.skins?.mapping)}
-                                                            />
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
-                                        ) : null}
-                                    </div>
-
-                                    {/* Name - Below Icon */}
-                                    <div className="w-full px-0.5 min-h-[1.5em] flex items-center justify-center">
-                                        {(() => {
-                                            const name = getItemName(slot.key, equipped);
-                                            const fontSizeClass = name.length > 20 ? "text-[10px]" : name.length > 15 ? "text-[11px]" : "text-xs";
-                                            return (
-                                                <span className={cn("font-bold text-center leading-tight line-clamp-2", fontSizeClass)}>
-                                                    {name}
-                                                </span>
-                                            );
-                                        })()}
-                                    </div>
-
-                                    {/* Main Stats - Compact & Wrapping */}
-                                    <div className="w-full bg-bg-input/30 rounded p-1 flex flex-col items-center justify-center gap-0.5">
-                                        {(() => {
-                                            const stats = getItemStats(equipped, slot.key);
-                                            return (
-                                                <div className="text-[11px] font-mono text-center leading-normal w-full">
-                                                    {stats.damage > 0 && (
-                                                        <div className="text-red-400 break-words flex flex-col items-center">
-                                                            <span>⚔️{Math.round(stats.damage).toLocaleString()}</span>
-                                                            <div className="flex gap-1 flex-wrap justify-center font-bold">
-                                                                {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
-                                                                {stats.skinBonuses?.damage > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round((stats.skinBonuses?.damage || 0) * 100)}% S)</span>}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {stats.health > 0 && (
-                                                        <div className="text-green-400 break-words flex flex-col items-center mt-0.5">
-                                                            <span>♥{Math.round(stats.health).toLocaleString()}</span>
-                                                            <div className="flex gap-1 flex-wrap justify-center font-bold">
-                                                                {stats.bonus > 0 && <span className="text-green-400 text-[10px]">(+{Math.round(stats.bonus * 100)}%)</span>}
-                                                                {stats.skinBonuses?.health > 0 && <span className="text-accent-primary text-[10px]">(+{Math.round((stats.skinBonuses?.health || 0) * 100)}% S)</span>}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-
-                                    {/* Secondary Stats - Bottom list */}
-                                    {equipped.secondaryStats && equipped.secondaryStats.length > 0 && (
-                                        <div className="w-full mt-auto pt-1 border-t border-border/30 flex flex-col gap-0.5">
-                                            {equipped.secondaryStats.map((stat, idx) => {
-                                                const formatted = formatSecondaryStat(stat.statId, stat.value);
-                                                const statPerf = getStatPerfection(stat.statId, stat.value);
-                                                return (
-                                                    <div key={idx} className={cn("flex justify-between items-start text-[10px] leading-tight gap-1", formatted.color)}>
-                                                        <span className="whitespace-normal break-words text-left opacity-80 flex-1">{formatted.name}</span>
-                                                        <span className="font-bold shrink-0 flex items-center gap-0.5">
-                                                            {formatted.formattedValue}
-                                                            {statPerf !== null && (
-                                                                <span className={cn(
-                                                                    "text-[9px]",
-                                                                    statPerf >= 100 ? "text-yellow-400" :
-                                                                        statPerf >= 80 ? "text-green-500" :
-                                                                            statPerf >= 50 ? "text-blue-400" : "text-gray-500"
-                                                                )}>
-                                                                    ({statPerf.toFixed(0)}%)
-                                                                </span>
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
-
-                                            {/* Perfection Bar */}
-                                            {(() => {
-                                                const perfection = getPerfection(equipped);
-                                                if (perfection !== null) {
-                                                    const colorClass = perfection >= 100 ? 'bg-yellow-400' :
-                                                        perfection >= 80 ? 'bg-green-500' :
-                                                            perfection >= 50 ? 'bg-blue-500' : 'bg-gray-500';
-
-                                                    return (
-                                                        <div className="w-full mt-1 flex flex-col gap-0.5" title={`Perfection: ${perfection.toFixed(1)}%`}>
-                                                            <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className={`h-full ${colorClass}`}
-                                                                    style={{ width: `${Math.min(100, perfection)}%` }}
-                                                                />
-                                                            </div>
-                                                            <div className="text-[9px] text-right text-text-muted leading-none">
-                                                                {perfection.toFixed(0)}% Perfect
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            })()}
-                                        </div>
+                        if (!equipped) {
+                            return (
+                                <div
+                                    key={slot.key}
+                                    onClick={() => setSelectedSlot(slot.key)}
+                                    className={cn(
+                                        "h-full min-h-[160px] rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col items-center justify-center p-1.5 gap-1 group bg-bg-input/30",
+                                        hasDiff && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
                                     )}
-                                </>
-                            ) : (
-                                <>
+                                >
                                     {inventoryStyle ? (
                                         <div style={inventoryStyle} className="opacity-30 group-hover:opacity-50 transition-opacity mb-2" />
                                     ) : (
@@ -649,31 +318,65 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                     )}
                                     <span className="text-sm text-text-muted font-bold text-center">{slot.label}</span>
                                     <span className="text-xs text-text-muted/50 text-center">Empty Slot</span>
-                                </>
-                            )}
-                        </div>
-                    );
-                })}
+                                </div>
+                            );
+                        }
 
-                {/* Mount Slot - spans 2 columns */}
-                <MountSlotWidget variant={variant} compareMount={compareMount} />
-            </div>
+                        return (
+                            <ItemSelectionCard
+                                key={slot.key}
+                                item={equipped}
+                                slotKey={slot.key}
+                                slotLabel={slot.label}
+                                hasDiff={hasDiff}
+                                globalAscensionLevel={globalAscensionLevel}
+                                isSaved={isItemSaved(slot.key, equipped)}
+                                itemName={getItemName(slot.key, equipped)}
+                                itemImage={itemImage}
+                                stats={getItemStats(
+                                    equipped, 
+                                    slot.key, 
+                                    { itemBalancingLibrary, itemBalancingConfig, weaponLibrary }, 
+                                    { techModifiers, forgeAscensionMulti }
+                                )}
+                                perfection={getPerfection(equipped, secondaryStatLibrary)}
+                                getStatPerfection={(sId, val) => getStatPerfection(sId, val, secondaryStatLibrary)}
+                                spriteMapping={spriteMapping}
+                                onClick={() => setSelectedSlot(slot.key)}
+                                onUnequip={(e) => handleUnequip(slot.key, e)}
+                                onAscensionChange={(val) => {
+                                    if (isComparing) {
+                                        if (variant === 'original') updateOriginalForgeAscension(val);
+                                        else if (variant === 'test') updateTestForgeAscension(val);
+                                    } else {
+                                        updateNestedProfile('misc', { forgeAscensionLevel: val });
+                                    }
+                                }}
+                                onSave={(e) => {
+                                    e.stopPropagation();
+                                    setItemToSave({ slot: slot.key, item: equipped });
+                                }}
+                            />
+                        );
+                    })}
 
-            {
-                selectedSlot && (
-                    <ItemSelectorModal
-                        isOpen={!!selectedSlot}
-                        onClose={() => setSelectedSlot(null)}
-                        onSelect={handleEquip}
-                        slot={selectedSlot}
-                        current={items[selectedSlot]}
-                        forgeAscensionLevel={globalAscensionLevel}
-                    />
-                )
-            }
+                    {/* Mount Slot - spans 2 columns */}
+                    <MountSlotWidget variant={variant} compareMount={compareMount} />
+                </div>
+            </Card>
+
+            <ItemSelectorModal
+                isOpen={selectedSlot !== null}
+                onClose={() => setSelectedSlot(null)}
+                onSelect={handleEquip}
+                slot={selectedSlot || 'Weapon'}
+                current={selectedSlot ? items[selectedSlot] : null}
+                isPvp={isPvp}
+                forgeAscensionLevel={globalAscensionLevel}
+            />
 
             <InputModal
-                isOpen={!!itemToSave}
+                isOpen={itemToSave !== null}
                 title={saveModalProps.title}
                 label={saveModalProps.label}
                 placeholder="Preset Name"
@@ -681,30 +384,23 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                 onConfirm={handleSaveItemPreset}
                 onCancel={() => setItemToSave(null)}
             />
-        </Card>
+        </>
     );
 }
 
-// Inline Mount Slot Widget with all mount data
-interface MountSlotWidgetProps {
-    variant?: 'default' | 'original' | 'test';
-    compareMount?: MountSlot | null;
-}
-
-function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetProps) {
+function MountSlotWidget({ variant, compareMount }: { variant: string; compareMount?: MountSlot | null }) {
     const { profile, updateNestedProfile } = useProfile();
     const { 
-        isComparing,
         originalMount, 
         testMount, 
+        isComparing,
         originalMountAscension,
         testMountAscension,
         updateOriginalMount, 
         updateTestMount,
         updateOriginalMountAscension,
-        updateTestMountAscension
+        updateTestMountAscension,
     } = useComparison();
-    // Use the mapping from parent scope or load it again (hook is cached)
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
@@ -712,51 +408,16 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
-    // Get the correct mount based on variant
     const mount = useMemo(() => {
         if (variant === 'original' && originalMount !== null) return originalMount;
         if (variant === 'test' && testMount !== null) return testMount;
-        if (variant === 'original' || variant === 'test') return variant === 'original' ? originalMount : testMount;
         return profile.mount.active;
     }, [variant, originalMount, testMount, profile.mount.active]);
 
-    // Tech tree bonuses
     const techModifiers = useTreeModifiers();
     const mountDamageBonus = techModifiers['MountDamage'] || 0;
     const mountHealthBonus = techModifiers['MountHealth'] || 0;
 
-    // Helper to calculate item perfection (avg of secondary stats vs max)
-    const getPerfection = (item: any): number | null => {
-        if (!item.secondaryStats || item.secondaryStats.length === 0 || !secondaryStatLibrary) return null;
-
-        let totalPercent = 0;
-        let count = 0;
-
-        for (const stat of item.secondaryStats) {
-            const libStat = secondaryStatLibrary[stat.statId];
-            if (libStat && libStat.UpperRange > 0) {
-                const maxVal = libStat.UpperRange * 100;
-                if (maxVal > 0) {
-                    const percent = (stat.value / maxVal) * 100;
-                    totalPercent += Math.min(100, percent);
-                    count++;
-                }
-            }
-        }
-
-        return count > 0 ? totalPercent / count : null;
-    };
-
-    const getStatPerfection = (statIdx: string, value: number): number | null => {
-        if (!secondaryStatLibrary) return null;
-        const libStat = secondaryStatLibrary[statIdx];
-        if (libStat && libStat.UpperRange > 0) {
-            return Math.min(100, (value / (libStat.UpperRange * 100)) * 100);
-        }
-        return null;
-    };
-
-    // Check if current mount matches a saved build
     const isSaved = useMemo(() => {
         if (!mount || !profile.mount.savedBuilds) return false;
         return profile.mount.savedBuilds.some(saved =>
@@ -768,396 +429,161 @@ function MountSlotWidget({ variant = 'default', compareMount }: MountSlotWidgetP
     }, [mount, profile.mount.savedBuilds]);
 
     const handleSelectMount = (rarity: string, id: number, level: number, secondaryStats: { statId: string; value: number }[]) => {
-        const newMount: MountSlot = {
-            rarity,
-            id,
-            level,
-            evolution: 0,
-            skills: [],
-            secondaryStats
-        };
-        if (variant === 'original') {
-            updateOriginalMount(newMount);
-        } else if (variant === 'test') {
-            updateTestMount(newMount);
-        } else {
-            updateNestedProfile('mount', { active: newMount });
-        }
+        const newMount: MountSlot = { rarity, id, level, evolution: 0, skills: [], secondaryStats };
+        if (variant === 'original') updateOriginalMount(newMount);
+        else if (variant === 'test') updateTestMount(newMount);
+        else updateNestedProfile('mount', { active: newMount });
         setIsModalOpen(false);
     };
 
     const handleRemove = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (variant === 'original') {
-            updateOriginalMount(null);
-        } else if (variant === 'test') {
-            updateTestMount(null);
-        } else {
-            updateNestedProfile('mount', { active: null });
-        }
-    };
-
-    const handleSavePreset = (name: string) => {
-        if (!mount) return;
-        const saved = profile.mount.savedBuilds || [];
-
-        const existingIdx = saved.findIndex(s =>
-            s.id === mount.id && s.rarity === mount.rarity && s.level === mount.level &&
-            JSON.stringify(s.secondaryStats) === JSON.stringify(mount.secondaryStats)
-        );
-
-        if (existingIdx >= 0) {
-            // Update
-            const newSaved = [...saved];
-            newSaved[existingIdx] = { ...newSaved[existingIdx], customName: name };
-            updateNestedProfile('mount', { savedBuilds: newSaved });
-        } else {
-            const newPreset = { ...mount, customName: name || undefined };
-            updateNestedProfile('mount', { savedBuilds: [...saved, newPreset] });
-        }
-        setIsSaveModalOpen(false);
+        if (variant === 'original') updateOriginalMount(null);
+        else if (variant === 'test') updateTestMount(null);
+        else updateNestedProfile('mount', { active: null });
     };
 
     const handleLevelChange = (delta: number, e: React.MouseEvent) => {
         e.stopPropagation();
         if (!mount) return;
-        const maxLevel = mountUpgradeLibrary?.[mount.rarity]?.LevelInfo?.length || 100;
-        const newLevel = Math.max(1, Math.min(maxLevel, mount.level + delta));
-        const updatedMount = { ...mount, level: newLevel };
-        if (variant === 'original') {
-            updateOriginalMount(updatedMount);
-        } else if (variant === 'test') {
-            updateTestMount(updatedMount);
-        } else {
-            updateNestedProfile('mount', { active: updatedMount });
-        }
+        const newLevel = Math.max(1, Math.min(100, mount.level + delta));
+        if (newLevel === mount.level) return;
+
+        const newMount = { ...mount, level: newLevel };
+        if (variant === 'original') updateOriginalMount(newMount);
+        else if (variant === 'test') updateTestMount(newMount);
+        else updateNestedProfile('mount', { active: newMount });
     };
 
-    // Corrected sprite lookup - matching MountPanel.tsx
+    const handleAscensionChange = (newLevel: number) => {
+        if (variant === 'original') updateOriginalMountAscension(newLevel);
+        else if (variant === 'test') updateTestMountAscension(newLevel);
+        else updateNestedProfile('misc', { mountAscensionLevel: newLevel });
+    };
+
+    const handleSavePreset = (name: string) => {
+        if (!mount) return;
+        const saved = profile.mount.savedBuilds || [];
+        const existingIdx = saved.findIndex(s => s.id === mount.id && s.rarity === mount.rarity && s.level === mount.level && JSON.stringify(s.secondaryStats) === JSON.stringify(mount.secondaryStats));
+        if (existingIdx >= 0) {
+            const newSaved = [...saved];
+            newSaved[existingIdx] = { ...newSaved[existingIdx], customName: name };
+            updateNestedProfile('mount', { savedBuilds: newSaved });
+        } else {
+            updateNestedProfile('mount', { savedBuilds: [...saved, { ...mount, customName: name || undefined }] });
+        }
+        setIsSaveModalOpen(false);
+    };
+
     const getSpriteInfo = (mountId: number, rarity: string) => {
         if (!spriteMapping?.mounts?.mapping) return null;
         const entry = Object.entries(spriteMapping.mounts.mapping).find(([_, val]: [string, any]) => val.id === mountId && val.rarity === rarity);
-        if (entry) {
-            return {
-                spriteIndex: parseInt(entry[0]),
-                config: spriteMapping.mounts,
-                name: (entry[1] as any).name
-            };
-        }
-        return null;
+        return entry ? { spriteIndex: parseInt(entry[0]), config: spriteMapping.mounts, name: (entry[1] as any).name } : null;
     };
 
-    // Get mount stats from library
     const getMountStats = () => {
-        if (!mount || !mountUpgradeLibrary) return { damage: 0, health: 0, damageBonus: 0, healthBonus: 0 };
+        if (!mount || !mountUpgradeLibrary) return { damage: 0, health: 0 };
         const upgradeData = mountUpgradeLibrary[mount.rarity];
-        if (!upgradeData?.LevelInfo) return { damage: 0, health: 0, damageBonus: 0, healthBonus: 0 };
-
-        const targetLevel = Math.max(0, mount.level - 1);
-        const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === targetLevel) || upgradeData.LevelInfo[0];
-
+        if (!upgradeData?.LevelInfo) return { damage: 0, health: 0 };
+        const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === Math.max(0, mount.level - 1)) || upgradeData.LevelInfo[0];
         let damage = 0, health = 0;
         if (levelInfo?.MountStats?.Stats) {
             levelInfo.MountStats.Stats.forEach((stat: any) => {
-                const statType = stat.StatNode?.UniqueStat?.StatType;
-                const value = stat.Value || 0;
-                if (statType === 'Damage') damage = value;
-                if (statType === 'Health') health = value;
+                if (stat.StatNode?.UniqueStat?.StatType === 'Damage') damage = stat.Value;
+                if (stat.StatNode?.UniqueStat?.StatType === 'Health') health = stat.Value;
             });
         }
-
-        // Apply tech tree bonuses
-        const mountDmgMulti = mountDamageBonus || 0;
-        const mountHpMulti = mountHealthBonus || 0;
-
-        // Apply ascension bonuses
-        let ascensionDmgMulti = 0;
-        let ascensionHpMulti = 0;
-        let mountAscensionLevel = profile.misc.mountAscensionLevel || 0;
-
+        let ascDmg = 0, ascHp = 0;
+        let ascLevel = profile.misc.mountAscensionLevel || 0;
         if (isComparing) {
-            if (variant === 'original' && originalMountAscension !== null) mountAscensionLevel = originalMountAscension;
-            else if (variant === 'test' && testMountAscension !== null) mountAscensionLevel = testMountAscension;
+            if (variant === 'original' && originalMountAscension !== null) ascLevel = originalMountAscension;
+            else if (variant === 'test' && testMountAscension !== null) ascLevel = testMountAscension;
         }
-
-        if (mountAscensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+        if (ascLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
             const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
-            for (let i = 0; i < mountAscensionLevel && i < ascConfigs.length; i++) {
-                const contributions = ascConfigs[i].StatContributions || [];
-                for (const s of contributions) {
-                    const sType = s.StatNode?.UniqueStat?.StatType;
-                    const sVal = s.Value;
-                    if (sType === 'Damage') ascensionDmgMulti += sVal;
-                    if (sType === 'Health') ascensionHpMulti += sVal;
-                }
+            for (let i = 0; i < ascLevel && i < ascConfigs.length; i++) {
+                (ascConfigs[i].StatContributions || []).forEach((s: any) => {
+                    if (s.StatNode?.UniqueStat?.StatType === 'Damage') ascDmg += s.Value;
+                    if (s.StatNode?.UniqueStat?.StatType === 'Health') ascHp += s.Value;
+                });
             }
         }
-
-        const finalDamage = damage * (1 + mountDmgMulti) * (1 + ascensionDmgMulti);
-        const finalHealth = health * (1 + mountHpMulti) * (1 + ascensionHpMulti);
-
-        return {
-            damage: finalDamage,
-            health: finalHealth,
-            damageBonus: mountDmgMulti,
-            healthBonus: mountHpMulti,
-            ascensionDmgMulti,
-            ascensionHpMulti
+        return { 
+            damage: damage * (1 + mountDamageBonus) * (1 + ascDmg), 
+            health: health * (1 + mountHealthBonus) * (1 + ascHp),
+            damageMulti: (1 + mountDamageBonus) * (1 + ascDmg),
+            healthMulti: (1 + mountHealthBonus) * (1 + ascHp),
+            ascLevel 
         };
     };
 
-
     const spriteInfo = mount ? getSpriteInfo(mount.id, mount.rarity) : null;
-    const mountStats = mount ? getMountStats() : null;
+    const mountData = mount ? getMountStats() : null;
+    const mountStats = mountData ? { damage: mountData.damage, health: mountData.health } : null;
+    const currentAscension = mountData?.ascLevel || 0;
+    const isDifferent = variant === 'test' && testMount?.id !== originalMount?.id;
 
-    const getModalProps = () => {
-        if (!mount) return { title: '', label: '', initialValue: '' };
-
-        const saved = profile.mount.savedBuilds || [];
-        const match = saved.find(s =>
-            s.id === mount.id && s.rarity === mount.rarity && s.level === mount.level &&
-            JSON.stringify(s.secondaryStats) === JSON.stringify(mount.secondaryStats)
-        );
-
-        const baseName = spriteInfo?.name || `Mount ${mount.id}`;
-
-        if (match) {
-            return { title: 'Update Saved Preset', label: 'Preset Name (Already Saved)', initialValue: match.customName || baseName };
-        }
-        return { title: 'Save Mount Preset', label: 'Preset Name', initialValue: baseName };
-
-    };
-
-    const modalProps = getModalProps();
-
-    // Check if mount differs from compareMount (for golden border in test panel)
-    const mountDiffers = (): boolean => {
-        if (variant !== 'test' || compareMount === undefined) return false;
-        // Both null = same
-        if (!mount && !compareMount) return false;
-        // One null, other not = different
-        if (!mount || !compareMount) return true;
-        // Compare key fields
-        if (mount.id !== compareMount.id) return true;
-        if (mount.rarity !== compareMount.rarity) return true;
-        if (mount.level !== compareMount.level) return true;
-        // Deep compare secondary stats
-        if (JSON.stringify(mount.secondaryStats) !== JSON.stringify(compareMount.secondaryStats)) return true;
-        return false;
-    };
-
-    const isDifferent = mountDiffers();
+    const perfection = useMemo(() => {
+        if (!mount || !secondaryStatLibrary) return null;
+        return getPerfection(mount as any, secondaryStatLibrary);
+    }, [mount, secondaryStatLibrary]);
 
     return (
         <>
-            <div
-                onClick={() => setIsModalOpen(true)}
-                className={cn(
-                    "col-span-2 sm:col-span-2 md:col-span-2 rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col gap-2 p-3 group min-h-[160px]",
-                    mount ? "border-solid bg-bg-secondary" : "bg-bg-input/30",
-                    isDifferent && "border-yellow-400 border-solid shadow-[0_0_12px_rgba(250,204,21,0.4)]"
-                )}
-            >
+            <div className="col-span-2 sm:col-span-2 md:col-span-2 h-full">
                 {mount ? (
-                    <div className="flex flex-col items-center gap-2 w-full pt-2 relative">
-                        {/* Buttons - Top Right */}
-                        <div className="absolute top-0 right-0 z-10 flex gap-1">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setIsSaveModalOpen(true); }}
-                                className={cn(
-                                    "p-1.5 rounded-lg transition-opacity border border-transparent hover:border-border",
-                                    isSaved ? "bg-accent-primary text-white" : "bg-bg-input text-text-muted hover:text-text-primary"
-                                )}
-                                title={isSaved ? "Update Saved Preset" : "Save as Preset"}
-                            >
-                                <Bookmark className={cn("w-3.5 h-3.5", isSaved && "fill-white")} />
-                            </button>
-                            <button
-                                onClick={handleRemove}
-                                className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-opacity shadow-sm"
-                                title="Remove Mount"
-                            >
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-
-                        {/* Icon - Centered */}
-                        <div className="mt-2 shrink-0 relative">
-                            <div
-                                className={cn(
-                                    "w-16 h-16 rounded-xl flex items-center justify-center shrink-0 border-2 bg-bg-primary/50",
-                                    `border-rarity-${mount.rarity.toLowerCase()}`
-                                )}
-                            >
-                                {spriteInfo ? (
-                                    <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
-                                        spriteWidth={spriteInfo.config.sprite_size.width}
-                                        spriteHeight={spriteInfo.config.sprite_size.height}
-                                        sheetWidth={spriteInfo.config.texture_size.width}
-                                        sheetHeight={spriteInfo.config.texture_size.height}
-                                        iconIndex={spriteInfo.spriteIndex}
-                                        className="w-14 h-14"
-                                    />
-                                ) : (
-                                    <div style={getInventoryIconStyle('Mount', 48) || {}} className="opacity-70 scale-110" />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Level Controls - Centered below icon */}
-                        <div className="flex items-center justify-center gap-1 bg-bg-input/50 rounded-lg p-1 border border-border/30">
-                            <button
-                                onClick={(e) => handleLevelChange(-1, e)}
-                                className="w-8 h-6 flex items-center justify-center bg-bg-input hover:bg-bg-secondary rounded text-text-muted hover:text-text-primary transition-colors font-bold"
-                            >-</button>
-                            <span className="text-sm font-mono font-bold w-12 text-center">Lv{mount.level}</span>
-                            <button
-                                onClick={(e) => handleLevelChange(1, e)}
-                                className="w-8 h-6 flex items-center justify-center bg-bg-input hover:bg-bg-secondary rounded text-text-muted hover:text-text-primary transition-colors font-bold"
-                            >+</button>
-                        </div>
-
-                        {/* Name and Stars - Centered */}
-                        <div className="flex flex-col items-center gap-1 w-full">
-                            <div className={cn(
-                                "font-bold leading-tight text-center break-words whitespace-normal px-2 transition-[font-size]",
-                                `text-rarity-${mount.rarity.toLowerCase()}`,
-                                (spriteInfo?.name || "").length > 20 ? "text-xs" : "text-sm"
-                            )}>
-                                {spriteInfo?.name || `${mount.rarity} Mount #${mount.id}`}
-                            </div>
-                            <div onClick={(e) => e.stopPropagation()}>
-                                <AscensionStars 
-                                    value={(() => {
-                                        if (isComparing) {
-                                            if (variant === 'original' && originalMountAscension !== null) return originalMountAscension;
-                                            if (variant === 'test' && testMountAscension !== null) return testMountAscension;
-                                        }
-                                        return profile.misc.mountAscensionLevel || 0;
-                                    })()}
-                                    onChange={(val: number) => {
-                                        if (isComparing) {
-                                            if (variant === 'original') updateOriginalMountAscension(val);
-                                            else if (variant === 'test') updateTestMountAscension(val);
-                                        } else {
-                                            updateNestedProfile('misc', { mountAscensionLevel: val });
-                                        }
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Base Stats (DMG/HP) - Side by side on larger screens */}
-                        {mountStats && (mountStats.damage > 0 || mountStats.health > 0) && (
-                            <div className="w-full bg-bg-input/30 rounded p-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 max-w-[95%] font-mono text-[11px]">
-                                {mountStats.damage > 0 && (
-                                    <div className="text-red-400 flex flex-col items-center">
-                                        <span>DMG +{mountStats.damage >= 1000000 ? (mountStats.damage / 1000000).toFixed(2) + 'M' : mountStats.damage.toLocaleString()}</span>
-                                        {(mountStats.damageBonus > 0 || (mountStats.ascensionDmgMulti || 0) > 0) && (
-                                            <span className="text-green-400 text-[10px]">
-                                                (x{( (mountStats.damageBonus + (mountStats.ascensionDmgMulti || 0)) + 1).toFixed(1)} [+{((mountStats.damageBonus + (mountStats.ascensionDmgMulti || 0)) * 100).toFixed(0)}%])
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                                {mountStats.health > 0 && (
-                                    <div className="text-green-400 flex flex-col items-center">
-                                        <span>HP +{mountStats.health >= 1000000 ? (mountStats.health / 1000000).toFixed(2) + 'M' : mountStats.health.toLocaleString()}</span>
-                                        {(mountStats.healthBonus > 0 || (mountStats.ascensionHpMulti || 0) > 0) && (
-                                            <span className="text-green-400 text-[10px]">
-                                                (x{( (mountStats.healthBonus + (mountStats.ascensionHpMulti || 0)) + 1).toFixed(1)} [+{((mountStats.healthBonus + (mountStats.ascensionHpMulti || 0)) * 100).toFixed(0)}%])
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                    <ItemSelectionCard
+                        item={mount as any}
+                        slotKey="Mount"
+                        slotLabel="Mount"
+                        isSelected={false}
+                        hasDiff={isDifferent}
+                        globalAscensionLevel={currentAscension}
+                        isSaved={isSaved}
+                        itemName={spriteInfo?.name || `Mount ${mount.id}`}
+                        itemImage={null}
+                        stats={{
+                            damage: mountStats?.damage || 0,
+                            health: mountStats?.health || 0,
+                            damageMulti: mountData?.damageMulti || 1,
+                            healthMulti: mountData?.healthMulti || 1,
+                            bonus: 0,
+                            isMelee: false
+                        }}
+                        perfection={perfection}
+                        getStatPerfection={(statId, value) => getStatPerfection(statId, value, secondaryStatLibrary)}
+                        spriteMapping={spriteMapping}
+                        onClick={() => setIsModalOpen(true)}
+                        onUnequip={handleRemove}
+                        onSave={(e) => { e.stopPropagation(); setIsSaveModalOpen(true); }}
+                        onLevelChange={handleLevelChange}
+                        onAscensionChange={handleAscensionChange}
+                        hideAgeStyles={true}
+                        rarity={mount.rarity}
+                        renderIcon={() => spriteInfo && (
+                            <SpriteSheetIcon
+                                textureSrc={getAscensionTexturePath('MountIcons', currentAscension)}
+                                spriteWidth={spriteInfo.config.sprite_size.width}
+                                spriteHeight={spriteInfo.config.sprite_size.height}
+                                sheetWidth={spriteInfo.config.texture_size.width}
+                                sheetHeight={spriteInfo.config.texture_size.height}
+                                iconIndex={spriteInfo.spriteIndex}
+                                className="w-14 h-14"
+                            />
                         )}
-
-                        {/* Secondary Stats (Passives) - Full Width List */}
-                        {mount.secondaryStats && mount.secondaryStats.length > 0 && (
-                            <div className="w-full mt-1 pt-2 border-t border-border/30 flex flex-col gap-1.5 px-2">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
-                                    {mount.secondaryStats.map((stat: any, idx: number) => {
-                                        const formatted = formatSecondaryStat(stat.statId, stat.value);
-                                        return (
-                                            <div key={idx} className="text-xs flex items-start justify-between gap-2 border-b border-border/10 pb-0.5 last:border-0">
-                                                <span className="text-text-muted text-left whitespace-normal break-words flex-1 leading-tight">{formatted.name}</span>
-                                                <span className={cn("font-mono font-bold shrink-0 flex items-center gap-1", formatted.color)}>
-                                                    {formatted.formattedValue}
-                                                    {(() => {
-                                                        const statPerf = getStatPerfection(stat.statId, stat.value);
-                                                        if (statPerf !== null) {
-                                                            return (
-                                                                <span className={cn(
-                                                                    "text-[10px] opacity-80",
-                                                                    statPerf >= 100 ? "text-yellow-400" :
-                                                                        statPerf >= 80 ? "text-green-500" :
-                                                                            statPerf >= 50 ? "text-blue-400" : "text-gray-500"
-                                                                )}>
-                                                                    ({statPerf.toFixed(0)}%)
-                                                                </span>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })()}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Perfection Bar */}
-                                {(() => {
-                                    const perfection = getPerfection(mount);
-                                    if (perfection !== null) {
-                                        const colorClass = perfection >= 100 ? 'bg-yellow-400' :
-                                            perfection >= 80 ? 'bg-green-500' :
-                                                perfection >= 50 ? 'bg-blue-500' : 'bg-gray-500';
-
-                                        return (
-                                            <div className="w-full mt-1 flex flex-col gap-0.5" title={`Perfection: ${perfection.toFixed(1)}%`}>
-                                                <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                                                    <div
-                                                        className={`h-full ${colorClass}`}
-                                                        style={{ width: `${Math.min(100, perfection)}%` }}
-                                                    />
-                                                </div>
-                                                <div className="text-[9px] text-right text-text-muted leading-none">
-                                                    {perfection.toFixed(0)}% Perfect
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()}
-                            </div>
-                        )}
-                    </div>
+                    />
                 ) : (
-                    <div className="flex items-center justify-center w-full gap-3">
-                        <div style={getInventoryIconStyle('Mount', 48) || {}} className="opacity-30 group-hover:opacity-50 transition-opacity" />
+                    <div
+                        onClick={() => setIsModalOpen(true)}
+                        className="h-full rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col items-center justify-center gap-3 p-3 bg-bg-input/30 min-h-[160px]"
+                    >
+                        <div style={getInventoryIconStyle('Mount', 48) || {}} className="opacity-30" />
                         <span className="text-sm text-text-muted">Click to select Mount</span>
                     </div>
                 )}
-            </div >
-
-            <MountSelectorModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSelect={handleSelectMount}
-                currentMount={mount}
-            />
-
-            <InputModal
-                isOpen={isSaveModalOpen}
-                title={modalProps.title}
-                label={modalProps.label}
-                placeholder="Preset Name"
-                initialValue={modalProps.initialValue}
-                onConfirm={handleSavePreset}
-                onCancel={() => setIsSaveModalOpen(false)}
-            />
+            </div>
+            <MountSelectorModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSelect={handleSelectMount} currentMount={mount} />
+            <InputModal isOpen={isSaveModalOpen} title="Save Mount Preset" label="Name" placeholder="Preset Name" initialValue={spriteInfo?.name || ''} onConfirm={handleSavePreset} onCancel={() => setIsSaveModalOpen(false)} />
         </>
     );
 }

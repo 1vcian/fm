@@ -64,7 +64,7 @@ export const SKILL_MECHANICS: {
     "3": { count: 5, isSingleTarget: true, delay: 0.2, descriptionIsPerHit: true }, // Shuriken (Per Shuriken)
     "Shuriken": { count: 5, isSingleTarget: true, delay: 0.2, descriptionIsPerHit: true },
     "11": { count: 5, isAOE: true, interval: 0.2, delay: 0.1, descriptionIsPerHit: true }, // Lightning (Per Hit)
-    "Lightning": { count: 5, isAOE: true, interval: 0.2, delay: 0.1, descriptionIsPerHit: true },
+    "Lightning": { count: 3.5, isAOE: true, interval: 0.2, delay: 0.1, descriptionIsPerHit: true },
 
     // --- Multi-Hit AOE Skills ---
     "4": { count: 8, isAOE: true, interval: 0.15, descriptionIsPerHit: true }, // Shout (Per Hit)

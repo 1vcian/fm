@@ -109,25 +109,34 @@ export default function MountCalculator() {
                                     <button
                                         onClick={() => setProgress(Math.max(0, currentProgress - 1))}
                                         className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
-                                        disabled={currentProgress <= 0}
+                                        disabled={currentProgress <= 0 || currentLevel >= maxPossibleLevel}
                                     >
                                         <Minus className="w-3 h-3 text-text-primary" />
                                     </button>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={currentProgress}
-                                        onChange={(e) => setProgress(Number(e.target.value))}
-                                        className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
-                                    />
+                                    <div className="flex-1 text-center">
+                                        {currentLevel >= maxPossibleLevel ? (
+                                            <span className="text-2xl font-black text-amber-500">MAX</span>
+                                        ) : (
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={currentProgress}
+                                                onChange={(e) => setProgress(Number(e.target.value))}
+                                                className="w-full bg-transparent text-2xl font-black text-white outline-none text-center"
+                                            />
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => setProgress(currentProgress + 1)}
-                                        className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors flex items-center justify-center shrink-0 w-8 h-8"
+                                        className="p-1.5 bg-bg-tertiary rounded hover:bg-bg-input transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 w-8 h-8"
+                                        disabled={currentLevel >= maxPossibleLevel}
                                     >
                                         <Plus className="w-3 h-3 text-text-primary" />
                                     </button>
                                 </div>
-                                <div className="text-[10px] text-text-muted text-center font-mono opacity-50">Next: {levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired || '?'}</div>
+                                <div className="text-[10px] text-text-muted text-center font-mono opacity-50">
+                                    Next: {currentLevel >= maxPossibleLevel ? 'MAX' : (levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired?.toLocaleString() || '?')}
+                                </div>
                             </div>
                         </div>
 
@@ -201,6 +210,30 @@ export default function MountCalculator() {
                                         </div>
                                         <Trophy className="w-8 h-8 text-accent-primary opacity-50" />
                                     </div>
+                                    {results.simulateAscension && results.phases && results.phases.length > 1 && (
+                                        <div className="space-y-2 -mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="flex items-center gap-2 text-[9px] font-bold text-text-muted uppercase px-1">
+                                                <RefreshCcw size={10} className="text-accent-primary" />
+                                                Phase Progression Breakdown
+                                            </div>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                                {results.phases.map((phase, idx) => (
+                                                    <div key={idx} className="bg-bg-tertiary/20 p-2 rounded-lg border border-white/5 flex flex-col justify-center">
+                                                        <div className={`text-[8px] uppercase font-black mb-0.5 ${phase.startAscension > 0 ? 'text-amber-500' : 'text-text-muted'}`}>
+                                                            {phase.label}
+                                                        </div>
+                                                        <div className="text-sm font-mono font-bold text-white leading-none mb-1">
+                                                            {phase.totalPoints.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-[8px] opacity-50">pts</span>
+                                                        </div>
+                                                        <div className="text-[8px] text-text-muted font-mono leading-none">
+                                                            Lv.{phase.startLevel} ➔ {phase.endLevel === 100 ? 'MAX' : `Lv.${phase.endLevel}`}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="bg-bg-tertiary/30 p-2 rounded-lg border border-white/5 text-center">
                                             <div className="text-[9px] text-text-muted uppercase font-bold">Summon Points</div>
@@ -289,19 +322,35 @@ export default function MountCalculator() {
                                                 </div>
                                                 <div className="flex flex-col items-end gap-1">
                                                     <span className="font-mono font-bold text-accent-primary leading-none">
-                                                        {Math.floor(item.count).toLocaleString()}
+                                                        {item.count.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                                     </span>
+
+                                                    {results.simulateAscension && results.phases && results.phases.length > 1 && (
+                                                        <div className="flex flex-wrap gap-1 justify-end max-w-[150px] mt-1">
+                                                            {(item.phaseCounts || []).map((phase, pIdx) => (
+                                                                <div key={pIdx} className={`px-1 rounded border ${phase.ascension > 0 ? 'bg-amber-500/5 border-amber-500/10' : 'bg-white/5 border-white/5'}`}>
+                                                                    <div className="flex items-center gap-0.5 text-[8px] font-mono leading-tight">
+                                                                        <span className={phase.ascension > 0 ? 'text-amber-500/80 font-bold' : 'text-text-muted'}>
+                                                                            {phase.ascension === 0 ? 'N' : `A${phase.ascension}`}:
+                                                                        </span>
+                                                                        <span className="text-white/90">{phase.count.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
                                                     <div className="flex gap-2">
                                                         {item.summonPoints > 0 && (
                                                             <div className="flex flex-col items-end text-[9px] text-text-muted font-mono leading-tight bg-white/5 px-1.5 py-0.5 rounded">
                                                                 <span className="opacity-50">Summon</span>
-                                                                <span className="text-white font-bold">{Math.floor(item.summonPoints).toLocaleString()}</span>
+                                                                <span className="text-white font-bold">{item.summonPoints.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                                             </div>
                                                         )}
                                                         {item.mergePoints > 0 && (
                                                             <div className="flex flex-col items-end text-[9px] text-accent-secondary/70 font-mono leading-tight bg-accent-secondary/5 px-1.5 py-0.5 rounded">
                                                                 <span className="opacity-50">Merge</span>
-                                                                <span className="text-accent-secondary font-bold">{Math.floor(item.mergePoints).toLocaleString()}</span>
+                                                                <span className="text-accent-secondary font-bold">{item.mergePoints.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                                             </div>
                                                         )}
                                                     </div>

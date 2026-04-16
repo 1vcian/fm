@@ -501,13 +501,13 @@ export class StatEngine {
         if (weapon && this.libs.weaponLibrary) {
             const baseKey = `{'Age': ${weapon.age}, 'Type': 'Weapon', 'Idx': ${weapon.idx}}`;
             const baseData = this.libs.weaponLibrary[baseKey];
-            
+
             if (baseData) {
                 // Determine base weapon characteristics
                 const attackRange = baseData.AttackRange || 0;
                 this.stats.isRangedWeapon = attackRange >= 1;
                 this.stats.weaponAttackRange = attackRange;
-                
+
                 // Animation defaults from base weapon
                 this.stats.weaponWindupTime = baseData.WindupTime || 0.5;
                 this.stats.weaponAttackDuration = baseData.AttackDuration || 1.5;
@@ -576,6 +576,10 @@ export class StatEngine {
                 // Store by node TYPE NAME (e.g., 'WeaponBonus', 'GloveBonus', 'PetBonusDamage')
                 const key = node.Type;
                 this.techModifiers[key] = (this.techModifiers[key] || 0) + totalVal;
+
+                if (key === 'SkillDamage') {
+                    console.log(`[DEBUG TechTree] Tree: ${tree}, NodeID: ${nodeId}, Level: ${level}, Contribution: ${totalVal.toFixed(6)}`);
+                }
             }
         }
 
@@ -587,9 +591,7 @@ export class StatEngine {
                 const stats = ascConfigs[i].StatContributions || [];
                 for (const stat of stats) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
-                    const value = stat.Value;
-                    // Forge Ascension values use direct multipliers (no division).
-                    // Example: 49.0 = +4900% boost (50x multiplier).
+                    const value = stat.Value / 10000; // Ascension values are stored * 10000 in JSON
                     if (statType === 'Damage') this.forgeAscensionDamageMulti += value;
                     if (statType === 'Health') this.forgeAscensionHealthMulti += value;
                 }
@@ -912,27 +914,27 @@ export class StatEngine {
                 case 'HealthMulti': this.secondaryStats.healthMulti += val; break;
                 case 'MeleeDamageMulti': this.secondaryStats.meleeDamageMulti += val; break;
                 case 'RangedDamageMulti': this.secondaryStats.rangedDamageMulti += val; break;
-                case 'CriticalChance': 
-                    this.secondaryStats.criticalChance += val; 
+                case 'CriticalChance':
+                    this.secondaryStats.criticalChance += val;
                     this.stats.critChanceBreakdown.substats += val;
                     break;
-                case 'CriticalMulti': 
-                    this.secondaryStats.criticalDamage += val; 
+                case 'CriticalMulti':
+                    this.secondaryStats.criticalDamage += val;
                     this.stats.critDamageBreakdown.substats += val;
                     break;
-                case 'DoubleDamageChance': 
-                    this.secondaryStats.doubleDamageChance += val; 
+                case 'DoubleDamageChance':
+                    this.secondaryStats.doubleDamageChance += val;
                     this.stats.doubleDamageBreakdown.substats += val;
                     break;
-                case 'AttackSpeed': 
-                    this.secondaryStats.attackSpeed += val; 
+                case 'AttackSpeed':
+                    this.secondaryStats.attackSpeed += val;
                     this.stats.attackSpeedBreakdown.substats += val;
                     break;
                 case 'LifeSteal': this.secondaryStats.lifeSteal += val; break;
                 case 'HealthRegen': this.secondaryStats.healthRegen += val; break;
                 case 'BlockChance': this.secondaryStats.blockChance += val; break;
-                case 'SkillCooldownMulti': 
-                    this.secondaryStats.skillCooldownMulti += val; 
+                case 'SkillCooldownMulti':
+                    this.secondaryStats.skillCooldownMulti += val;
                     this.stats.skillCooldownBreakdown.substats += val;
                     break;
                 case 'SkillDamageMulti': this.secondaryStats.skillDamageMulti += val; break;
@@ -1308,37 +1310,35 @@ export class StatEngine {
         this.debugLogs.push(`Flat Stats: Damage=${flatDamageWithMelee.toFixed(0)} (skillPassive: ${this.stats.skillPassiveDamage.toFixed(0)}, mount: ${this.mountDamage.toFixed(0)}), Health=${flatHealth.toFixed(0)} (skillPassive: ${this.stats.skillPassiveHealth.toFixed(0)}, mount: ${this.mountHealth.toFixed(0)})`);
 
         // 4. Multiplier Layers
-        // - Global Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
+        // - Global/Common Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
+        // This is what scales Skills, Pets, and Mounts.
         const commonDamageMulti = 1 + this.secondaryStats.damageMulti;
         const commonHealthMulti = 1 + this.secondaryStats.healthMulti;
 
-        // - Equipment-Only Layer: Forge Ascension
+        // - Equipment-Only Layer: Common + Forge Ascension
+        // This ONLY applies to the flat damage/health from Items/Equipment.
         const equipDamageMulti = commonDamageMulti + this.forgeAscensionDamageMulti;
         const equipHealthMulti = commonHealthMulti + this.forgeAscensionHealthMulti;
 
         this.debugLogs.push(`Calculation Layers: CommonDmg=${commonDamageMulti.toFixed(3)}, EquipDmg=${equipDamageMulti.toFixed(3)} (Forge: +${this.forgeAscensionDamageMulti.toFixed(3)})`);
 
         // 5. Final Calculation by Buckets
-        //    (Equipment) * EquipMulti + (Systems) * CommonMulti
+        // (Equipment) * EquipMulti + (Systems) * CommonMulti
         const equipContributionDmg = (this.stats.basePlayerDamage + weaponWithMelee + otherItemDamage) * equipDamageMulti;
         const equipContributionHp = (this.stats.basePlayerHealth + this.stats.itemHealth) * equipHealthMulti;
 
         const systemContributionDmg = (this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMulti;
         const systemContributionHp = (this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMulti;
 
-        // Populate breakdowns for Damage/Health Multipliers
-        this.stats.damageBreakdown = {
-            substats: this.secondaryStats.damageMulti,
-            tree: 0, 
-            ascension: this.forgeAscensionDamageMulti,
-            other: 0
-        };
-        this.stats.healthBreakdown = {
-            substats: this.secondaryStats.healthMulti,
-            tree: 0,
-            ascension: this.forgeAscensionHealthMulti,
-            other: 0
-        };
+        // Populate breakdowns for GENERIC Multipliers
+        // Note: Tree contribution was already tracked in applyStat during collectTechTreeStats
+        this.stats.damageBreakdown.substats = this.secondaryStats.damageMulti - this.stats.damageBreakdown.tree;
+        this.stats.damageBreakdown.ascension = 0; // Forge Ascension is equipment-specific
+        this.stats.damageBreakdown.other = 0;
+
+        this.stats.healthBreakdown.substats = this.secondaryStats.healthMulti - this.stats.healthBreakdown.tree;
+        this.stats.healthBreakdown.ascension = 0;
+        this.stats.healthBreakdown.other = 0;
 
         let totalDmgBeforeGlobal = equipContributionDmg + systemContributionDmg;
         let totalHpBeforeGlobal = equipContributionHp + systemContributionHp;
@@ -1368,11 +1368,14 @@ export class StatEngine {
         this.stats.totalDamage = finalDamage;
         this.stats.totalHealth = healthAfterGlobalMultis;
 
-        // Store multipliers for display (We use the equip layer as the 'official' additive multiplier)
-        const damageAdditiveMulti = equipDamageMulti;
-        const healthAdditiveMulti = equipHealthMulti;
-        this.stats.damageMultiplier = damageAdditiveMulti;
-        this.stats.healthMultiplier = healthAdditiveMulti;
+        // Store multipliers for display (We use the COMMON layer as the 'official' player multiplier for skills/pets)
+        this.stats.damageMultiplier = commonDamageMulti;
+        this.stats.healthMultiplier = commonHealthMulti;
+
+        // Also keep track of the equipment specific multiplier for UI display/item tooltips if needed
+        this.stats.equipDamageMultiplier = equipDamageMulti;
+        this.stats.equipHealthMultiplier = equipHealthMulti;
+
         this.stats.secondaryDamageMulti = this.secondaryStats.damageMulti;
         this.stats.secondaryHealthMulti = this.secondaryStats.healthMulti;
         this.stats.mountDamage = this.mountDamage;
@@ -1389,19 +1392,20 @@ export class StatEngine {
         const flatDamageNoMelee = this.stats.basePlayerDamage + this.stats.itemDamage + this.stats.petDamage;
 
         // Melee/Ranged specific damage (for display)
-        const globalDmgFactor = damageAdditiveMulti * (skinDmgFactor + setDmgFactor);
-        this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * globalDmgFactor * (1 + this.secondaryStats.meleeDamageMulti));
-        this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * globalDmgFactor * (1 + this.secondaryStats.rangedDamageMulti));
+        // Note: For display, we use the damageMultiplier (Common) as the base
+        const globalDmgDisplayFactor = this.stats.damageMultiplier * (skinDmgFactor + setDmgFactor);
+        this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * globalDmgDisplayFactor * (1 + this.secondaryStats.meleeDamageMulti));
+        this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * globalDmgDisplayFactor * (1 + this.secondaryStats.rangedDamageMulti));
 
         // Power calculation - GHIDRA REVERSE ENGINEERED FORMULA (VERIFIED):
         // Power = ((Damage - 10) × 8 + (Health - 80)) × 3
-        // NOTE: Health is NOT multiplied by 8! Only Damage is, then result × 3
         const powerDmgMulti = this.stats.powerDamageMultiplier || 8.0;
-        const baseDmg = this.stats.basePlayerDamage; // 10.0 from config
-        const baseHp = this.stats.basePlayerHealth;  // 80.0 from config
+        const baseDmg = this.stats.basePlayerDamage; // 10.0
+        const baseHp = this.stats.basePlayerHealth;  // 80.0
 
         const basePower = ((finalDamage - baseDmg) * powerDmgMulti + (healthAfterGlobalMultis - baseHp)) * 3;
-        this.stats.power = Math.round(basePower); // Game uses RoundToInt128
+        this.stats.power = Math.round(basePower);
+
 
 
         // Apply secondary stats to stats object
@@ -1446,6 +1450,27 @@ export class StatEngine {
                     const skillMulti = this.stats.skillDamageMultiplier;
                     const effectiveMultiplier = skillMulti + globalDamageMulti - 1;
 
+                    // Technical Debug Log for Formula Verification
+                    console.group(`[CALC] Active Skill Multiplier Analysis - ${skill.id} (L${skill.level})`);
+                    console.log(`Base Skill Value: ${baseSkillDmg}`);
+                    console.log(`--- Skill-Specific Multiplier (skillMulti) ---`);
+                    console.log(`  Base:               1.000000`);
+                    console.log(`  Tree (SkillDamage): +${(this.stats.skillDamageBreakdown.tree || 0).toFixed(6)}`);
+                    console.log(`  Skill Ascension:    +${(this.stats.skillDamageBreakdown.ascension || 0).toFixed(6)}`);
+                    console.log(`  Substats (SkillDM): +${(this.secondaryStats.skillDamageMulti || 0).toFixed(6)}`);
+                    console.log(`  TOTAL Skill Multi:  ${skillMulti.toFixed(6)}`);
+                    console.log(`--- Global Damage Multiplier (globalDamageMulti) ---`);
+                    console.log(`  Base:               1.000000`);
+                    console.log(`  Tree (GlobalDmg):   +${(this.stats.damageBreakdown.tree || 0).toFixed(6)}`);
+                    console.log(`  Forge Ascension:    +${(this.forgeAscensionDamageMulti || 0).toFixed(6)}`);
+                    console.log(`  Substats (Dmg):     +${(this.secondaryStats.damageMulti || 0).toFixed(6)}`);
+                    console.log(`  TOTAL Global Multi: ${globalDamageMulti.toFixed(6)}`);
+                    console.log(`--- Final Formula ---`);
+                    console.log(`  Formula: Effective = SkillMulti + GlobalMulti - 1`);
+                    console.log(`  Calculation: ${skillMulti.toFixed(6)} + ${globalDamageMulti.toFixed(6)} - 1 = ${effectiveMultiplier.toFixed(6)}`);
+                    console.log(`  RESULT: ${baseSkillDmg} * ${effectiveMultiplier.toFixed(6)} = ${(baseSkillDmg * effectiveMultiplier).toFixed(0)}`);
+                    console.groupEnd();
+
                     const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale", "0", "1", "6", "12", "13"];
                     const isBuffSkill = BUFF_SKILLS.includes(String(skill.id));
 
@@ -1470,28 +1495,41 @@ export class StatEngine {
                         if (baseSkillDmg > 0) {
                             const mechanics = SKILL_MECHANICS[String(skill.id)] || { count: 1 };
                             const hitCount = mechanics.count || 1;
-                            const totalDmgPerActivation = baseSkillDmg * effectiveMultiplier * hitCount;
+                    const totalDmgPerActivation = baseSkillDmg * effectiveMultiplier * hitCount;
                             this.stats.skillDps += totalDmgPerActivation / finalCd;
                         }
                     }
-                }
 
-                if (baseSkillHeal > 0) {
-                    // SKILL HEALING
-                    const flatSkillHeal = baseSkillHeal;
-                    const hSkillMulti = this.stats.skillHealthMultiplier;
-                    const hEffectiveMultiplier = hSkillMulti;
+                    if (baseSkillHeal > 0) {
+                        // SKILL HEALING (Matches Damage Multiplier Logic)
+                        const flatSkillHeal = baseSkillHeal;
+                        const hSkillMulti = skillMulti;
+                        const hEffectiveMultiplier = effectiveMultiplier;
 
-                    const healPerHit = flatSkillHeal * hEffectiveMultiplier;
-                    this.stats.skillHps += healPerHit / finalCd;
-                }
+                        // Technical Debug Log for Health Formula
+                        console.group(`[CALC] Skill Healing Multiplier Analysis - ${skill.id} (L${skill.level})`);
+                        console.log(`Base Skill Health: ${flatSkillHeal}`);
+                        console.log(`--- Skill Health Multiplier (hSkillMulti) ---`);
+                        console.log(`  Base:               1.000000`);
+                        console.log(`  Tree (SkillDamage): +${(this.techModifiers['SkillDamage'] || 0).toFixed(6)}`);
+                        console.log(`  Skill Ascension:    +${(this.stats.skillHealthBreakdown?.ascension || 0).toFixed(6)}`);
+                        console.log(`  Substats (Health):  +${(this.secondaryStats.skillHealthMulti || 0).toFixed(6)}`);
+                        console.log(`  TOTAL Health Multi: ${hSkillMulti.toFixed(6)}`);
+                        console.log(`--- Final Formula ---`);
+                        console.log(`  Calculation: ${flatSkillHeal} * ${hSkillMulti.toFixed(6)} = ${(flatSkillHeal * hSkillMulti).toFixed(0)}`);
+                        console.groupEnd();
+
+                        const healPerHit = flatSkillHeal * hEffectiveMultiplier;
+                        this.stats.skillHps += healPerHit / finalCd;
+                    }
+                } // Final closing of (baseSkillDmg > 0 || baseSkillHeal > 0)
             } // end for
         } // end if library
 
         // Final DPS Synchronization (Weapon + Damage Skills + Buff Skills)
         const critMult = 1 + Math.min(this.stats.criticalChance, 1) * (this.stats.criticalDamage - 1);
         const doubleMult = 1 + Math.min(this.stats.doubleDamageChance, 1);
-        
+
         // AVERAGE WEAPON DPS (Theoretical - used for simple summary)
         const simpleAps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
         this.stats.weaponDps = this.stats.totalDamage * simpleAps * critMult * doubleMult;
@@ -1507,7 +1545,7 @@ export class StatEngine {
         const steppedWindup = Math.floor((baseWindup / speedMult) * 10) / 10;
         const steppedRecovery = Math.floor((baseRecovery / speedMult) * 10) / 10;
         const steppedCycle = Math.max(0.4, steppedWindup + steppedRecovery + 0.2);
-        
+
         // DOUBLE HIT SEQUENTIAL TIMING (0.25s base delay)
         const baseDoubleDelay = 0.25;
         this.stats.doubleHitDelay = baseDoubleDelay;
@@ -1524,7 +1562,7 @@ export class StatEngine {
         this.stats.realDoubleHitCycle = doubleHitCycle;
         this.stats.realAps = weightedAps;
         this.stats.realDoubleHitAps = 2 / doubleHitCycle; // Stats only for pure double hit phase 
-        
+
         this.stats.realWeaponDps = this.stats.totalDamage * weightedAps * critMult;
         this.stats.realTotalDps = this.stats.realWeaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0);
 

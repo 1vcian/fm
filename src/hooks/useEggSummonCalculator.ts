@@ -98,6 +98,30 @@ export function useEggSummonCalculator() {
         let ascensionLevel = profile?.misc?.petAscensionLevel || 0;
         let summonsToMax: number | null = null;
 
+        interface PhaseData {
+            label: string;
+            startLevel: number;
+            startAscension: number;
+            endLevel: number;
+            endAscension: number;
+            counts: Record<string, number>;
+        }
+        
+        const phases: PhaseData[] = [];
+        
+        const createPhase = (lvl: number, asc: number): PhaseData => ({
+            label: asc === 0 ? "Normal" : `Ascension ${asc}`,
+            startLevel: lvl,
+            startAscension: asc,
+            endLevel: lvl,
+            endAscension: asc,
+            counts: {
+                Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0
+            }
+        });
+
+        let currentPhase = createPhase(currentLevel, ascensionLevel);
+
         const breakdown: Record<string, { count: number }> = {
             Common: { count: 0 },
             Rare: { count: 0 },
@@ -108,6 +132,18 @@ export function useEggSummonCalculator() {
         };
 
         for (let i = 0; i < totalPaidSummons; i++) {
+            // Immediate Ascension Check: If we are at max level, we can ascend for free (no summons required)
+            if (simulateAscension && ascensionLevel < 3 && currentLevel >= maxPossibleLevel) {
+                if (summonsToMax === null) summonsToMax = i;
+
+                currentPhase.endLevel = maxPossibleLevel;
+                currentPhase.endAscension = ascensionLevel;
+                phases.push(currentPhase);
+
+                currentLevel = 1;
+                ascensionLevel++;
+                currentPhase = createPhase(currentLevel, ascensionLevel);
+            }
             // Level index is 0-based, our level is 1-based
             const levelIdx = Math.min(currentLevel - 1, levels.length - 1);
             const probabilities = levels[levelIdx];
@@ -118,13 +154,25 @@ export function useEggSummonCalculator() {
                     const expectedCount = chance * EGGS_PER_SUMMON;
 
                     breakdown[rarity].count += expectedCount;
+                    currentPhase.counts[rarity] += expectedCount;
                 });
             }
 
             // Progress level - each summon produces EGGS_PER_SUMMON eggs
             currentProgress += EGGS_PER_SUMMON;
             let threshold = levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired;
+            
             while (threshold && currentProgress >= threshold) {
+                // Check if we can progress
+                const isAtMaxLevel = currentLevel >= maxPossibleLevel;
+                const isAtMaxAscension = ascensionLevel >= 3;
+
+                if (isAtMaxLevel && isAtMaxAscension) {
+                    currentLevel = maxPossibleLevel;
+                    currentProgress = threshold;
+                    break;
+                }
+
                 currentProgress -= threshold;
                 currentLevel++;
                 
@@ -134,12 +182,16 @@ export function useEggSummonCalculator() {
                         summonsToMax = i + 1;
                     }
                     
-                    if (simulateAscension) {
+                    if (simulateAscension && ascensionLevel < 3) {
+                        currentPhase.endLevel = maxPossibleLevel;
+                        currentPhase.endAscension = ascensionLevel;
+                        phases.push(currentPhase);
+
                         currentLevel = 1;
                         ascensionLevel++;
+                        currentPhase = createPhase(currentLevel, ascensionLevel);
                     } else {
                         currentLevel = maxPossibleLevel;
-                        // Break the while loop since we won't progress further
                         break;
                     }
                 }
@@ -148,6 +200,11 @@ export function useEggSummonCalculator() {
             }
         }
 
+        // Finalize last phase
+        currentPhase.endLevel = currentLevel;
+        currentPhase.endAscension = ascensionLevel;
+        phases.push(currentPhase);
+
         return {
             totalSummons: totalPaidSummons,
             endLevel: currentLevel,
@@ -155,11 +212,16 @@ export function useEggSummonCalculator() {
             endAscensionLevel: ascensionLevel,
             summonsToMax,
             simulateAscension,
+            phases,
             breakdown: Object.entries(breakdown)
                 .map(([rarity, data]) => ({
                     rarity,
                     ...data,
-                    percentage: (getCurrentProbs(currentLevel)[rarity] || 0) * 100
+                    percentage: (getCurrentProbs(currentLevel)[rarity] || 0) * 100,
+                    phaseCounts: phases.map(p => ({
+                        ascension: p.startAscension,
+                        count: p.counts[rarity] || 0
+                    }))
                 }))
                 .filter(b => b.count > 0 || b.percentage > 0),
             finalCost: finalCostPerSummon,
