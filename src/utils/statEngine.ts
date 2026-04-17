@@ -1244,7 +1244,7 @@ export class StatEngine {
                 // Separate freebie chances by target type
                 if (target === 'ForgeStatTarget') {
                     this.stats.forgeFreebieChance = this.combine(this.stats.forgeFreebieChance, value, statNature);
-                } else if (target === 'DungeonStatTarget') {
+                } else if (target === 'EggStatTarget' || target === 'DungeonStatTarget') {
                     this.stats.eggFreebieChance = this.combine(this.stats.eggFreebieChance, value, statNature);
                 } else if (target === 'MountStatTarget') {
                     this.stats.mountFreebieChance = this.combine(this.stats.mountFreebieChance, value, statNature);
