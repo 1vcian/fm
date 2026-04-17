@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Bike as MountIcon, Save, Info, Plus, Trash2, Grid, Settings, Bookmark, Search, Unlock } from 'lucide-react';
+import { X, Save, Info, Plus, Trash2, Grid, Settings, Bookmark, Search, Unlock } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
@@ -178,8 +178,16 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
-                            <MountIcon className="w-8 h-8" />
+                        <div className="p-2 bg-accent-primary/10 rounded-lg">
+                            <SpriteSheetIcon
+                                textureSrc={getAscensionTexturePath('MountIcons', 0)}
+                                spriteWidth={256}
+                                spriteHeight={256}
+                                sheetWidth={1024}
+                                sheetHeight={1024}
+                                iconIndex={9}
+                                className="w-8 h-8"
+                            />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold">{currentMount ? 'Edit Mount' : 'Select Mount'}</h3>

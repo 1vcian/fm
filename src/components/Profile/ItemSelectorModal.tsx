@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark } from 'lucide-react';
+import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark, Shield, Calendar } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
@@ -1400,66 +1400,5 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             </div>
         </div>,
         document.body
-    );
-}
-// Helper component for decimal input
-function DecimalInput({ value, onChange, min, max, className }: { value: number, onChange: (val: number) => void, min: number, max: number, className?: string }) {
-    const [localValue, setLocalValue] = useState<string>(value.toString());
-
-    // Sync from parent only if value differs significantly (external update)
-    // and we are not currently typing a compatible string
-    useEffect(() => {
-        const currentNum = parseFloat(localValue.replace(',', '.'));
-        // If the prop value matches our current parsed value, don't touch strict string
-        // This allows "0.50" to remain "0.50" even if prop is 0.5
-        // But if prop changes to 0.6, we must update.
-        if (Math.abs(currentNum - value) > 0.0001) {
-            setLocalValue(value.toString());
-        }
-    }, [value]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const raw = e.target.value;
-        setLocalValue(raw);
-
-        if (raw === '') return;
-
-        const normalized = raw.replace(',', '.');
-        const num = parseFloat(normalized);
-
-        if (!isNaN(num)) {
-            // Propagate change immediately without clamping string
-            // We clamp for data integrity but keep string free
-            // Actually parent expects clamped value usually?
-            // Let's pass raw num to parent, parent logic updates state.
-            // If we want strict clamping, do it on blur or let parent clamp.
-            // Existing logic clamped immediately. Ideally we clamp result passed to parent.
-            const clamped = Math.max(min, Math.min(max, num));
-            onChange(clamped);
-        }
-    };
-
-    const handleBlur = () => {
-        const normalized = localValue.replace(',', '.');
-        let num = parseFloat(normalized);
-        if (isNaN(num)) {
-            num = min;
-        }
-        const clamped = Math.max(min, Math.min(max, num));
-        // On blur, format nicely
-        setLocalValue(clamped.toString());
-        onChange(clamped);
-    };
-
-    return (
-        <input
-            type="text"
-            inputMode="decimal"
-            value={localValue}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            onFocus={(e) => e.target.select()}
-            className={className}
-        />
     );
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Zap, Plus, Minus, Search, Info, Save, Star, Grid, Settings } from 'lucide-react';
+import { X, Flame, Plus, Minus, Search, Info, Save, Star, Grid, Settings } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useProfile } from '../../context/ProfileContext';
@@ -150,7 +150,15 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
-                            <Zap className="w-6 h-6 text-accent-primary" />
+                            <SpriteSheetIcon
+                                textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
+                                spriteWidth={256}
+                                spriteHeight={256}
+                                sheetWidth={2048}
+                                sheetHeight={2048}
+                                iconIndex={3}
+                                className="w-8 h-8"
+                            />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold">{currentSkill ? 'Edit Skill' : 'Select Skill'}</h3>
@@ -482,7 +490,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                     />
                                                 );
                                             }
-                                            return <Zap className="w-10 h-10 text-accent-primary" />;
+                                            return <Flame className="w-10 h-10 text-accent-primary" />;
                                         })()}
                                     </div>
                                     <h2 className="text-xl font-bold text-text-primary break-words">

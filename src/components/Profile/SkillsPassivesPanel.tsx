@@ -1,4 +1,5 @@
 import { useProfile } from '../../context/ProfileContext';
+import { useComparison } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
@@ -21,12 +22,9 @@ interface SkillInfo {
 
 const RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
 
-interface SkillsPassivesPanelProps {
-    considerAnimation?: boolean;
-}
-
-export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassivesPanelProps) {
+export function SkillsPassivesPanel() {
     const { profile, updateNestedProfile } = useProfile();
+    const { isCompactStats } = useComparison();
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
@@ -38,12 +36,10 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     const [previousPassives, setPreviousPassives] = useState<Record<string, number> | null>(null);
     const [isUndoVisible, setIsUndoVisible] = useState(false);
 
-    // Tech tree bonuses for skill passives
     const skillPassiveDamageBonus = techModifiers['SkillPassiveDamage'] || 0;
     const skillPassiveHealthBonus = techModifiers['SkillPassiveHealth'] || 0;
     const skillCooldownReduction = globalStats?.skillCooldownReduction || 0;
 
-    // Skill Ascension multipliers
     const { ascensionDmgMulti, ascensionHpMulti } = useMemo(() => {
         const skillAscensionLevel = profile.misc.skillAscensionLevel || 0;
         let dMulti = 0;
@@ -67,7 +63,6 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
         return { ascensionDmgMulti: dMulti, ascensionHpMulti: hMulti };
     }, [profile.misc.skillAscensionLevel, ascensionConfigsLibrary]);
 
-    // Get all skills organized by rarity
     const skillsByRarity = useMemo(() => {
         if (!skillLibrary) return {};
         const byRarity: Record<string, SkillInfo[]> = {};
@@ -82,14 +77,13 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     const passives = profile.skills?.passives || {};
 
     const handleLevelChange = (skillId: string, newLevel: number) => {
-        setIsUndoVisible(false); // Manual edit clears undo state
+        setIsUndoVisible(false);
         const skillData = skillLibrary?.[skillId];
         const rarity = skillData?.Rarity || 'Common';
         const maxLevel = skillPassiveLibrary?.[rarity]?.LevelStats?.length || 299;
         const clampedLevel = Math.max(0, Math.min(newLevel, maxLevel));
         const updatedPassives = { ...passives, [skillId]: clampedLevel };
 
-        // Sync with equipped
         const equipped = profile.skills.equipped || [];
         const updatedEquipped = equipped.map(s =>
             s.id === skillId ? { ...s, level: Math.max(1, clampedLevel) } : s
@@ -101,10 +95,8 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
     const handleResetAll = () => {
         setPreviousPassives({ ...passives });
         setIsUndoVisible(true);
-        
         const resetPassives = { ...passives };
         Object.keys(resetPassives).forEach(key => resetPassives[key] = 0);
-        
         updateNestedProfile('skills', { passives: resetPassives });
     };
 
@@ -129,16 +121,13 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
         return null;
     };
 
-    // Get individual skill stats (base and with bonus)
     const getSkillStats = (skillId: string, level: number) => {
         if (!skillPassiveLibrary || !skillLibrary || level <= 0) return null;
         const skillData = skillLibrary[skillId];
         if (!skillData) return null;
-
         const rarity = skillData.Rarity || 'Common';
         const passiveData = skillPassiveLibrary[rarity];
         if (!passiveData?.LevelStats) return null;
-
         const levelIdx = Math.max(0, Math.min(level - 1, passiveData.LevelStats.length - 1));
         const levelInfo = passiveData.LevelStats[levelIdx];
         if (!levelInfo?.Stats) return null;
@@ -150,10 +139,8 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
             if (statType === 'Health') baseHealth += stat.Value || 0;
         }
 
-        // Apply tech tree bonuses, ascension, and round to integer (as the game does)
         const damage = Math.floor(baseDamage * (1 + skillPassiveDamageBonus + ascensionDmgMulti));
         const health = Math.floor(baseHealth * (1 + skillPassiveHealthBonus + ascensionHpMulti));
-
         const baseCooldown = skillData.Cooldown || 0;
         const cooldown = baseCooldown * Math.max(0.1, 1 - skillCooldownReduction);
 
@@ -171,11 +158,9 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
         };
     };
 
-    // Calculate totals from passives (with tech tree bonuses)
     const totals = useMemo(() => {
         let totalBaseDmg = 0, totalBaseHp = 0;
         let totalDmg = 0, totalHp = 0;
-        
         let ascensionActiveSkillDmgMulti = 0;
         let ascensionActiveSkillHpMulti = 0;
 
@@ -215,11 +200,10 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
             healthBonus: skillPassiveHealthBonus,
             ascensionDmgMulti,
             ascensionHpMulti,
-            // Calculate active skill multipliers for display
             activeDamageMulti: 1 + ascensionActiveSkillDmgMulti + (techModifiers['ActiveSkillDamage'] || 0),
             activeHealthMulti: 1 + ascensionActiveSkillHpMulti + (techModifiers['ActiveSkillHealth'] || 0)
         };
-    }, [passives, skillPassiveLibrary, skillLibrary, skillPassiveDamageBonus, skillPassiveHealthBonus, ascensionDmgMulti, ascensionHpMulti]);
+    }, [passives, skillPassiveLibrary, skillLibrary, skillPassiveDamageBonus, skillPassiveHealthBonus, ascensionDmgMulti, ascensionHpMulti, profile.misc.skillAscensionLevel]);
 
     const toggleRarity = (rarity: string) => {
         setActiveRarity(prev => prev === rarity ? null : rarity);
@@ -250,15 +234,9 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                         title={isUndoVisible ? "Undo Reset" : "Reset All to 0"}
                     >
                         {isUndoVisible ? (
-                            <>
-                                <RotateCcw className="w-3 h-3" />
-                                Undo
-                            </>
+                            <><RotateCcw className="w-3 h-3" />Undo</>
                         ) : (
-                            <>
-                                <Trash2 className="w-3 h-3" />
-                                Reset
-                            </>
+                            <><Trash2 className="w-3 h-3" />Reset</>
                         )}
                     </button>
                     <div className="scale-90 sm:scale-100 origin-right">
@@ -279,16 +257,13 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                     value={frequencyWindow}
                     onChange={(e) => {
                         const num = parseFloat(e.target.value);
-                        if (!isNaN(num) && num >= 0) {
-                            setFrequencyWindow(num);
-                        }
+                        if (!isNaN(num) && num >= 0) setFrequencyWindow(num);
                     }}
-                    className="w-16 h-7 text-xs text-right bg-bg-primary border-border/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-16 h-7 text-xs text-right bg-bg-primary border-border/50"
                 />
                 <span className="text-xs text-text-muted">sec</span>
             </div>
 
-            {/* Totals Display */}
             <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/30 text-center">
                     <div className="text-xs text-text-muted uppercase font-bold tracking-wider mb-1">Passive DMG</div>
@@ -310,8 +285,6 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                 </div>
             </div>
 
-
-            {/* Skills by rarity */}
             <div className="space-y-3">
                 {RARITIES.map(rarity => {
                     const skills = skillsByRarity[rarity] || [];
@@ -329,18 +302,10 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                 )}
                             >
                                 <div className="flex items-center gap-2">
-                                    <span className={cn("font-bold", `text-rarity-${rarity.toLowerCase()}`)}>
-                                        {rarity}
-                                    </span>
-                                    <span className="text-xs text-text-muted">
-                                        ({rarityOwned}/{skills.length})
-                                    </span>
+                                    <span className={cn("font-bold", `text-rarity-${rarity.toLowerCase()}`)}>{rarity}</span>
+                                    <span className="text-xs text-text-muted">({rarityOwned}/{skills.length})</span>
                                 </div>
-                                {isExpanded ? (
-                                    <ChevronUp className="w-4 h-4 text-text-muted" />
-                                ) : (
-                                    <ChevronDown className="w-4 h-4 text-text-muted" />
-                                )}
+                                {isExpanded ? <ChevronUp className="w-4 h-4 text-text-muted" /> : <ChevronDown className="w-4 h-4 text-text-muted" />}
                             </button>
 
                             {isExpanded && (
@@ -358,9 +323,9 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                                 slotLabel="Skill"
                                                 itemName={skill.id}
                                                 itemImage={null}
-                                                variant="compact"
-                                                perfection={null}
-                                                getStatPerfection={() => null}
+                                                variant={isCompactStats ? 'compact' : 'default'}
+                                                rarity={rarity}
+                                                hideAgeStyles={true}
                                                 renderIcon={() => (
                                                     <div
                                                         className={cn(
@@ -384,8 +349,6 @@ export function SkillsPassivesPanel({ considerAnimation = false }: SkillsPassive
                                                         )}
                                                     </div>
                                                 )}
-                                                rarity={rarity}
-                                                hideAgeStyles={true}
                                                 stats={stats && level > 0 ? {
                                                     damage: stats.damage,
                                                     health: stats.health,

@@ -3,11 +3,11 @@ import { useComparison } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
-import { Zap, Plus, X, Minus, Sword } from 'lucide-react';
+import { Flame, Plus, Sword } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
 import { SkillSlot } from '../../types/Profile';
-import { cn, getRarityBgStyle } from '../../lib/utils';
+import { cn } from '../../lib/utils';
 import { useState, useMemo } from 'react';
 import { MAX_ACTIVE_SKILLS, SKILL_MECHANICS } from '../../utils/constants';
 import { SkillSelectorModal } from './SkillSelectorModal';
@@ -16,6 +16,7 @@ import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { formatNumber } from '../../utils/format';
 
 // Helper for truncation (sync with StatEngine)
 const truncate = (value: number, decimals: number): number => {
@@ -42,7 +43,8 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         updateOriginalSkill,
         updateTestSkill,
         updateOriginalSkillAscension,
-        updateTestSkillAscension
+        updateTestSkillAscension,
+        isCompactStats
     } = useComparison();
     const { optimizeSkills, isReady } = useProfileOptimizer();
     
@@ -109,7 +111,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
     const handleSelectSkill = (skill: SkillSlot) => {
         const level = Math.max(1, skill.level);
         const skillToAdd = { ...skill, level };
-        const updates: any = {};
+
 
         if (editingIdx !== null) {
             const newSkills = [...equippedSkills];
@@ -213,15 +215,16 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
     return (
         <Card className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                    <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Active Skills" className="w-8 h-8 object-contain" />
-                    {panelTitle}
-
-                    <div className="flex items-center gap-1.5 ml-4">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Active Skills" className="w-8 h-8 object-contain" />
+                        {panelTitle}
+                    </h2>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                         <Button 
                             variant="outline" 
                             size="sm" 
-                            className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all"
+                            className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
                             onClick={handleAutoOptimize}
                             disabled={!isReady || !skillLibrary || Object.keys(skillLibrary).length < 1}
                             title="Select best 3 active skills for Max DPS"
@@ -230,14 +233,13 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                             AUTO DPS
                         </Button>
                     </div>
-                </h2>
+                </div>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <div className="scale-90 sm:scale-100 origin-right">
-                        <AscensionStars
-                            value={skillAscensionLevel}
-                            onChange={handleAscensionChange}
-                        />
-                    </div>
+                    <AscensionStars
+                        value={skillAscensionLevel}
+                        onChange={handleAscensionChange}
+                        size="sm"
+                    />
                 </div>
             </div>
 
@@ -275,9 +277,10 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                     const hasDiff = checkDiff(idx);
 
                     return (
-                        <ItemSelectionCard
+                         <ItemSelectionCard
                             key={idx}
                             item={skill}
+                            variant={isCompactStats ? 'compact' : 'default'}
                             slotKey="ActiveSkill"
                             slotLabel="Skill"
                             itemName={skill.id}
@@ -308,12 +311,12 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                         className="w-10 h-10"
                                     />
                                 ) : (
-                                    <Zap className={cn("w-6 h-6", `text-rarity-${skill.rarity.toLowerCase()}`)} />
+                                    <Flame className={cn("w-6 h-6", `text-rarity-${skill.rarity.toLowerCase()}`)} />
                                 )
                             )}
                             stats={{
-                                damage: stats.damage,
-                                health: stats.health,
+                                damage: 0,
+                                health: 0,
                                 isMelee: false
                             }}
                             perfection={null}
@@ -342,14 +345,14 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                                     })()}
                                                 </div>
                                                 <div className="text-sm font-mono font-bold text-red-400 leading-tight">
-                                                    {Math.round(stats.totalDamage).toLocaleString()}
+                                                    {isCompactStats ? formatNumber(stats.totalDamage) : Math.round(stats.totalDamage).toLocaleString()}
                                                 </div>
                                                 {stats.count > 1 && (
                                                     <div className="text-[8px] text-red-400/60 font-mono italic">
-                                                        ({Math.round(stats.damage).toLocaleString()} / hit)
+                                                        ({isCompactStats ? formatNumber(stats.damage) : Math.round(stats.damage).toLocaleString()} / hit)
                                                     </div>
                                                 )}
-                                                <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center gap-1 mt-0.5">
+                                                <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5 text-center">
                                                     <span>x{stats.multi.toFixed(2)}</span>
                                                     <span className="text-green-400/80">({((stats.multi - 1) * 100).toFixed(1)}%)</span>
                                                 </div>
@@ -359,9 +362,9 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                             <div className="bg-green-400/10 rounded p-1 border border-green-400/20 flex flex-col items-center">
                                                 <div className="text-[10px] text-green-400 uppercase font-bold">Healing</div>
                                                 <div className="text-sm font-mono font-bold text-green-400 leading-tight">
-                                                    {Math.round(stats.health).toLocaleString()}
+                                                    {isCompactStats ? formatNumber(stats.health) : Math.round(stats.health).toLocaleString()}
                                                 </div>
-                                                <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center gap-1">
+                                                <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5 text-center">
                                                     <span>x{stats.multi.toFixed(2)}</span>
                                                     <span className="text-green-400/80">({((stats.multi - 1) * 100).toFixed(1)}%)</span>
                                                 </div>

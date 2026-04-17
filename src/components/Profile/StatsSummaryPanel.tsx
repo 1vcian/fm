@@ -973,17 +973,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                             onToggle={() => setOpenSection(openSection === 'economy' ? null : 'economy')}
                         >
                             <div className="space-y-2">
-                                <StatRow
-                                    icon={<Coins className="w-4 h-4" />}
-                                    label="Sell Price"
-                                    value={formatMultiplier(stats.sellPriceMultiplier)}
-                                    color="text-amber-400"
-                                />
+
                                 <div className="grid grid-cols-2 gap-2">
+                                    <CompactStat icon={<Coins className="w-3 h-3" />} label="Sell Price" value={formatMultiplier(stats.sellPriceMultiplier)} color="text-amber-400" />
                                     <CompactStat icon={<Star className="w-3 h-3" />} label="Forge Free" value={formatPercent(stats.forgeFreebieChance)} color="text-pink-400" />
                                     <CompactStat icon={<Star className="w-3 h-3" />} label="Egg Free" value={formatPercent(stats.eggFreebieChance)} color="text-amber-400" />
                                     <CompactStat icon={<Star className="w-3 h-3" />} label="Mount Free" value={formatPercent(stats.mountFreebieChance)} color="text-cyan-400" />
-                                    <CompactStat icon={<Star className="w-3 h-3" />} label="Research" value="Coming Soon" color="text-text-muted" />
                                 </div>
                             </div>
                         </CollapsibleSection>

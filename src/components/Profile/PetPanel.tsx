@@ -35,7 +35,8 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         updateOriginalPet,
         updateTestPet,
         updateOriginalPetAscension,
-        updateTestPetAscension
+        updateTestPetAscension,
+        isCompactStats
     } = useComparison();
     const { optimizePets, isReady } = useProfileOptimizer();
     
@@ -263,52 +264,57 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
 
     return (
         <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <div className="w-8 h-8 flex items-center justify-center">
-                    <SpriteSheetIcon
-                        textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
-                        spriteWidth={256}
-                        spriteHeight={256}
-                        sheetWidth={2048}
-                        sheetHeight={2048}
-                        iconIndex={14}
-                        className="w-8 h-8"
-                    />
-                </div>
-                {panelTitle}
-                
-                <div className="flex items-center gap-1.5 ml-4">
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all"
-                        onClick={() => handleAutoOptimize('dps')}
-                        disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
-                        title="Select best 3 saved pets for Max DPS"
-                    >
-                        <Sword className="w-3 h-3" />
-                        AUTO DPS
-                    </Button>
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all"
-                        onClick={() => handleAutoOptimize('power')}
-                        disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
-                        title="Select best 3 saved pets for Max Power"
-                    >
-                        <PowerIcon className="w-3 h-3" />
-                        AUTO POWER
-                    </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                        <div className="w-8 h-8 flex items-center justify-center">
+                            <SpriteSheetIcon
+                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
+                                spriteWidth={256}
+                                spriteHeight={256}
+                                sheetWidth={2048}
+                                sheetHeight={2048}
+                                iconIndex={14}
+                                className="w-8 h-8"
+                            />
+                        </div>
+                        {panelTitle}
+                    </h2>
+                    
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
+                            onClick={() => handleAutoOptimize('dps')}
+                            disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
+                            title="Select best 3 saved pets for Max DPS"
+                        >
+                            <Sword className="w-3 h-3" />
+                            AUTO DPS
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
+                            onClick={() => handleAutoOptimize('power')}
+                            disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
+                            title="Select best 3 saved pets for Max Power"
+                        >
+                            <PowerIcon className="w-3 h-3" />
+                            AUTO POWER
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="ml-auto">
+                <div className="flex items-center justify-end">
                     <AscensionStars 
                         value={petAscensionLevel}
                         onChange={handleAscensionChange}
+                        size="sm"
                     />
                 </div>
-            </h2>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {Array.from({ length: MAX_ACTIVE_PETS }).map((_, idx) => {
@@ -365,6 +371,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                         <ItemSelectionCard
                             key={idx}
                             item={pet}
+                            variant={isCompactStats ? 'compact' : 'default'}
                             slotKey={`pet-${idx}`}
                             slotLabel={`Pet Slot ${idx + 1}`}
                             itemName={spriteInfo?.name || `${pet.rarity} Pet`}

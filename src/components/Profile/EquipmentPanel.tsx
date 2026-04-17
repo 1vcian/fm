@@ -21,25 +21,17 @@ import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 
 import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 
-// InventoryTextures.png is a 4x4 sprite sheet (512x512, each icon 128x128)
-// Row 1: Helmet(0), Armor(1), Gloves(2), Necklace(3)
-// Row 2: Ring(4), Weapon(5), Shoes(6), Belt(7)
-// Row 3: Mount(8), ...
-
 const SLOTS: { key: keyof UserProfile['items']; label: string }[] = [
-    // Row 1
     { key: 'Helmet', label: 'Helmet' },
     { key: 'Body', label: 'Armor' },
     { key: 'Gloves', label: 'Gloves' },
     { key: 'Necklace', label: 'Necklace' },
     { key: 'Ring', label: 'Ring' },
-    // Row 2
     { key: 'Weapon', label: 'Weapon' },
     { key: 'Shoe', label: 'Shoe' },
     { key: 'Belt', label: 'Belt' },
 ];
 
-// Map profile slot keys to item file slot names
 const SLOT_TO_FILE_MAP: Record<string, string> = {
     'Weapon': 'Weapon',
     'Helmet': 'Headgear',
@@ -67,22 +59,21 @@ interface EquipmentPanelProps {
     title?: string;
     showCompareButton?: boolean;
     compareItems?: UserProfile['items'] | null;
-    compareMount?: MountSlot | null;
     isPvp?: boolean;
 }
 
-export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems, compareMount, isPvp = false }: EquipmentPanelProps) {
+export function EquipmentPanel({ variant = 'default', title, showCompareButton = true, compareItems, isPvp = false }: EquipmentPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
     const { isComparing, originalItems, testItems,
         originalForgeAscension,
         testForgeAscension,
         updateOriginalForgeAscension,
         updateTestForgeAscension,
-        updateOriginalItem, updateTestItem, enterCompareMode } = useComparison();
+        updateOriginalItem, updateTestItem, enterCompareMode,
+        isCompactStats } = useComparison();
     const [selectedSlot, setSelectedSlot] = useState<keyof UserProfile['items'] | null>(null);
     const [itemToSave, setItemToSave] = useState<{ slot: keyof UserProfile['items']; item: ItemSlot } | null>(null);
 
-    // Determine which items to use based on variant
     const items = useMemo(() => {
         if (variant === 'original' && originalItems) return originalItems;
         if (variant === 'test' && testItems) return testItems;
@@ -113,22 +104,16 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         }
     };
 
-    // Check if items differ for golden border (only in test panel)
     const itemsDiffer = (slotKey: keyof UserProfile['items']): boolean => {
         if (variant !== 'test' || !compareItems) return false;
         const testItem = items[slotKey];
         const originalItem = compareItems[slotKey];
-
-        // Both null = same
         if (!testItem && !originalItem) return false;
-        // One null, other not = different
         if (!testItem || !originalItem) return true;
-        // Compare key fields
         if (testItem.age !== originalItem.age) return true;
         if (testItem.idx !== originalItem.idx) return true;
         if (testItem.level !== originalItem.level) return true;
         if (testItem.rarity !== originalItem.rarity) return true;
-        // Deep compare secondary stats
         if (JSON.stringify(testItem.secondaryStats) !== JSON.stringify(originalItem.secondaryStats)) return true;
         return false;
     };
@@ -141,20 +126,15 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
 
-    // Tech tree bonuses
     const techModifiers = useTreeModifiers();
 
-    // Ascension Multiplier calculation
     const forgeAscensionMulti = useMemo(() => {
         let total = 0;
         let ascLevel = profile.misc.forgeAscensionLevel || 0;
-
-        // Use comparison levels if in comparison mode
         if (isComparing) {
             if (variant === 'original' && originalForgeAscension !== null) ascLevel = originalForgeAscension;
             else if (variant === 'test' && testForgeAscension !== null) ascLevel = testForgeAscension;
         }
-
         if (ascLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
             for (let i = 0; i < ascLevel && i < configs.length; i++) {
@@ -187,13 +167,10 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         if (!item || !autoMapping) return slotKey;
         const typeId = SLOT_TYPE_ID_MAP[slotKey];
         if (typeId === undefined) return slotKey;
-
-        // Key format: Age_Type_Idx e.g. "0_0_0"
         const key = `${item.age}_${typeId}_${item.idx}`;
         return autoMapping[key]?.ItemName || slotKey;
     };
 
-    // Check if item is saved
     const isItemSaved = (slot: string, item: ItemSlot | null) => {
         if (!item || !profile.savedItems || !profile.savedItems[slot]) return false;
         return profile.savedItems[slot].some(s =>
@@ -208,23 +185,18 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         if (!itemToSave) return;
         const { slot, item } = itemToSave;
         const savedList = profile.savedItems?.[slot] || [];
-
         const existingIdx = savedList.findIndex(s =>
             s.age === item.age &&
             s.idx === item.idx &&
             s.level === item.level &&
             JSON.stringify(s.secondaryStats) === JSON.stringify(item.secondaryStats)
         );
-
         if (existingIdx >= 0) {
-            // Update
             const newSaved = [...savedList];
             newSaved[existingIdx] = { ...newSaved[existingIdx], customName: name };
             updateNestedProfile('savedItems', { [slot]: newSaved });
         } else {
-            // Add new
-            const newItem = { ...item, customName: name || undefined };
-            updateNestedProfile('savedItems', { [slot]: [...savedList, newItem] });
+            updateNestedProfile('savedItems', { [slot]: [...savedList, { ...item, customName: name || undefined }] });
         }
         setItemToSave(null);
     };
@@ -233,16 +205,13 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         if (!itemToSave) return { title: '', label: '', initialValue: '' };
         const { slot, item } = itemToSave;
         const savedList = profile.savedItems?.[slot] || [];
-
         const existingMatch = savedList.find(s =>
             s.age === item.age &&
             s.idx === item.idx &&
             s.level === item.level &&
             JSON.stringify(s.secondaryStats) === JSON.stringify(item.secondaryStats)
         );
-
         const baseName = getItemName(slot, item);
-
         if (existingMatch) {
             return { title: 'Update Saved Preset', label: 'Preset Name (Already Saved)', initialValue: existingMatch.customName || baseName };
         }
@@ -272,7 +241,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                         updateNestedProfile('misc', { forgeAscensionLevel: val });
                                     }
                                 }}
-                                className="scale-75 sm:scale-90 origin-left sm:origin-right"
+                                size="sm"
                             />
                             {forgeAscensionMulti > 0 && (
                                 <div className="hidden xs:block text-[9px] sm:text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1 sm:px-1.5 py-0.5 rounded border border-amber-400/20">
@@ -326,6 +295,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                             <ItemSelectionCard
                                 key={slot.key}
                                 item={equipped}
+                                variant={isCompactStats ? 'compact' : 'default'}
                                 slotKey={slot.key}
                                 slotLabel={slot.label}
                                 hasDiff={hasDiff}
@@ -360,8 +330,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                         );
                     })}
 
-                    {/* Mount Slot - spans 2 columns */}
-                    <MountSlotWidget variant={variant} compareMount={compareMount} />
+                    <MountSlotWidget variant={variant} isCompact={isCompactStats} />
                 </div>
             </Card>
 
@@ -388,7 +357,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     );
 }
 
-function MountSlotWidget({ variant, compareMount }: { variant: string; compareMount?: MountSlot | null }) {
+function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: boolean }) {
     const { profile, updateNestedProfile } = useProfile();
     const { 
         originalMount, 
@@ -399,7 +368,7 @@ function MountSlotWidget({ variant, compareMount }: { variant: string; compareMo
         updateOriginalMount, 
         updateTestMount,
         updateOriginalMountAscension,
-        updateTestMountAscension,
+        updateTestMountAscension
     } = useComparison();
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
@@ -449,7 +418,6 @@ function MountSlotWidget({ variant, compareMount }: { variant: string; compareMo
         if (!mount) return;
         const newLevel = Math.max(1, Math.min(100, mount.level + delta));
         if (newLevel === mount.level) return;
-
         const newMount = { ...mount, level: newLevel };
         if (variant === 'original') updateOriginalMount(newMount);
         else if (variant === 'test') updateTestMount(newMount);
@@ -537,6 +505,7 @@ function MountSlotWidget({ variant, compareMount }: { variant: string; compareMo
                         item={mount as any}
                         slotKey="Mount"
                         slotLabel="Mount"
+                        variant={isCompact ? 'compact' : 'default'}
                         isSelected={false}
                         hasDiff={isDifferent}
                         globalAscensionLevel={currentAscension}

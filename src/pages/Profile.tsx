@@ -1,6 +1,6 @@
 import { useProfile } from '../context/ProfileContext';
 import { useComparison } from '../context/ComparisonContext';
-import { Download, Upload, Trash2, Copy, Clipboard, X } from 'lucide-react';
+import { Download, Upload, Trash2, Copy, Clipboard } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -12,7 +12,7 @@ import { TechTreePanel } from '../components/Profile/TechTreePanel';
 import { StatsSummaryPanel } from '../components/Profile/StatsSummaryPanel';
 import { ProfileHeaderPanel } from '../components/Profile/ProfileHeaderPanel';
 import { SkillsPassivesPanel } from '../components/Profile/SkillsPassivesPanel';
-import { cn } from '../lib/utils';
+
 
 export default function Profile() {
     const {
@@ -26,12 +26,8 @@ export default function Profile() {
     const {
         isComparing,
         originalItems,
-        originalMount,
         originalPets,
-        originalSkills,
-        exitCompareMode,
-        keepOriginal,
-        applyTestBuild,
+        originalSkills
     } = useComparison();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,7 +108,6 @@ export default function Profile() {
                                 title="Test Build Items"
                                 showCompareButton={false}
                                 compareItems={originalItems}
-                                compareMount={originalMount}
                             />
                         </div>
 
@@ -123,9 +118,9 @@ export default function Profile() {
                                 title="Equipped Pets"
                             />
                             <PetPanel
-                                variant="test"
-                                title="Test Build Pets"
-                                comparePets={originalPets}
+                               variant="test"
+                               title="Test Build Pets"
+                               comparePets={originalPets}
                             />
                         </div>
 
@@ -153,7 +148,7 @@ export default function Profile() {
                     </>
                 )}
 
-                <SkillsPassivesPanel considerAnimation={considerAnimation} />
+                <SkillsPassivesPanel />
 
                 <TechTreePanel />
             </div>

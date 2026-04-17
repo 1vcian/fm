@@ -339,10 +339,11 @@ export function MountPanel() {
                                     <span className="px-1.5 text-[10px] font-bold self-center">{activeMount.level}</span>
                                     <button onClick={() => handleLevelChange(1)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded">+</button>
                                 </div>
-                                <div className="scale-75 origin-right">
+                                <div className="">
                                     <AscensionStars 
                                         value={profile.misc.mountAscensionLevel || 0}
                                         onChange={(val: number) => updateNestedProfile('misc', { mountAscensionLevel: val })}
+                                        size="xs"
                                     />
                                 </div>
                             </div>

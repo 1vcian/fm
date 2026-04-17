@@ -228,12 +228,12 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
                             <SpriteSheetIcon
-                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
+                                textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0)}
                                 spriteWidth={256}
                                 spriteHeight={256}
-                                sheetWidth={2048}
-                                sheetHeight={2048}
-                                iconIndex={14}
+                                sheetWidth={1024}
+                                sheetHeight={1024}
+                                iconIndex={0}
                                 className="w-8 h-8"
                             />
                         </div>
