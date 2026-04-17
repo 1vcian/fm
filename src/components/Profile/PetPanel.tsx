@@ -1,7 +1,7 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
-import { Zap as PowerIcon, Plus, Cat, Sword } from 'lucide-react';
+import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { PetSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
@@ -57,6 +57,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPetIdx, setEditingPetIdx] = useState<number | null>(null);
     const [petToSave, setPetToSave] = useState<PetSlot | null>(null);
+    const [previousPets, setPreviousPets] = useState<PetSlot[] | null>(null);
 
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
@@ -128,6 +129,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     };
 
     const handleRemove = (index: number) => {
+        setPreviousPets(null);
         const newPets = [...activePets];
         newPets.splice(index, 1);
         updatePets(newPets);
@@ -140,6 +142,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         }
         if (activePets.length >= MAX_ACTIVE_PETS) return;
         updatePets([...activePets, pet]);
+        setPreviousPets(null);
         setIsModalOpen(false);
     };
 
@@ -152,6 +155,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         const newPets = [...activePets];
         newPets[index] = pet;
         updatePets(newPets);
+        setPreviousPets(null);
         setEditingPetIdx(null);
     };
 
@@ -162,6 +166,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         const newPets = [...activePets];
         newPets[index] = { ...pet, level: newLevel };
         updatePets(newPets);
+        setPreviousPets(null);
     };
 
     const handleAscensionChange = (val: number) => {
@@ -174,8 +179,16 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     };
 
     const handleAutoOptimize = (metric: 'dps' | 'power') => {
+        setPreviousPets([...activePets]);
         const best = optimizePets(metric);
         if (best) updatePets(best);
+    };
+
+    const handleRevert = () => {
+        if (previousPets) {
+            updatePets(previousPets);
+            setPreviousPets(null);
+        }
     };
 
     const handleConfirmSave = (name: string) => {
@@ -304,6 +317,17 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             <PowerIcon className="w-3 h-3" />
                             AUTO POWER
                         </Button>
+                        {previousPets && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-fit"
+                                onClick={handleRevert}
+                            >
+                                <RotateCcw className="w-3 h-3" />
+                                REVERT
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -418,6 +442,12 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             onUnequip={(e) => { e.stopPropagation(); handleRemove(idx); }}
                             onSave={(e) => { e.stopPropagation(); setPetToSave(pet); }}
                             onLevelChange={(delta, e) => { e.stopPropagation(); handleLevelChange(idx, delta); }}
+                            onLevelSet={(newLevel) => {
+                                const newPets = [...activePets];
+                                newPets[idx] = { ...pet, level: newLevel };
+                                updatePets(newPets);
+                                setPreviousPets(null);
+                            }}
                             maxLevel={petUpgradeLib?.[pet.rarity]?.LevelInfo?.length || 100}
                         />
                     );

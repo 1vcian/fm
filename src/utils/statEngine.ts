@@ -145,6 +145,17 @@ export interface AggregatedStats {
     // Calculation temporary properties
     equipDamageMultiplier: number;
     equipHealthMultiplier: number;
+
+    // Detailed hit metrics
+    hitDamage: number;
+    hitDamageCrit: number;
+    hitDamageBuffed: number;
+    hitDamageBuffedCrit: number;
+    buffHitMetrics: {
+        name: string;
+        damage: number;
+        damageCrit: number;
+    }[];
 }
 
 export type StatMap = Record<string, any>;
@@ -236,6 +247,11 @@ export const DEFAULT_STATS: AggregatedStats = {
     statCounts: {},
     equipDamageMultiplier: 1,
     equipHealthMultiplier: 1,
+    buffHitMetrics: [],
+    hitDamage: 0,
+    hitDamageCrit: 0,
+    hitDamageBuffed: 0,
+    hitDamageBuffedCrit: 0,
 };
 
 export interface LibraryData {
@@ -929,6 +945,7 @@ export class StatEngine {
                     this.stats.critChanceBreakdown.substats += val;
                     break;
                 case 'CriticalMulti':
+                case 'CriticalDamage':
                     this.secondaryStats.criticalDamage += val;
                     this.stats.critDamageBreakdown.substats += val;
                     break;
@@ -944,6 +961,7 @@ export class StatEngine {
                 case 'HealthRegen': this.secondaryStats.healthRegen += val; break;
                 case 'BlockChance': this.secondaryStats.blockChance += val; break;
                 case 'SkillCooldownMulti':
+                case 'TimerSpeed':
                     this.secondaryStats.skillCooldownMulti += val;
                     this.stats.skillCooldownBreakdown.substats += val;
                     break;
@@ -1326,6 +1344,19 @@ export class StatEngine {
         const commonDamageMulti = 1 + this.secondaryStats.damageMulti;
         const commonHealthMulti = 1 + this.secondaryStats.healthMulti;
 
+        // Merge other secondary stats into final results (summing Tech Tree + Items/Pets)
+        this.stats.criticalChance = this.combine(this.stats.criticalChance, this.secondaryStats.criticalChance, 'Additive');
+        this.stats.criticalDamage = this.combine(this.stats.criticalDamage, this.secondaryStats.criticalDamage, 'Additive');
+        this.stats.doubleDamageChance = this.combine(this.stats.doubleDamageChance, this.secondaryStats.doubleDamageChance, 'Additive');
+        this.stats.blockChance = this.combine(this.stats.blockChance, this.secondaryStats.blockChance, 'Additive');
+        this.stats.attackSpeedMultiplier = this.combine(this.stats.attackSpeedMultiplier, this.secondaryStats.attackSpeed, 'Multiplier');
+        this.stats.healthRegen = this.combine(this.stats.healthRegen, this.secondaryStats.healthRegen, 'Multiplier');
+        this.stats.lifeSteal = this.combine(this.stats.lifeSteal, this.secondaryStats.lifeSteal, 'Multiplier');
+        this.stats.skillCooldownReduction = this.combine(this.stats.skillCooldownReduction, this.secondaryStats.skillCooldownMulti, 'OneMinusMultiplier');
+        this.stats.skillDamageMultiplier = this.combine(this.stats.skillDamageMultiplier, this.secondaryStats.skillDamageMulti, 'Multiplier');
+        this.stats.skillHealthMultiplier = this.combine(this.stats.skillHealthMultiplier, this.secondaryStats.skillHealthMulti, 'Multiplier');
+        this.stats.moveSpeed = this.combine(this.stats.moveSpeed, this.secondaryStats.moveSpeed, 'Additive');
+
         // - Equipment-Only Layer: Common + Forge Ascension
         // This ONLY applies to the flat damage/health from Items/Equipment.
         const equipDamageMulti = commonDamageMulti + this.forgeAscensionDamageMulti;
@@ -1408,6 +1439,100 @@ export class StatEngine {
         const globalDmgDisplayFactor = this.stats.damageMultiplier * (skinDmgFactor + setDmgFactor);
         this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * globalDmgDisplayFactor * (1 + this.secondaryStats.meleeDamageMulti));
         this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * globalDmgDisplayFactor * (1 + this.secondaryStats.rangedDamageMulti));
+
+        // --- Calculate Detailed Hit Metrics ---
+        this.stats.hitDamage = finalDamage;
+        this.stats.hitDamageCrit = finalDamage * this.stats.criticalDamage;
+
+        // Calculate Buff Power Sum
+        let totalBuffPower = 0;
+        const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale"];
+        const equipped = this.profile.skills.equipped || [];
+        const skillFactor = this.stats.skillDamageMultiplier || 1;
+        const globalFactor = this.stats.damageMultiplier || 1;
+        const totalDamageMulti = skillFactor + globalFactor - 1;
+
+        if (this.libs.skillLibrary) {
+            equipped.forEach(slot => {
+                if (BUFF_SKILLS.includes(slot.id)) {
+                    const skillConfig = this.libs.skillLibrary![slot.id];
+                    if (skillConfig && skillConfig.DamagePerLevel) {
+                        const levelIdx = Math.max(0, slot.level - 1);
+                        if (skillConfig.DamagePerLevel.length > levelIdx) {
+                            const baseDamage = skillConfig.DamagePerLevel[levelIdx];
+                            totalBuffPower += (baseDamage * totalDamageMulti);
+                        }
+                    }
+                }
+            });
+        }
+
+        this.stats.hitDamageBuffed = finalDamage + totalBuffPower;
+        this.stats.hitDamageBuffedCrit = this.stats.hitDamageBuffed * this.stats.criticalDamage;
+
+        // --- Calculate Dynamic Buff Combinations ---
+        this.stats.buffHitMetrics = [];
+        const activeBuffs: { id: string; power: number }[] = [];
+        const BUFF_NAME_MAPPING: Record<string, string> = {
+            "Meat": "Meat",
+            "Morale": "Morale",
+            "Berserk": "Berserk",
+            "Buff": "Buff",
+            "HigherMorale": "H. Morale"
+        };
+
+        if (this.libs.skillLibrary) {
+            equipped.forEach(slot => {
+                if (BUFF_SKILLS.includes(slot.id)) {
+                    const skillConfig = this.libs.skillLibrary![slot.id];
+                    if (skillConfig && skillConfig.DamagePerLevel) {
+                        const levelIdx = Math.max(0, slot.level - 1);
+                        if (skillConfig.DamagePerLevel.length > levelIdx) {
+                            const baseDamage = skillConfig.DamagePerLevel[levelIdx];
+                            activeBuffs.push({
+                                id: slot.id,
+                                power: baseDamage * totalDamageMulti
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate Power Set (excluding empty set which is the normal Hit damage already shown)
+        const getPowerSet = (list: typeof activeBuffs) => {
+            const results: (typeof activeBuffs)[] = [];
+            for (let i = 1; i < (1 << list.length); i++) {
+                const subset: typeof activeBuffs = [];
+                for (let j = 0; j < list.length; j++) {
+                    if ((i >> j) & 1) subset.push(list[j]);
+                }
+                results.push(subset);
+            }
+            return results;
+        };
+
+        const combinations = getPowerSet(activeBuffs);
+
+        // Filter out the "Full" combination because it's already shown in "All Buffs Active"
+        const filteredCombinations = combinations.filter(subset => subset.length < activeBuffs.length);
+
+        // Sort combinations by number of buffs, then alphabetically
+        filteredCombinations.sort((a, b) => {
+            if (a.length !== b.length) return a.length - b.length;
+            return a.map(x => x.id).join().localeCompare(b.map(x => x.id).join());
+        });
+
+        filteredCombinations.forEach(subset => {
+            const name = subset.map(s => BUFF_NAME_MAPPING[s.id] || s.id).join(" + ");
+            const extraDamage = subset.reduce((sum, s) => sum + s.power, 0);
+            const total = finalDamage + extraDamage;
+            this.stats.buffHitMetrics.push({
+                name: name,
+                damage: total,
+                damageCrit: total * this.stats.criticalDamage
+            });
+        });
 
         // Power calculation - GHIDRA REVERSE ENGINEERED FORMULA (VERIFIED):
         // Power = ((Damage - 10) × 8 + (Health - 80)) × 3
@@ -1511,7 +1636,7 @@ export class StatEngine {
                         if (baseSkillDmg > 0) {
                             const mechanics = SKILL_MECHANICS[String(skill.id)] || { count: 1 };
                             const hitCount = mechanics.count || 1;
-                    const totalDmgPerActivation = baseSkillDmg * effectiveMultiplier * hitCount;
+                            const totalDmgPerActivation = baseSkillDmg * effectiveMultiplier * hitCount;
                             this.stats.skillDps += totalDmgPerActivation / finalCd;
                         }
                     }

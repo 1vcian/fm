@@ -365,6 +365,7 @@ export function SkillsPassivesPanel() {
                                                 currentLevel={level}
                                                 maxLevel={skillPassiveLibrary?.[skill.rarity]?.LevelStats?.length || 299}
                                                 onLevelChange={(delta) => handleLevelChange(skill.id, level + delta)}
+                                                onLevelSet={(newLevel) => handleLevelChange(skill.id, newLevel)}
                                             />
                                         );
                                     })}

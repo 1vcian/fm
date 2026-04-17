@@ -38,6 +38,7 @@ interface ItemSelectionCardProps {
     onUnequip?: (e: React.MouseEvent) => void;
     onSave?: (e: React.MouseEvent) => void;
     onLevelChange?: (delta: number, e: React.MouseEvent) => void;
+    onLevelSet?: (newLevel: number) => void;
     onAscensionChange?: (newLevel: number) => void;
     renderIcon?: () => React.ReactNode;
     hideAgeStyles?: boolean;
@@ -67,12 +68,14 @@ export function ItemSelectionCard({
     onUnequip,
     onSave,
     onLevelChange,
+    onLevelSet,
     onAscensionChange,
     renderIcon,
     hideAgeStyles,
     rarity,
     variant = 'default',
-    currentLevel
+    currentLevel,
+    maxLevel = 299
 }: ItemSelectionCardProps) {
     const isCompact = variant === 'compact';
     const displayLevel = currentLevel ?? item?.level ?? 0;
@@ -108,7 +111,32 @@ export function ItemSelectionCard({
                             >
                                 <Minus className="w-2.5 h-2.5 text-white/70 hover:text-white" />
                             </button>
-                            <span className="text-[10px] md:text-[11px] font-bold text-white min-w-[3.5ch] text-center tabular-nums">Lv{displayLevel}</span>
+                            {onLevelSet ? (
+                                <div className="flex items-center text-[10px] md:text-[11px] font-bold text-white min-w-[3.5ch]">
+                                    <span className="opacity-50 mr-0.5">Lv</span>
+                                    <input
+                                        type="number"
+                                        value={displayLevel}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            if (!isNaN(val)) {
+                                                const clamped = Math.max(1, Math.min(maxLevel, val));
+                                                onLevelSet(clamped);
+                                            } else if (e.target.value === '') {
+                                                onLevelSet(0); // Allow clearing to type
+                                            }
+                                        }}
+                                        onBlur={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            if (isNaN(val) || val < 1) onLevelSet(1);
+                                        }}
+                                        className="w-full bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        style={{ width: `${Math.max(2, String(displayLevel).length)}ch` }}
+                                    />
+                                </div>
+                            ) : (
+                                <span className="text-[10px] md:text-[11px] font-bold text-white min-w-[3.5ch] text-center tabular-nums">Lv{displayLevel}</span>
+                            )}
                             <button 
                                 onClick={(e) => onLevelChange(1, e)}
                                 className="p-0.5 hover:bg-white/10 rounded transition-colors"

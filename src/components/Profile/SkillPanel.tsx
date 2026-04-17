@@ -3,7 +3,7 @@ import { useComparison } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
-import { Flame, Plus, Sword } from 'lucide-react';
+import { Flame, Plus, Sword, RotateCcw } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
 import { SkillSlot } from '../../types/Profile';
@@ -69,6 +69,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [frequencyWindow, setFrequencyWindow] = useState(60);
+    const [previousSkills, setPreviousSkills] = useState<SkillSlot[] | null>(null);
 
     const updateSkills = (newSkills: SkillSlot[]) => {
         if (variant === 'original') updateOriginalSkill(newSkills);
@@ -77,6 +78,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
     };
 
     const handleRemove = (index: number) => {
+        setPreviousSkills(null);
         const newSkills = [...equippedSkills];
         newSkills.splice(index, 1);
         updateSkills(newSkills);
@@ -94,6 +96,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         const clampedLevel = Math.max(1, Math.min(newLevel, maxLevel));
         const newSkills = [...equippedSkills];
         newSkills[index] = { ...skill, level: clampedLevel };
+        setPreviousSkills(null);
 
         if (variant === 'default') {
             // Sync with passives only in default mode
@@ -121,6 +124,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
             if (equippedSkills.length >= MAX_ACTIVE_SKILLS) return;
             updateSkills([...equippedSkills, skillToAdd]);
         }
+        setPreviousSkills(null);
 
         // Sync passives only in default mode
         if (variant === 'default') {
@@ -147,8 +151,16 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
     };
 
     const handleAutoOptimize = () => {
+        setPreviousSkills([...equippedSkills]);
         const best = optimizeSkills();
         if (best) updateSkills(best);
+    };
+
+    const handleRevert = () => {
+        if (previousSkills) {
+            updateSkills(previousSkills);
+            setPreviousSkills(null);
+        }
     };
 
     const getSkillStats = (skill: SkillSlot) => {
@@ -232,6 +244,17 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                             <Sword className="w-3 h-3" />
                             AUTO DPS
                         </Button>
+                        {previousSkills && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-fit"
+                                onClick={handleRevert}
+                            >
+                                <RotateCcw className="w-3 h-3" />
+                                REVERT
+                            </Button>
+                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -297,6 +320,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                 e.stopPropagation();
                                 handleUpdateLevel(idx, skill.level + delta);
                             }}
+                            onLevelSet={(newLevel) => handleUpdateLevel(idx, newLevel)}
                             onAscensionChange={handleAscensionChange}
                             onClick={() => setEditingIdx(idx)}
                             renderIcon={() => (

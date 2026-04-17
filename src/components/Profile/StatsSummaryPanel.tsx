@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
-    ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2
+    ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -145,6 +145,7 @@ interface ComparisonStatRowProps {
     onTestDetailsClick?: () => void;
     variant?: 'default' | 'minimal';
     isCompact?: boolean;
+    className?: string;
 }
 
 function ComparisonStatRow({
@@ -326,6 +327,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
     const [showDpsModal, setShowDpsModal] = useState(false);
     const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile } | null>(null);
     const [openSection, setOpenSection] = useState<string | null>(null);
+    const [stripViewMode, setStripViewMode] = useState<'general' | 'hits'>('general');
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const {
@@ -627,18 +629,117 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                     { label: 'Skills', value: testHpsDetails.skills }
                 ]}
             />
-        </div>
+
+            <CollapsibleSection
+                title="Single Hit Damage"
+                icon={<Sparkles className="w-4 h-4 text-orange-400" />}
+                isOpen={openSection === 'hit-damage'}
+                onToggle={() => setOpenSection(openSection === 'hit-damage' ? null : 'hit-damage')}
+            >
+                <div className="space-y-3">
+                    {/* Base Hit Card */}
+                    <div className="bg-black/20 rounded-xl border border-white/5 overflow-hidden">
+                        <div className="px-3 py-1.5 bg-white/5 border-b border-white/5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Base Hit</span>
+                        </div>
+                        <div className="p-2 space-y-2">
+                            <ComparisonStatRow
+                                isCompact={true}
+                                icon={<Swords />}
+                                label="Normal"
+                                originalValue={originalStats.hitDamage}
+                                testValue={testStats.hitDamage}
+                                color="text-red-400"
+                                className="!p-1.5 !bg-transparent !border-0"
+                            />
+                            <ComparisonStatRow
+                                isCompact={true}
+                                icon={<Sparkles />}
+                                label="Critical"
+                                originalValue={originalStats.hitDamageCrit}
+                                testValue={testStats.hitDamageCrit}
+                                color="text-yellow-400"
+                                className="!p-1.5 !bg-transparent !border-0"
+                            />
+                        </div>
+                    </div>
+
+                    {/* All Buffs Card */}
+                    {testStats.hitDamageBuffed !== testStats.hitDamage && (
+                        <div className="bg-black/20 rounded-xl border border-white/5 overflow-hidden">
+                            <div className="px-3 py-1.5 bg-white/5 border-b border-white/5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">All Buffs Active</span>
+                            </div>
+                            <div className="p-2 space-y-2">
+                                <ComparisonStatRow
+                                    isCompact={true}
+                                    icon={<Zap />}
+                                    label="Normal"
+                                    originalValue={originalStats.hitDamageBuffed}
+                                    testValue={testStats.hitDamageBuffed}
+                                    color="text-orange-400"
+                                    className="!p-1.5 !bg-transparent !border-0"
+                                />
+                                <ComparisonStatRow
+                                    isCompact={true}
+                                    icon={<Sparkles />}
+                                    label="Critical"
+                                    originalValue={originalStats.hitDamageBuffedCrit}
+                                    testValue={testStats.hitDamageBuffedCrit}
+                                    color="text-orange-500"
+                                    className="!p-1.5 !bg-transparent !border-0"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+
+            </CollapsibleSection >
+        </div >
     );
 
     // The strip view (build comparison small bar)
     if (isStrip) {
         if (!isComparing) return null;
         return (
-            <div className="relative bg-bg-secondary/95 backdrop-blur-md rounded-2xl border border-accent-primary/20 shadow-2xl p-4 flex flex-col items-center gap-4 animate-in slide-in-from-top duration-300">
+            <div className="relative bg-bg-secondary/95 backdrop-blur-md rounded-2xl border border-accent-primary/20 shadow-2xl p-4 flex flex-col items-center animate-in slide-in-from-top duration-300">
                 {/* Centered Comparison Label - Floating above */}
                 <div className="absolute left-1/2 -top-3.5 -translate-x-1/2 bg-bg-secondary border border-accent-primary/40 px-3 py-1 rounded-full flex items-center gap-2 shadow-xl z-20 backdrop-blur-xl">
                     <AnimatedClock className="w-3.5 h-3.5 text-accent-primary" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-accent-primary leading-none">Comparison Mode</span>
+                </div>
+
+                {/* View Mode Toggler - Floating Top Left */}
+                <div className="absolute left-4 -top-3.5">
+                    <div className="flex bg-bg-secondary border border-border/50 rounded-full p-0.5 shadow-lg backdrop-blur-xl">
+                        <button
+                            onClick={() => setStripViewMode('general')}
+                            className={cn(
+                                // Modificato: gap e px orizzontale applicati solo da sm (schermi medi) in su
+                                "p-1.5 rounded-full transition-all flex items-center sm:gap-1.5 sm:px-2",
+                                stripViewMode === 'general' ? "bg-accent-primary text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
+                            )}
+                            title="General Stats"
+                        >
+                            <Layout className="w-3 h-3" />
+                            {/* Modificato: aggiunto hidden per mobile, sm:block per tablet/desktop */}
+                            <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">General</span>
+                        </button>
+                        <button
+                            onClick={() => setStripViewMode('hits')}
+                            className={cn(
+                                // Modificato: gap e px orizzontale applicati solo da sm (schermi medi) in su
+                                "p-1.5 rounded-full transition-all flex items-center sm:gap-1.5 sm:px-2",
+                                stripViewMode === 'hits' ? "bg-orange-500 text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
+                            )}
+                            title="Hit Damage"
+                        >
+                            <Swords className="w-3 h-3" />
+                            {/* Modificato: aggiunto hidden per mobile, sm:block per tablet/desktop */}
+                            <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Hits</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stat Compactness Toggler - Floating Top Right */}
@@ -669,24 +770,48 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
 
                 {/* Top Row: Build Stats comparison */}
                 <div className="flex items-center justify-start gap-6 overflow-x-auto no-scrollbar w-full pb-2 px-8 snap-x snap-mandatory">
-                    <div className="shrink-0">
-                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Gauge className="w-4 h-4 text-purple-400" />} label="Power" originalValue={originalStats?.power ?? 0} testValue={testStats?.power ?? 0} color="text-purple-400" />
-                    </div>
-                    <div className="shrink-0">
-                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage" originalValue={originalStats?.totalDamage ?? 0} testValue={testStats?.totalDamage ?? 0} color="text-red-400" />
-                    </div>
-                    <div className="shrink-0">
-                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-green-400" />} label="Health" originalValue={originalStats?.totalHealth ?? 0} testValue={testStats?.totalHealth ?? 0} color="text-green-400" />
-                    </div>
-                    <div className="shrink-0">
-                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theoretical" originalValue={originalDps} testValue={testDps} color="text-orange-400" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
-                    </div>
-                    <div className="shrink-0">
-                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real-Time" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
-                    </div>
-                    <div className="shrink-0">
-                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
-                    </div>
+                    {stripViewMode === 'general' ? (
+                        <>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Gauge className="w-4 h-4 text-purple-400" />} label="Power" originalValue={originalStats?.power ?? 0} testValue={testStats?.power ?? 0} color="text-purple-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage" originalValue={originalStats?.totalDamage ?? 0} testValue={testStats?.totalDamage ?? 0} color="text-red-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-green-400" />} label="Health" originalValue={originalStats?.totalHealth ?? 0} testValue={testStats?.totalHealth ?? 0} color="text-green-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theoretical" originalValue={originalDps} testValue={testDps} color="text-orange-400" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real-Time" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Base Hit" originalValue={originalStats?.hitDamage ?? 0} testValue={testStats?.hitDamage ?? 0} color="text-red-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Sparkles className="w-4 h-4 text-yellow-400" />} label="Crit Hit" originalValue={originalStats?.hitDamageCrit ?? 0} testValue={testStats?.hitDamageCrit ?? 0} color="text-yellow-400" />
+                            </div>
+                            {testStats && testStats.hitDamageBuffed !== testStats.hitDamage && (
+                                <>
+                                    <div className="shrink-0">
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Buffed Hit" originalValue={originalStats?.hitDamageBuffed ?? 0} testValue={testStats?.hitDamageBuffed ?? 0} color="text-orange-400" />
+                                    </div>
+                                    <div className="shrink-0">
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Sparkles className="w-4 h-4 text-orange-500" />} label="Buffed Crit" originalValue={originalStats?.hitDamageBuffedCrit ?? 0} testValue={testStats?.hitDamageBuffedCrit ?? 0} color="text-orange-500" />
+                                    </div>
+                                </>
+                            )}
+
+                        </>
+                    )}
                 </div>
 
                 {/* Bottom Row: Action Buttons (Always Visible and Centered) */}
@@ -876,6 +1001,55 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                             />
                         </div>
 
+                        {/* Single Hit Damage Section */}
+                        <CollapsibleSection
+                            title="Single Hit Damage"
+                            icon={<Sparkles className="w-4 h-4 text-orange-400" />}
+                            isOpen={openSection === 'hit-damage'}
+                            onToggle={() => setOpenSection(openSection === 'hit-damage' ? null : 'hit-damage')}
+                        >
+                            <div className="space-y-2">
+                                <StatRow
+                                    icon={<Swords className="w-4 h-4" />}
+                                    label="Base Hit"
+                                    value={formatValue(stats.hitDamage)}
+                                    subValue={`Crit: ${formatValue(stats.hitDamageCrit)}`}
+                                    color="text-red-400"
+                                />
+                                {stats.hitDamageBuffed !== stats.hitDamage && (
+                                    <StatRow
+                                        icon={<Sparkles className="w-4 h-4" />}
+                                        label="All Buffs Active"
+                                        value={formatValue(stats.hitDamageBuffed)}
+                                        subValue={`Crit: ${formatValue(stats.hitDamageBuffedCrit)}`}
+                                        color="text-orange-500"
+                                    />
+                                )}
+
+                                {/* Grouped Buff Scenarios Card */}
+                                {stats.buffHitMetrics && stats.buffHitMetrics.length > 0 && (
+                                    <div className="mt-2 bg-black/20 rounded-xl border border-white/5 overflow-hidden">
+                                        <div className="px-3 py-1.5 bg-white/5 border-b border-white/5">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Buff Scenarios</span>
+                                        </div>
+                                        <div className="divide-y divide-white/5">
+                                            {stats.buffHitMetrics.map((metric, idx) => (
+                                                <div key={`buff-${idx}`} className="px-3 py-2 flex items-center justify-between gap-4">
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-xs font-medium text-text-primary">{metric.name}</span>
+                                                    </div>
+                                                    <div className="flex flex-col items-end shrink-0">
+                                                        <span className="text-xs font-mono text-orange-300">{formatValue(metric.damage)}</span>
+                                                        <span className="text-[10px] font-mono text-orange-400/70">Crit: {formatValue(metric.damageCrit)}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </CollapsibleSection>
+
                         {/* Passive Detailed Section */}
                         <CollapsibleSection
                             title="Passives & Multipliers"
@@ -889,7 +1063,16 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                     <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Crit x" value={`${(stats.criticalDamage || 0).toFixed(2)}x`} color="text-yellow-500" />
                                     <CompactStat icon={<Shield className="w-3 h-3" />} label="Block %" value={formatPercent(stats.blockChance || 0)} color="text-blue-400" />
                                     <CompactStat icon={<Zap className="w-3 h-3" />} label="Double %" value={formatPercent(stats.doubleDamageChance || 0)} color="text-purple-400" />
+                                    <CompactStat icon={<Heart className="w-3 h-3" />} label="Life Steal %" value={formatPercent(stats.lifeSteal || 0)} color="text-purple-400" />
+                                    <CompactStat icon={<Heart className="w-3 h-3" />} label="Health Regen %" value={formatPercent(stats.healthRegen || 0)} color="text-purple-400" />
+                                    <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Attack Speed %" value={formatPercent(stats.attackSpeedMultiplier)} color="text-orange-400" />
+                                    <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Skill Cooldown %" value={formatPercent(stats.skillCooldownReduction)} color="text-emerald-400" />
+
+
                                 </div>
+                                <StatRow icon={<Swords className="w-3 h-3" />} label="Skill Damage %" value={formatPercent(stats.skillDamageMultiplier)} color="text-red-400" />
+                                <StatRow icon={<Swords className="w-3 h-3" />} label="Damage Multiplier %" value={formatPercent(stats.damageMultiplier)} color="text-red-400" />
+                                <StatRow icon={<Heart className="w-3 h-3" />} label="Health Multiplier %" value={formatPercent(stats.healthMultiplier)} color="text-emerald-400" />
                                 <StatRow
                                     icon={<TrendingUp className="w-4 h-4 text-text-primary" />}
                                     label="Total HPS"
@@ -897,12 +1080,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                     subValue={`Regen: ${formatCompactNumber(regenHps)}, Life: ${formatCompactNumber(lifestealHps)}, Skills: ${formatCompactNumber(skillHps)}`}
                                     color="text-emerald-400"
                                 />
-                                <StatRow
-                                    icon={<Gauge className="w-4 h-4" />}
-                                    label={getStatName('AttackSpeed')}
-                                    value={formatPercent(stats.attackSpeedMultiplier)}
-                                    color="text-cyan-400"
-                                />
+
                                 <StatRow
                                     icon={<Clock className="w-4 h-4" />}
                                     label={getStatName('AttackDuration')}
@@ -910,20 +1088,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                     subValue={`Final: ${(stats.weaponAttackDuration / stats.attackSpeedMultiplier).toFixed(2)}s`}
                                     color="text-amber-400"
                                 />
-                                <StatRow
-                                    icon={<Star className="w-4 h-4" />}
-                                    label="Damage Multiplier"
-                                    value={formatPercent(stats.secondaryDamageMulti)}
-                                    subValue={`Sources sum: x${(stats.secondaryDamageMulti + 1).toFixed(2)}`}
-                                    color="text-red-400"
-                                />
-                                <StatRow
-                                    icon={<Heart className="w-4 h-4" />}
-                                    label="Health Multiplier"
-                                    value={formatPercent(stats.secondaryHealthMulti)}
-                                    subValue={`Sources sum: x${(stats.secondaryHealthMulti + 1).toFixed(2)}`}
-                                    color="text-green-400"
-                                />
+
                             </div>
                         </CollapsibleSection>
 
