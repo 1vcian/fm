@@ -601,7 +601,7 @@ export class StatEngine {
                 const stats = ascConfigs[i].StatContributions || [];
                 for (const stat of stats) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
-                    const value = stat.Value / 10000; // Ascension values are stored * 10000 in JSON
+                    const value = stat.Value; // Ascension values are direct multipliers
                     if (statType === 'Damage') this.forgeAscensionDamageMulti += value;
                     if (statType === 'Health') this.forgeAscensionHealthMulti += value;
                 }
@@ -1344,11 +1344,12 @@ export class StatEngine {
         // Populate breakdowns for GENERIC Multipliers
         // Note: Tree contribution was already tracked in applyStat during collectTechTreeStats
         this.stats.damageBreakdown.substats = this.secondaryStats.damageMulti - this.stats.damageBreakdown.tree;
-        this.stats.damageBreakdown.ascension = 0; // Forge Ascension is equipment-specific
+        // Ascension includes Forge global gear multi
+        this.stats.damageBreakdown.ascension = this.forgeAscensionDamageMulti;
         this.stats.damageBreakdown.other = 0;
 
         this.stats.healthBreakdown.substats = this.secondaryStats.healthMulti - this.stats.healthBreakdown.tree;
-        this.stats.healthBreakdown.ascension = 0;
+        this.stats.healthBreakdown.ascension = this.forgeAscensionHealthMulti;
         this.stats.healthBreakdown.other = 0;
 
         let totalDmgBeforeGlobal = equipContributionDmg + systemContributionDmg;
