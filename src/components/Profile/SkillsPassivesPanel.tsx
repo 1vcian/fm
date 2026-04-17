@@ -9,6 +9,7 @@ import { cn, getRarityBgStyle } from '../../lib/utils';
 import { useState, useMemo } from 'react';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
+
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';

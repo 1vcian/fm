@@ -1181,11 +1181,16 @@ export function EnemyBuilder() {
                 currentMount={enemy.mount || undefined}
                 context="pvp"
                 onSelect={(rarity, id, level, secondaryStats) => {
+                    if (!rarity || id === undefined) {
+                        handleMountSelect(null);
+                        setModalOpen(null);
+                        return;
+                    }
                     handleMountSelect({
                         rarity,
                         id,
-                        level,
-                        secondaryStats,
+                        level: level ?? 1,
+                        secondaryStats: secondaryStats ?? [],
                         evolution: 0,
                         skills: [],
                         hp: 0

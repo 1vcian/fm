@@ -97,7 +97,7 @@ interface CollapsibleSectionProps {
 function CollapsibleSection({ title, icon, children, isOpen, onToggle }: CollapsibleSectionProps) {
     return (
         <div className="group">
-            <button 
+            <button
                 onClick={onToggle}
                 className="w-full flex items-center gap-2 cursor-pointer select-none p-2 -mx-2 rounded-lg hover:bg-bg-input/30 transition-colors"
             >
@@ -120,8 +120,8 @@ function formatDelta(original: number, comparison: number, isCompact: boolean): 
     const percent = original !== 0 ? ((delta / original) * 100) : (delta !== 0 ? 100 : 0);
     const isPositive = delta >= 0;
     const sign = isPositive ? '+' : '';
-    
-    const formattedDelta = isCompact 
+
+    const formattedDelta = isCompact
         ? formatCompactNumber(Math.abs(delta))
         : Math.abs(delta).toLocaleString(undefined, { maximumFractionDigits: 0 });
 
@@ -162,13 +162,13 @@ function ComparisonStatRow({
     isCompact = true
 }: ComparisonStatRowProps) {
     const isMinimal = variant === 'minimal';
-    
-    const defaultFormat = (val: number) => isCompact 
-        ? formatCompactNumber(val) 
+
+    const defaultFormat = (val: number) => isCompact
+        ? formatCompactNumber(val)
         : val.toLocaleString(undefined, { maximumFractionDigits: 0 });
-        
+
     const finalFormat = formatFn || defaultFormat;
-    
+
     const delta = formatDelta(originalValue, testValue, isCompact);
     const isExactlySame = originalValue === testValue;
     const testIsHigher = testValue > originalValue;
@@ -176,7 +176,7 @@ function ComparisonStatRow({
     const detailDeltas = originalDetails?.map((orig, i) => {
         const test = testDetails?.[i];
         if (!test) return null;
-        return formatDelta(orig.value, test.value);
+        return formatDelta(orig.value, test.value, isCompact);
     });
 
     // Determine delta color and icon
@@ -467,7 +467,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
     }, [
         isComparing, originalItems, testItems, itemBalancingConfig, itemBalancingLibrary,
         profile, originalMount, testMount, originalForgeAscension, originalMountAscension,
-        testForgeAscension, testMountAscension, 
+        testForgeAscension, testMountAscension,
         originalPets, testPets, originalSkills, testSkills,
         originalPetAscension, testPetAscension, originalSkillAscension, testSkillAscension,
         treeMode, techTreePositionLibrary, techTreeLibrary, libs
@@ -522,8 +522,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
     const originalHps = originalHpsDetails.total;
     const testHps = testHpsDetails.total;
 
-    const formatValue = (val: number) => isCompactStats 
-        ? formatCompactNumber(val) 
+    const formatValue = (val: number) => isCompactStats
+        ? formatCompactNumber(val)
         : val.toLocaleString(undefined, { maximumFractionDigits: 0 });
 
     // The comparison UI block
@@ -644,7 +644,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                 {/* Stat Compactness Toggler - Floating Top Right */}
                 <div className="absolute right-4 -top-3.5">
                     <div className="flex bg-bg-secondary border border-border/50 rounded-full p-0.5 shadow-lg backdrop-blur-xl">
-                        <button 
+                        <button
                             onClick={() => setIsCompactStats(true)}
                             className={cn(
                                 "p-1.5 rounded-full transition-all",
@@ -654,7 +654,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                         >
                             <Minimize2 className="w-3.5 h-3.5" />
                         </button>
-                        <button 
+                        <button
                             onClick={() => setIsCompactStats(false)}
                             className={cn(
                                 "p-1.5 rounded-full transition-all",
@@ -690,21 +690,21 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                 </div>
 
                 {/* Bottom Row: Action Buttons (Always Visible and Centered) */}
-                <div className="flex items-center justify-center gap-2 sm:gap-4 w-full pt-2 border-t border-white/5">
-                    <Button variant="ghost" size="sm" onClick={exitCompareMode} className="h-10 px-3 sm:px-6 gap-2 text-xs text-text-muted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all font-bold">
-                        <X className="w-4 h-4" /> 
+                <div className="flex items-center justify-center gap-1.5 sm:gap-4 w-full pt-2 border-t border-white/5">
+                    <Button variant="ghost" size="sm" onClick={exitCompareMode} className="h-8 sm:h-10 px-2 sm:px-6 gap-1 sm:gap-2 text-[10px] sm:text-xs text-text-muted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all font-bold">
+                        <X className="w-3.5 h-3.5 sm:w-4 h-4" />
                         <span className="hidden sm:inline">Exit Comparison</span>
-                        <span className="inline sm:hidden">Exit</span>
+                        <span className="inline sm:hidden uppercase tracking-tight">Exit</span>
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={keepOriginal} className="h-10 px-3 sm:px-8 gap-2 text-xs font-bold bg-white/5 hover:bg-white/10 border border-white/10 text-text-primary">
-                        <Check className="w-4 h-4 text-green-400" /> 
+                    <Button variant="secondary" size="sm" onClick={keepOriginal} className="h-8 sm:h-10 px-2 sm:px-8 gap-1 sm:gap-2 text-[10px] sm:text-xs font-bold bg-white/5 hover:bg-white/10 border border-white/10 text-text-primary">
+                        <Check className="w-3.5 h-3.5 sm:w-4 h-4 text-green-400" />
                         <span className="hidden sm:inline">Keep Equipped</span>
-                        <span className="inline sm:hidden">Keep</span>
+                        <span className="inline sm:hidden uppercase tracking-tight">Keep Equipped</span>
                     </Button>
-                    <Button variant="primary" size="sm" onClick={applyTestBuild} className="h-10 px-4 sm:px-12 gap-2 text-xs font-black uppercase tracking-widest bg-accent-primary hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-accent-primary/25">
-                        <ArrowRight className="w-4 h-4" /> 
+                    <Button variant="primary" size="sm" onClick={applyTestBuild} className="h-8 sm:h-10 px-3 sm:px-12 gap-1 sm:gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest bg-accent-primary hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-accent-primary/25">
+                        <ArrowRight className="w-3.5 h-3.5 sm:w-4 h-4" />
                         <span className="hidden sm:inline">Apply Test Build</span>
-                        <span className="inline sm:hidden">Apply</span>
+                        <span className="inline sm:hidden tracking-tight">Apply Test</span>
                     </Button>
                 </div>
 
@@ -760,61 +760,64 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                     </div>
                 </div>
 
+                {/* Display Format Toggler - Always Visible */}
+                <div className="mt-4 flex items-center justify-between px-2 py-2 bg-bg-input/30 rounded-lg border border-border/20">
+                    <div className="text-[10px] text-text-muted font-bold uppercase tracking-widest opacity-60">Display Format</div>
+                    <div className="flex bg-bg-input/50 rounded-lg p-0.5 border border-border/30">
+                        <button
+                            onClick={() => setIsCompactStats(true)}
+                            className={cn(
+                                "px-3 py-1 rounded text-[9px] font-bold transition-all",
+                                isCompactStats ? "bg-accent-primary text-white shadow-sm" : "text-text-muted hover:text-text-primary"
+                            )}
+                        >
+                            Compact
+                        </button>
+                        <button
+                            onClick={() => setIsCompactStats(false)}
+                            className={cn(
+                                "px-3 py-1 rounded text-[9px] font-bold transition-all",
+                                !isCompactStats ? "bg-accent-primary text-white shadow-sm" : "text-text-muted hover:text-text-primary"
+                            )}
+                        >
+                            Extended
+                        </button>
+                    </div>
+                </div>
+
                 {isComparing && (
                     <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                             <div className="text-[10px] text-text-muted font-bold uppercase tracking-widest opacity-60">Display Format</div>
-                             <div className="flex bg-bg-input/50 rounded-lg p-0.5 border border-border/30">
-                                <button 
-                                    onClick={() => setIsCompactStats(true)}
-                                    className={cn(
-                                        "px-2 py-1 rounded text-[9px] font-bold transition-all",
-                                        isCompactStats ? "bg-accent-primary text-white shadow-sm" : "text-text-muted hover:text-text-primary"
-                                    )}
-                                >
-                                    Compact
-                                </button>
-                                <button 
-                                    onClick={() => setIsCompactStats(false)}
-                                    className={cn(
-                                        "px-2 py-1 rounded text-[9px] font-bold transition-all",
-                                        !isCompactStats ? "bg-accent-primary text-white shadow-sm" : "text-text-muted hover:text-text-primary"
-                                    )}
-                                >
-                                    Extended
-                                </button>
-                             </div>
-                        </div>
+
 
                         <div className="space-y-3">
                             <div className="text-[10px] text-text-muted text-center font-bold uppercase tracking-widest opacity-60">Build Actions</div>
                             <div className="grid grid-cols-3 gap-2">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={exitCompareMode}
                                     className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] text-text-muted hover:text-red-400 grayscale hover:grayscale-0 transition-all font-bold uppercase tracking-tight border border-transparent hover:border-red-500/20"
                                 >
-                                    <X className="w-4 h-4" /> 
+                                    <X className="w-4 h-4" />
                                     <span>Exit</span>
                                 </Button>
-                                <Button 
-                                    variant="secondary" 
-                                    size="sm" 
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
                                     onClick={keepOriginal}
                                     className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] font-bold uppercase tracking-tight bg-bg-input/50 border border-border/30"
                                 >
-                                    <Check className="w-4 h-4 text-green-400" /> 
-                                    <span>Keep</span>
+                                    <Check className="w-4 h-4 text-green-400" />
+                                    <span>Keep Equipped</span>
                                 </Button>
-                                <Button 
-                                    variant="primary" 
-                                    size="sm" 
+                                <Button
+                                    variant="primary"
+                                    size="sm"
                                     onClick={applyTestBuild}
                                     className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] font-bold uppercase tracking-tight bg-accent-primary shadow-lg shadow-accent-primary/10 hover:scale-105 transition-transform"
                                 >
-                                    <ArrowRight className="w-4 h-4" /> 
-                                    <span>Apply</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                    <span>Apply Test</span>
                                 </Button>
                             </div>
                         </div>

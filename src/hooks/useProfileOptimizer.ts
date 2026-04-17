@@ -6,7 +6,7 @@ import { PetSlot, SkillSlot, UserProfile } from '../types/Profile';
 import { MAX_ACTIVE_PETS, MAX_ACTIVE_SKILLS } from '../utils/constants';
 
 export function useProfileOptimizer() {
-    const { profile, updateNestedProfile } = useProfile();
+    const { profile } = useProfile();
     
     // Load all necessary libraries for StatEngine
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');

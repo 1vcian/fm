@@ -1,17 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { X, Bike as MountIcon, Save, Info, Plus, Minus, Trash2, Star, Grid, Settings, Bookmark, Search, Unlock } from 'lucide-react';
+import { X, Bike as MountIcon, Save, Info, Plus, Trash2, Grid, Settings, Bookmark, Search, Unlock } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
-import { Input } from '../UI/Input';
+
 import { ModalLevelSelector } from '../UI/ModalLevelSelector';
 import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
-import { getStatName, formatSecondaryStat } from '../../utils/statNames';
+import { getStatName } from '../../utils/statNames';
 import { useProfile } from '../../context/ProfileContext';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
@@ -40,7 +39,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     const { data: petUnlockLib } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
 
     const [activeTab, setActiveTab] = useState<'library' | 'saved'>('library');
-    const [mobileTab, setMobileTab] = useState<'mounts' | 'config'>('mounts');
+    const [mobileTab, setMobileTab] = useState<MobileTab>('mounts');
     const [selectedRarity, setSelectedRarity] = useState<string>('Common');
     const [selectedMountId, setSelectedMountId] = useState<number | null>(null);
     const [mountLevel, setMountLevel] = useState<number>(1);

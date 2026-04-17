@@ -1,6 +1,6 @@
 import { useProfile } from '../context/ProfileContext';
 import { useComparison } from '../context/ComparisonContext';
-import { Download, Upload, Trash2, Copy, Clipboard, X, Check, ArrowRight } from 'lucide-react';
+import { Download, Upload, Trash2, Copy, Clipboard, X } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -90,85 +90,73 @@ export default function Profile() {
 
             {/* Content */}
             <div className="space-y-6">
-                    <MiscPanel />
+                <MiscPanel />
 
-                    {isComparing ? (
-                        <div className="space-y-6">
-                            {/* Comparison Controls & Stats Strip - Sticky Header */}
-                            <div className="sticky top-0 z-40 py-2 -mx-4 px-4 bg-bg-primary/80 backdrop-blur-md border-b border-border shadow-lg space-y-2">
-                                <div className="flex flex-wrap justify-between items-center gap-3">
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" onClick={keepOriginal} className="text-emerald-400 hover:text-emerald-300">
-                                            Keep Equipped
-                                        </Button>
-                                        <Button variant="primary" size="sm" onClick={applyTestBuild}>
-                                            Apply Test Build
-                                        </Button>
-                                    </div>
-                                    <Button variant="ghost" size="sm" onClick={exitCompareMode} className="text-red-400 hover:text-red-300">
-                                        <X className="w-4 h-4 mr-2" /> Exit Comparison
-                                    </Button>
-                                </div>
-                                <StatsSummaryPanel variant="horizontal-strip" />
-                            </div>
+                {isComparing ? (
+                    <div className="space-y-6">
+                        {/* Comparison Controls & Stats Strip - Sticky Header */}
+                        <div className="sticky top-0 z-40 py-2 -mx-4 px-4 bg-bg-primary/80 backdrop-blur-md border-b border-border shadow-lg space-y-2">
 
-                            {/* Comparison Equipment Panels */}
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                <EquipmentPanel
-                                    variant="original"
-                                    title="Equipped Items"
-                                    showCompareButton={false}
-                                />
-                                <EquipmentPanel
-                                    variant="test"
-                                    title="Test Build Items"
-                                    showCompareButton={false}
-                                    compareItems={originalItems}
-                                    compareMount={originalMount}
-                                />
-                            </div>
-
-                            {/* Comparison Pet Panels */}
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                <PetPanel 
-                                    variant="original" 
-                                    title="Equipped Pets" 
-                                />
-                                <PetPanel 
-                                    variant="test" 
-                                    title="Test Build Pets" 
-                                    comparePets={originalPets}
-                                />
-                            </div>
-
-                            {/* Comparison Skill Panels */}
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                <SkillPanel 
-                                    variant="original" 
-                                    title="Equipped Skills" 
-                                    considerAnimation={considerAnimation} 
-                                    setConsiderAnimation={setConsiderAnimation} 
-                                />
-                                <SkillPanel 
-                                    variant="test" 
-                                    title="Test Build Skills" 
-                                    compareSkills={originalSkills}
-                                    considerAnimation={considerAnimation} 
-                                />
-                            </div>
+                            <StatsSummaryPanel variant="horizontal-strip" />
                         </div>
-                    ) : (
-                        <>
-                            <EquipmentPanel />
-                            <PetPanel />
-                            <SkillPanel considerAnimation={considerAnimation} setConsiderAnimation={setConsiderAnimation} />
-                        </>
-                    )}
 
-                    <SkillsPassivesPanel considerAnimation={considerAnimation} />
+                        {/* Comparison Equipment Panels */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <EquipmentPanel
+                                variant="original"
+                                title="Equipped Items"
+                                showCompareButton={false}
+                            />
+                            <EquipmentPanel
+                                variant="test"
+                                title="Test Build Items"
+                                showCompareButton={false}
+                                compareItems={originalItems}
+                                compareMount={originalMount}
+                            />
+                        </div>
 
-                    <TechTreePanel />
-                </div>
+                        {/* Comparison Pet Panels */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <PetPanel
+                                variant="original"
+                                title="Equipped Pets"
+                            />
+                            <PetPanel
+                                variant="test"
+                                title="Test Build Pets"
+                                comparePets={originalPets}
+                            />
+                        </div>
+
+                        {/* Comparison Skill Panels */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <SkillPanel
+                                variant="original"
+                                title="Equipped Skills"
+                                considerAnimation={considerAnimation}
+                                setConsiderAnimation={setConsiderAnimation}
+                            />
+                            <SkillPanel
+                                variant="test"
+                                title="Test Build Skills"
+                                compareSkills={originalSkills}
+                                considerAnimation={considerAnimation}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <EquipmentPanel />
+                        <PetPanel />
+                        <SkillPanel considerAnimation={considerAnimation} setConsiderAnimation={setConsiderAnimation} />
+                    </>
+                )}
+
+                <SkillsPassivesPanel considerAnimation={considerAnimation} />
+
+                <TechTreePanel />
+            </div>
 
             {/* Import JSON Modal */}
             {showImportModal && createPortal(

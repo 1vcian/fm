@@ -11,15 +11,15 @@ import { InputModal } from '../UI/InputModal';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
-import { cn, getAgeBgStyle, getAgeBorderStyle, getInventoryIconStyle } from '../../lib/utils';
+import { cn, getInventoryIconStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
 import { AGES } from '../../utils/constants';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
-import { formatSecondaryStat } from '../../utils/statNames';
+
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
-import { getSkinSpriteStyle } from '../../utils/skinSprites';
-import { getItemStats, getPerfection, getStatPerfection, SLOT_TO_JSON_TYPE } from '../../utils/itemCalculations';
+
+import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 
 // InventoryTextures.png is a 4x4 sprite sheet (512x512, each icon 128x128)
 // Row 1: Helmet(0), Armor(1), Gloves(2), Necklace(3)
@@ -428,8 +428,9 @@ function MountSlotWidget({ variant, compareMount }: { variant: string; compareMo
         );
     }, [mount, profile.mount.savedBuilds]);
 
-    const handleSelectMount = (rarity: string, id: number, level: number, secondaryStats: { statId: string; value: number }[]) => {
-        const newMount: MountSlot = { rarity, id, level, evolution: 0, skills: [], secondaryStats };
+    const handleSelectMount = (rarity: string | null, id?: number, level?: number, secondaryStats?: { statId: string; value: number }[]) => {
+        if (!rarity || id === undefined) return;
+        const newMount: MountSlot = { rarity, id, level: level ?? 1, evolution: 0, skills: [], secondaryStats: secondaryStats ?? [] };
         if (variant === 'original') updateOriginalMount(newMount);
         else if (variant === 'test') updateTestMount(newMount);
         else updateNestedProfile('mount', { active: newMount });

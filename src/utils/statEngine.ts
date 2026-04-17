@@ -463,6 +463,7 @@ export class StatEngine {
             blockChance: 0,
             skillCooldownMulti: 0,
             skillDamageMulti: 0,
+            skillHealthMulti: 0,
             moveSpeed: 0,
         };
 
@@ -947,6 +948,7 @@ export class StatEngine {
                     this.stats.skillCooldownBreakdown.substats += val;
                     break;
                 case 'SkillDamageMulti': this.secondaryStats.skillDamageMulti += val; break;
+                case 'SkillHealthMulti': this.secondaryStats.skillHealthMulti += val; break;
                 case 'MoveSpeed': this.secondaryStats.moveSpeed += val; break;
             }
         };
@@ -1055,7 +1057,7 @@ export class StatEngine {
             // Skill damage multiplier is base (1) + tree + substats + ascension
             // NOTE: substats (this.secondaryStats.skillDamageMulti) are added in finalizeCalculation
             this.stats.skillDamageMultiplier = 1 + (this.techModifiers['SkillDamage'] || 0) + this.stats.skillDamageBreakdown.ascension;
-            this.stats.skillHealthMultiplier = 1 + (this.techModifiers['SkillDamage'] || 0) + ascensionActiveSkillHpMulti;
+            this.stats.skillHealthMultiplier = 1 + (this.techModifiers['SkillHealth'] || 0) + ascensionActiveSkillHpMulti;
 
             let skillBaseDmg = 0;
             let skillBaseHp = 0;
@@ -1432,6 +1434,10 @@ export class StatEngine {
         // Add secondary stat skill damage bonus once to skill multiplier
         this.stats.skillDamageBreakdown.substats = this.secondaryStats.skillDamageMulti;
         this.stats.skillDamageMultiplier += this.secondaryStats.skillDamageMulti;
+
+        // Add secondary stat skill health bonus once to skill multiplier
+        this.stats.skillHealthBreakdown.substats = this.secondaryStats.skillHealthMulti;
+        this.stats.skillHealthMultiplier += this.secondaryStats.skillHealthMulti;
 
         // Move Speed
         this.stats.moveSpeed = this.secondaryStats.moveSpeed;

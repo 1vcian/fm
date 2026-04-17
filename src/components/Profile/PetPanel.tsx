@@ -1,17 +1,17 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
-import { Zap as PowerIcon, Plus, X, Minus, Cat, Pencil, Bookmark, Sword } from 'lucide-react';
+import { Zap as PowerIcon, Plus, Cat, Sword } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { PetSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
-import { cn, getRarityBgStyle } from '../../lib/utils';
+import { cn } from '../../lib/utils';
 import { MAX_ACTIVE_PETS } from '../../utils/constants';
 import { PetSelectorModal } from './PetSelectorModal';
 import { useGameData } from '../../hooks/useGameData';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
-import { formatSecondaryStat } from '../../utils/statNames';
+
 import { InputModal } from '../UI/InputModal';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
@@ -411,6 +411,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             onUnequip={(e) => { e.stopPropagation(); handleRemove(idx); }}
                             onSave={(e) => { e.stopPropagation(); setPetToSave(pet); }}
                             onLevelChange={(delta, e) => { e.stopPropagation(); handleLevelChange(idx, delta); }}
+                            maxLevel={petUpgradeLib?.[pet.rarity]?.LevelInfo?.length || 100}
                         />
                     );
                 })}

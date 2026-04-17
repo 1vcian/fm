@@ -318,7 +318,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                             }}
                             perfection={null}
                             getStatPerfection={() => null}
-                            rarity={skill.rarity}
+                            maxLevel={skillLibrary?.[skill.id]?.DamagePerLevel?.length || 999}
                             customStats={
                                 <div className="w-full flex flex-col gap-1.5 mt-1">
                                     <div className="flex flex-col gap-1 w-full">

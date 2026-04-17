@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { X, Sword, Heart, Shield, Plus, Trash2, Clock, Target, Unlock, Calendar, Grid, Settings, Bookmark } from 'lucide-react';
+import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { useGlobalStats } from '../../hooks/useGlobalStats';

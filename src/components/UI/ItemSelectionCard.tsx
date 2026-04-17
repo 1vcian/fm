@@ -3,10 +3,8 @@ import { X, Bookmark, Shield, Minus, Plus } from 'lucide-react';
 import { ItemSlot, MountSlot, PetSlot } from '../../types/Profile';
 import { AscensionStars } from './AscensionStars';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getRarityBgStyle, getRarityBorderStyle } from '../../lib/utils';
-import { getItemImage } from '../../utils/itemAssets';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
 import { formatSecondaryStat } from '../../utils/statNames';
-import { SpriteSheetIcon } from './SpriteSheetIcon';
 
 interface ItemSelectionCardProps {
     item: ItemSlot | MountSlot | PetSlot | any;
@@ -45,6 +43,7 @@ interface ItemSelectionCardProps {
     rarity?: string;
     variant?: 'default' | 'compact';
     currentLevel?: number;
+    maxLevel?: number;
 }
 
 export function ItemSelectionCard({
@@ -187,7 +186,7 @@ export function ItemSelectionCard({
                     )}
                     style={hideAgeStyles 
                         ? (rarity ? { ...getRarityBgStyle(rarity), ...getRarityBorderStyle(rarity) } : {}) 
-                        : { ...getAgeBgStyle((item as ItemSlot)?.age || 'Primitive'), ...getAgeBorderStyle((item as ItemSlot)?.age || 'Primitive') }
+                        : { ...getAgeBgStyle(typeof (item as any)?.age === 'number' ? (item as any).age : 0), ...getAgeBorderStyle(typeof (item as any)?.age === 'number' ? (item as any).age : 0) }
                     }
                 >
                     {renderIcon ? renderIcon() : (
@@ -296,7 +295,7 @@ export function ItemSelectionCard({
             {/* Passive Stats List */}
             {item?.secondaryStats && item.secondaryStats.length > 0 && (
                 <div className="w-full grid grid-cols-1 gap-1 mt-1 pt-1 border-t border-border/20">
-                    {item.secondaryStats.map((stat, idx) => {
+                    {item.secondaryStats.map((stat: { statId: string; value: number }, idx: number) => {
                         const formatted = formatSecondaryStat(stat.statId, stat.value);
                         const statPerf = getStatPerfection(stat.statId, stat.value);
                         return (

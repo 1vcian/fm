@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { Plus, Trash2, Save, Info, Minus, X, Search, Star, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
-import { formatSecondaryStat, getStatColor } from '../../utils/statNames';
+import { Plus, Trash2, Save, Info, X, Search, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
+
 import { useGameData } from '../../hooks/useGameData';
 import { PetSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
-import { Input } from '../UI/Input';
+
 import { ModalLevelSelector } from '../UI/ModalLevelSelector';
 import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getRarityBgStyle } from '../../lib/utils';

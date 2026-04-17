@@ -1,7 +1,6 @@
 import { useProfile } from '../../context/ProfileContext';
 import { Card } from '../UI/Card';
-import { Bike as MountIcon, Plus, Minus, X, Recycle, Bookmark } from 'lucide-react';
-import { Button } from '../UI/Button';
+import { Bike as MountIcon, Plus, X, Recycle, Bookmark } from 'lucide-react';
 import { MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { cn, getRarityBgStyle } from '../../lib/utils';
