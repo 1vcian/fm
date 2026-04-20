@@ -1,0 +1,4002 @@
+{
+  "0": {
+    "Level": 0,
+    "Damage": 15,
+    "Health": 120,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "1": {
+    "Level": 1,
+    "Damage": 45,
+    "Health": 360,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "2": {
+    "Level": 2,
+    "Damage": 135,
+    "Health": 1080,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "3": {
+    "Level": 3,
+    "Damage": 405,
+    "Health": 3240,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "4": {
+    "Level": 4,
+    "Damage": 1215,
+    "Health": 9720,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "5": {
+    "Level": 5,
+    "Damage": 1337,
+    "Health": 10696,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "6": {
+    "Level": 6,
+    "Damage": 1470,
+    "Health": 11760,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "7": {
+    "Level": 7,
+    "Damage": 1617,
+    "Health": 12936,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "8": {
+    "Level": 8,
+    "Damage": 1779,
+    "Health": 14232,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "9": {
+    "Level": 9,
+    "Damage": 1957,
+    "Health": 15656,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "10": {
+    "Level": 10,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "11": {
+    "Level": 11,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "12": {
+    "Level": 12,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "13": {
+    "Level": 13,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "14": {
+    "Level": 14,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "15": {
+    "Level": 15,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "16": {
+    "Level": 16,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "17": {
+    "Level": 17,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "18": {
+    "Level": 18,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "19": {
+    "Level": 19,
+    "Damage": 5120,
+    "Health": 40960,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "20": {
+    "Level": 20,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "21": {
+    "Level": 21,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "22": {
+    "Level": 22,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "23": {
+    "Level": 23,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "24": {
+    "Level": 24,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "25": {
+    "Level": 25,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "26": {
+    "Level": 26,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "27": {
+    "Level": 27,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "28": {
+    "Level": 28,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "29": {
+    "Level": 29,
+    "Damage": 20480,
+    "Health": 163840,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "30": {
+    "Level": 30,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "31": {
+    "Level": 31,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "32": {
+    "Level": 32,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "33": {
+    "Level": 33,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "34": {
+    "Level": 34,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "35": {
+    "Level": 35,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "36": {
+    "Level": 36,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "37": {
+    "Level": 37,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "38": {
+    "Level": 38,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "39": {
+    "Level": 39,
+    "Damage": 81900,
+    "Health": 655200,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "40": {
+    "Level": 40,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "41": {
+    "Level": 41,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "42": {
+    "Level": 42,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "43": {
+    "Level": 43,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "44": {
+    "Level": 44,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "45": {
+    "Level": 45,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "46": {
+    "Level": 46,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "47": {
+    "Level": 47,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "48": {
+    "Level": 48,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "49": {
+    "Level": 49,
+    "Damage": 300000,
+    "Health": 2400000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "50": {
+    "Level": 50,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "51": {
+    "Level": 51,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "52": {
+    "Level": 52,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "53": {
+    "Level": 53,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "54": {
+    "Level": 54,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "55": {
+    "Level": 55,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "56": {
+    "Level": 56,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "57": {
+    "Level": 57,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "58": {
+    "Level": 58,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "59": {
+    "Level": 59,
+    "Damage": 450000,
+    "Health": 3600000,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "60": {
+    "Level": 60,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "61": {
+    "Level": 61,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "62": {
+    "Level": 62,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "63": {
+    "Level": 63,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "64": {
+    "Level": 64,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "65": {
+    "Level": 65,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "66": {
+    "Level": 66,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "67": {
+    "Level": 67,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "68": {
+    "Level": 68,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "69": {
+    "Level": 69,
+    "Damage": 800000,
+    "Health": 6400000,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "70": {
+    "Level": 70,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "71": {
+    "Level": 71,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "72": {
+    "Level": 72,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "73": {
+    "Level": 73,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "74": {
+    "Level": 74,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "75": {
+    "Level": 75,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "76": {
+    "Level": 76,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "77": {
+    "Level": 77,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "78": {
+    "Level": 78,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "79": {
+    "Level": 79,
+    "Damage": 1300000,
+    "Health": 10400000,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "80": {
+    "Level": 80,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "81": {
+    "Level": 81,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "82": {
+    "Level": 82,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "83": {
+    "Level": 83,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "84": {
+    "Level": 84,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "85": {
+    "Level": 85,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "86": {
+    "Level": 86,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "87": {
+    "Level": 87,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "88": {
+    "Level": 88,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "89": {
+    "Level": 89,
+    "Damage": 2000000,
+    "Health": 16000000,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "90": {
+    "Level": 90,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "91": {
+    "Level": 91,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "92": {
+    "Level": 92,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "93": {
+    "Level": 93,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "94": {
+    "Level": 94,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "95": {
+    "Level": 95,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "96": {
+    "Level": 96,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "97": {
+    "Level": 97,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "98": {
+    "Level": 98,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "99": {
+    "Level": 99,
+    "Damage": 4000000,
+    "Health": 32000000,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "100": {
+    "Level": 100,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "101": {
+    "Level": 101,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "102": {
+    "Level": 102,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "103": {
+    "Level": 103,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "104": {
+    "Level": 104,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "105": {
+    "Level": 105,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "106": {
+    "Level": 106,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "107": {
+    "Level": 107,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "108": {
+    "Level": 108,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "109": {
+    "Level": 109,
+    "Damage": 6000000,
+    "Health": 48000000,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "110": {
+    "Level": 110,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "111": {
+    "Level": 111,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "112": {
+    "Level": 112,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "113": {
+    "Level": 113,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "114": {
+    "Level": 114,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "115": {
+    "Level": 115,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "116": {
+    "Level": 116,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "117": {
+    "Level": 117,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "118": {
+    "Level": 118,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "119": {
+    "Level": 119,
+    "Damage": 8000000,
+    "Health": 64000000,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "120": {
+    "Level": 120,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "121": {
+    "Level": 121,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "122": {
+    "Level": 122,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "123": {
+    "Level": 123,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "124": {
+    "Level": 124,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "125": {
+    "Level": 125,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "126": {
+    "Level": 126,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "127": {
+    "Level": 127,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "128": {
+    "Level": 128,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "129": {
+    "Level": 129,
+    "Damage": 10000000,
+    "Health": 80000000,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "130": {
+    "Level": 130,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "131": {
+    "Level": 131,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "132": {
+    "Level": 132,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "133": {
+    "Level": 133,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "134": {
+    "Level": 134,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "135": {
+    "Level": 135,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "136": {
+    "Level": 136,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "137": {
+    "Level": 137,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "138": {
+    "Level": 138,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "139": {
+    "Level": 139,
+    "Damage": 12000000,
+    "Health": 96000000,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "140": {
+    "Level": 140,
+    "Damage": 12720000,
+    "Health": 101760000,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "141": {
+    "Level": 141,
+    "Damage": 13483200,
+    "Health": 107865600,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "142": {
+    "Level": 142,
+    "Damage": 14292192,
+    "Health": 114337536,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "143": {
+    "Level": 143,
+    "Damage": 15149724,
+    "Health": 121197788,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "144": {
+    "Level": 144,
+    "Damage": 16058707,
+    "Health": 128469655,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "145": {
+    "Level": 145,
+    "Damage": 17022229,
+    "Health": 136177835,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "146": {
+    "Level": 146,
+    "Damage": 18043563,
+    "Health": 144348505,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "147": {
+    "Level": 147,
+    "Damage": 19126177,
+    "Health": 153009415,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "148": {
+    "Level": 148,
+    "Damage": 20273748,
+    "Health": 162189980,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "149": {
+    "Level": 149,
+    "Damage": 21490172,
+    "Health": 171921379,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "150": {
+    "Level": 150,
+    "Damage": 22779583,
+    "Health": 182236662,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "151": {
+    "Level": 151,
+    "Damage": 24146358,
+    "Health": 193170861,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "152": {
+    "Level": 152,
+    "Damage": 25595139,
+    "Health": 204761113,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "153": {
+    "Level": 153,
+    "Damage": 27130847,
+    "Health": 217046780,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "154": {
+    "Level": 154,
+    "Damage": 28758698,
+    "Health": 230069587,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "155": {
+    "Level": 155,
+    "Damage": 30484220,
+    "Health": 243873762,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "156": {
+    "Level": 156,
+    "Damage": 32313273,
+    "Health": 258506187,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "157": {
+    "Level": 157,
+    "Damage": 34252070,
+    "Health": 274016559,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "158": {
+    "Level": 158,
+    "Damage": 36307194,
+    "Health": 290457552,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "159": {
+    "Level": 159,
+    "Damage": 38485626,
+    "Health": 307885005,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "160": {
+    "Level": 160,
+    "Damage": 40794763,
+    "Health": 326358106,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "161": {
+    "Level": 161,
+    "Damage": 43242449,
+    "Health": 345939592,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "162": {
+    "Level": 162,
+    "Damage": 45836996,
+    "Health": 366695968,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "163": {
+    "Level": 163,
+    "Damage": 48587216,
+    "Health": 388697726,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "164": {
+    "Level": 164,
+    "Damage": 51502449,
+    "Health": 412019589,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "165": {
+    "Level": 165,
+    "Damage": 54592596,
+    "Health": 436740764,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "166": {
+    "Level": 166,
+    "Damage": 57868151,
+    "Health": 462945210,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "167": {
+    "Level": 167,
+    "Damage": 61340240,
+    "Health": 490721923,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "168": {
+    "Level": 168,
+    "Damage": 65020655,
+    "Health": 520165238,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "169": {
+    "Level": 169,
+    "Damage": 68921894,
+    "Health": 551375153,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "170": {
+    "Level": 170,
+    "Damage": 73057208,
+    "Health": 584457662,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "171": {
+    "Level": 171,
+    "Damage": 77440640,
+    "Health": 619525121,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "172": {
+    "Level": 172,
+    "Damage": 82087079,
+    "Health": 656696629,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "173": {
+    "Level": 173,
+    "Damage": 87012303,
+    "Health": 696098426,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "174": {
+    "Level": 174,
+    "Damage": 92233042,
+    "Health": 737864332,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "175": {
+    "Level": 175,
+    "Damage": 97767024,
+    "Health": 782136192,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "176": {
+    "Level": 176,
+    "Damage": 103633045,
+    "Health": 829064364,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "177": {
+    "Level": 177,
+    "Damage": 109851028,
+    "Health": 878808225,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "178": {
+    "Level": 178,
+    "Damage": 116442090,
+    "Health": 931536719,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "179": {
+    "Level": 179,
+    "Damage": 123428615,
+    "Health": 987428922,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "180": {
+    "Level": 180,
+    "Damage": 130834332,
+    "Health": 1046674657,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "181": {
+    "Level": 181,
+    "Damage": 138684392,
+    "Health": 1109475137,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "182": {
+    "Level": 182,
+    "Damage": 147005456,
+    "Health": 1176043645,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "183": {
+    "Level": 183,
+    "Damage": 155825783,
+    "Health": 1246606264,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "184": {
+    "Level": 184,
+    "Damage": 165175330,
+    "Health": 1321402639,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "185": {
+    "Level": 185,
+    "Damage": 175085850,
+    "Health": 1400686798,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "186": {
+    "Level": 186,
+    "Damage": 185591001,
+    "Health": 1484728006,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "187": {
+    "Level": 187,
+    "Damage": 196726461,
+    "Health": 1573811686,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "188": {
+    "Level": 188,
+    "Damage": 208530048,
+    "Health": 1668240387,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "189": {
+    "Level": 189,
+    "Damage": 221041851,
+    "Health": 1768334810,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "190": {
+    "Level": 190,
+    "Damage": 234304362,
+    "Health": 1874434899,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "191": {
+    "Level": 191,
+    "Damage": 248362624,
+    "Health": 1986900993,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "192": {
+    "Level": 192,
+    "Damage": 263264382,
+    "Health": 2106115053,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "193": {
+    "Level": 193,
+    "Damage": 279060244,
+    "Health": 2232481956,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "194": {
+    "Level": 194,
+    "Damage": 295803859,
+    "Health": 2366430873,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "195": {
+    "Level": 195,
+    "Damage": 313552091,
+    "Health": 2508416725,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "196": {
+    "Level": 196,
+    "Damage": 332365216,
+    "Health": 2658921729,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "197": {
+    "Level": 197,
+    "Damage": 352307129,
+    "Health": 2818457033,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "198": {
+    "Level": 198,
+    "Damage": 373445557,
+    "Health": 2987564455,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "199": {
+    "Level": 199,
+    "Damage": 395852290,
+    "Health": 3166818322,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "200": {
+    "Level": 200,
+    "Damage": 419603428,
+    "Health": 3356827421,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "201": {
+    "Level": 201,
+    "Damage": 444779633,
+    "Health": 3558237067,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "202": {
+    "Level": 202,
+    "Damage": 471466411,
+    "Health": 3771731290,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "203": {
+    "Level": 203,
+    "Damage": 499754396,
+    "Health": 3998035168,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "204": {
+    "Level": 204,
+    "Damage": 529739660,
+    "Health": 4237917278,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "205": {
+    "Level": 205,
+    "Damage": 561524039,
+    "Health": 4492192315,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "206": {
+    "Level": 206,
+    "Damage": 595215482,
+    "Health": 4761723854,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "207": {
+    "Level": 207,
+    "Damage": 630928411,
+    "Health": 5047427285,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "208": {
+    "Level": 208,
+    "Damage": 668784115,
+    "Health": 5350272922,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "209": {
+    "Level": 209,
+    "Damage": 708911162,
+    "Health": 5671289297,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "210": {
+    "Level": 210,
+    "Damage": 751445832,
+    "Health": 6011566655,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "211": {
+    "Level": 211,
+    "Damage": 796532582,
+    "Health": 6372260654,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "212": {
+    "Level": 212,
+    "Damage": 844324537,
+    "Health": 6754596294,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "213": {
+    "Level": 213,
+    "Damage": 894984009,
+    "Health": 7159872071,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "214": {
+    "Level": 214,
+    "Damage": 948683049,
+    "Health": 7589464395,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "215": {
+    "Level": 215,
+    "Damage": 1005604032,
+    "Health": 8044832259,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "216": {
+    "Level": 216,
+    "Damage": 1065940274,
+    "Health": 8527522195,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "217": {
+    "Level": 217,
+    "Damage": 1129896691,
+    "Health": 9039173526,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "218": {
+    "Level": 218,
+    "Damage": 1197690492,
+    "Health": 9581523938,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "219": {
+    "Level": 219,
+    "Damage": 1269551922,
+    "Health": 10156415374,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "220": {
+    "Level": 220,
+    "Damage": 1345725037,
+    "Health": 10765800297,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "221": {
+    "Level": 221,
+    "Damage": 1426468539,
+    "Health": 11411748315,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "222": {
+    "Level": 222,
+    "Damage": 1512056652,
+    "Health": 12096453213,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "223": {
+    "Level": 223,
+    "Damage": 1602780051,
+    "Health": 12822240406,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "224": {
+    "Level": 224,
+    "Damage": 1698946854,
+    "Health": 13591574831,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "225": {
+    "Level": 225,
+    "Damage": 1800883665,
+    "Health": 14407069320,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "226": {
+    "Level": 226,
+    "Damage": 1908936685,
+    "Health": 15271493480,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "227": {
+    "Level": 227,
+    "Damage": 2023472886,
+    "Health": 16187783088,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "228": {
+    "Level": 228,
+    "Damage": 2144881259,
+    "Health": 17159050074,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "229": {
+    "Level": 229,
+    "Damage": 2273574135,
+    "Health": 18188593078,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "230": {
+    "Level": 230,
+    "Damage": 2409988583,
+    "Health": 19279908663,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "231": {
+    "Level": 231,
+    "Damage": 2554587898,
+    "Health": 20436703183,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "232": {
+    "Level": 232,
+    "Damage": 2707863172,
+    "Health": 21662905374,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "233": {
+    "Level": 233,
+    "Damage": 2870334962,
+    "Health": 22962679696,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "234": {
+    "Level": 234,
+    "Damage": 3042555060,
+    "Health": 24340440478,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "235": {
+    "Level": 235,
+    "Damage": 3225108363,
+    "Health": 25800866906,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "236": {
+    "Level": 236,
+    "Damage": 3418614865,
+    "Health": 27348918921,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "237": {
+    "Level": 237,
+    "Damage": 3623731757,
+    "Health": 28989854056,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "238": {
+    "Level": 238,
+    "Damage": 3841155662,
+    "Health": 30729245299,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "239": {
+    "Level": 239,
+    "Damage": 4071625002,
+    "Health": 32573000017,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "240": {
+    "Level": 240,
+    "Damage": 4315922502,
+    "Health": 34527380018,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "241": {
+    "Level": 241,
+    "Damage": 4574877852,
+    "Health": 36599022820,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "242": {
+    "Level": 242,
+    "Damage": 4849370524,
+    "Health": 38794964189,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "243": {
+    "Level": 243,
+    "Damage": 5140332755,
+    "Health": 41122662040,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "244": {
+    "Level": 244,
+    "Damage": 5448752720,
+    "Health": 43590021762,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "245": {
+    "Level": 245,
+    "Damage": 5775677884,
+    "Health": 46205423068,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "246": {
+    "Level": 246,
+    "Damage": 6122218557,
+    "Health": 48977748452,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "247": {
+    "Level": 247,
+    "Damage": 6489551670,
+    "Health": 51916413359,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "248": {
+    "Level": 248,
+    "Damage": 6878924770,
+    "Health": 55031398161,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "249": {
+    "Level": 249,
+    "Damage": 7291660256,
+    "Health": 58333282051,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "250": {
+    "Level": 250,
+    "Damage": 7729159872,
+    "Health": 61833278974,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "251": {
+    "Level": 251,
+    "Damage": 8192909464,
+    "Health": 65543275712,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "252": {
+    "Level": 252,
+    "Damage": 8684484032,
+    "Health": 69475872255,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "253": {
+    "Level": 253,
+    "Damage": 9205553074,
+    "Health": 73644424590,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "254": {
+    "Level": 254,
+    "Damage": 9757886258,
+    "Health": 78063090066,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "255": {
+    "Level": 255,
+    "Damage": 10343359434,
+    "Health": 82746875469,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "256": {
+    "Level": 256,
+    "Damage": 10963961000,
+    "Health": 87711687998,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "257": {
+    "Level": 257,
+    "Damage": 11621798660,
+    "Health": 92974389277,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "258": {
+    "Level": 258,
+    "Damage": 12319106579,
+    "Health": 98552852634,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "259": {
+    "Level": 259,
+    "Damage": 13058252974,
+    "Health": 104466023792,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "260": {
+    "Level": 260,
+    "Damage": 13841748152,
+    "Health": 110733985220,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "261": {
+    "Level": 261,
+    "Damage": 14672253042,
+    "Health": 117378024333,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "262": {
+    "Level": 262,
+    "Damage": 15552588224,
+    "Health": 124420705793,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "263": {
+    "Level": 263,
+    "Damage": 16485743518,
+    "Health": 131885948140,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "264": {
+    "Level": 264,
+    "Damage": 17474888129,
+    "Health": 139799105029,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "265": {
+    "Level": 265,
+    "Damage": 18523381416,
+    "Health": 148187051331,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "266": {
+    "Level": 266,
+    "Damage": 19634784301,
+    "Health": 157078274410,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "267": {
+    "Level": 267,
+    "Damage": 20812871359,
+    "Health": 166502970875,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "268": {
+    "Level": 268,
+    "Damage": 22061643641,
+    "Health": 176493149128,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "269": {
+    "Level": 269,
+    "Damage": 23385342259,
+    "Health": 187082738075,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "270": {
+    "Level": 270,
+    "Damage": 24788462795,
+    "Health": 198307702360,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "271": {
+    "Level": 271,
+    "Damage": 26275770563,
+    "Health": 210206164501,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "272": {
+    "Level": 272,
+    "Damage": 27852316796,
+    "Health": 222818534371,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "273": {
+    "Level": 273,
+    "Damage": 29523455804,
+    "Health": 236187646434,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "274": {
+    "Level": 274,
+    "Damage": 31294863152,
+    "Health": 250358905220,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "275": {
+    "Level": 275,
+    "Damage": 33172554942,
+    "Health": 265380439533,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "276": {
+    "Level": 276,
+    "Damage": 35162908238,
+    "Health": 281303265905,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "277": {
+    "Level": 277,
+    "Damage": 37272682732,
+    "Health": 298181461859,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "278": {
+    "Level": 278,
+    "Damage": 39509043696,
+    "Health": 316072349571,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "279": {
+    "Level": 279,
+    "Damage": 41879586318,
+    "Health": 335036690545,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "280": {
+    "Level": 280,
+    "Damage": 44392361497,
+    "Health": 355138891978,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "281": {
+    "Level": 281,
+    "Damage": 47055903187,
+    "Health": 376447225496,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "282": {
+    "Level": 282,
+    "Damage": 49879257378,
+    "Health": 399034059026,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "283": {
+    "Level": 283,
+    "Damage": 52872012821,
+    "Health": 422976102568,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "284": {
+    "Level": 284,
+    "Damage": 56044333590,
+    "Health": 448354668722,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "285": {
+    "Level": 285,
+    "Damage": 59406993606,
+    "Health": 475255948845,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "286": {
+    "Level": 286,
+    "Damage": 62971413222,
+    "Health": 503771305776,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "287": {
+    "Level": 287,
+    "Damage": 66749698015,
+    "Health": 533997584122,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "288": {
+    "Level": 288,
+    "Damage": 70754679896,
+    "Health": 566037439169,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "289": {
+    "Level": 289,
+    "Damage": 74999960690,
+    "Health": 599999685520,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "290": {
+    "Level": 290,
+    "Damage": 79499958331,
+    "Health": 635999666651,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "291": {
+    "Level": 291,
+    "Damage": 84269955831,
+    "Health": 674159646650,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "292": {
+    "Level": 292,
+    "Damage": 89326153181,
+    "Health": 714609225449,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "293": {
+    "Level": 293,
+    "Damage": 94685722372,
+    "Health": 757485778976,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "294": {
+    "Level": 294,
+    "Damage": 100366865714,
+    "Health": 802934925714,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "295": {
+    "Level": 295,
+    "Damage": 106388877657,
+    "Health": 851111021257,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "296": {
+    "Level": 296,
+    "Damage": 112772210317,
+    "Health": 902177682533,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "297": {
+    "Level": 297,
+    "Damage": 119538542936,
+    "Health": 956308343485,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "298": {
+    "Level": 298,
+    "Damage": 126710855512,
+    "Health": 1013686844094,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "299": {
+    "Level": 299,
+    "Damage": 134313506842,
+    "Health": 1074508054739,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "300": {
+    "Level": 300,
+    "Damage": 142372317253,
+    "Health": 1138978538024,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "301": {
+    "Level": 301,
+    "Damage": 150914656288,
+    "Health": 1207317250305,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "302": {
+    "Level": 302,
+    "Damage": 159969535665,
+    "Health": 1279756285323,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "303": {
+    "Level": 303,
+    "Damage": 169567707805,
+    "Health": 1356541662443,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "304": {
+    "Level": 304,
+    "Damage": 179741770274,
+    "Health": 1437934162189,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "305": {
+    "Level": 305,
+    "Damage": 190526276490,
+    "Health": 1524210211921,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "306": {
+    "Level": 306,
+    "Damage": 201957853079,
+    "Health": 1615662824636,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "307": {
+    "Level": 307,
+    "Damage": 214075324264,
+    "Health": 1712602594114,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "308": {
+    "Level": 308,
+    "Damage": 226919843720,
+    "Health": 1815358749761,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "309": {
+    "Level": 309,
+    "Damage": 240535034343,
+    "Health": 1924280274747,
+    "EnemyId1": 1001,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "310": {
+    "Level": 310,
+    "Damage": 254967136404,
+    "Health": 2039737091231,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "311": {
+    "Level": 311,
+    "Damage": 270265164588,
+    "Health": 2162121316705,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "312": {
+    "Level": 312,
+    "Damage": 286481074463,
+    "Health": 2291848595708,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "313": {
+    "Level": 313,
+    "Damage": 303669938931,
+    "Health": 2429359511450,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "314": {
+    "Level": 314,
+    "Damage": 321890135267,
+    "Health": 2575121082137,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "315": {
+    "Level": 315,
+    "Damage": 341203543383,
+    "Health": 2729628347065,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "316": {
+    "Level": 316,
+    "Damage": 361675755986,
+    "Health": 2893406047889,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "317": {
+    "Level": 317,
+    "Damage": 383376301345,
+    "Health": 3067010410763,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "318": {
+    "Level": 318,
+    "Damage": 406378879426,
+    "Health": 3251031035408,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "319": {
+    "Level": 319,
+    "Damage": 430761612192,
+    "Health": 3446092897533,
+    "EnemyId1": 1002,
+    "EnemyId2": 1003,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "320": {
+    "Level": 320,
+    "Damage": 456607308923,
+    "Health": 3652858471385,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "321": {
+    "Level": 321,
+    "Damage": 484003747458,
+    "Health": 3872029979668,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "322": {
+    "Level": 322,
+    "Damage": 513043972306,
+    "Health": 4104351778448,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "323": {
+    "Level": 323,
+    "Damage": 543826610644,
+    "Health": 4350612885155,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "324": {
+    "Level": 324,
+    "Damage": 576456207283,
+    "Health": 4611649658264,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "325": {
+    "Level": 325,
+    "Damage": 611043579720,
+    "Health": 4888348637760,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "326": {
+    "Level": 326,
+    "Damage": 647706194503,
+    "Health": 5181649556025,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "327": {
+    "Level": 327,
+    "Damage": 686568566173,
+    "Health": 5492548529387,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "328": {
+    "Level": 328,
+    "Damage": 727762680144,
+    "Health": 5822101441150,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "329": {
+    "Level": 329,
+    "Damage": 771428440952,
+    "Health": 6171427527619,
+    "EnemyId1": 1004,
+    "EnemyId2": 1005,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "330": {
+    "Level": 330,
+    "Damage": 817714147410,
+    "Health": 6541713179276,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "331": {
+    "Level": 331,
+    "Damage": 866776996254,
+    "Health": 6934215970033,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "332": {
+    "Level": 332,
+    "Damage": 918783616029,
+    "Health": 7350268928235,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "333": {
+    "Level": 333,
+    "Damage": 973910632991,
+    "Health": 7791285063929,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "334": {
+    "Level": 334,
+    "Damage": 1032345270971,
+    "Health": 8258762167765,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "335": {
+    "Level": 335,
+    "Damage": 1094285987229,
+    "Health": 8754287897831,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "336": {
+    "Level": 336,
+    "Damage": 1159943146463,
+    "Health": 9279545171701,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "337": {
+    "Level": 337,
+    "Damage": 1229539735250,
+    "Health": 9836317882003,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "338": {
+    "Level": 338,
+    "Damage": 1303312119365,
+    "Health": 10426496954923,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "339": {
+    "Level": 339,
+    "Damage": 1381510846527,
+    "Health": 11052086772218,
+    "EnemyId1": 1006,
+    "EnemyId2": 1007,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "340": {
+    "Level": 340,
+    "Damage": 1464401497319,
+    "Health": 11715211978551,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "341": {
+    "Level": 341,
+    "Damage": 1552265587158,
+    "Health": 12418124697264,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "342": {
+    "Level": 342,
+    "Damage": 1645401522388,
+    "Health": 13163212179100,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "343": {
+    "Level": 343,
+    "Damage": 1744125613731,
+    "Health": 13953004909846,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "344": {
+    "Level": 344,
+    "Damage": 1848773150555,
+    "Health": 14790185204437,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "345": {
+    "Level": 345,
+    "Damage": 1959699539588,
+    "Health": 15677596316703,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "346": {
+    "Level": 346,
+    "Damage": 2077281511963,
+    "Health": 16618252095705,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "347": {
+    "Level": 347,
+    "Damage": 2201918402681,
+    "Health": 17615347221448,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "348": {
+    "Level": 348,
+    "Damage": 2334033506842,
+    "Health": 18672268054735,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "349": {
+    "Level": 349,
+    "Damage": 2474075517252,
+    "Health": 19792604138019,
+    "EnemyId1": 1008,
+    "EnemyId2": 1009,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "350": {
+    "Level": 350,
+    "Damage": 2622520048287,
+    "Health": 20980160386300,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "351": {
+    "Level": 351,
+    "Damage": 2779871251185,
+    "Health": 22238970009478,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "352": {
+    "Level": 352,
+    "Damage": 2946663526256,
+    "Health": 23573308210046,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "353": {
+    "Level": 353,
+    "Damage": 3123463337831,
+    "Health": 24987706702649,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "354": {
+    "Level": 354,
+    "Damage": 3310871138101,
+    "Health": 26486969104808,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "355": {
+    "Level": 355,
+    "Damage": 3509523406387,
+    "Health": 28076187251097,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "356": {
+    "Level": 356,
+    "Damage": 3720094810770,
+    "Health": 29760758486162,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "357": {
+    "Level": 357,
+    "Damage": 3943300499417,
+    "Health": 31546403995332,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "358": {
+    "Level": 358,
+    "Damage": 4179898529381,
+    "Health": 33439188235052,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "359": {
+    "Level": 359,
+    "Damage": 4430692441144,
+    "Health": 35445539529155,
+    "EnemyId1": 1010,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "360": {
+    "Level": 360,
+    "Damage": 4696533987613,
+    "Health": 37572271900904,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "361": {
+    "Level": 361,
+    "Damage": 4978326026870,
+    "Health": 39826608214959,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "362": {
+    "Level": 362,
+    "Damage": 5277025588482,
+    "Health": 42216204707856,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "363": {
+    "Level": 363,
+    "Damage": 5593647123791,
+    "Health": 44749176990328,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "364": {
+    "Level": 364,
+    "Damage": 5929265951218,
+    "Health": 47434127609747,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "365": {
+    "Level": 365,
+    "Damage": 6285021908292,
+    "Health": 50280175266332,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "366": {
+    "Level": 366,
+    "Damage": 6662123222789,
+    "Health": 53296985782312,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "367": {
+    "Level": 367,
+    "Damage": 7061850616156,
+    "Health": 56494804929251,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "368": {
+    "Level": 368,
+    "Damage": 7485561653126,
+    "Health": 59884493225006,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "369": {
+    "Level": 369,
+    "Damage": 7934695352313,
+    "Health": 63477562818506,
+    "EnemyId1": 1011,
+    "EnemyId2": 1012,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "370": {
+    "Level": 370,
+    "Damage": 8410777073452,
+    "Health": 67286216587616,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "371": {
+    "Level": 371,
+    "Damage": 8915423697859,
+    "Health": 71323389582873,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "372": {
+    "Level": 372,
+    "Damage": 9450349119731,
+    "Health": 75602792957846,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "373": {
+    "Level": 373,
+    "Damage": 10017370066915,
+    "Health": 80138960535317,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "374": {
+    "Level": 374,
+    "Damage": 10618412270929,
+    "Health": 84947298167436,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "375": {
+    "Level": 375,
+    "Damage": 11255517007185,
+    "Health": 90044136057482,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "376": {
+    "Level": 376,
+    "Damage": 11930848027616,
+    "Health": 95446784220931,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "377": {
+    "Level": 377,
+    "Damage": 12646698909273,
+    "Health": 101173591274187,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "378": {
+    "Level": 378,
+    "Damage": 13405500843830,
+    "Health": 107244006750638,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "379": {
+    "Level": 379,
+    "Damage": 14209830894460,
+    "Health": 113678647155676,
+    "EnemyId1": 1013,
+    "EnemyId2": 1014,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "380": {
+    "Level": 380,
+    "Damage": 15062420748127,
+    "Health": 120499365985017,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "381": {
+    "Level": 381,
+    "Damage": 15966165993015,
+    "Health": 127729327944118,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "382": {
+    "Level": 382,
+    "Damage": 16924135952596,
+    "Health": 135393087620765,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "383": {
+    "Level": 383,
+    "Damage": 17939584109751,
+    "Health": 143516672878011,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "384": {
+    "Level": 384,
+    "Damage": 19015959156336,
+    "Health": 152127673250692,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "385": {
+    "Level": 385,
+    "Damage": 20156916705717,
+    "Health": 161255333645733,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "386": {
+    "Level": 386,
+    "Damage": 21366331708060,
+    "Health": 170930653664477,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "387": {
+    "Level": 387,
+    "Damage": 22648311610543,
+    "Health": 181186492884346,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "388": {
+    "Level": 388,
+    "Damage": 24007210307176,
+    "Health": 192057682457406,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "389": {
+    "Level": 389,
+    "Damage": 25447642925606,
+    "Health": 203581143404851,
+    "EnemyId1": 1015,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "390": {
+    "Level": 390,
+    "Damage": 26974501501143,
+    "Health": 215796012009142,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 0
+  },
+  "391": {
+    "Level": 391,
+    "Damage": 28592971591211,
+    "Health": 228743772729690,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 1
+  },
+  "392": {
+    "Level": 392,
+    "Damage": 30308549886684,
+    "Health": 242468399093472,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 1,
+    "Wave2": 1,
+    "Wave3": 2
+  },
+  "393": {
+    "Level": 393,
+    "Damage": 32127062879885,
+    "Health": 257016503039080,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 2
+  },
+  "394": {
+    "Level": 394,
+    "Damage": 34054686652678,
+    "Health": 272437493221425,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 2,
+    "Wave3": 3
+  },
+  "395": {
+    "Level": 395,
+    "Damage": 36097967851839,
+    "Health": 288783742814710,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 2,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "396": {
+    "Level": 396,
+    "Damage": 38263845922949,
+    "Health": 306110767383593,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 3
+  },
+  "397": {
+    "Level": 397,
+    "Damage": 40559676678326,
+    "Health": 324477413426608,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 3,
+    "Wave3": 4
+  },
+  "398": {
+    "Level": 398,
+    "Damage": 42993257279026,
+    "Health": 343946058232205,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 3,
+    "Wave2": 4,
+    "Wave3": 4
+  },
+  "399": {
+    "Level": 399,
+    "Damage": 45572852715767,
+    "Health": 364582821726137,
+    "EnemyId1": 1016,
+    "EnemyId2": 0,
+    "Wave1": 4,
+    "Wave2": 4,
+    "Wave3": 4
+  }
+}

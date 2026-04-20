@@ -2,6 +2,16 @@
     {
         "coffee_count": 1,
         "supporter": {
+            "name": "Lucky",
+            "dp": "https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/E3CBF4/LU.png"
+        },
+        "supporter_message": {
+            "note": "This is such a useful tool. I can't imagine how many hours you've poured into it XD"
+        }
+    },
+    {
+        "coffee_count": 1,
+        "supporter": {
             "name": "Jens Gynnerstedt",
             "dp": "https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/80BEAF/JG.png"
         },
