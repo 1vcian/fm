@@ -26,7 +26,7 @@
             "$type": "DungeonKeyReward"
           },
           {
-            "Amount": 100,
+            "Amount": 125,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           }
@@ -56,7 +56,7 @@
             "$type": "DungeonKeyReward"
           },
           {
-            "Amount": 200,
+            "Amount": 250,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           }
@@ -86,7 +86,7 @@
             "$type": "DungeonKeyReward"
           },
           {
-            "Amount": 500,
+            "Amount": 625,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           }
@@ -116,7 +116,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 100,
+            "Amount": 150,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -126,7 +126,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 50,
+            "Amount": 62,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           }
@@ -151,7 +151,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 100,
+            "Amount": 170,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -161,7 +161,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 100,
+            "Amount": 125,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           }
@@ -186,7 +186,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 300,
+            "Amount": 500,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -196,7 +196,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 200,
+            "Amount": 250,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           }
@@ -221,7 +221,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 700,
+            "Amount": 1150,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -231,7 +231,7 @@
             "$type": "CurrencyReward"
           },
           {
-            "Amount": 500,
+            "Amount": 625,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           }
@@ -246,7 +246,7 @@
         "SizeId": 0,
         "Rewards": [
           {
-            "Amount": 100,
+            "Amount": 165,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -266,7 +266,7 @@
         "SizeId": 1,
         "Rewards": [
           {
-            "Amount": 400,
+            "Amount": 660,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -286,7 +286,7 @@
         "SizeId": 2,
         "Rewards": [
           {
-            "Amount": 1000,
+            "Amount": 1650,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -306,7 +306,7 @@
         "SizeId": 3,
         "Rewards": [
           {
-            "Amount": 2500,
+            "Amount": 4150,
             "Type": "Eggshells",
             "$type": "CurrencyReward"
           },
@@ -501,7 +501,7 @@
         "SizeId": 0,
         "Rewards": [
           {
-            "Amount": 70,
+            "Amount": 90,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           },
@@ -521,7 +521,7 @@
         "SizeId": 1,
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 320,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           },
@@ -541,7 +541,7 @@
         "SizeId": 2,
         "Rewards": [
           {
-            "Amount": 750,
+            "Amount": 940,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           },
@@ -561,7 +561,7 @@
         "SizeId": 3,
         "Rewards": [
           {
-            "Amount": 1700,
+            "Amount": 2150,
             "Type": "ClockWinders",
             "$type": "CurrencyReward"
           },
