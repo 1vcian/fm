@@ -105,7 +105,7 @@
         "Task": "SummonRareSkill",
         "Rewards": [
           {
-            "Amount": 150,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -114,7 +114,7 @@
         "Task": "SummonEpicSkill",
         "Rewards": [
           {
-            "Amount": 175,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -123,7 +123,7 @@
         "Task": "SummonLegendarySkill",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -132,7 +132,7 @@
         "Task": "SummonUltimateSkill",
         "Rewards": [
           {
-            "Amount": 225,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -141,7 +141,7 @@
         "Task": "SummonMythicSkill",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -159,7 +159,7 @@
         "Task": "UpgradeRareSkill",
         "Rewards": [
           {
-            "Amount": 150,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -168,7 +168,7 @@
         "Task": "UpgradeEpicSkill",
         "Rewards": [
           {
-            "Amount": 175,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -177,7 +177,7 @@
         "Task": "UpgradeLegendarySkill",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -186,7 +186,7 @@
         "Task": "UpgradeUltimateSkill",
         "Rewards": [
           {
-            "Amount": 225,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -195,7 +195,7 @@
         "Task": "UpgradeMythicSkill",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -309,7 +309,7 @@
         "Task": "HatchCommonEgg",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 400,
             "$type": "WarPointsReward"
           }
         ]
@@ -318,7 +318,7 @@
         "Task": "HatchRareEgg",
         "Rewards": [
           {
-            "Amount": 800,
+            "Amount": 1600,
             "$type": "WarPointsReward"
           }
         ]
@@ -327,7 +327,7 @@
         "Task": "HatchEpicEgg",
         "Rewards": [
           {
-            "Amount": 1600,
+            "Amount": 3200,
             "$type": "WarPointsReward"
           }
         ]
@@ -336,7 +336,7 @@
         "Task": "HatchLegendaryEgg",
         "Rewards": [
           {
-            "Amount": 3200,
+            "Amount": 6400,
             "$type": "WarPointsReward"
           }
         ]
@@ -345,7 +345,7 @@
         "Task": "HatchUltimateEgg",
         "Rewards": [
           {
-            "Amount": 6400,
+            "Amount": 12800,
             "$type": "WarPointsReward"
           }
         ]
@@ -354,7 +354,7 @@
         "Task": "HatchMythicEgg",
         "Rewards": [
           {
-            "Amount": 12800,
+            "Amount": 25600,
             "$type": "WarPointsReward"
           }
         ]
@@ -363,7 +363,7 @@
         "Task": "MergeCommonPet",
         "Rewards": [
           {
-            "Amount": 50,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -372,7 +372,7 @@
         "Task": "MergeRarePet",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -381,7 +381,7 @@
         "Task": "MergeEpicPet",
         "Rewards": [
           {
-            "Amount": 400,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -390,7 +390,7 @@
         "Task": "MergeLegendaryPet",
         "Rewards": [
           {
-            "Amount": 800,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -399,7 +399,7 @@
         "Task": "MergeUltimatePet",
         "Rewards": [
           {
-            "Amount": 1600,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -408,7 +408,7 @@
         "Task": "MergeMythicPet",
         "Rewards": [
           {
-            "Amount": 3200,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -522,7 +522,7 @@
         "Task": "SummonRareSkill",
         "Rewards": [
           {
-            "Amount": 150,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -531,7 +531,7 @@
         "Task": "SummonEpicSkill",
         "Rewards": [
           {
-            "Amount": 175,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -540,7 +540,7 @@
         "Task": "SummonLegendarySkill",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -549,7 +549,7 @@
         "Task": "SummonUltimateSkill",
         "Rewards": [
           {
-            "Amount": 225,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -558,7 +558,7 @@
         "Task": "SummonMythicSkill",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -576,7 +576,7 @@
         "Task": "UpgradeRareSkill",
         "Rewards": [
           {
-            "Amount": 150,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -585,7 +585,7 @@
         "Task": "UpgradeEpicSkill",
         "Rewards": [
           {
-            "Amount": 175,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -594,7 +594,7 @@
         "Task": "UpgradeLegendarySkill",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -603,7 +603,7 @@
         "Task": "UpgradeUltimateSkill",
         "Rewards": [
           {
-            "Amount": 225,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -612,7 +612,7 @@
         "Task": "UpgradeMythicSkill",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 125,
             "$type": "WarPointsReward"
           }
         ]
@@ -621,7 +621,7 @@
         "Task": "SummonCommonMount",
         "Rewards": [
           {
-            "Amount": 50,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -630,7 +630,7 @@
         "Task": "SummonRareMount",
         "Rewards": [
           {
-            "Amount": 100,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -639,7 +639,7 @@
         "Task": "SummonEpicMount",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -648,7 +648,7 @@
         "Task": "SummonLegendaryMount",
         "Rewards": [
           {
-            "Amount": 500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -657,7 +657,7 @@
         "Task": "SummonUltimateMount",
         "Rewards": [
           {
-            "Amount": 1500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -666,7 +666,7 @@
         "Task": "SummonMythicMount",
         "Rewards": [
           {
-            "Amount": 2500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -675,7 +675,7 @@
         "Task": "MergeCommonMount",
         "Rewards": [
           {
-            "Amount": 50,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -684,7 +684,7 @@
         "Task": "MergeRareMount",
         "Rewards": [
           {
-            "Amount": 100,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -693,7 +693,7 @@
         "Task": "MergeEpicMount",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -702,7 +702,7 @@
         "Task": "MergeLegendaryMount",
         "Rewards": [
           {
-            "Amount": 500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -711,7 +711,7 @@
         "Task": "MergeUltimateMount",
         "Rewards": [
           {
-            "Amount": 1500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -720,7 +720,7 @@
         "Task": "MergeMythicMount",
         "Rewards": [
           {
-            "Amount": 2500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -798,7 +798,7 @@
         "Task": "HatchCommonEgg",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 400,
             "$type": "WarPointsReward"
           }
         ]
@@ -807,7 +807,7 @@
         "Task": "HatchRareEgg",
         "Rewards": [
           {
-            "Amount": 800,
+            "Amount": 1600,
             "$type": "WarPointsReward"
           }
         ]
@@ -816,7 +816,7 @@
         "Task": "HatchEpicEgg",
         "Rewards": [
           {
-            "Amount": 1600,
+            "Amount": 3200,
             "$type": "WarPointsReward"
           }
         ]
@@ -825,7 +825,7 @@
         "Task": "HatchLegendaryEgg",
         "Rewards": [
           {
-            "Amount": 3200,
+            "Amount": 6400,
             "$type": "WarPointsReward"
           }
         ]
@@ -834,7 +834,7 @@
         "Task": "HatchUltimateEgg",
         "Rewards": [
           {
-            "Amount": 6400,
+            "Amount": 12800,
             "$type": "WarPointsReward"
           }
         ]
@@ -843,7 +843,7 @@
         "Task": "HatchMythicEgg",
         "Rewards": [
           {
-            "Amount": 12800,
+            "Amount": 25600,
             "$type": "WarPointsReward"
           }
         ]
@@ -852,7 +852,7 @@
         "Task": "MergeCommonPet",
         "Rewards": [
           {
-            "Amount": 50,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -861,7 +861,7 @@
         "Task": "MergeRarePet",
         "Rewards": [
           {
-            "Amount": 200,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -870,7 +870,7 @@
         "Task": "MergeEpicPet",
         "Rewards": [
           {
-            "Amount": 400,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -879,7 +879,7 @@
         "Task": "MergeLegendaryPet",
         "Rewards": [
           {
-            "Amount": 800,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -888,7 +888,7 @@
         "Task": "MergeUltimatePet",
         "Rewards": [
           {
-            "Amount": 1600,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -897,7 +897,7 @@
         "Task": "MergeMythicPet",
         "Rewards": [
           {
-            "Amount": 3200,
+            "Amount": 1250,
             "$type": "WarPointsReward"
           }
         ]
@@ -1038,7 +1038,7 @@
         "Task": "SummonCommonMount",
         "Rewards": [
           {
-            "Amount": 50,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1047,7 +1047,7 @@
         "Task": "SummonRareMount",
         "Rewards": [
           {
-            "Amount": 100,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1056,7 +1056,7 @@
         "Task": "SummonEpicMount",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1065,7 +1065,7 @@
         "Task": "SummonLegendaryMount",
         "Rewards": [
           {
-            "Amount": 500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1074,7 +1074,7 @@
         "Task": "SummonUltimateMount",
         "Rewards": [
           {
-            "Amount": 1500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1083,7 +1083,7 @@
         "Task": "SummonMythicMount",
         "Rewards": [
           {
-            "Amount": 2500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1092,7 +1092,7 @@
         "Task": "MergeCommonMount",
         "Rewards": [
           {
-            "Amount": 50,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1101,7 +1101,7 @@
         "Task": "MergeRareMount",
         "Rewards": [
           {
-            "Amount": 100,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1110,7 +1110,7 @@
         "Task": "MergeEpicMount",
         "Rewards": [
           {
-            "Amount": 250,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1119,7 +1119,7 @@
         "Task": "MergeLegendaryMount",
         "Rewards": [
           {
-            "Amount": 500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1128,7 +1128,7 @@
         "Task": "MergeUltimateMount",
         "Rewards": [
           {
-            "Amount": 1500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]
@@ -1137,7 +1137,7 @@
         "Task": "MergeMythicMount",
         "Rewards": [
           {
-            "Amount": 2500,
+            "Amount": 600,
             "$type": "WarPointsReward"
           }
         ]

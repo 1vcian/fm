@@ -564,6 +564,7 @@
     "ItemBalancingConfig.json",
     "ItemBalancingLibrary.json",
     "ItemLevelBracketsLibrary.json",
+    "LegacyDungeonsMigration.json",
     "LegacyForgeUpgradeLibrary.json",
     "LegacyMigration.json",
     "LegacySummonConfigs.json",
