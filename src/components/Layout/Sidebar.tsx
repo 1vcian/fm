@@ -77,6 +77,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Arena', path: '/arena', icon: Swords },
                 { name: 'Guild War', path: '/guild-war', icon: Shield },
                 { name: 'Shop', path: '/wiki/shop', icon: ShoppingCart },
+                { name: 'Progress Pass', path: '/wiki/progress-pass', icon: TrendingUp },
             ]
         },
         {

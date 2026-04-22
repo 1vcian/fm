@@ -35,6 +35,7 @@ import ForgeWiki from './pages/ForgeWiki';
 import SkinsPage from './pages/Skins';
 import BaseDrops from './pages/BaseDrops';
 import Shop from './pages/Shop';
+import ProgressPassWiki from './pages/ProgressPassWiki';
 
 function App() {
     return (
@@ -75,6 +76,7 @@ function App() {
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
                                     <Route path="wiki/base-drops" element={<BaseDrops />} />
                                     <Route path="wiki/shop" element={<Shop />} />
+                                    <Route path="wiki/progress-pass" element={<ProgressPassWiki />} />
                                     <Route path="skins" element={<SkinsPage />} />
                                     <Route path="*" element={<Home />} />
                                 </Route>
