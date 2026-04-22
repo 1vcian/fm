@@ -1,0 +1,582 @@
+{
+  "Dungeon": {
+    "DailyDealType": "Dungeon",
+    "Size": [
+      {
+        "SizeId": 1,
+        "Rewards": [
+          {
+            "Amount": 1,
+            "Type": "Hammer",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Skill",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 1,
+            "Type": "Potion",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 125,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 2,
+        "Rewards": [
+          {
+            "Amount": 2,
+            "Type": "Hammer",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Skill",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 2,
+            "Type": "Potion",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 250,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 3,
+        "Rewards": [
+          {
+            "Amount": 5,
+            "Type": "Hammer",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Skill",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Pet",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Potion",
+            "$type": "DungeonKeyReward"
+          },
+          {
+            "Amount": 625,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "Resource": {
+    "DailyDealType": "Resource",
+    "Size": [
+      {
+        "SizeId": 0,
+        "Rewards": [
+          {
+            "Amount": 1000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 200,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 62,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 1,
+        "Rewards": [
+          {
+            "Amount": 20000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 400,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 170,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 400,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 125,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 2,
+        "Rewards": [
+          {
+            "Amount": 50000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1500,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 500,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 500,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 250,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 3,
+        "Rewards": [
+          {
+            "Amount": 150000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2500,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 625,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "Pet": {
+    "DailyDealType": "Pet",
+    "Size": [
+      {
+        "SizeId": 0,
+        "Rewards": [
+          {
+            "Amount": 165,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 10,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 1,
+        "Rewards": [
+          {
+            "Amount": 660,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 200,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 20,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 2,
+        "Rewards": [
+          {
+            "Amount": 1650,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2000,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 80,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 3,
+        "Rewards": [
+          {
+            "Amount": 4150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 170,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "Tech": {
+    "DailyDealType": "Tech",
+    "Size": [
+      {
+        "SizeId": 0,
+        "Rewards": [
+          {
+            "Amount": 150,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 300,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 10,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 1,
+        "Rewards": [
+          {
+            "Amount": 600,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1000,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 30,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 2,
+        "Rewards": [
+          {
+            "Amount": 1600,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2000,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 3,
+        "Rewards": [
+          {
+            "Amount": 4500,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4000,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 200,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "Skill": {
+    "DailyDealType": "Skill",
+    "Size": [
+      {
+        "SizeId": 0,
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 10,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 1,
+        "Rewards": [
+          {
+            "Amount": 1200,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 300,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 30,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 2,
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 2000,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 90,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 3,
+        "Rewards": [
+          {
+            "Amount": 9000,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 3500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "Mount": {
+    "DailyDealType": "Mount",
+    "Size": [
+      {
+        "SizeId": 0,
+        "Rewards": [
+          {
+            "Amount": 90,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 10,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 1,
+        "Rewards": [
+          {
+            "Amount": 320,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 20,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 2,
+        "Rewards": [
+          {
+            "Amount": 940,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 1000,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 40,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "SizeId": 3,
+        "Rewards": [
+          {
+            "Amount": 2150,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 4000,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  }
+}

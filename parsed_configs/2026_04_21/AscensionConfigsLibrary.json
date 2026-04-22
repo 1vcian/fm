@@ -1,0 +1,517 @@
+{
+  "Forge": {
+    "Type": "Forge",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": {
+          "Amount": 3000000,
+          "Currency": "Coins"
+        },
+        "UnlockSegments": [
+          "ForgeLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "ItemType": null,
+                "$type": "EquipmentStatTarget"
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "ItemType": null,
+                "$type": "EquipmentStatTarget"
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": {
+          "Amount": 3000000,
+          "Currency": "Coins"
+        },
+        "UnlockSegments": [
+          "ForgeLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "ItemType": null,
+                "$type": "EquipmentStatTarget"
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "ItemType": null,
+                "$type": "EquipmentStatTarget"
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": {
+          "Amount": 3000000,
+          "Currency": "Coins"
+        },
+        "UnlockSegments": [
+          "ForgeLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "ItemType": null,
+                "$type": "EquipmentStatTarget"
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "ItemType": null,
+                "$type": "EquipmentStatTarget"
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  },
+  "Mounts": {
+    "Type": "Mounts",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "MountsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "MountRarity": null,
+                "$type": "MountStatTarget"
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "MountRarity": null,
+                "$type": "MountStatTarget"
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "MountsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "MountRarity": null,
+                "$type": "MountStatTarget"
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "MountRarity": null,
+                "$type": "MountStatTarget"
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "MountsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "MountRarity": null,
+                "$type": "MountStatTarget"
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "MountRarity": null,
+                "$type": "MountStatTarget"
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  },
+  "Pets": {
+    "Type": "Pets",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "EggsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "PetRarity": null,
+                "$type": "PetStatTarget"
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "PetRarity": null,
+                "$type": "PetStatTarget"
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "EggsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "PetRarity": null,
+                "$type": "PetStatTarget"
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "PetRarity": null,
+                "$type": "PetStatTarget"
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "EggsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "PetRarity": null,
+                "$type": "PetStatTarget"
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "PetRarity": null,
+                "$type": "PetStatTarget"
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  },
+  "Skills": {
+    "Type": "Skills",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "SkillsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "ActiveSkillStatTarget"
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "ActiveSkillStatTarget"
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "PassiveSkillStatTarget"
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "PassiveSkillStatTarget"
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "SkillsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "ActiveSkillStatTarget"
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "ActiveSkillStatTarget"
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "PassiveSkillStatTarget"
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "PassiveSkillStatTarget"
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "UnlockSegments": [
+          "SkillsSummonLevelMaxed"
+        ],
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "ActiveSkillStatTarget"
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "ActiveSkillStatTarget"
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "PassiveSkillStatTarget"
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "StatTarget": {
+                "SkillType": null,
+                "$type": "PassiveSkillStatTarget"
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  }
+}
