@@ -1,0 +1,422 @@
+{
+  "E": {
+    "Tier": "E",
+    "RequiredPoints": 0,
+    "WarWonRewards": [
+      {
+        "Amount": 190,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 5000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 260,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 170,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 200,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 125,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 100,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2500,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 130,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 85,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 100,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 65,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 3
+  },
+  "D": {
+    "Tier": "D",
+    "RequiredPoints": 5,
+    "WarWonRewards": [
+      {
+        "Amount": 380,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 10000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 520,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 350,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 400,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 250,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 190,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 5000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 260,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 175,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 200,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 125,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 2
+  },
+  "C": {
+    "Tier": "C",
+    "RequiredPoints": 10,
+    "WarWonRewards": [
+      {
+        "Amount": 750,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 20000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1050,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 700,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 800,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 525,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 375,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 10000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 525,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 350,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 400,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 260,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 1
+  },
+  "B": {
+    "Tier": "B",
+    "RequiredPoints": 15,
+    "WarWonRewards": [
+      {
+        "Amount": 1400,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 55000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2100,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1400,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1580,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1000,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 700,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 27500,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1050,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 700,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 790,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 500,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 0
+  },
+  "A": {
+    "Tier": "A",
+    "RequiredPoints": 20,
+    "WarWonRewards": [
+      {
+        "Amount": 2500,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 80000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 3600,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2500,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2800,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1900,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 1250,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 40000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1800,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1250,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1400,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 1000,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 2
+  },
+  "S": {
+    "Tier": "S",
+    "RequiredPoints": 25,
+    "WarWonRewards": [
+      {
+        "Amount": 5700,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 150000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 7800,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 5200,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 5900,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 4000,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "WarLostRewards": [
+      {
+        "Amount": 2850,
+        "Type": "Hammers",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 75000,
+        "Type": "Coins",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 3900,
+        "Type": "SkillSummonTickets",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2600,
+        "Type": "Eggshells",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2900,
+        "Type": "TechPotions",
+        "$type": "CurrencyReward"
+      },
+      {
+        "Amount": 2000,
+        "Type": "ClockWinders",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "TierPointsOnWin": 5,
+    "TierPointsOnLose": 4
+  }
+}

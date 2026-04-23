@@ -1,0 +1,1153 @@
+{
+  "0": {
+    "Day": 0,
+    "Tasks": [
+      {
+        "Task": "ForgePrimitiveEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeMedievalEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeEarlyModernEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeModernEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeSpaceEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeInterstellarEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeMultiverseEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeQuantumEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeUnderworldEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeDivineEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonCommonSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonRareSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonEpicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonLegendarySkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonUltimateSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonMythicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeCommonSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeRareSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeEpicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeLegendarySkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeUltimateSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeMythicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishITechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 920,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishIITechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 9000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishIIITechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 26000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishIVTechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 47800,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishVTechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 90700,
+            "$type": "WarPointsReward"
+          }
+        ]
+      }
+    ],
+    "DayPoints": 1
+  },
+  "1": {
+    "Day": 1,
+    "Tasks": [
+      {
+        "Task": "SpendCoinsOnForge",
+        "Rewards": [
+          {
+            "Amount": 27,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SpendGemOnForge",
+        "Rewards": [
+          {
+            "Amount": 50,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseHammerThiefDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseGhostTownDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseInvasionDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseZombieInvasionDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchCommonEgg",
+        "Rewards": [
+          {
+            "Amount": 400,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchRareEgg",
+        "Rewards": [
+          {
+            "Amount": 1600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchEpicEgg",
+        "Rewards": [
+          {
+            "Amount": 3200,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchLegendaryEgg",
+        "Rewards": [
+          {
+            "Amount": 6400,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchUltimateEgg",
+        "Rewards": [
+          {
+            "Amount": 12800,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchMythicEgg",
+        "Rewards": [
+          {
+            "Amount": 25600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeCommonPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeRarePet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeEpicPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeLegendaryPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeUltimatePet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeMythicPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      }
+    ],
+    "DayPoints": 2
+  },
+  "2": {
+    "Day": 2,
+    "Tasks": [
+      {
+        "Task": "ForgePrimitiveEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeMedievalEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeEarlyModernEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeModernEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeSpaceEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeInterstellarEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeMultiverseEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeQuantumEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeUnderworldEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeDivineEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonCommonSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonRareSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonEpicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonLegendarySkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonUltimateSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonMythicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeCommonSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeRareSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeEpicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeLegendarySkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeUltimateSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UpgradeMythicSkill",
+        "Rewards": [
+          {
+            "Amount": 125,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonCommonMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonRareMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonEpicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonLegendaryMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonUltimateMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonMythicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeCommonMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeRareMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeEpicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeLegendaryMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeUltimateMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeMythicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      }
+    ],
+    "DayPoints": 2
+  },
+  "3": {
+    "Day": 3,
+    "Tasks": [
+      {
+        "Task": "SpendCoinsOnForge",
+        "Rewards": [
+          {
+            "Amount": 27,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SpendGemOnForge",
+        "Rewards": [
+          {
+            "Amount": 50,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishITechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 920,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishIITechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 9000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishIIITechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 26000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishIVTechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 47800,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "FinishVTechTreeUpgrade",
+        "Rewards": [
+          {
+            "Amount": 90700,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchCommonEgg",
+        "Rewards": [
+          {
+            "Amount": 400,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchRareEgg",
+        "Rewards": [
+          {
+            "Amount": 1600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchEpicEgg",
+        "Rewards": [
+          {
+            "Amount": 3200,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchLegendaryEgg",
+        "Rewards": [
+          {
+            "Amount": 6400,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchUltimateEgg",
+        "Rewards": [
+          {
+            "Amount": 12800,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "HatchMythicEgg",
+        "Rewards": [
+          {
+            "Amount": 25600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeCommonPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeRarePet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeEpicPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeLegendaryPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeUltimatePet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeMythicPet",
+        "Rewards": [
+          {
+            "Amount": 1250,
+            "$type": "WarPointsReward"
+          }
+        ]
+      }
+    ],
+    "DayPoints": 2
+  },
+  "4": {
+    "Day": 4,
+    "Tasks": [
+      {
+        "Task": "ForgePrimitiveEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeMedievalEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeEarlyModernEquipment",
+        "Rewards": [
+          {
+            "Amount": 1,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeModernEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeSpaceEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeInterstellarEquipment",
+        "Rewards": [
+          {
+            "Amount": 2,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeMultiverseEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeQuantumEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeUnderworldEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "ForgeDivineEquipment",
+        "Rewards": [
+          {
+            "Amount": 3,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseHammerThiefDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseGhostTownDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseInvasionDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "UseZombieInvasionDungeonKey",
+        "Rewards": [
+          {
+            "Amount": 3000,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonCommonMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonRareMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonEpicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonLegendaryMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonUltimateMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "SummonMythicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeCommonMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeRareMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeEpicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeLegendaryMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeUltimateMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      },
+      {
+        "Task": "MergeMythicMount",
+        "Rewards": [
+          {
+            "Amount": 600,
+            "$type": "WarPointsReward"
+          }
+        ]
+      }
+    ],
+    "DayPoints": 2
+  },
+  "5": {
+    "Day": 5,
+    "Tasks": [],
+    "DayPoints": 4
+  }
+}
