@@ -1,0 +1,2161 @@
+{
+  "Forge": {
+    "Type": "Forge",
+    "Nodes": [
+      {
+        "Id": 0,
+        "Tier": 0,
+        "Layer": 0,
+        "Type": "ForgeTimerSpeed",
+        "Requirements": []
+      },
+      {
+        "Id": 1,
+        "Tier": 0,
+        "Layer": 0,
+        "Type": "ForgeUpgradeCost",
+        "Requirements": []
+      },
+      {
+        "Id": 2,
+        "Tier": 0,
+        "Layer": 1,
+        "Type": "EquipmentSellPrice",
+        "Requirements": [
+          0,
+          1
+        ]
+      },
+      {
+        "Id": 3,
+        "Tier": 0,
+        "Layer": 2,
+        "Type": "HammerThiefHammerReward",
+        "Requirements": [
+          2
+        ]
+      },
+      {
+        "Id": 4,
+        "Tier": 0,
+        "Layer": 2,
+        "Type": "HammerThiefCoinReward",
+        "Requirements": [
+          2
+        ]
+      },
+      {
+        "Id": 5,
+        "Tier": 0,
+        "Layer": 3,
+        "Type": "AutoForge",
+        "Requirements": [
+          3,
+          4
+        ]
+      },
+      {
+        "Id": 6,
+        "Tier": 0,
+        "Layer": 4,
+        "Type": "FreeForgeChance",
+        "Requirements": [
+          5
+        ]
+      },
+      {
+        "Id": 7,
+        "Tier": 0,
+        "Layer": 5,
+        "Type": "MaxOfflineReward",
+        "Requirements": [
+          6
+        ]
+      },
+      {
+        "Id": 8,
+        "Tier": 0,
+        "Layer": 6,
+        "Type": "CoinOfflineReward",
+        "Requirements": [
+          7
+        ]
+      },
+      {
+        "Id": 9,
+        "Tier": 0,
+        "Layer": 6,
+        "Type": "HammerOfflineReward",
+        "Requirements": [
+          7
+        ]
+      },
+      {
+        "Id": 10,
+        "Tier": 1,
+        "Layer": 7,
+        "Type": "ForgeTimerSpeed",
+        "Requirements": [
+          8
+        ]
+      },
+      {
+        "Id": 11,
+        "Tier": 1,
+        "Layer": 7,
+        "Type": "ForgeUpgradeCost",
+        "Requirements": [
+          9
+        ]
+      },
+      {
+        "Id": 12,
+        "Tier": 1,
+        "Layer": 8,
+        "Type": "EquipmentSellPrice",
+        "Requirements": [
+          10,
+          11
+        ]
+      },
+      {
+        "Id": 13,
+        "Tier": 1,
+        "Layer": 9,
+        "Type": "HammerThiefHammerReward",
+        "Requirements": [
+          12
+        ]
+      },
+      {
+        "Id": 14,
+        "Tier": 1,
+        "Layer": 9,
+        "Type": "HammerThiefCoinReward",
+        "Requirements": [
+          12
+        ]
+      },
+      {
+        "Id": 15,
+        "Tier": 1,
+        "Layer": 10,
+        "Type": "AutoForge",
+        "Requirements": [
+          13,
+          14
+        ]
+      },
+      {
+        "Id": 16,
+        "Tier": 1,
+        "Layer": 11,
+        "Type": "FreeForgeChance",
+        "Requirements": [
+          15
+        ]
+      },
+      {
+        "Id": 17,
+        "Tier": 1,
+        "Layer": 12,
+        "Type": "MaxOfflineReward",
+        "Requirements": [
+          16
+        ]
+      },
+      {
+        "Id": 18,
+        "Tier": 1,
+        "Layer": 13,
+        "Type": "CoinOfflineReward",
+        "Requirements": [
+          17
+        ]
+      },
+      {
+        "Id": 19,
+        "Tier": 1,
+        "Layer": 13,
+        "Type": "HammerOfflineReward",
+        "Requirements": [
+          17
+        ]
+      },
+      {
+        "Id": 20,
+        "Tier": 2,
+        "Layer": 14,
+        "Type": "ForgeTimerSpeed",
+        "Requirements": [
+          18
+        ]
+      },
+      {
+        "Id": 21,
+        "Tier": 2,
+        "Layer": 14,
+        "Type": "ForgeUpgradeCost",
+        "Requirements": [
+          19
+        ]
+      },
+      {
+        "Id": 22,
+        "Tier": 2,
+        "Layer": 15,
+        "Type": "EquipmentSellPrice",
+        "Requirements": [
+          20,
+          21
+        ]
+      },
+      {
+        "Id": 23,
+        "Tier": 2,
+        "Layer": 16,
+        "Type": "HammerThiefHammerReward",
+        "Requirements": [
+          22
+        ]
+      },
+      {
+        "Id": 24,
+        "Tier": 2,
+        "Layer": 16,
+        "Type": "HammerThiefCoinReward",
+        "Requirements": [
+          22
+        ]
+      },
+      {
+        "Id": 25,
+        "Tier": 2,
+        "Layer": 17,
+        "Type": "AutoForge",
+        "Requirements": [
+          23,
+          24
+        ]
+      },
+      {
+        "Id": 26,
+        "Tier": 2,
+        "Layer": 18,
+        "Type": "FreeForgeChance",
+        "Requirements": [
+          25
+        ]
+      },
+      {
+        "Id": 27,
+        "Tier": 2,
+        "Layer": 19,
+        "Type": "MaxOfflineReward",
+        "Requirements": [
+          26
+        ]
+      },
+      {
+        "Id": 28,
+        "Tier": 2,
+        "Layer": 20,
+        "Type": "CoinOfflineReward",
+        "Requirements": [
+          27
+        ]
+      },
+      {
+        "Id": 29,
+        "Tier": 2,
+        "Layer": 20,
+        "Type": "HammerOfflineReward",
+        "Requirements": [
+          27
+        ]
+      },
+      {
+        "Id": 30,
+        "Tier": 3,
+        "Layer": 21,
+        "Type": "ForgeTimerSpeed",
+        "Requirements": [
+          28
+        ]
+      },
+      {
+        "Id": 31,
+        "Tier": 3,
+        "Layer": 21,
+        "Type": "ForgeUpgradeCost",
+        "Requirements": [
+          29
+        ]
+      },
+      {
+        "Id": 32,
+        "Tier": 3,
+        "Layer": 22,
+        "Type": "EquipmentSellPrice",
+        "Requirements": [
+          30,
+          31
+        ]
+      },
+      {
+        "Id": 33,
+        "Tier": 3,
+        "Layer": 23,
+        "Type": "HammerThiefHammerReward",
+        "Requirements": [
+          32
+        ]
+      },
+      {
+        "Id": 34,
+        "Tier": 3,
+        "Layer": 23,
+        "Type": "HammerThiefCoinReward",
+        "Requirements": [
+          32
+        ]
+      },
+      {
+        "Id": 35,
+        "Tier": 3,
+        "Layer": 24,
+        "Type": "AutoForge",
+        "Requirements": [
+          33,
+          34
+        ]
+      },
+      {
+        "Id": 36,
+        "Tier": 3,
+        "Layer": 25,
+        "Type": "FreeForgeChance",
+        "Requirements": [
+          35
+        ]
+      },
+      {
+        "Id": 37,
+        "Tier": 3,
+        "Layer": 26,
+        "Type": "MaxOfflineReward",
+        "Requirements": [
+          36
+        ]
+      },
+      {
+        "Id": 38,
+        "Tier": 3,
+        "Layer": 27,
+        "Type": "CoinOfflineReward",
+        "Requirements": [
+          37
+        ]
+      },
+      {
+        "Id": 39,
+        "Tier": 3,
+        "Layer": 27,
+        "Type": "HammerOfflineReward",
+        "Requirements": [
+          37
+        ]
+      },
+      {
+        "Id": 40,
+        "Tier": 4,
+        "Layer": 28,
+        "Type": "ForgeTimerSpeed",
+        "Requirements": [
+          38
+        ]
+      },
+      {
+        "Id": 41,
+        "Tier": 4,
+        "Layer": 28,
+        "Type": "ForgeUpgradeCost",
+        "Requirements": [
+          39
+        ]
+      },
+      {
+        "Id": 42,
+        "Tier": 4,
+        "Layer": 29,
+        "Type": "EquipmentSellPrice",
+        "Requirements": [
+          40,
+          41
+        ]
+      },
+      {
+        "Id": 43,
+        "Tier": 4,
+        "Layer": 30,
+        "Type": "HammerThiefHammerReward",
+        "Requirements": [
+          42
+        ]
+      },
+      {
+        "Id": 44,
+        "Tier": 4,
+        "Layer": 30,
+        "Type": "HammerThiefCoinReward",
+        "Requirements": [
+          42
+        ]
+      },
+      {
+        "Id": 45,
+        "Tier": 4,
+        "Layer": 31,
+        "Type": "AutoForge",
+        "Requirements": [
+          43,
+          44
+        ]
+      },
+      {
+        "Id": 46,
+        "Tier": 4,
+        "Layer": 32,
+        "Type": "FreeForgeChance",
+        "Requirements": [
+          45
+        ]
+      },
+      {
+        "Id": 47,
+        "Tier": 4,
+        "Layer": 33,
+        "Type": "MaxOfflineReward",
+        "Requirements": [
+          46
+        ]
+      },
+      {
+        "Id": 48,
+        "Tier": 4,
+        "Layer": 34,
+        "Type": "CoinOfflineReward",
+        "Requirements": [
+          47
+        ]
+      },
+      {
+        "Id": 49,
+        "Tier": 4,
+        "Layer": 34,
+        "Type": "HammerOfflineReward",
+        "Requirements": [
+          47
+        ]
+      }
+    ]
+  },
+  "Power": {
+    "Type": "Power",
+    "Nodes": [
+      {
+        "Id": 0,
+        "Tier": 0,
+        "Layer": 0,
+        "Type": "WeaponBonus",
+        "Requirements": []
+      },
+      {
+        "Id": 1,
+        "Tier": 0,
+        "Layer": 0,
+        "Type": "HelmetBonus",
+        "Requirements": []
+      },
+      {
+        "Id": 2,
+        "Tier": 0,
+        "Layer": 1,
+        "Type": "GloveBonus",
+        "Requirements": [
+          0
+        ]
+      },
+      {
+        "Id": 3,
+        "Tier": 0,
+        "Layer": 1,
+        "Type": "BodyBonus",
+        "Requirements": [
+          1
+        ]
+      },
+      {
+        "Id": 4,
+        "Tier": 0,
+        "Layer": 2,
+        "Type": "NecklaceBonus",
+        "Requirements": [
+          2
+        ]
+      },
+      {
+        "Id": 5,
+        "Tier": 0,
+        "Layer": 2,
+        "Type": "ShoeBonus",
+        "Requirements": [
+          3
+        ]
+      },
+      {
+        "Id": 6,
+        "Tier": 0,
+        "Layer": 3,
+        "Type": "RingBonus",
+        "Requirements": [
+          4
+        ]
+      },
+      {
+        "Id": 7,
+        "Tier": 0,
+        "Layer": 3,
+        "Type": "BeltBonus",
+        "Requirements": [
+          5
+        ]
+      },
+      {
+        "Id": 8,
+        "Tier": 0,
+        "Layer": 4,
+        "Type": "MountDamage",
+        "Requirements": [
+          6,
+          7
+        ]
+      },
+      {
+        "Id": 9,
+        "Tier": 0,
+        "Layer": 5,
+        "Type": "MountHealth",
+        "Requirements": [
+          8
+        ]
+      },
+      {
+        "Id": 10,
+        "Tier": 0,
+        "Layer": 6,
+        "Type": "WeaponLevelUp",
+        "Requirements": [
+          9
+        ]
+      },
+      {
+        "Id": 11,
+        "Tier": 0,
+        "Layer": 6,
+        "Type": "HelmetLevelUp",
+        "Requirements": [
+          9
+        ]
+      },
+      {
+        "Id": 12,
+        "Tier": 0,
+        "Layer": 7,
+        "Type": "GloveLevelUp",
+        "Requirements": [
+          10
+        ]
+      },
+      {
+        "Id": 13,
+        "Tier": 0,
+        "Layer": 7,
+        "Type": "BodyLevelUp",
+        "Requirements": [
+          11
+        ]
+      },
+      {
+        "Id": 14,
+        "Tier": 0,
+        "Layer": 8,
+        "Type": "NecklaceLevelUp",
+        "Requirements": [
+          12
+        ]
+      },
+      {
+        "Id": 15,
+        "Tier": 0,
+        "Layer": 8,
+        "Type": "ShoeLevelUp",
+        "Requirements": [
+          13
+        ]
+      },
+      {
+        "Id": 16,
+        "Tier": 0,
+        "Layer": 9,
+        "Type": "RingLevelUp",
+        "Requirements": [
+          14
+        ]
+      },
+      {
+        "Id": 17,
+        "Tier": 0,
+        "Layer": 9,
+        "Type": "BeltLevelUp",
+        "Requirements": [
+          15
+        ]
+      },
+      {
+        "Id": 18,
+        "Tier": 0,
+        "Layer": 10,
+        "Type": "MountSummonCost",
+        "Requirements": [
+          16,
+          17
+        ]
+      },
+      {
+        "Id": 19,
+        "Tier": 0,
+        "Layer": 11,
+        "Type": "ExtraMountChance",
+        "Requirements": [
+          18
+        ]
+      },
+      {
+        "Id": 20,
+        "Tier": 1,
+        "Layer": 12,
+        "Type": "WeaponBonus",
+        "Requirements": [
+          19
+        ]
+      },
+      {
+        "Id": 21,
+        "Tier": 1,
+        "Layer": 12,
+        "Type": "HelmetBonus",
+        "Requirements": [
+          19
+        ]
+      },
+      {
+        "Id": 22,
+        "Tier": 1,
+        "Layer": 13,
+        "Type": "GloveBonus",
+        "Requirements": [
+          20
+        ]
+      },
+      {
+        "Id": 23,
+        "Tier": 1,
+        "Layer": 13,
+        "Type": "BodyBonus",
+        "Requirements": [
+          21
+        ]
+      },
+      {
+        "Id": 24,
+        "Tier": 1,
+        "Layer": 14,
+        "Type": "NecklaceBonus",
+        "Requirements": [
+          22
+        ]
+      },
+      {
+        "Id": 25,
+        "Tier": 1,
+        "Layer": 14,
+        "Type": "ShoeBonus",
+        "Requirements": [
+          23
+        ]
+      },
+      {
+        "Id": 26,
+        "Tier": 1,
+        "Layer": 15,
+        "Type": "RingBonus",
+        "Requirements": [
+          24
+        ]
+      },
+      {
+        "Id": 27,
+        "Tier": 1,
+        "Layer": 15,
+        "Type": "BeltBonus",
+        "Requirements": [
+          25
+        ]
+      },
+      {
+        "Id": 28,
+        "Tier": 1,
+        "Layer": 16,
+        "Type": "MountDamage",
+        "Requirements": [
+          26,
+          27
+        ]
+      },
+      {
+        "Id": 29,
+        "Tier": 1,
+        "Layer": 17,
+        "Type": "MountHealth",
+        "Requirements": [
+          28
+        ]
+      },
+      {
+        "Id": 30,
+        "Tier": 1,
+        "Layer": 18,
+        "Type": "WeaponLevelUp",
+        "Requirements": [
+          29
+        ]
+      },
+      {
+        "Id": 31,
+        "Tier": 1,
+        "Layer": 18,
+        "Type": "HelmetLevelUp",
+        "Requirements": [
+          29
+        ]
+      },
+      {
+        "Id": 32,
+        "Tier": 1,
+        "Layer": 19,
+        "Type": "GloveLevelUp",
+        "Requirements": [
+          30
+        ]
+      },
+      {
+        "Id": 33,
+        "Tier": 1,
+        "Layer": 19,
+        "Type": "BodyLevelUp",
+        "Requirements": [
+          31
+        ]
+      },
+      {
+        "Id": 34,
+        "Tier": 1,
+        "Layer": 20,
+        "Type": "NecklaceLevelUp",
+        "Requirements": [
+          32
+        ]
+      },
+      {
+        "Id": 35,
+        "Tier": 1,
+        "Layer": 20,
+        "Type": "ShoeLevelUp",
+        "Requirements": [
+          33
+        ]
+      },
+      {
+        "Id": 36,
+        "Tier": 1,
+        "Layer": 21,
+        "Type": "RingLevelUp",
+        "Requirements": [
+          34
+        ]
+      },
+      {
+        "Id": 37,
+        "Tier": 1,
+        "Layer": 21,
+        "Type": "BeltLevelUp",
+        "Requirements": [
+          35
+        ]
+      },
+      {
+        "Id": 38,
+        "Tier": 1,
+        "Layer": 22,
+        "Type": "MountSummonCost",
+        "Requirements": [
+          36,
+          37
+        ]
+      },
+      {
+        "Id": 39,
+        "Tier": 1,
+        "Layer": 23,
+        "Type": "ExtraMountChance",
+        "Requirements": [
+          38
+        ]
+      },
+      {
+        "Id": 40,
+        "Tier": 2,
+        "Layer": 24,
+        "Type": "WeaponBonus",
+        "Requirements": [
+          39
+        ]
+      },
+      {
+        "Id": 41,
+        "Tier": 2,
+        "Layer": 24,
+        "Type": "HelmetBonus",
+        "Requirements": [
+          39
+        ]
+      },
+      {
+        "Id": 42,
+        "Tier": 2,
+        "Layer": 25,
+        "Type": "GloveBonus",
+        "Requirements": [
+          40
+        ]
+      },
+      {
+        "Id": 43,
+        "Tier": 2,
+        "Layer": 25,
+        "Type": "BodyBonus",
+        "Requirements": [
+          41
+        ]
+      },
+      {
+        "Id": 44,
+        "Tier": 2,
+        "Layer": 26,
+        "Type": "NecklaceBonus",
+        "Requirements": [
+          42
+        ]
+      },
+      {
+        "Id": 45,
+        "Tier": 2,
+        "Layer": 26,
+        "Type": "ShoeBonus",
+        "Requirements": [
+          43
+        ]
+      },
+      {
+        "Id": 46,
+        "Tier": 2,
+        "Layer": 27,
+        "Type": "RingBonus",
+        "Requirements": [
+          44
+        ]
+      },
+      {
+        "Id": 47,
+        "Tier": 2,
+        "Layer": 27,
+        "Type": "BeltBonus",
+        "Requirements": [
+          45
+        ]
+      },
+      {
+        "Id": 48,
+        "Tier": 2,
+        "Layer": 28,
+        "Type": "MountDamage",
+        "Requirements": [
+          46,
+          47
+        ]
+      },
+      {
+        "Id": 49,
+        "Tier": 2,
+        "Layer": 29,
+        "Type": "MountHealth",
+        "Requirements": [
+          48
+        ]
+      },
+      {
+        "Id": 50,
+        "Tier": 2,
+        "Layer": 30,
+        "Type": "WeaponLevelUp",
+        "Requirements": [
+          49
+        ]
+      },
+      {
+        "Id": 51,
+        "Tier": 2,
+        "Layer": 30,
+        "Type": "HelmetLevelUp",
+        "Requirements": [
+          49
+        ]
+      },
+      {
+        "Id": 52,
+        "Tier": 2,
+        "Layer": 31,
+        "Type": "GloveLevelUp",
+        "Requirements": [
+          50
+        ]
+      },
+      {
+        "Id": 53,
+        "Tier": 2,
+        "Layer": 31,
+        "Type": "BodyLevelUp",
+        "Requirements": [
+          51
+        ]
+      },
+      {
+        "Id": 54,
+        "Tier": 2,
+        "Layer": 32,
+        "Type": "NecklaceLevelUp",
+        "Requirements": [
+          52
+        ]
+      },
+      {
+        "Id": 55,
+        "Tier": 2,
+        "Layer": 32,
+        "Type": "ShoeLevelUp",
+        "Requirements": [
+          53
+        ]
+      },
+      {
+        "Id": 56,
+        "Tier": 2,
+        "Layer": 33,
+        "Type": "RingLevelUp",
+        "Requirements": [
+          54
+        ]
+      },
+      {
+        "Id": 57,
+        "Tier": 2,
+        "Layer": 33,
+        "Type": "BeltLevelUp",
+        "Requirements": [
+          55
+        ]
+      },
+      {
+        "Id": 58,
+        "Tier": 2,
+        "Layer": 34,
+        "Type": "MountSummonCost",
+        "Requirements": [
+          56,
+          57
+        ]
+      },
+      {
+        "Id": 59,
+        "Tier": 2,
+        "Layer": 35,
+        "Type": "ExtraMountChance",
+        "Requirements": [
+          58
+        ]
+      },
+      {
+        "Id": 60,
+        "Tier": 3,
+        "Layer": 36,
+        "Type": "WeaponBonus",
+        "Requirements": [
+          59
+        ]
+      },
+      {
+        "Id": 61,
+        "Tier": 3,
+        "Layer": 36,
+        "Type": "HelmetBonus",
+        "Requirements": [
+          59
+        ]
+      },
+      {
+        "Id": 62,
+        "Tier": 3,
+        "Layer": 37,
+        "Type": "GloveBonus",
+        "Requirements": [
+          60
+        ]
+      },
+      {
+        "Id": 63,
+        "Tier": 3,
+        "Layer": 37,
+        "Type": "BodyBonus",
+        "Requirements": [
+          61
+        ]
+      },
+      {
+        "Id": 64,
+        "Tier": 3,
+        "Layer": 38,
+        "Type": "NecklaceBonus",
+        "Requirements": [
+          62
+        ]
+      },
+      {
+        "Id": 65,
+        "Tier": 3,
+        "Layer": 38,
+        "Type": "ShoeBonus",
+        "Requirements": [
+          63
+        ]
+      },
+      {
+        "Id": 66,
+        "Tier": 3,
+        "Layer": 39,
+        "Type": "RingBonus",
+        "Requirements": [
+          64
+        ]
+      },
+      {
+        "Id": 67,
+        "Tier": 3,
+        "Layer": 39,
+        "Type": "BeltBonus",
+        "Requirements": [
+          65
+        ]
+      },
+      {
+        "Id": 68,
+        "Tier": 3,
+        "Layer": 40,
+        "Type": "MountDamage",
+        "Requirements": [
+          66,
+          67
+        ]
+      },
+      {
+        "Id": 69,
+        "Tier": 3,
+        "Layer": 41,
+        "Type": "MountHealth",
+        "Requirements": [
+          68
+        ]
+      },
+      {
+        "Id": 70,
+        "Tier": 3,
+        "Layer": 42,
+        "Type": "WeaponLevelUp",
+        "Requirements": [
+          69
+        ]
+      },
+      {
+        "Id": 71,
+        "Tier": 3,
+        "Layer": 42,
+        "Type": "HelmetLevelUp",
+        "Requirements": [
+          69
+        ]
+      },
+      {
+        "Id": 72,
+        "Tier": 3,
+        "Layer": 43,
+        "Type": "GloveLevelUp",
+        "Requirements": [
+          70
+        ]
+      },
+      {
+        "Id": 73,
+        "Tier": 3,
+        "Layer": 43,
+        "Type": "BodyLevelUp",
+        "Requirements": [
+          71
+        ]
+      },
+      {
+        "Id": 74,
+        "Tier": 3,
+        "Layer": 44,
+        "Type": "NecklaceLevelUp",
+        "Requirements": [
+          72
+        ]
+      },
+      {
+        "Id": 75,
+        "Tier": 3,
+        "Layer": 44,
+        "Type": "ShoeLevelUp",
+        "Requirements": [
+          73
+        ]
+      },
+      {
+        "Id": 76,
+        "Tier": 3,
+        "Layer": 45,
+        "Type": "RingLevelUp",
+        "Requirements": [
+          74
+        ]
+      },
+      {
+        "Id": 77,
+        "Tier": 3,
+        "Layer": 45,
+        "Type": "BeltLevelUp",
+        "Requirements": [
+          75
+        ]
+      },
+      {
+        "Id": 78,
+        "Tier": 3,
+        "Layer": 46,
+        "Type": "MountSummonCost",
+        "Requirements": [
+          76,
+          77
+        ]
+      },
+      {
+        "Id": 79,
+        "Tier": 3,
+        "Layer": 47,
+        "Type": "ExtraMountChance",
+        "Requirements": [
+          78
+        ]
+      },
+      {
+        "Id": 80,
+        "Tier": 4,
+        "Layer": 48,
+        "Type": "WeaponBonus",
+        "Requirements": [
+          79
+        ]
+      },
+      {
+        "Id": 81,
+        "Tier": 4,
+        "Layer": 48,
+        "Type": "HelmetBonus",
+        "Requirements": [
+          79
+        ]
+      },
+      {
+        "Id": 82,
+        "Tier": 4,
+        "Layer": 49,
+        "Type": "GloveBonus",
+        "Requirements": [
+          80
+        ]
+      },
+      {
+        "Id": 83,
+        "Tier": 4,
+        "Layer": 49,
+        "Type": "BodyBonus",
+        "Requirements": [
+          81
+        ]
+      },
+      {
+        "Id": 84,
+        "Tier": 4,
+        "Layer": 50,
+        "Type": "NecklaceBonus",
+        "Requirements": [
+          82
+        ]
+      },
+      {
+        "Id": 85,
+        "Tier": 4,
+        "Layer": 50,
+        "Type": "ShoeBonus",
+        "Requirements": [
+          83
+        ]
+      },
+      {
+        "Id": 86,
+        "Tier": 4,
+        "Layer": 51,
+        "Type": "RingBonus",
+        "Requirements": [
+          84
+        ]
+      },
+      {
+        "Id": 87,
+        "Tier": 4,
+        "Layer": 51,
+        "Type": "BeltBonus",
+        "Requirements": [
+          85
+        ]
+      },
+      {
+        "Id": 88,
+        "Tier": 4,
+        "Layer": 52,
+        "Type": "MountDamage",
+        "Requirements": [
+          86,
+          87
+        ]
+      },
+      {
+        "Id": 89,
+        "Tier": 4,
+        "Layer": 53,
+        "Type": "MountHealth",
+        "Requirements": [
+          88
+        ]
+      },
+      {
+        "Id": 90,
+        "Tier": 4,
+        "Layer": 54,
+        "Type": "WeaponLevelUp",
+        "Requirements": [
+          89
+        ]
+      },
+      {
+        "Id": 91,
+        "Tier": 4,
+        "Layer": 54,
+        "Type": "HelmetLevelUp",
+        "Requirements": [
+          89
+        ]
+      },
+      {
+        "Id": 92,
+        "Tier": 4,
+        "Layer": 55,
+        "Type": "GloveLevelUp",
+        "Requirements": [
+          90
+        ]
+      },
+      {
+        "Id": 93,
+        "Tier": 4,
+        "Layer": 55,
+        "Type": "BodyLevelUp",
+        "Requirements": [
+          91
+        ]
+      },
+      {
+        "Id": 94,
+        "Tier": 4,
+        "Layer": 56,
+        "Type": "NecklaceLevelUp",
+        "Requirements": [
+          92
+        ]
+      },
+      {
+        "Id": 95,
+        "Tier": 4,
+        "Layer": 56,
+        "Type": "ShoeLevelUp",
+        "Requirements": [
+          93
+        ]
+      },
+      {
+        "Id": 96,
+        "Tier": 4,
+        "Layer": 57,
+        "Type": "RingLevelUp",
+        "Requirements": [
+          94
+        ]
+      },
+      {
+        "Id": 97,
+        "Tier": 4,
+        "Layer": 57,
+        "Type": "BeltLevelUp",
+        "Requirements": [
+          95
+        ]
+      },
+      {
+        "Id": 98,
+        "Tier": 4,
+        "Layer": 58,
+        "Type": "MountSummonCost",
+        "Requirements": [
+          96,
+          97
+        ]
+      },
+      {
+        "Id": 99,
+        "Tier": 4,
+        "Layer": 59,
+        "Type": "ExtraMountChance",
+        "Requirements": [
+          98
+        ]
+      }
+    ]
+  },
+  "SkillsPetTech": {
+    "Type": "SkillsPetTech",
+    "Nodes": [
+      {
+        "Id": 0,
+        "Tier": 0,
+        "Layer": 0,
+        "Type": "TechResearchTimer",
+        "Requirements": []
+      },
+      {
+        "Id": 1,
+        "Tier": 0,
+        "Layer": 1,
+        "Type": "SkillDamage",
+        "Requirements": [
+          0
+        ]
+      },
+      {
+        "Id": 2,
+        "Tier": 0,
+        "Layer": 2,
+        "Type": "SkillPassiveDamage",
+        "Requirements": [
+          1
+        ]
+      },
+      {
+        "Id": 3,
+        "Tier": 0,
+        "Layer": 2,
+        "Type": "SkillPassiveHealth",
+        "Requirements": [
+          1
+        ]
+      },
+      {
+        "Id": 4,
+        "Tier": 0,
+        "Layer": 3,
+        "Type": "TechNodeUpgradeCost",
+        "Requirements": [
+          2,
+          3
+        ]
+      },
+      {
+        "Id": 5,
+        "Tier": 0,
+        "Layer": 4,
+        "Type": "PetBonusDamage",
+        "Requirements": [
+          4
+        ]
+      },
+      {
+        "Id": 6,
+        "Tier": 0,
+        "Layer": 4,
+        "Type": "PetBonusHealth",
+        "Requirements": [
+          4
+        ]
+      },
+      {
+        "Id": 7,
+        "Tier": 0,
+        "Layer": 5,
+        "Type": "SkillSummonCost",
+        "Requirements": [
+          5,
+          6
+        ]
+      },
+      {
+        "Id": 8,
+        "Tier": 0,
+        "Layer": 6,
+        "Type": "CommonEggTimer",
+        "Requirements": [
+          7
+        ]
+      },
+      {
+        "Id": 9,
+        "Tier": 0,
+        "Layer": 6,
+        "Type": "RareEggTimer",
+        "Requirements": [
+          7
+        ]
+      },
+      {
+        "Id": 10,
+        "Tier": 0,
+        "Layer": 7,
+        "Type": "EpicEggTimer",
+        "Requirements": [
+          8
+        ]
+      },
+      {
+        "Id": 11,
+        "Tier": 0,
+        "Layer": 7,
+        "Type": "LegendaryEggTimer",
+        "Requirements": [
+          9
+        ]
+      },
+      {
+        "Id": 12,
+        "Tier": 0,
+        "Layer": 8,
+        "Type": "UltimateEggTimer",
+        "Requirements": [
+          10
+        ]
+      },
+      {
+        "Id": 13,
+        "Tier": 0,
+        "Layer": 8,
+        "Type": "MythicEggTimer",
+        "Requirements": [
+          11
+        ]
+      },
+      {
+        "Id": 14,
+        "Tier": 0,
+        "Layer": 9,
+        "Type": "ExtraEggChance",
+        "Requirements": [
+          12,
+          13
+        ]
+      },
+      {
+        "Id": 15,
+        "Tier": 0,
+        "Layer": 10,
+        "Type": "GhostTownSkillBonus",
+        "Requirements": [
+          14
+        ]
+      },
+      {
+        "Id": 16,
+        "Tier": 0,
+        "Layer": 10,
+        "Type": "ZombieRushTechPotions",
+        "Requirements": [
+          14
+        ]
+      },
+      {
+        "Id": 17,
+        "Tier": 1,
+        "Layer": 11,
+        "Type": "TechResearchTimer",
+        "Requirements": [
+          15,
+          16
+        ]
+      },
+      {
+        "Id": 18,
+        "Tier": 1,
+        "Layer": 12,
+        "Type": "SkillDamage",
+        "Requirements": [
+          17
+        ]
+      },
+      {
+        "Id": 19,
+        "Tier": 1,
+        "Layer": 13,
+        "Type": "SkillPassiveDamage",
+        "Requirements": [
+          18
+        ]
+      },
+      {
+        "Id": 20,
+        "Tier": 1,
+        "Layer": 13,
+        "Type": "SkillPassiveHealth",
+        "Requirements": [
+          18
+        ]
+      },
+      {
+        "Id": 21,
+        "Tier": 1,
+        "Layer": 14,
+        "Type": "TechNodeUpgradeCost",
+        "Requirements": [
+          19,
+          20
+        ]
+      },
+      {
+        "Id": 22,
+        "Tier": 1,
+        "Layer": 15,
+        "Type": "PetBonusDamage",
+        "Requirements": [
+          21
+        ]
+      },
+      {
+        "Id": 23,
+        "Tier": 1,
+        "Layer": 15,
+        "Type": "PetBonusHealth",
+        "Requirements": [
+          21
+        ]
+      },
+      {
+        "Id": 24,
+        "Tier": 1,
+        "Layer": 16,
+        "Type": "SkillSummonCost",
+        "Requirements": [
+          22,
+          23
+        ]
+      },
+      {
+        "Id": 25,
+        "Tier": 1,
+        "Layer": 17,
+        "Type": "CommonEggTimer",
+        "Requirements": [
+          24
+        ]
+      },
+      {
+        "Id": 26,
+        "Tier": 1,
+        "Layer": 17,
+        "Type": "RareEggTimer",
+        "Requirements": [
+          24
+        ]
+      },
+      {
+        "Id": 27,
+        "Tier": 1,
+        "Layer": 18,
+        "Type": "EpicEggTimer",
+        "Requirements": [
+          25
+        ]
+      },
+      {
+        "Id": 28,
+        "Tier": 1,
+        "Layer": 18,
+        "Type": "LegendaryEggTimer",
+        "Requirements": [
+          26
+        ]
+      },
+      {
+        "Id": 29,
+        "Tier": 1,
+        "Layer": 19,
+        "Type": "UltimateEggTimer",
+        "Requirements": [
+          27
+        ]
+      },
+      {
+        "Id": 30,
+        "Tier": 1,
+        "Layer": 19,
+        "Type": "MythicEggTimer",
+        "Requirements": [
+          28
+        ]
+      },
+      {
+        "Id": 31,
+        "Tier": 1,
+        "Layer": 20,
+        "Type": "ExtraEggChance",
+        "Requirements": [
+          29,
+          30
+        ]
+      },
+      {
+        "Id": 32,
+        "Tier": 1,
+        "Layer": 21,
+        "Type": "GhostTownSkillBonus",
+        "Requirements": [
+          31
+        ]
+      },
+      {
+        "Id": 33,
+        "Tier": 1,
+        "Layer": 21,
+        "Type": "ZombieRushTechPotions",
+        "Requirements": [
+          31
+        ]
+      },
+      {
+        "Id": 34,
+        "Tier": 2,
+        "Layer": 22,
+        "Type": "TechResearchTimer",
+        "Requirements": [
+          32,
+          33
+        ]
+      },
+      {
+        "Id": 35,
+        "Tier": 2,
+        "Layer": 23,
+        "Type": "SkillDamage",
+        "Requirements": [
+          34
+        ]
+      },
+      {
+        "Id": 36,
+        "Tier": 2,
+        "Layer": 24,
+        "Type": "SkillPassiveDamage",
+        "Requirements": [
+          35
+        ]
+      },
+      {
+        "Id": 37,
+        "Tier": 2,
+        "Layer": 24,
+        "Type": "SkillPassiveHealth",
+        "Requirements": [
+          35
+        ]
+      },
+      {
+        "Id": 38,
+        "Tier": 2,
+        "Layer": 25,
+        "Type": "TechNodeUpgradeCost",
+        "Requirements": [
+          36,
+          37
+        ]
+      },
+      {
+        "Id": 39,
+        "Tier": 2,
+        "Layer": 26,
+        "Type": "PetBonusDamage",
+        "Requirements": [
+          38
+        ]
+      },
+      {
+        "Id": 40,
+        "Tier": 2,
+        "Layer": 26,
+        "Type": "PetBonusHealth",
+        "Requirements": [
+          38
+        ]
+      },
+      {
+        "Id": 41,
+        "Tier": 2,
+        "Layer": 27,
+        "Type": "SkillSummonCost",
+        "Requirements": [
+          39,
+          40
+        ]
+      },
+      {
+        "Id": 42,
+        "Tier": 2,
+        "Layer": 28,
+        "Type": "CommonEggTimer",
+        "Requirements": [
+          41
+        ]
+      },
+      {
+        "Id": 43,
+        "Tier": 2,
+        "Layer": 28,
+        "Type": "RareEggTimer",
+        "Requirements": [
+          41
+        ]
+      },
+      {
+        "Id": 44,
+        "Tier": 2,
+        "Layer": 29,
+        "Type": "EpicEggTimer",
+        "Requirements": [
+          42
+        ]
+      },
+      {
+        "Id": 45,
+        "Tier": 2,
+        "Layer": 29,
+        "Type": "LegendaryEggTimer",
+        "Requirements": [
+          43
+        ]
+      },
+      {
+        "Id": 46,
+        "Tier": 2,
+        "Layer": 30,
+        "Type": "UltimateEggTimer",
+        "Requirements": [
+          44
+        ]
+      },
+      {
+        "Id": 47,
+        "Tier": 2,
+        "Layer": 30,
+        "Type": "MythicEggTimer",
+        "Requirements": [
+          45
+        ]
+      },
+      {
+        "Id": 48,
+        "Tier": 2,
+        "Layer": 31,
+        "Type": "ExtraEggChance",
+        "Requirements": [
+          46,
+          47
+        ]
+      },
+      {
+        "Id": 49,
+        "Tier": 2,
+        "Layer": 32,
+        "Type": "GhostTownSkillBonus",
+        "Requirements": [
+          48
+        ]
+      },
+      {
+        "Id": 50,
+        "Tier": 2,
+        "Layer": 32,
+        "Type": "ZombieRushTechPotions",
+        "Requirements": [
+          48
+        ]
+      },
+      {
+        "Id": 51,
+        "Tier": 3,
+        "Layer": 33,
+        "Type": "TechResearchTimer",
+        "Requirements": [
+          49,
+          50
+        ]
+      },
+      {
+        "Id": 52,
+        "Tier": 3,
+        "Layer": 34,
+        "Type": "SkillDamage",
+        "Requirements": [
+          51
+        ]
+      },
+      {
+        "Id": 53,
+        "Tier": 3,
+        "Layer": 35,
+        "Type": "SkillPassiveDamage",
+        "Requirements": [
+          52
+        ]
+      },
+      {
+        "Id": 54,
+        "Tier": 3,
+        "Layer": 35,
+        "Type": "SkillPassiveHealth",
+        "Requirements": [
+          52
+        ]
+      },
+      {
+        "Id": 55,
+        "Tier": 3,
+        "Layer": 36,
+        "Type": "TechNodeUpgradeCost",
+        "Requirements": [
+          53,
+          54
+        ]
+      },
+      {
+        "Id": 56,
+        "Tier": 3,
+        "Layer": 37,
+        "Type": "PetBonusDamage",
+        "Requirements": [
+          55
+        ]
+      },
+      {
+        "Id": 57,
+        "Tier": 3,
+        "Layer": 37,
+        "Type": "PetBonusHealth",
+        "Requirements": [
+          55
+        ]
+      },
+      {
+        "Id": 58,
+        "Tier": 3,
+        "Layer": 38,
+        "Type": "SkillSummonCost",
+        "Requirements": [
+          56,
+          57
+        ]
+      },
+      {
+        "Id": 59,
+        "Tier": 3,
+        "Layer": 39,
+        "Type": "CommonEggTimer",
+        "Requirements": [
+          58
+        ]
+      },
+      {
+        "Id": 60,
+        "Tier": 3,
+        "Layer": 39,
+        "Type": "RareEggTimer",
+        "Requirements": [
+          58
+        ]
+      },
+      {
+        "Id": 61,
+        "Tier": 3,
+        "Layer": 40,
+        "Type": "EpicEggTimer",
+        "Requirements": [
+          59
+        ]
+      },
+      {
+        "Id": 62,
+        "Tier": 3,
+        "Layer": 40,
+        "Type": "LegendaryEggTimer",
+        "Requirements": [
+          60
+        ]
+      },
+      {
+        "Id": 63,
+        "Tier": 3,
+        "Layer": 41,
+        "Type": "UltimateEggTimer",
+        "Requirements": [
+          61
+        ]
+      },
+      {
+        "Id": 64,
+        "Tier": 3,
+        "Layer": 41,
+        "Type": "MythicEggTimer",
+        "Requirements": [
+          62
+        ]
+      },
+      {
+        "Id": 65,
+        "Tier": 3,
+        "Layer": 42,
+        "Type": "ExtraEggChance",
+        "Requirements": [
+          63,
+          64
+        ]
+      },
+      {
+        "Id": 66,
+        "Tier": 3,
+        "Layer": 43,
+        "Type": "GhostTownSkillBonus",
+        "Requirements": [
+          65
+        ]
+      },
+      {
+        "Id": 67,
+        "Tier": 3,
+        "Layer": 43,
+        "Type": "ZombieRushTechPotions",
+        "Requirements": [
+          65
+        ]
+      },
+      {
+        "Id": 68,
+        "Tier": 4,
+        "Layer": 44,
+        "Type": "TechResearchTimer",
+        "Requirements": [
+          66,
+          67
+        ]
+      },
+      {
+        "Id": 69,
+        "Tier": 4,
+        "Layer": 45,
+        "Type": "SkillDamage",
+        "Requirements": [
+          68
+        ]
+      },
+      {
+        "Id": 70,
+        "Tier": 4,
+        "Layer": 46,
+        "Type": "SkillPassiveDamage",
+        "Requirements": [
+          69
+        ]
+      },
+      {
+        "Id": 71,
+        "Tier": 4,
+        "Layer": 46,
+        "Type": "SkillPassiveHealth",
+        "Requirements": [
+          69
+        ]
+      },
+      {
+        "Id": 72,
+        "Tier": 4,
+        "Layer": 47,
+        "Type": "TechNodeUpgradeCost",
+        "Requirements": [
+          70,
+          71
+        ]
+      },
+      {
+        "Id": 73,
+        "Tier": 4,
+        "Layer": 48,
+        "Type": "PetBonusDamage",
+        "Requirements": [
+          72
+        ]
+      },
+      {
+        "Id": 74,
+        "Tier": 4,
+        "Layer": 48,
+        "Type": "PetBonusHealth",
+        "Requirements": [
+          72
+        ]
+      },
+      {
+        "Id": 75,
+        "Tier": 4,
+        "Layer": 49,
+        "Type": "SkillSummonCost",
+        "Requirements": [
+          73,
+          74
+        ]
+      },
+      {
+        "Id": 76,
+        "Tier": 4,
+        "Layer": 50,
+        "Type": "CommonEggTimer",
+        "Requirements": [
+          75
+        ]
+      },
+      {
+        "Id": 77,
+        "Tier": 4,
+        "Layer": 50,
+        "Type": "RareEggTimer",
+        "Requirements": [
+          75
+        ]
+      },
+      {
+        "Id": 78,
+        "Tier": 4,
+        "Layer": 51,
+        "Type": "EpicEggTimer",
+        "Requirements": [
+          76
+        ]
+      },
+      {
+        "Id": 79,
+        "Tier": 4,
+        "Layer": 51,
+        "Type": "LegendaryEggTimer",
+        "Requirements": [
+          77
+        ]
+      },
+      {
+        "Id": 80,
+        "Tier": 4,
+        "Layer": 52,
+        "Type": "UltimateEggTimer",
+        "Requirements": [
+          78
+        ]
+      },
+      {
+        "Id": 81,
+        "Tier": 4,
+        "Layer": 52,
+        "Type": "MythicEggTimer",
+        "Requirements": [
+          79
+        ]
+      },
+      {
+        "Id": 82,
+        "Tier": 4,
+        "Layer": 53,
+        "Type": "ExtraEggChance",
+        "Requirements": [
+          80,
+          81
+        ]
+      },
+      {
+        "Id": 83,
+        "Tier": 4,
+        "Layer": 54,
+        "Type": "GhostTownSkillBonus",
+        "Requirements": [
+          82
+        ]
+      },
+      {
+        "Id": 84,
+        "Tier": 4,
+        "Layer": 54,
+        "Type": "ZombieRushTechPotions",
+        "Requirements": [
+          82
+        ]
+      }
+    ]
+  }
+}

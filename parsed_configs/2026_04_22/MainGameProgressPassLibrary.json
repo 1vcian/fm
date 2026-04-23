@@ -1,0 +1,2122 @@
+{
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 1, 'BattleIdx': 4}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 1,
+        "BattleIdx": 4
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 1000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 5000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 1, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 1,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 2, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 2,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 50,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 2, 'BattleIdx': 7}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 2,
+        "BattleIdx": 7
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 5000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 2, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 2,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 2, 'BattleIdx': 19}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 2,
+        "BattleIdx": 19
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 3, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 3,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 3, 'BattleIdx': 3}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 3,
+        "BattleIdx": 3
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 3, 'BattleIdx': 7}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 3,
+        "BattleIdx": 7
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 3, 'BattleIdx': 11}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 3,
+        "BattleIdx": 11
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 5000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 3, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 3,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 3, 'BattleIdx': 19}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 3,
+        "BattleIdx": 19
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 4, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 4,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 5000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 4, 'BattleIdx': 4}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 4,
+        "BattleIdx": 4
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 50,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 4, 'BattleIdx': 7}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 4,
+        "BattleIdx": 7
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 4, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 4,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 5000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 5, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 5,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 100,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 5, 'BattleIdx': 7}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 5,
+        "BattleIdx": 7
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 5, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 5,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 40,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 6, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 6,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 6, 'BattleIdx': 7}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 6,
+        "BattleIdx": 7
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 6, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 6,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 7, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 7,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 7, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 7,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 8, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 8,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 8, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 8,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 300,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 10000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 9, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 9,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 9, 'BattleIdx': 9}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 9,
+        "BattleIdx": 9
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 10000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 9, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 9,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 10, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 10,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 10000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 0, 'AgeIdx': 10, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 0,
+        "AgeIdx": 10,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 0, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 0,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 0, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 0,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 1, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 1,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 40000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 1, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 1,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 8,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 2, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 2,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 12000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 2, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 2,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 3, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 3,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 150,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 3, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 3,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 4, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 4,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 40000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 4, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 4,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 10,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 5, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 5,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 15000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 5, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 5,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 6, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 6,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 6, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 6,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 15,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 7, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 7,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 40000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 7, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 7,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "Eggshells",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 8, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 8,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 20000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 8, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 8,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 9, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 9,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 20,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 9, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 9,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 200,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 400,
+            "Type": "TechPotions",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 10, 'BattleIdx': 0}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 10,
+        "BattleIdx": 0
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 20000,
+            "Type": "Coins",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 500,
+            "Type": "ClockWinders",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  },
+  "{'MainBattleId': {'DifficultyIdx': 1, 'AgeIdx': 10, 'BattleIdx': 14}, '$type': 'MainBattleIdProgressKey'}": {
+    "ProgressKey": {
+      "MainBattleId": {
+        "DifficultyIdx": 1,
+        "AgeIdx": 10,
+        "BattleIdx": 14
+      },
+      "$type": "MainBattleIdProgressKey"
+    },
+    "Rewards": [
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 100,
+            "Type": "Hammers",
+            "$type": "CurrencyReward"
+          }
+        ]
+      },
+      {
+        "Rewards": [
+          {
+            "Amount": 220,
+            "Type": "SkillSummonTickets",
+            "$type": "CurrencyReward"
+          },
+          {
+            "Amount": 5,
+            "Type": "Gems",
+            "$type": "CurrencyReward"
+          }
+        ]
+      }
+    ]
+  }
+}

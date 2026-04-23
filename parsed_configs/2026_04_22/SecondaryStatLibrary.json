@@ -1,0 +1,242 @@
+{
+  "CriticalChance": {
+    "Stat": "CriticalChance",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.12000000011175871,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "CriticalChance",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  },
+  "CriticalMulti": {
+    "Stat": "CriticalMulti",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 1.0,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "CriticalDamage",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  },
+  "BlockChance": {
+    "Stat": "BlockChance",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.05000000004656613,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "BlockChance",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  },
+  "HealthRegen": {
+    "Stat": "HealthRegen",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.060000000055879354,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "HealthRegen",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  },
+  "LifeSteal": {
+    "Stat": "LifeSteal",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.19999999995343387,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "LifeSteal",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  },
+  "DoubleDamageChance": {
+    "Stat": "DoubleDamageChance",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.39999999990686774,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "DoubleDamageChance",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  },
+  "DamageMulti": {
+    "Stat": "DamageMulti",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.14999999990686774,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "SkillType": null,
+          "$type": "ActiveSkillStatTarget"
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "SkillType": null,
+          "$type": "ActiveSkillStatTarget"
+        }
+      }
+    ]
+  },
+  "MeleeDamageMulti": {
+    "Stat": "MeleeDamageMulti",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.5,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerMeleeOnlyStatTarget"
+        }
+      }
+    ]
+  },
+  "RangedDamageMulti": {
+    "Stat": "RangedDamageMulti",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.14999999990686774,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerRangedOnlyStatTarget"
+        }
+      }
+    ]
+  },
+  "AttackSpeed": {
+    "Stat": "AttackSpeed",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.39999999990686774,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "AttackSpeed",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  },
+  "SkillDamageMulti": {
+    "Stat": "SkillDamageMulti",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.30000000004656613,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "SkillType": null,
+          "$type": "ActiveSkillStatTarget"
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "SkillType": null,
+          "$type": "ActiveSkillStatTarget"
+        }
+      }
+    ]
+  },
+  "SkillCooldownMulti": {
+    "Stat": "SkillCooldownMulti",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.07000000006519258,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "OneMinusMultiplier"
+        },
+        "StatTarget": {
+          "SkillType": null,
+          "$type": "ActiveSkillStatTarget"
+        }
+      }
+    ]
+  },
+  "HealthMulti": {
+    "Stat": "HealthMulti",
+    "LowerRange": 0.010000000009313226,
+    "UpperRange": 0.14999999990686774,
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "StatTarget": {
+          "$type": "PlayerStatTarget"
+        }
+      }
+    ]
+  }
+}
