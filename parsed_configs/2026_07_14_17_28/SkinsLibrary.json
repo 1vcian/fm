@@ -1,0 +1,3434 @@
+{
+  "{'Type': 'Helmet', 'Idx': 0}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 0
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SantaSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 0}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 0
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SantaSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 1}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 1
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SkiSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 1}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 1
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SkiSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 2}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 2
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SnowmanSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 2}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 2
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SnowmanSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 3}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 3
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "LeprechaunSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 3}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 3
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "LeprechaunSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 3}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 3
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "LeprechaunSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 4}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 4
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "FlowerSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 4}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 4
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "FlowerSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 4}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 4
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "FlowerSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 5}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 5
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "DruidSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 5}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 5
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "DruidSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 5}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 5
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "DruidSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 6}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 6
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "BunnySet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 6}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 6
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "BunnySet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 6}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 6
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "BunnySet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 7}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 7
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "ClownSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 7}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 7
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "ClownSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 7}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 7
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "ClownSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 8}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 8
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "MillionaireSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 8}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 8
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "MillionaireSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 8}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 8
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "MillionaireSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 9}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 9
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "FishbowlSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 9}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 9
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "FishbowlSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 9}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 9
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "FishbowlSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 10}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 10
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "EagleSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 10}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 10
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "EagleSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 10}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 10
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "EagleSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 11}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 11
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SkaterSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 11}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 11
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SkaterSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 11}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 11
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SkaterSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 12}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 12
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "CatSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 12}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 12
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "CatSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 12}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 12
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "CatSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 13}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 13
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SharkSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 13}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 13
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SharkSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 13}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 13
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "SharkSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 14}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 14
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "MushroomSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 14}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 14
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "MushroomSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 14}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 14
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "MushroomSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 15}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 15
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "AnubisSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 15}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 15
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "AnubisSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 15}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 15
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "AnubisSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 16}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 16
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "BoxerSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 16}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 16
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "BoxerSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 16}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 16
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "BoxerSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 17}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 17
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "DarkPlanetWarriorSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 17}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 17
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "DarkPlanetWarriorSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 17}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 17
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "DarkPlanetWarriorSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 18}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 18
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "CubeguySet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 18}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 18
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "CubeguySet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 18}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 18
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "CubeguySet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 19}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 19
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "LavamanSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 19}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 19
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "LavamanSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 19}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 19
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "LavamanSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Weapon', 'Idx': 20}": {
+    "SkinId": {
+      "Type": "Weapon",
+      "Idx": 20
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "ChefSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 20}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 20
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "ChefSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Armour', 'Idx': 20}": {
+    "SkinId": {
+      "Type": "Armour",
+      "Idx": 20
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.019999999552965164,
+        "MaxValue": 0.11999999731779099
+      }
+    ],
+    "BaseSetId": "ChefSet",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 100}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 100
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 101}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 101
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 102}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 102
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 103}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 103
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 104}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 104
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 105}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 105
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 106}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 106
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 107}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 107
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 108}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 108
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 109}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 109
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 110}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 110
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 111}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 111
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 112}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 112
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 113}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 113
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 114}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 114
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 115}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 115
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 116}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 116
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  },
+  "{'Type': 'Helmet', 'Idx': 117}": {
+    "SkinId": {
+      "Type": "Helmet",
+      "Idx": 117
+    },
+    "PossibleStats": [
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Damage",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      },
+      {
+        "StatNode": {
+          "UniqueStat": {
+            "StatType": "Health",
+            "StatNature": "Multiplier"
+          },
+          "LegacyTarget": null,
+          "Layer": "Skins",
+          "Condition": "None",
+          "Target": {
+            "Kind": "Player",
+            "Qualifiers": []
+          }
+        },
+        "MinValue": 0.009999999776482582,
+        "MaxValue": 0.009999999776482582
+      }
+    ],
+    "BaseSetId": "",
+    "MaxStatCount": 1
+  }
+}

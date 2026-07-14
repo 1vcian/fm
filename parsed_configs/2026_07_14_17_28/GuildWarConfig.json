@@ -1,0 +1,10 @@
+{
+  "MaxWarTicketsPerMember": 5,
+  "MaxPointsForAttackingOpponentGuildMember": 50,
+  "MaxMembersDefeatedForReset": 45,
+  "CoinsSpentOnForgeNeededToGrantOneActionReward": 1000,
+  "BrawlWinPointsReward": 1000,
+  "MaxGuildTierPoints": 60,
+  "BanPointsThreshold": 50000,
+  "MinMembersDefeatedForReset": 5
+}

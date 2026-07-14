@@ -1,0 +1,903 @@
+{
+  "texture": "ClanTechTreeIcons.png",
+  "texture_size": {
+    "width": 1024,
+    "height": 1024
+  },
+  "sprite_size": {
+    "width": 128,
+    "height": 128
+  },
+  "grid": {
+    "columns": 8,
+    "rows": 8
+  },
+  "total_sprites": 59,
+  "mapping": {
+    "WeaponBonus": {
+      "name": "WeaponBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "HelmetBonus": {
+      "name": "HelmetBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "BodyBonus": {
+      "name": "BodyBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 768,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ShoeBonus": {
+      "name": "ShoeBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 896,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GloveBonus": {
+      "name": "GloveBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 256,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "BeltBonus": {
+      "name": "BeltBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "NecklaceBonus": {
+      "name": "NecklaceBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "RingBonus": {
+      "name": "RingBonus",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "SkillDamage": {
+      "name": "SkillDamage",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 512,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "PetBonusDamage": {
+      "name": "PetBonusDamage",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "PetBonusHealth": {
+      "name": "PetBonusHealth",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 128,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "MountDamage": {
+      "name": "MountDamage",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 768,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "MountHealth": {
+      "name": "MountHealth",
+      "category": "Power",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 896,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "CommonEggTimer": {
+      "name": "CommonEggTimer",
+      "category": "EggTimers",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "RareEggTimer": {
+      "name": "RareEggTimer",
+      "category": "EggTimers",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "EpicEggTimer": {
+      "name": "EpicEggTimer",
+      "category": "EggTimers",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "LegendaryEggTimer": {
+      "name": "LegendaryEggTimer",
+      "category": "EggTimers",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 768,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "UltimateEggTimer": {
+      "name": "UltimateEggTimer",
+      "category": "EggTimers",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 896,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "MythicEggTimer": {
+      "name": "MythicEggTimer",
+      "category": "EggTimers",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 768,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "AutoForge": {
+      "name": "AutoForge",
+      "category": "Special",
+      "texture": "TechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ForgeAnimationSpeed": {
+      "name": "ForgeAnimationSpeed",
+      "category": "Special",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "PlayerMoveSpeed": {
+      "name": "PlayerMoveSpeed",
+      "category": "Special",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "PlayerAttackRange": {
+      "name": "PlayerAttackRange",
+      "category": "Special",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromForging": {
+      "name": "WarPointsFromForging",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromSkillSummon": {
+      "name": "WarPointsFromSkillSummon",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 128,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromSkillUpgrade": {
+      "name": "WarPointsFromSkillUpgrade",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 256,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromTechUpgrade": {
+      "name": "WarPointsFromTechUpgrade",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromForgeSpend": {
+      "name": "WarPointsFromForgeSpend",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromDungeonKey": {
+      "name": "WarPointsFromDungeonKey",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromEggHatch": {
+      "name": "WarPointsFromEggHatch",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 768,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromPetMerge": {
+      "name": "WarPointsFromPetMerge",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 896,
+        "y": 0,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromMountSummon": {
+      "name": "WarPointsFromMountSummon",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsFromMountMerge": {
+      "name": "WarPointsFromMountMerge",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 128,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsOnDay1": {
+      "name": "WarPointsOnDay1",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 256,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsOnDay2": {
+      "name": "WarPointsOnDay2",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsOnDay3": {
+      "name": "WarPointsOnDay3",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsOnDay4": {
+      "name": "WarPointsOnDay4",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsOnDay5": {
+      "name": "WarPointsOnDay5",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 768,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "WarPointsOnDay6": {
+      "name": "WarPointsOnDay6",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 896,
+        "y": 128,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ClanWarDamage": {
+      "name": "ClanWarDamage",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ClanWarHealth": {
+      "name": "ClanWarHealth",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 128,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "PersonalWarRewards": {
+      "name": "PersonalWarRewards",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 256,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ClanWarWinRewards": {
+      "name": "ClanWarWinRewards",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ClanWarLoseRewards": {
+      "name": "ClanWarLoseRewards",
+      "category": "ClanWar",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "MissionDamage": {
+      "name": "MissionDamage",
+      "category": "ClanMissions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "MissionHealth": {
+      "name": "MissionHealth",
+      "category": "ClanMissions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 768,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "MissionRewards": {
+      "name": "MissionRewards",
+      "category": "ClanMissions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 896,
+        "y": 256,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "HammerThiefDungeonDamage": {
+      "name": "HammerThiefDungeonDamage",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 768,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "HammerThiefDungeonHealth": {
+      "name": "HammerThiefDungeonHealth",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 896,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GhostTownDungeonDamage": {
+      "name": "GhostTownDungeonDamage",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 0,
+        "y": 512,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GhostTownDungeonHealth": {
+      "name": "GhostTownDungeonHealth",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 128,
+        "y": 512,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "InvasionDungeonDamage": {
+      "name": "InvasionDungeonDamage",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 256,
+        "y": 512,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "InvasionDungeonHealth": {
+      "name": "InvasionDungeonHealth",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 512,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ZombieRushDungeonDamage": {
+      "name": "ZombieRushDungeonDamage",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 512,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "ZombieRushDungeonHealth": {
+      "name": "ZombieRushDungeonHealth",
+      "category": "Dungeons",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 640,
+        "y": 512,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GuildPotionsFromMissions": {
+      "name": "GuildPotionsFromMissions",
+      "category": "ClanTechPotions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 128,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GuildPotionsFromPersonalWar": {
+      "name": "GuildPotionsFromPersonalWar",
+      "category": "ClanTechPotions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 256,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GuildPotionsFromClanWarWin": {
+      "name": "GuildPotionsFromClanWarWin",
+      "category": "ClanTechPotions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 384,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GuildPotionsFromClanWarLose": {
+      "name": "GuildPotionsFromClanWarLose",
+      "category": "ClanTechPotions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 512,
+        "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    }
+  }
+}

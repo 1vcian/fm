@@ -1,0 +1,2332 @@
+{
+  "ForgeTimerSpeed": {
+    "NodeType": "ForgeTimerSpeed",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "ForgeUpgradeCost": {
+    "NodeType": "ForgeUpgradeCost",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "EquipmentSellPrice": {
+    "NodeType": "EquipmentSellPrice",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "HammerThiefHammerReward": {
+    "NodeType": "HammerThiefHammerReward",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "HammerThiefCoinReward": {
+    "NodeType": "HammerThiefCoinReward",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "AutoForge": {
+    "NodeType": "AutoForge",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.5
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.5
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          2.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          2.5
+        ]
+      }
+    ]
+  },
+  "FreeForgeChance": {
+    "NodeType": "FreeForgeChance",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "MaxOfflineReward": {
+    "NodeType": "MaxOfflineReward",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.08,
+          0.16,
+          0.24,
+          0.32,
+          0.4
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.08,
+          0.16,
+          0.24,
+          0.32,
+          0.4
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.08,
+          0.16,
+          0.24,
+          0.32,
+          0.4
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.08,
+          0.16,
+          0.24,
+          0.32,
+          0.4
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.08,
+          0.16,
+          0.24,
+          0.32,
+          0.4
+        ]
+      }
+    ]
+  },
+  "CoinOfflineReward": {
+    "NodeType": "CoinOfflineReward",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "HammerOfflineReward": {
+    "NodeType": "HammerOfflineReward",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "WeaponBonus": {
+    "NodeType": "WeaponBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "HelmetBonus": {
+    "NodeType": "HelmetBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "GloveBonus": {
+    "NodeType": "GloveBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "BodyBonus": {
+    "NodeType": "BodyBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "NecklaceBonus": {
+    "NodeType": "NecklaceBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "ShoeBonus": {
+    "NodeType": "ShoeBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "RingBonus": {
+    "NodeType": "RingBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "BeltBonus": {
+    "NodeType": "BeltBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "MountDamage": {
+    "NodeType": "MountDamage",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "MountHealth": {
+    "NodeType": "MountHealth",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "WeaponLevelUp": {
+    "NodeType": "WeaponLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "HelmetLevelUp": {
+    "NodeType": "HelmetLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "GloveLevelUp": {
+    "NodeType": "GloveLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "BodyLevelUp": {
+    "NodeType": "BodyLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "NecklaceLevelUp": {
+    "NodeType": "NecklaceLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "ShoeLevelUp": {
+    "NodeType": "ShoeLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "RingLevelUp": {
+    "NodeType": "RingLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "BeltLevelUp": {
+    "NodeType": "BeltLevelUp",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    ]
+  },
+  "MountSummonCost": {
+    "NodeType": "MountSummonCost",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "ExtraMountChance": {
+    "NodeType": "ExtraMountChance",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "TechResearchTimer": {
+    "NodeType": "TechResearchTimer",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.02,
+          0.04,
+          0.06,
+          0.08,
+          0.1
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.02,
+          0.04,
+          0.06,
+          0.08,
+          0.1
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.02,
+          0.04,
+          0.06,
+          0.08,
+          0.1
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.02,
+          0.04,
+          0.06,
+          0.08,
+          0.1
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.02,
+          0.04,
+          0.06,
+          0.08,
+          0.1
+        ]
+      }
+    ]
+  },
+  "SkillDamage": {
+    "NodeType": "SkillDamage",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "SkillPassiveDamage": {
+    "NodeType": "SkillPassiveDamage",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "SkillPassiveHealth": {
+    "NodeType": "SkillPassiveHealth",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "TechNodeUpgradeCost": {
+    "NodeType": "TechNodeUpgradeCost",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "PetBonusDamage": {
+    "NodeType": "PetBonusDamage",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "PetBonusHealth": {
+    "NodeType": "PetBonusHealth",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "SkillSummonCost": {
+    "NodeType": "SkillSummonCost",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "CommonEggTimer": {
+    "NodeType": "CommonEggTimer",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      }
+    ]
+  },
+  "RareEggTimer": {
+    "NodeType": "RareEggTimer",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      }
+    ]
+  },
+  "EpicEggTimer": {
+    "NodeType": "EpicEggTimer",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      }
+    ]
+  },
+  "LegendaryEggTimer": {
+    "NodeType": "LegendaryEggTimer",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      }
+    ]
+  },
+  "UltimateEggTimer": {
+    "NodeType": "UltimateEggTimer",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      }
+    ]
+  },
+  "MythicEggTimer": {
+    "NodeType": "MythicEggTimer",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.25
+        ]
+      }
+    ]
+  },
+  "ExtraEggChance": {
+    "NodeType": "ExtraEggChance",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  },
+  "GhostTownSkillBonus": {
+    "NodeType": "GhostTownSkillBonus",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025
+        ]
+      }
+    ]
+  },
+  "ZombieRushTechPotions": {
+    "NodeType": "ZombieRushTechPotions",
+    "Tiers": [
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "StatValuePerLevel": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05
+        ]
+      }
+    ]
+  }
+}

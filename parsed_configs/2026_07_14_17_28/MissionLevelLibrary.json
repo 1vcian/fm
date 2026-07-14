@@ -1,0 +1,362 @@
+{
+  "1": {
+    "Index": 1,
+    "MinHammerThiefLevel": 0,
+    "MinLevel": 1,
+    "MaxLevel": 6
+  },
+  "2": {
+    "Index": 2,
+    "MinHammerThiefLevel": 10,
+    "MinLevel": 1,
+    "MaxLevel": 7
+  },
+  "3": {
+    "Index": 3,
+    "MinHammerThiefLevel": 11,
+    "MinLevel": 2,
+    "MaxLevel": 8
+  },
+  "4": {
+    "Index": 4,
+    "MinHammerThiefLevel": 14,
+    "MinLevel": 3,
+    "MaxLevel": 9
+  },
+  "5": {
+    "Index": 5,
+    "MinHammerThiefLevel": 16,
+    "MinLevel": 4,
+    "MaxLevel": 10
+  },
+  "6": {
+    "Index": 6,
+    "MinHammerThiefLevel": 18,
+    "MinLevel": 5,
+    "MaxLevel": 11
+  },
+  "7": {
+    "Index": 7,
+    "MinHammerThiefLevel": 22,
+    "MinLevel": 6,
+    "MaxLevel": 12
+  },
+  "8": {
+    "Index": 8,
+    "MinHammerThiefLevel": 27,
+    "MinLevel": 7,
+    "MaxLevel": 13
+  },
+  "9": {
+    "Index": 9,
+    "MinHammerThiefLevel": 31,
+    "MinLevel": 8,
+    "MaxLevel": 14
+  },
+  "10": {
+    "Index": 10,
+    "MinHammerThiefLevel": 36,
+    "MinLevel": 9,
+    "MaxLevel": 15
+  },
+  "11": {
+    "Index": 11,
+    "MinHammerThiefLevel": 40,
+    "MinLevel": 10,
+    "MaxLevel": 16
+  },
+  "12": {
+    "Index": 12,
+    "MinHammerThiefLevel": 44,
+    "MinLevel": 11,
+    "MaxLevel": 17
+  },
+  "13": {
+    "Index": 13,
+    "MinHammerThiefLevel": 50,
+    "MinLevel": 12,
+    "MaxLevel": 18
+  },
+  "14": {
+    "Index": 14,
+    "MinHammerThiefLevel": 60,
+    "MinLevel": 13,
+    "MaxLevel": 19
+  },
+  "15": {
+    "Index": 15,
+    "MinHammerThiefLevel": 71,
+    "MinLevel": 14,
+    "MaxLevel": 20
+  },
+  "16": {
+    "Index": 16,
+    "MinHammerThiefLevel": 82,
+    "MinLevel": 15,
+    "MaxLevel": 21
+  },
+  "17": {
+    "Index": 17,
+    "MinHammerThiefLevel": 92,
+    "MinLevel": 16,
+    "MaxLevel": 22
+  },
+  "18": {
+    "Index": 18,
+    "MinHammerThiefLevel": 103,
+    "MinLevel": 17,
+    "MaxLevel": 23
+  },
+  "19": {
+    "Index": 19,
+    "MinHammerThiefLevel": 114,
+    "MinLevel": 18,
+    "MaxLevel": 24
+  },
+  "20": {
+    "Index": 20,
+    "MinHammerThiefLevel": 125,
+    "MinLevel": 19,
+    "MaxLevel": 25
+  },
+  "21": {
+    "Index": 21,
+    "MinHammerThiefLevel": 135,
+    "MinLevel": 20,
+    "MaxLevel": 26
+  },
+  "22": {
+    "Index": 22,
+    "MinHammerThiefLevel": 144,
+    "MinLevel": 21,
+    "MaxLevel": 27
+  },
+  "23": {
+    "Index": 23,
+    "MinHammerThiefLevel": 151,
+    "MinLevel": 22,
+    "MaxLevel": 28
+  },
+  "24": {
+    "Index": 24,
+    "MinHammerThiefLevel": 158,
+    "MinLevel": 23,
+    "MaxLevel": 29
+  },
+  "25": {
+    "Index": 25,
+    "MinHammerThiefLevel": 165,
+    "MinLevel": 24,
+    "MaxLevel": 30
+  },
+  "26": {
+    "Index": 26,
+    "MinHammerThiefLevel": 172,
+    "MinLevel": 25,
+    "MaxLevel": 31
+  },
+  "27": {
+    "Index": 27,
+    "MinHammerThiefLevel": 179,
+    "MinLevel": 26,
+    "MaxLevel": 32
+  },
+  "28": {
+    "Index": 28,
+    "MinHammerThiefLevel": 186,
+    "MinLevel": 27,
+    "MaxLevel": 33
+  },
+  "29": {
+    "Index": 29,
+    "MinHammerThiefLevel": 193,
+    "MinLevel": 28,
+    "MaxLevel": 34
+  },
+  "30": {
+    "Index": 30,
+    "MinHammerThiefLevel": 200,
+    "MinLevel": 29,
+    "MaxLevel": 35
+  },
+  "31": {
+    "Index": 31,
+    "MinHammerThiefLevel": 207,
+    "MinLevel": 30,
+    "MaxLevel": 36
+  },
+  "32": {
+    "Index": 32,
+    "MinHammerThiefLevel": 214,
+    "MinLevel": 31,
+    "MaxLevel": 37
+  },
+  "33": {
+    "Index": 33,
+    "MinHammerThiefLevel": 222,
+    "MinLevel": 32,
+    "MaxLevel": 38
+  },
+  "34": {
+    "Index": 34,
+    "MinHammerThiefLevel": 229,
+    "MinLevel": 33,
+    "MaxLevel": 39
+  },
+  "35": {
+    "Index": 35,
+    "MinHammerThiefLevel": 236,
+    "MinLevel": 34,
+    "MaxLevel": 40
+  },
+  "36": {
+    "Index": 36,
+    "MinHammerThiefLevel": 243,
+    "MinLevel": 35,
+    "MaxLevel": 41
+  },
+  "37": {
+    "Index": 37,
+    "MinHammerThiefLevel": 250,
+    "MinLevel": 36,
+    "MaxLevel": 42
+  },
+  "38": {
+    "Index": 38,
+    "MinHammerThiefLevel": 257,
+    "MinLevel": 37,
+    "MaxLevel": 43
+  },
+  "39": {
+    "Index": 39,
+    "MinHammerThiefLevel": 264,
+    "MinLevel": 38,
+    "MaxLevel": 44
+  },
+  "40": {
+    "Index": 40,
+    "MinHammerThiefLevel": 271,
+    "MinLevel": 39,
+    "MaxLevel": 45
+  },
+  "41": {
+    "Index": 41,
+    "MinHammerThiefLevel": 279,
+    "MinLevel": 40,
+    "MaxLevel": 46
+  },
+  "42": {
+    "Index": 42,
+    "MinHammerThiefLevel": 286,
+    "MinLevel": 41,
+    "MaxLevel": 47
+  },
+  "43": {
+    "Index": 43,
+    "MinHammerThiefLevel": 293,
+    "MinLevel": 42,
+    "MaxLevel": 48
+  },
+  "44": {
+    "Index": 44,
+    "MinHammerThiefLevel": 299,
+    "MinLevel": 43,
+    "MaxLevel": 49
+  },
+  "45": {
+    "Index": 45,
+    "MinHammerThiefLevel": 307,
+    "MinLevel": 44,
+    "MaxLevel": 50
+  },
+  "46": {
+    "Index": 46,
+    "MinHammerThiefLevel": 314,
+    "MinLevel": 45,
+    "MaxLevel": 51
+  },
+  "47": {
+    "Index": 47,
+    "MinHammerThiefLevel": 321,
+    "MinLevel": 46,
+    "MaxLevel": 52
+  },
+  "48": {
+    "Index": 48,
+    "MinHammerThiefLevel": 328,
+    "MinLevel": 47,
+    "MaxLevel": 53
+  },
+  "49": {
+    "Index": 49,
+    "MinHammerThiefLevel": 335,
+    "MinLevel": 48,
+    "MaxLevel": 54
+  },
+  "50": {
+    "Index": 50,
+    "MinHammerThiefLevel": 342,
+    "MinLevel": 48,
+    "MaxLevel": 55
+  },
+  "51": {
+    "Index": 51,
+    "MinHammerThiefLevel": 349,
+    "MinLevel": 49,
+    "MaxLevel": 56
+  },
+  "52": {
+    "Index": 52,
+    "MinHammerThiefLevel": 356,
+    "MinLevel": 49,
+    "MaxLevel": 57
+  },
+  "53": {
+    "Index": 53,
+    "MinHammerThiefLevel": 363,
+    "MinLevel": 49,
+    "MaxLevel": 58
+  },
+  "54": {
+    "Index": 54,
+    "MinHammerThiefLevel": 370,
+    "MinLevel": 50,
+    "MaxLevel": 58
+  },
+  "55": {
+    "Index": 55,
+    "MinHammerThiefLevel": 378,
+    "MinLevel": 51,
+    "MaxLevel": 58
+  },
+  "56": {
+    "Index": 56,
+    "MinHammerThiefLevel": 385,
+    "MinLevel": 51,
+    "MaxLevel": 59
+  },
+  "57": {
+    "Index": 57,
+    "MinHammerThiefLevel": 392,
+    "MinLevel": 51,
+    "MaxLevel": 60
+  },
+  "58": {
+    "Index": 58,
+    "MinHammerThiefLevel": 397,
+    "MinLevel": 52,
+    "MaxLevel": 60
+  },
+  "59": {
+    "Index": 59,
+    "MinHammerThiefLevel": 398,
+    "MinLevel": 53,
+    "MaxLevel": 60
+  },
+  "60": {
+    "Index": 60,
+    "MinHammerThiefLevel": 399,
+    "MinLevel": 54,
+    "MaxLevel": 60
+  }
+}

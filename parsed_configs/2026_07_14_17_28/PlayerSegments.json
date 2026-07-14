@@ -1,0 +1,951 @@
+{
+  "AndroidNativeRateUs": {
+    "SegmentId": "AndroidNativeRateUs",
+    "Description": "For rating use the android native popup instead of redirecting to the store. This is here temporarliy because we need to be able to switch it on and off until android fixes it",
+    "DisplayName": "Android Native Popup (temporary)",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdFeatureForceLock"
+          },
+          "Min": {
+            "_value": true,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "IdleCash": {
+    "SegmentId": "IdleCash",
+    "Description": "Can earn idle currency",
+    "DisplayName": "Idle Cash",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 0,
+              "BattleIdx": 8,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "Shop": {
+    "SegmentId": "Shop",
+    "Description": "Player can buy IAPs and resources",
+    "DisplayName": "Ingame-Shop",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "StarterPackage": {
+    "SegmentId": "StarterPackage",
+    "Description": "Player gets starter offers",
+    "DisplayName": "Starter Packages",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "AutoForge": {
+    "SegmentId": "AutoForge",
+    "Description": "Auto Forge unlocked",
+    "DisplayName": "Auto Forge",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 9,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "Dungeons": {
+    "SegmentId": "Dungeons",
+    "Description": "Dungeons tab is unlocked",
+    "DisplayName": "Dungeons Feature unlocked",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 9,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "HammerDungeon": {
+    "SegmentId": "HammerDungeon",
+    "Description": "Hammer Dungeon unlocked",
+    "DisplayName": "Hammer Dungeon",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 9,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SkillCollection": {
+    "SegmentId": "SkillCollection",
+    "Description": "Skill collection unlocked",
+    "DisplayName": "Skills",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SkillSlot0": {
+    "SegmentId": "SkillSlot0",
+    "Description": "First skill slot",
+    "DisplayName": "First skill slot",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SkillDungeon": {
+    "SegmentId": "SkillDungeon",
+    "Description": "Dungeon that gives skills currency",
+    "DisplayName": "Skill Ticket Dungeon ",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "Pets": {
+    "SegmentId": "Pets",
+    "Description": "pets tab",
+    "DisplayName": "Pets",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "PetSlot0": {
+    "SegmentId": "PetSlot0",
+    "Description": "First pet slot",
+    "DisplayName": "First pet slot",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "PetDungeon": {
+    "SegmentId": "PetDungeon",
+    "Description": "Dungeon that gives pet currency",
+    "DisplayName": "Eggshells Dungeon",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "EggStarterOffer": {
+    "SegmentId": "EggStarterOffer",
+    "Description": "Player gets egg starter offer",
+    "DisplayName": "Egg Starter Offer",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyAccountAge"
+          },
+          "Min": null,
+          "Max": {
+            "_value": 86400000,
+            "$type": "MetaDurationConstant"
+          }
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": [
+        "Pets"
+      ],
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "Chat": {
+    "SegmentId": "Chat",
+    "Description": "Chat is now unlocked",
+    "DisplayName": "Chat",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 9,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "Arena": {
+    "SegmentId": "Arena",
+    "Description": "Players compete in leagues",
+    "DisplayName": "Arena",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 9,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SkillSlot1": {
+    "SegmentId": "SkillSlot1",
+    "Description": "Second Skill Slot unlocked",
+    "DisplayName": "Second Skill Slot",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "TechTree": {
+    "SegmentId": "TechTree",
+    "Description": "Tech tree is now unlocked",
+    "DisplayName": "Tech Tree",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "PotionDungeon": {
+    "SegmentId": "PotionDungeon",
+    "Description": "Dungeon that gives tech tree currency",
+    "DisplayName": "Tech Potions Dungeon",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "PetSlot1": {
+    "SegmentId": "PetSlot1",
+    "Description": "Second Pet Slot is unlocked",
+    "DisplayName": "Second Pet Slot",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 9,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "Guilds": {
+    "SegmentId": "Guilds",
+    "Description": "Guilds feature now unlocked",
+    "DisplayName": "Guilds",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SkillSlot2": {
+    "SegmentId": "SkillSlot2",
+    "Description": "Third Skill Slot now unlocked",
+    "DisplayName": "Third Skill Slot",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 4,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "AutoHammer1": {
+    "SegmentId": "AutoHammer1",
+    "Description": "Second Free Auto Hammer now unlocked",
+    "DisplayName": "First Free Auto Hammer",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 4,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "PetSlot2": {
+    "SegmentId": "PetSlot2",
+    "Description": "Third Pet Slot now unlocked",
+    "DisplayName": "Third Pet Slot",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 5,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "AutoHammer2": {
+    "SegmentId": "AutoHammer2",
+    "Description": "Third Free Auto Hammer now unlocked",
+    "DisplayName": "Second Free Auto Hammer",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 6,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SwitchWorlds": {
+    "SegmentId": "SwitchWorlds",
+    "Description": "The player is allowed to change his current server",
+    "DisplayName": "Switch Worlds",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": null,
+          "Max": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          }
+        },
+        {
+          "Id": {
+            "$type": "PlayerPropertyAccountAge"
+          },
+          "Min": null,
+          "Max": {
+            "_value": 3600000,
+            "$type": "MetaDurationConstant"
+          }
+        },
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdSwitchedWorldCount"
+          },
+          "Min": null,
+          "Max": {
+            "_value": 0,
+            "$type": "LongConstant"
+          }
+        },
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdHasGuild"
+          },
+          "Min": {
+            "_value": false,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SteppingStones": {
+    "SegmentId": "SteppingStones",
+    "Description": "Determines if player has unlocked Stepping Stones event",
+    "DisplayName": "Stepping Stones Unlocked",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 5,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "ForgeAscension": {
+    "SegmentId": "ForgeAscension",
+    "Description": "Determines if the player can ascend his forge",
+    "DisplayName": "Can Ascend Forge",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdForgeLevelMaxed"
+          },
+          "Min": {
+            "_value": true,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "MountsAscension": {
+    "SegmentId": "MountsAscension",
+    "Description": "Determines if the player can ascend his mounts",
+    "DisplayName": "Can Ascend Mounts",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdMountsSummonLevelMaxed"
+          },
+          "Min": {
+            "_value": true,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "SkillsAscension": {
+    "SegmentId": "SkillsAscension",
+    "Description": "Determines if the player can ascend his skills",
+    "DisplayName": "Can Ascend Skills",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdSkillsSummonLevelMaxed"
+          },
+          "Min": {
+            "_value": true,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "PetsAscension": {
+    "SegmentId": "PetsAscension",
+    "Description": "Determines if the player can ascend his pets",
+    "DisplayName": "Can Ascend Pets",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdEggsSummonLevelMaxed"
+          },
+          "Min": {
+            "_value": true,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "AutoForgeStack": {
+    "SegmentId": "AutoForgeStack",
+    "Description": "Auto forge stays active after finding an item and adds to a stack",
+    "DisplayName": "Auto Forge Stack",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdForgeLevel"
+          },
+          "Min": {
+            "_value": 19,
+            "$type": "LongConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "GuildMissions": {
+    "SegmentId": "GuildMissions",
+    "Description": "Players can participate and start missions within their clan",
+    "DisplayName": "Guild missions are available",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdFeatureForceLock"
+          },
+          "Min": {
+            "_value": false,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "ClanTechTree": {
+    "SegmentId": "ClanTechTree",
+    "Description": "Shared clan tree that players can donate into to get shared bonuses",
+    "DisplayName": "Clan Tech Tree",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdFeatureForceLock"
+          },
+          "Min": {
+            "_value": false,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "AscensionStarsBonus": {
+    "SegmentId": "AscensionStarsBonus",
+    "Description": "Bonuses based on the number of ascension stars you collect",
+    "DisplayName": "Ascension Bonuses",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdFeatureForceLock"
+          },
+          "Min": {
+            "_value": false,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  },
+  "DiscordLink": {
+    "SegmentId": "DiscordLink",
+    "Description": "Enables frontend button to start linking",
+    "DisplayName": "Discord Linking Button",
+    "PlayerCondition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "$type": "PlayerPropertyIdFeatureForceLock"
+          },
+          "Min": {
+            "_value": true,
+            "$type": "BoolConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null,
+      "$type": "PlayerSegmentBasicCondition"
+    }
+  }
+}
