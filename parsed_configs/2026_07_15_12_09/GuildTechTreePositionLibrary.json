@@ -1,0 +1,96 @@
+{
+  "Power": {
+    "Category": "Power",
+    "Nodes": [
+      "WeaponBonus",
+      "HelmetBonus",
+      "BodyBonus",
+      "ShoeBonus",
+      "GloveBonus",
+      "BeltBonus",
+      "NecklaceBonus",
+      "RingBonus",
+      "SkillDamage",
+      "PetBonusDamage",
+      "PetBonusHealth",
+      "MountDamage",
+      "MountHealth"
+    ]
+  },
+  "EggTimers": {
+    "Category": "EggTimers",
+    "Nodes": [
+      "CommonEggTimer",
+      "RareEggTimer",
+      "EpicEggTimer",
+      "LegendaryEggTimer",
+      "UltimateEggTimer",
+      "MythicEggTimer"
+    ]
+  },
+  "Special": {
+    "Category": "Special",
+    "Nodes": [
+      "AutoForge",
+      "ForgeAnimationSpeed",
+      "PlayerMoveSpeed",
+      "PlayerAttackRange"
+    ]
+  },
+  "ClanWar": {
+    "Category": "ClanWar",
+    "Nodes": [
+      "WarPointsFromForging",
+      "WarPointsFromSkillSummon",
+      "WarPointsFromSkillUpgrade",
+      "WarPointsFromTechUpgrade",
+      "WarPointsFromForgeSpend",
+      "WarPointsFromDungeonKey",
+      "WarPointsFromEggHatch",
+      "WarPointsFromPetMerge",
+      "WarPointsFromMountSummon",
+      "WarPointsFromMountMerge",
+      "WarPointsOnDay1",
+      "WarPointsOnDay2",
+      "WarPointsOnDay3",
+      "WarPointsOnDay4",
+      "WarPointsOnDay5",
+      "WarPointsOnDay6",
+      "ClanWarDamage",
+      "ClanWarHealth",
+      "PersonalWarRewards",
+      "ClanWarWinRewards",
+      "ClanWarLoseRewards"
+    ]
+  },
+  "ClanMissions": {
+    "Category": "ClanMissions",
+    "Nodes": [
+      "MissionDamage",
+      "MissionHealth",
+      "MissionRewards"
+    ]
+  },
+  "Dungeons": {
+    "Category": "Dungeons",
+    "Nodes": [
+      "HammerThiefDungeonDamage",
+      "HammerThiefDungeonHealth",
+      "GhostTownDungeonDamage",
+      "GhostTownDungeonHealth",
+      "InvasionDungeonDamage",
+      "InvasionDungeonHealth",
+      "ZombieRushDungeonDamage",
+      "ZombieRushDungeonHealth"
+    ]
+  },
+  "ClanTechPotions": {
+    "Category": "ClanTechPotions",
+    "Nodes": [
+      "GuildPotionsFromMissions",
+      "GuildPotionsFromPersonalWar",
+      "GuildPotionsFromClanWarWin",
+      "GuildPotionsFromClanWarLose"
+    ]
+  }
+}

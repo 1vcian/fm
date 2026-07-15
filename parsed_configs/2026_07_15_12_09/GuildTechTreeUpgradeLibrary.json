@@ -1,0 +1,356 @@
+{
+  "WeaponBonus": {
+    "Type": "WeaponBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "HelmetBonus": {
+    "Type": "HelmetBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "BodyBonus": {
+    "Type": "BodyBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "ShoeBonus": {
+    "Type": "ShoeBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "GloveBonus": {
+    "Type": "GloveBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "BeltBonus": {
+    "Type": "BeltBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "NecklaceBonus": {
+    "Type": "NecklaceBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "RingBonus": {
+    "Type": "RingBonus",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "SkillDamage": {
+    "Type": "SkillDamage",
+    "MaxLevel": 20,
+    "PointsPerLevel": 1215,
+    "ValuePerLevel": 0.025
+  },
+  "PetBonusDamage": {
+    "Type": "PetBonusDamage",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "PetBonusHealth": {
+    "Type": "PetBonusHealth",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "MountDamage": {
+    "Type": "MountDamage",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "MountHealth": {
+    "Type": "MountHealth",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "CommonEggTimer": {
+    "Type": "CommonEggTimer",
+    "MaxLevel": 60,
+    "PointsPerLevel": 135,
+    "ValuePerLevel": 0.025
+  },
+  "RareEggTimer": {
+    "Type": "RareEggTimer",
+    "MaxLevel": 60,
+    "PointsPerLevel": 135,
+    "ValuePerLevel": 0.025
+  },
+  "EpicEggTimer": {
+    "Type": "EpicEggTimer",
+    "MaxLevel": 60,
+    "PointsPerLevel": 135,
+    "ValuePerLevel": 0.025
+  },
+  "LegendaryEggTimer": {
+    "Type": "LegendaryEggTimer",
+    "MaxLevel": 60,
+    "PointsPerLevel": 135,
+    "ValuePerLevel": 0.025
+  },
+  "UltimateEggTimer": {
+    "Type": "UltimateEggTimer",
+    "MaxLevel": 60,
+    "PointsPerLevel": 135,
+    "ValuePerLevel": 0.025
+  },
+  "MythicEggTimer": {
+    "Type": "MythicEggTimer",
+    "MaxLevel": 60,
+    "PointsPerLevel": 135,
+    "ValuePerLevel": 0.025
+  },
+  "AutoForge": {
+    "Type": "AutoForge",
+    "MaxLevel": 2,
+    "PointsPerLevel": 6080,
+    "ValuePerLevel": 4.5
+  },
+  "ForgeAnimationSpeed": {
+    "Type": "ForgeAnimationSpeed",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "PlayerMoveSpeed": {
+    "Type": "PlayerMoveSpeed",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "PlayerAttackRange": {
+    "Type": "PlayerAttackRange",
+    "MaxLevel": 3,
+    "PointsPerLevel": 4056,
+    "ValuePerLevel": 0.5
+  },
+  "WarPointsFromForging": {
+    "Type": "WarPointsFromForging",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromSkillSummon": {
+    "Type": "WarPointsFromSkillSummon",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromSkillUpgrade": {
+    "Type": "WarPointsFromSkillUpgrade",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromTechUpgrade": {
+    "Type": "WarPointsFromTechUpgrade",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromForgeSpend": {
+    "Type": "WarPointsFromForgeSpend",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromDungeonKey": {
+    "Type": "WarPointsFromDungeonKey",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromEggHatch": {
+    "Type": "WarPointsFromEggHatch",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromPetMerge": {
+    "Type": "WarPointsFromPetMerge",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromMountSummon": {
+    "Type": "WarPointsFromMountSummon",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsFromMountMerge": {
+    "Type": "WarPointsFromMountMerge",
+    "MaxLevel": 10,
+    "PointsPerLevel": 243,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsOnDay1": {
+    "Type": "WarPointsOnDay1",
+    "MaxLevel": 10,
+    "PointsPerLevel": 405,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsOnDay2": {
+    "Type": "WarPointsOnDay2",
+    "MaxLevel": 10,
+    "PointsPerLevel": 405,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsOnDay3": {
+    "Type": "WarPointsOnDay3",
+    "MaxLevel": 10,
+    "PointsPerLevel": 405,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsOnDay4": {
+    "Type": "WarPointsOnDay4",
+    "MaxLevel": 10,
+    "PointsPerLevel": 405,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsOnDay5": {
+    "Type": "WarPointsOnDay5",
+    "MaxLevel": 10,
+    "PointsPerLevel": 405,
+    "ValuePerLevel": 0.02
+  },
+  "WarPointsOnDay6": {
+    "Type": "WarPointsOnDay6",
+    "MaxLevel": 10,
+    "PointsPerLevel": 405,
+    "ValuePerLevel": 0.02
+  },
+  "ClanWarDamage": {
+    "Type": "ClanWarDamage",
+    "MaxLevel": 100,
+    "PointsPerLevel": 246,
+    "ValuePerLevel": 0.5
+  },
+  "ClanWarHealth": {
+    "Type": "ClanWarHealth",
+    "MaxLevel": 100,
+    "PointsPerLevel": 246,
+    "ValuePerLevel": 0.5
+  },
+  "PersonalWarRewards": {
+    "Type": "PersonalWarRewards",
+    "MaxLevel": 10,
+    "PointsPerLevel": 1622,
+    "ValuePerLevel": 0.005
+  },
+  "ClanWarWinRewards": {
+    "Type": "ClanWarWinRewards",
+    "MaxLevel": 10,
+    "PointsPerLevel": 1622,
+    "ValuePerLevel": 0.005
+  },
+  "ClanWarLoseRewards": {
+    "Type": "ClanWarLoseRewards",
+    "MaxLevel": 10,
+    "PointsPerLevel": 1622,
+    "ValuePerLevel": 0.005
+  },
+  "MissionDamage": {
+    "Type": "MissionDamage",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "MissionHealth": {
+    "Type": "MissionHealth",
+    "MaxLevel": 20,
+    "PointsPerLevel": 304,
+    "ValuePerLevel": 0.025
+  },
+  "MissionRewards": {
+    "Type": "MissionRewards",
+    "MaxLevel": 10,
+    "PointsPerLevel": 1215,
+    "ValuePerLevel": 0.005
+  },
+  "HammerThiefDungeonDamage": {
+    "Type": "HammerThiefDungeonDamage",
+    "MaxLevel": 10,
+    "PointsPerLevel": 973,
+    "ValuePerLevel": 0.025
+  },
+  "HammerThiefDungeonHealth": {
+    "Type": "HammerThiefDungeonHealth",
+    "MaxLevel": 10,
+    "PointsPerLevel": 973,
+    "ValuePerLevel": 0.025
+  },
+  "GhostTownDungeonDamage": {
+    "Type": "GhostTownDungeonDamage",
+    "MaxLevel": 10,
+    "PointsPerLevel": 487,
+    "ValuePerLevel": 0.025
+  },
+  "GhostTownDungeonHealth": {
+    "Type": "GhostTownDungeonHealth",
+    "MaxLevel": 10,
+    "PointsPerLevel": 487,
+    "ValuePerLevel": 0.025
+  },
+  "InvasionDungeonDamage": {
+    "Type": "InvasionDungeonDamage",
+    "MaxLevel": 10,
+    "PointsPerLevel": 487,
+    "ValuePerLevel": 0.025
+  },
+  "InvasionDungeonHealth": {
+    "Type": "InvasionDungeonHealth",
+    "MaxLevel": 10,
+    "PointsPerLevel": 487,
+    "ValuePerLevel": 0.025
+  },
+  "ZombieRushDungeonDamage": {
+    "Type": "ZombieRushDungeonDamage",
+    "MaxLevel": 10,
+    "PointsPerLevel": 487,
+    "ValuePerLevel": 0.025
+  },
+  "ZombieRushDungeonHealth": {
+    "Type": "ZombieRushDungeonHealth",
+    "MaxLevel": 10,
+    "PointsPerLevel": 487,
+    "ValuePerLevel": 0.025
+  },
+  "GuildPotionsFromMissions": {
+    "Type": "GuildPotionsFromMissions",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "GuildPotionsFromPersonalWar": {
+    "Type": "GuildPotionsFromPersonalWar",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "GuildPotionsFromClanWarWin": {
+    "Type": "GuildPotionsFromClanWarWin",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  },
+  "GuildPotionsFromClanWarLose": {
+    "Type": "GuildPotionsFromClanWarLose",
+    "MaxLevel": 20,
+    "PointsPerLevel": 608,
+    "ValuePerLevel": 0.025
+  }
+}

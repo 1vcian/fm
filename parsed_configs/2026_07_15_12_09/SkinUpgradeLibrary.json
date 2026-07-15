@@ -1,0 +1,44 @@
+{
+  "Weapon": {
+    "SkinType": "Weapon",
+    "GoodSkinsLevelExperience": [
+      100,
+      800,
+      2900,
+      4400
+    ],
+    "BadSkinsLevelExperience": [
+      10
+    ],
+    "GoodSkinStatIncreasePerLevel": 0.10000000009313226,
+    "BadSkinStatIncreasePerLevel": 0.0
+  },
+  "Helmet": {
+    "SkinType": "Helmet",
+    "GoodSkinsLevelExperience": [
+      60,
+      800,
+      2900,
+      4400
+    ],
+    "BadSkinsLevelExperience": [
+      10
+    ],
+    "GoodSkinStatIncreasePerLevel": 0.10000000009313226,
+    "BadSkinStatIncreasePerLevel": 0.0
+  },
+  "Armour": {
+    "SkinType": "Armour",
+    "GoodSkinsLevelExperience": [
+      100,
+      800,
+      2900,
+      4400
+    ],
+    "BadSkinsLevelExperience": [
+      10
+    ],
+    "GoodSkinStatIncreasePerLevel": 0.10000000009313226,
+    "BadSkinStatIncreasePerLevel": 0.0
+  }
+}

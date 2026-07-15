@@ -1,0 +1,1964 @@
+{
+  "WeaponBonus": {
+    "Type": "WeaponBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 5
+            }
+          ]
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 5
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "HelmetBonus": {
+    "Type": "HelmetBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "BodyBonus": {
+    "Type": "BodyBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ShoeBonus": {
+    "Type": "ShoeBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 6
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "GloveBonus": {
+    "Type": "GloveBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 2
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "BeltBonus": {
+    "Type": "BeltBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 7
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "NecklaceBonus": {
+    "Type": "NecklaceBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 3
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "RingBonus": {
+    "Type": "RingBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 4
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WeaponLevelUp": {
+    "Type": "WeaponLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 5
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "HelmetLevelUp": {
+    "Type": "HelmetLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "BodyLevelUp": {
+    "Type": "BodyLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ShoeLevelUp": {
+    "Type": "ShoeLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 6
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "GloveLevelUp": {
+    "Type": "GloveLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 2
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "BeltLevelUp": {
+    "Type": "BeltLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 7
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "NecklaceLevelUp": {
+    "Type": "NecklaceLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 3
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "RingLevelUp": {
+    "Type": "RingLevelUp",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxLevel",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": [
+            {
+              "Type": "ItemType",
+              "Value": 4
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "MountDamage": {
+    "Type": "MountDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Mount",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "MountHealth": {
+    "Type": "MountHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Mount",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ExtraMountChance": {
+    "Type": "ExtraMountChance",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "FreebieChance",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Mount",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "MountSummonCost": {
+    "Type": "MountSummonCost",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Cost",
+          "StatNature": "OneMinusMultiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Mount",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ForgeTimerSpeed": {
+    "Type": "ForgeTimerSpeed",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Forge",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ForgeUpgradeCost": {
+    "Type": "ForgeUpgradeCost",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Cost",
+          "StatNature": "OneMinusMultiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Forge",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "EquipmentSellPrice": {
+    "Type": "EquipmentSellPrice",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "SellPrice",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Equipment",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "AutoForge": {
+    "Type": "AutoForge",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MaxCount",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Forge",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "HammerOfflineReward": {
+    "Type": "HammerOfflineReward",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 2
+            },
+            {
+              "Type": "Source",
+              "Value": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "CoinOfflineReward": {
+    "Type": "CoinOfflineReward",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 0
+            },
+            {
+              "Type": "Source",
+              "Value": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "MaxOfflineReward": {
+    "Type": "MaxOfflineReward",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Duration",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "FreeForgeChance": {
+    "Type": "FreeForgeChance",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "FreebieChance",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Forge",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "HammerThiefHammerReward": {
+    "Type": "HammerThiefHammerReward",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 2
+            },
+            {
+              "Type": "Source",
+              "Value": 40
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "HammerThiefCoinReward": {
+    "Type": "HammerThiefCoinReward",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 0
+            },
+            {
+              "Type": "Source",
+              "Value": 40
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "SkillDamage": {
+    "Type": "SkillDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "ActiveSkill",
+          "Qualifiers": []
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "ActiveSkill",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "SkillPassiveDamage": {
+    "Type": "SkillPassiveDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "PassiveSkill",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "SkillPassiveHealth": {
+    "Type": "SkillPassiveHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "PassiveSkill",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "GhostTownSkillBonus": {
+    "Type": "GhostTownSkillBonus",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 3
+            },
+            {
+              "Type": "Source",
+              "Value": 41
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "SkillSummonCost": {
+    "Type": "SkillSummonCost",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Cost",
+          "StatNature": "OneMinusMultiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "ActiveSkill",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "PetBonusDamage": {
+    "Type": "PetBonusDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Pet",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "PetBonusHealth": {
+    "Type": "PetBonusHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Pet",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ExtraEggChance": {
+    "Type": "ExtraEggChance",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "FreebieChance",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Egg",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "CommonEggTimer": {
+    "Type": "CommonEggTimer",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Egg",
+          "Qualifiers": [
+            {
+              "Type": "Rarity",
+              "Value": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "RareEggTimer": {
+    "Type": "RareEggTimer",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Egg",
+          "Qualifiers": [
+            {
+              "Type": "Rarity",
+              "Value": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "EpicEggTimer": {
+    "Type": "EpicEggTimer",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Egg",
+          "Qualifiers": [
+            {
+              "Type": "Rarity",
+              "Value": 2
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "LegendaryEggTimer": {
+    "Type": "LegendaryEggTimer",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Egg",
+          "Qualifiers": [
+            {
+              "Type": "Rarity",
+              "Value": 3
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "UltimateEggTimer": {
+    "Type": "UltimateEggTimer",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Egg",
+          "Qualifiers": [
+            {
+              "Type": "Rarity",
+              "Value": 4
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "MythicEggTimer": {
+    "Type": "MythicEggTimer",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Egg",
+          "Qualifiers": [
+            {
+              "Type": "Rarity",
+              "Value": 5
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ZombieRushTechPotions": {
+    "Type": "ZombieRushTechPotions",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 4
+            },
+            {
+              "Type": "Source",
+              "Value": 43
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "TechNodeUpgradeCost": {
+    "Type": "TechNodeUpgradeCost",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Cost",
+          "StatNature": "OneMinusMultiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "TechTree",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "TechResearchTimer": {
+    "Type": "TechResearchTimer",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "TimerSpeed",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "TechTree",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "WarPointsFromForging": {
+    "Type": "WarPointsFromForging",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 10
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromSkillSummon": {
+    "Type": "WarPointsFromSkillSummon",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 11
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromSkillUpgrade": {
+    "Type": "WarPointsFromSkillUpgrade",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 12
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromTechUpgrade": {
+    "Type": "WarPointsFromTechUpgrade",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 13
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromForgeSpend": {
+    "Type": "WarPointsFromForgeSpend",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 14
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromDungeonKey": {
+    "Type": "WarPointsFromDungeonKey",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 15
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromEggHatch": {
+    "Type": "WarPointsFromEggHatch",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 16
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromPetMerge": {
+    "Type": "WarPointsFromPetMerge",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 17
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromMountSummon": {
+    "Type": "WarPointsFromMountSummon",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 18
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsFromMountMerge": {
+    "Type": "WarPointsFromMountMerge",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 19
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "WarPointsOnDay1": {
+    "Type": "WarPointsOnDay1",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "OnGuildWarDay1",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "WarPointsOnDay2": {
+    "Type": "WarPointsOnDay2",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "OnGuildWarDay2",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "WarPointsOnDay3": {
+    "Type": "WarPointsOnDay3",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "OnGuildWarDay3",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "WarPointsOnDay4": {
+    "Type": "WarPointsOnDay4",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "OnGuildWarDay4",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "WarPointsOnDay5": {
+    "Type": "WarPointsOnDay5",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "OnGuildWarDay5",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "WarPointsOnDay6": {
+    "Type": "WarPointsOnDay6",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "OnGuildWarDay6",
+        "Target": {
+          "Kind": "WarPoints",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ClanWarDamage": {
+    "Type": "ClanWarDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InClanWarOrBrawl",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ClanWarHealth": {
+    "Type": "ClanWarHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InClanWarOrBrawl",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "PersonalWarRewards": {
+    "Type": "PersonalWarRewards",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 30
+            }
+          ]
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Keys",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 30
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ClanWarWinRewards": {
+    "Type": "ClanWarWinRewards",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 31
+            }
+          ]
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Keys",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 31
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ClanWarLoseRewards": {
+    "Type": "ClanWarLoseRewards",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 32
+            }
+          ]
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Keys",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 32
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "MissionDamage": {
+    "Type": "MissionDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InMission",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "MissionHealth": {
+    "Type": "MissionHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InMission",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "MissionRewards": {
+    "Type": "MissionRewards",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 33
+            }
+          ]
+        }
+      },
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Keys",
+          "Qualifiers": [
+            {
+              "Type": "Source",
+              "Value": 33
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "GuildPotionsFromMissions": {
+    "Type": "GuildPotionsFromMissions",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 11
+            },
+            {
+              "Type": "Source",
+              "Value": 33
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "GuildPotionsFromPersonalWar": {
+    "Type": "GuildPotionsFromPersonalWar",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 11
+            },
+            {
+              "Type": "Source",
+              "Value": 30
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "GuildPotionsFromClanWarWin": {
+    "Type": "GuildPotionsFromClanWarWin",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 11
+            },
+            {
+              "Type": "Source",
+              "Value": 31
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "GuildPotionsFromClanWarLose": {
+    "Type": "GuildPotionsFromClanWarLose",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Bonus",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "TechTree",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Currency",
+          "Qualifiers": [
+            {
+              "Type": "CurrencyType",
+              "Value": 11
+            },
+            {
+              "Type": "Source",
+              "Value": 32
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ForgeAnimationSpeed": {
+    "Type": "ForgeAnimationSpeed",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Duration",
+          "StatNature": "Divisor"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Forge",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "HammerThiefDungeonDamage": {
+    "Type": "HammerThiefDungeonDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InHammerThiefDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "HammerThiefDungeonHealth": {
+    "Type": "HammerThiefDungeonHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InHammerThiefDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "GhostTownDungeonDamage": {
+    "Type": "GhostTownDungeonDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InGhostTownDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "GhostTownDungeonHealth": {
+    "Type": "GhostTownDungeonHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InGhostTownDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "InvasionDungeonDamage": {
+    "Type": "InvasionDungeonDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InInvasionDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "InvasionDungeonHealth": {
+    "Type": "InvasionDungeonHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InInvasionDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ZombieRushDungeonDamage": {
+    "Type": "ZombieRushDungeonDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InZombieRushDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "ZombieRushDungeonHealth": {
+    "Type": "ZombieRushDungeonHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InZombieRushDungeon",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "LeagueBattleDamage": {
+    "Type": "LeagueBattleDamage",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Damage",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InLeagueBattle",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "LeagueBattleHealth": {
+    "Type": "LeagueBattleHealth",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "Health",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "InLeagueBattle",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "PlayerMoveSpeed": {
+    "Type": "PlayerMoveSpeed",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "MoveSpeed",
+          "StatNature": "Multiplier"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  },
+  "PlayerAttackRange": {
+    "Type": "PlayerAttackRange",
+    "StatNodes": [
+      {
+        "UniqueStat": {
+          "StatType": "AttackRange",
+          "StatNature": "Additive"
+        },
+        "LegacyTarget": null,
+        "Layer": "None",
+        "Condition": "None",
+        "Target": {
+          "Kind": "Player",
+          "Qualifiers": []
+        }
+      }
+    ]
+  }
+}

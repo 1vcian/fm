@@ -1,0 +1,39 @@
+{
+  "MaxGuildNameLength": 9,
+  "MaxGuildTagLength": 5,
+  "GuildCreateCost": 150,
+  "GuildCreateCurrencyType": "Gems",
+  "MaxGuildMemberCount": 50,
+  "MaxCommanderRoleMemberCount": 1,
+  "MaxCaptainRoleMemberCount": 1,
+  "MaxR1RoleMemberCount": 3,
+  "MaxR2RoleMemberCount": 5,
+  "MaxR3RoleMemberCount": 7,
+  "MaxR4RoleMemberCount": 0,
+  "NameValidationRegex": "^[A-Za-z0-9 '&\\-_]+$",
+  "TagValidationRegex": "^[A-Z0-9_-]+$",
+  "AnnouncementMaxLength": 350,
+  "AnnouncementMaxLines": 5,
+  "RequestTimeoutDurationMinutes": 1,
+  "GuildLeaveCooldownDurationMinutes": 1440,
+  "TechTreeDonationCurrencies": [
+    {
+      "Currency": "GuildPotions",
+      "CostPerPoint": 2,
+      "PossiblePointDonations": [
+        1,
+        10,
+        50
+      ]
+    },
+    {
+      "Currency": "Gems",
+      "CostPerPoint": 1,
+      "PossiblePointDonations": [
+        1,
+        10,
+        50
+      ]
+    }
+  ]
+}

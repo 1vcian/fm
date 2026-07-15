@@ -1,0 +1,9 @@
+{
+  "DailyEnergy": 3,
+  "MaxSupportMembers": 3,
+  "RefreshGemCost": 10,
+  "RefreshMissionCount": 6,
+  "MissionBattleMatchTimerSeconds": 180,
+  "HealthAndDamageLevelMultiplier": 1.5239999999757856,
+  "MissionOwnerRewardsCount": 4
+}
