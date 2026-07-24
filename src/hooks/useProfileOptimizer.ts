@@ -51,9 +51,13 @@ export function useProfileOptimizer() {
         ascensionConfigsLibrary
     };
 
-    const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal'): { pets: PetSlot[]; mount: MountSlot | null } | null => {
+    // respectSavedLevels: when true (default), each saved build is scored at its own
+    // stored level — the original behavior. When false, every candidate is scored at
+    // level 1 so only secondary stats decide. Either way the returned build keeps its
+    // saved level for equipping.
+    const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal' | 'balanced', base: UserProfile = profile, respectSavedLevels: boolean = true): { pets: PetSlot[]; mount: MountSlot | null } | null => {
         // --- Pet candidate sets: every combination of up to MAX_ACTIVE_PETS from saved builds ---
-        const savedPets = profile.pets.savedBuilds || [];
+        const savedPets = base.pets.savedBuilds || [];
         const petSets: PetSlot[][] = [];
         const n = savedPets.length;
         const slotsToFill = Math.min(n, MAX_ACTIVE_PETS);
@@ -76,7 +80,7 @@ export function useProfileOptimizer() {
             }
         }
         // If there are no saved pets, keep the current active pets (don't force a change).
-        if (petSets.length === 0) petSets.push(profile.pets.active);
+        if (petSets.length === 0) petSets.push(base.pets.active);
 
         // --- Mount candidates: current active + saved builds, deduped ---
         const mountCandidates: (MountSlot | null)[] = [];
@@ -89,37 +93,62 @@ export function useProfileOptimizer() {
             seen.add(key);
             mountCandidates.push(m);
         };
-        addMount(profile.mount.active);
-        (profile.mount.savedBuilds || []).forEach(addMount);
+        addMount(base.mount.active);
+        (base.mount.savedBuilds || []).forEach(addMount);
         // If there are no mounts at all, keep the current mount (no change).
-        if (mountCandidates.length === 0) mountCandidates.push(profile.mount.active);
+        if (mountCandidates.length === 0) mountCandidates.push(base.mount.active);
+
+        // Evaluate every combination once. "Balanced" needs two passes (it
+        // normalises DPS and HPS by their maxima across the sweep), so keep the
+        // full stats around rather than collapsing to a single scalar up front.
+        type Combo = { pets: PetSlot[]; mount: MountSlot | null; stats: ReturnType<StatEngine['calculate']> };
+        const combos: Combo[] = [];
+        for (const petSet of petSets) {
+            for (const mount of mountCandidates) {
+                // Score at level 1 when respectSavedLevels is off; the original
+                // petSet/mount (with saved levels) are still what we push and return.
+                const scoredPets = respectSavedLevels
+                    ? petSet
+                    : petSet.map(p => ({ ...p, level: 1 }));
+                const scoredMount = (respectSavedLevels || !mount)
+                    ? mount
+                    : { ...mount, level: 1 };
+                const tempProfile: UserProfile = {
+                    ...base,
+                    pets: { ...base.pets, active: scoredPets },
+                    mount: { ...base.mount, active: scoredMount }
+                };
+                const engine = new StatEngine(tempProfile, libs);
+                combos.push({ pets: petSet, mount, stats: engine.calculate() });
+            }
+        }
+        if (combos.length === 0) return null;
 
         const scoreOf = (stats: ReturnType<StatEngine['calculate']>): number => {
-            if (metric === 'dps') return stats.averageTotalDps;
+            // Real-time DPS, matching the Loadout Optimizer sweep (not the theoretical average).
+            if (metric === 'dps') return stats.realTotalDps;
             if (metric === 'power') return stats.power;
+            if (metric === 'balanced') {
+                // Geometric mean (product) of real-time DPS and HPS. Unlike a weighted
+                // sum of the two, the product rewards being strong on BOTH axes and
+                // collapses toward zero if either is weak — that's what a balanced build
+                // actually is. Raw scale is fine: the product is scale-invariant for
+                // ranking, so no normalisation is needed. Matches the Substats Calculator.
+                return stats.realTotalDps * stats.realTotalHps;
+            }
             return stats.realWeaponDps * stats.lifeSteal; // lifesteal/sec (real-time)
         };
 
         let bestPets: PetSlot[] = [];
-        let bestMount: MountSlot | null = profile.mount.active;
+        let bestMount: MountSlot | null = base.mount.active;
         let bestValue = -1;
 
-        for (const petSet of petSets) {
-            for (const mount of mountCandidates) {
-                const tempProfile: UserProfile = {
-                    ...profile,
-                    pets: { ...profile.pets, active: petSet },
-                    mount: { ...profile.mount, active: mount }
-                };
-
-                const engine = new StatEngine(tempProfile, libs);
-                const value = scoreOf(engine.calculate());
-
-                if (value > bestValue) {
-                    bestValue = value;
-                    bestPets = petSet;
-                    bestMount = mount;
-                }
+        for (const c of combos) {
+            const value = scoreOf(c.stats);
+            if (value > bestValue) {
+                bestValue = value;
+                bestPets = c.pets;
+                bestMount = c.mount;
             }
         }
 

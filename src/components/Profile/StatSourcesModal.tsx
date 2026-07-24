@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Cat, Info } from 'lucide-react';
+import { X, Cat, Info, Bike } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
@@ -145,13 +145,19 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
         }
 
         const mount = ref.mount;
+        const mountsConfig = spriteMapping?.mounts;
+        const mountSpriteEntry = mountsConfig?.mapping
+            ? Object.entries(mountsConfig.mapping).find(
+                ([, v]: [string, any]) => v.id === mount.id && v.rarity === mount.rarity)
+            : undefined;
+        const mountSpriteIndex = mountSpriteEntry ? parseInt(mountSpriteEntry[0]) : null;
         return (
             <ItemSelectionCard
                 key={c.id}
                 item={mount}
                 slotKey="mount"
                 slotLabel="Mount"
-                itemName={mount.customName || `${mount.rarity} Mount`}
+                itemName={mount.customName || (mountSpriteEntry ? (mountSpriteEntry[1] as any).name : `${mount.rarity} Mount`)}
                 itemImage={null}
                 rarity={mount.rarity}
                 hideAgeStyles
@@ -159,6 +165,19 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                 currentLevel={mount.level}
                 spriteMapping={spriteMapping}
                 customStats={contribution}
+                renderIcon={() => mountSpriteIndex !== null && mountsConfig ? (
+                    <SpriteSheetIcon
+                        textureSrc={getAscensionTexturePath('MountIcons', (mount as any).ascensionLevel || 0, selectedVersion)}
+                        spriteWidth={mountsConfig.sprite_size.width}
+                        spriteHeight={mountsConfig.sprite_size.height}
+                        sheetWidth={mountsConfig.texture_size.width}
+                        sheetHeight={mountsConfig.texture_size.height}
+                        iconIndex={mountSpriteIndex}
+                        className="w-10 h-10"
+                    />
+                ) : (
+                    <Bike className={cn('w-8 h-8 opacity-50', `text-rarity-${mount.rarity.toLowerCase()}`)} />
+                )}
             />
         );
     };

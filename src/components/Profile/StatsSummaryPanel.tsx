@@ -4,7 +4,7 @@ import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
     ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
-    ArrowLeftRight, Info, Scale
+    ArrowLeftRight, Info, Sword, Scale, RotateCcw, Layers
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -15,12 +15,14 @@ import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { getStatName } from '../../utils/statNames';
 import { useComparison } from '../../context/ComparisonContext';
-import { useLoadoutSweep } from '../../hooks/useLoadoutSweep';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEngine';
 import { useTreeMode } from '../../context/TreeModeContext';
-import { UserProfile } from '../../types/Profile';
+import { UserProfile, PetSlot, MountSlot } from '../../types/Profile';
+import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { getAveragePerfection } from '../../utils/itemCalculations';
+import { PerfectionMeter } from '../UI/PerfectionMeter';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
 import { LifestealBreakdownModal } from './LifestealBreakdownModal';
 import { StatSourcesModal, MultiplierBreakdown } from './StatSourcesModal';
@@ -435,25 +437,69 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         testSkills,
         originalUseSkinWindup,
         testUseSkinWindup,
+        updateTestPet,
+        updateTestMount,
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
         loadProfileIntoTest,
-        updateTestPet,
-        updateTestMount,
         isCompactStats,
         setIsCompactStats,
         excludeSubstats,
         setExcludeSubstats
     } = useComparison();
-    // Same balanced principle as the Loadout Optimizer: sweep the saved pet+mount
-    // builds and rank by 0.5·DPS + 0.5·HPS (each normalised across the sweep).
-    // Only runs while comparing so it adds no background cost to the normal panel.
-    const { status: sweepStatus, rank: rankLoadout } = useLoadoutSweep(isComparing);
     const stats = useGlobalStats(excludeSubstats);
     const fullStats = useGlobalStats(false);
     const techModifiers = useTreeModifiers() as Record<string, number>;
     const { profile, profiles, activeProfileId } = useProfile();
+
+    // --- Auto-optimize the Test build (drives the strip's AUTO buttons) --------
+    const { optimizeLoadout, isReady: optimizerReady } = useProfileOptimizer();
+    // undefined = nothing to revert; null = revert to "no mount equipped"
+    const [previousTestPets, setPreviousTestPets] = useState<PetSlot[] | null>(null);
+    const [previousTestMount, setPreviousTestMount] = useState<MountSlot | null | undefined>(undefined);
+    // On: score saved builds at their own level. Off: score everything at level 1.
+    const [respectSavedLevels, setRespectSavedLevels] = useState(true);
+
+    // Saved builds are global, so the optimizer has candidates whenever either pool is non-empty.
+    const autoOptimizeDisabled = !optimizerReady
+        || ((profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1);
+
+    const handleAutoOptimizeTest = (metric: 'dps' | 'power' | 'lifesteal' | 'balanced') => {
+        // Evaluate against the Test build's own items/mount/ascensions, keeping
+        // everything the Test side doesn't override (tech tree, passives, saved builds).
+        const testBase: UserProfile = {
+            ...profile,
+            items: testItems ?? profile.items,
+            mount: { ...profile.mount, active: testMount ?? profile.mount.active },
+            pets: { ...profile.pets, active: testPets ?? profile.pets.active },
+            skills: { ...profile.skills, equipped: testSkills ?? profile.skills.equipped },
+            misc: {
+                ...profile.misc,
+                forgeAscensionLevel: testForgeAscension ?? profile.misc.forgeAscensionLevel,
+                mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel,
+                petAscensionLevel: testPetAscension ?? profile.misc.petAscensionLevel,
+                skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel,
+                useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup,
+            },
+        };
+
+        setPreviousTestPets(testPets ? [...testPets] : null);
+        setPreviousTestMount(testMount);
+
+        const best = optimizeLoadout(metric, testBase, respectSavedLevels);
+        if (!best) return;
+
+        updateTestPet(best.pets);
+        updateTestMount(best.mount);
+    };
+
+    const handleRevertTest = () => {
+        if (previousTestPets) updateTestPet(previousTestPets);
+        if (previousTestMount !== undefined) updateTestMount(previousTestMount);
+        setPreviousTestPets(null);
+        setPreviousTestMount(undefined);
+    };
 
     const { treeMode, setTreeMode } = useTreeMode();
 
@@ -474,6 +520,16 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+
+    // Average perfection across all gear (items + pets + mount) for each compare side.
+    const originalPerfection = useMemo(() => originalItems ? getAveragePerfection(
+        [...Object.values(originalItems), ...(originalPets || []), originalMount],
+        secondaryStatLibrary
+    ) : null, [originalItems, originalPets, originalMount, secondaryStatLibrary]);
+    const testPerfection = useMemo(() => testItems ? getAveragePerfection(
+        [...Object.values(testItems), ...(testPets || []), testMount],
+        secondaryStatLibrary
+    ) : null, [testItems, testPets, testMount, secondaryStatLibrary]);
 
     const treeModeLabels: Record<typeof treeMode, string> = {
         empty: 'Empty Tree',
@@ -711,16 +767,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const formatValue = (val: number) => isCompactStats
         ? formatCompactNumber(val)
         : val.toLocaleString(undefined, { maximumFractionDigits: 0 });
-
-    // "Auto Balanced": load the balanced-best pet+mount loadout (from the saved
-    // builds) into the test side, using the Loadout Optimizer's scoring verbatim.
-    const autoBalancedReady = sweepStatus === 'done';
-    const applyAutoBalanced = () => {
-        const best = rankLoadout('balanced')[0]?.result;
-        if (!best) return;
-        updateTestPet(best.petSet);
-        updateTestMount(best.mount);
-    };
 
     // The comparison UI block
     // The comparison UI block
@@ -1217,17 +1263,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             </select>
                         </div>
                     )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={applyAutoBalanced}
-                        disabled={!autoBalancedReady}
-                        title="Fill the test build with the balanced-best pet + mount loadout from your saved builds (same scoring as the Loadout Optimizer)"
-                        className="h-8 sm:h-10 px-2 flex flex-col items-center justify-center p-0 gap-0.5 text-[9px] text-violet-400/70 hover:text-violet-400 hover:bg-violet-500/10 border border-transparent hover:border-violet-500/20 transition-all font-bold uppercase tracking-tight disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        <Scale className={cn("w-3.5 h-3.5", !autoBalancedReady && "animate-pulse")} />
-                        <span>Auto Bal</span>
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={exitCompareMode} className="h-8 sm:h-10 px-2 sm:px-6 gap-1 sm:gap-2 text-[10px] sm:text-xs text-text-muted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all font-bold">
                         <X className="w-3.5 h-3.5 sm:w-4 h-4" />
                         <span className="hidden sm:inline">Exit Comparison</span>
@@ -1243,6 +1278,97 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         <span className="hidden sm:inline">Apply Test Build</span>
                         <span className="inline sm:hidden tracking-tight">Apply Test</span>
                     </Button>
+                </div>
+                )}
+
+                {isComparing && !actualHideActions && (
+                <div className="flex items-center justify-between gap-2 flex-wrap w-full pt-2">
+                    {/* Equipped build perfection (far left) */}
+                    <div className="flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-bg-input/30 min-w-[120px] shrink-0">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/70 text-center">Equipped Perfection</span>
+                        <PerfectionMeter value={originalPerfection} className="gap-2" />
+                    </div>
+
+                    {/* Auto Test Build controls (center) */}
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/60 mr-0.5">Auto Test Build</span>
+                    <button
+                        onClick={() => setRespectSavedLevels(v => !v)}
+                        role="switch"
+                        aria-checked={respectSavedLevels}
+                        title="On: score saved builds at their own level. Off: score everything at level 1, so only secondary stats decide. Equipping always keeps the saved level."
+                        className={cn(
+                            "h-7 px-2 text-[10px] font-bold rounded border gap-1 inline-flex items-center active:scale-95 transition-all w-fit",
+                            respectSavedLevels
+                                ? "border-accent-primary/40 bg-accent-primary/10 text-accent-primary"
+                                : "border-border bg-bg-input/30 text-text-muted hover:text-text-primary"
+                        )}
+                    >
+                        <Layers className="w-3 h-3" />
+                        {respectSavedLevels ? 'SAVED LVL' : 'LVL 1'}
+                    </button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('dps')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for Max DPS on the Test build"
+                    >
+                        <Sword className="w-3 h-3" />
+                        AUTO DPS
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('power')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for Max Power on the Test build"
+                    >
+                        <Zap className="w-3 h-3" />
+                        AUTO POWER
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('lifesteal')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for Max Lifesteal/sec on the Test build"
+                    >
+                        <Heart className="w-3 h-3" />
+                        AUTO LIFESTEAL/SEC
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('balanced')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for a balance of DPS and HPS on the Test build (same scoring as the Loadout Optimizer)"
+                    >
+                        <Scale className="w-3 h-3" />
+                        AUTO BALANCED
+                    </Button>
+                    {(previousTestPets || previousTestMount !== undefined) && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-fit"
+                            onClick={handleRevertTest}
+                        >
+                            <RotateCcw className="w-3 h-3" />
+                            REVERT
+                        </Button>
+                    )}
+                    </div>
+
+                    {/* Test build perfection (far right) */}
+                    <div className="flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-accent-primary/30 bg-accent-primary/5 min-w-[120px] shrink-0">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-accent-primary/80 text-center">Test Perfection</span>
+                        <PerfectionMeter value={testPerfection} className="gap-2" />
+                    </div>
                 </div>
                 )}
 
@@ -1385,7 +1511,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
                         <div className="space-y-3">
                             <div className="text-[10px] text-text-muted text-center font-bold uppercase tracking-widest opacity-60">Build Actions</div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-4 gap-2">
                                 {/* Load Profile - Small Button with hidden select */}
                                 {profiles.length > 1 && (
                                     <div className="relative">
@@ -1418,17 +1544,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={applyAutoBalanced}
-                                    disabled={!autoBalancedReady}
-                                    title="Fill the test build with the balanced-best pet + mount loadout from your saved builds (same scoring as the Loadout Optimizer)"
-                                    className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] text-violet-400/70 hover:text-violet-400 grayscale hover:grayscale-0 transition-all font-bold uppercase tracking-tight border border-transparent hover:border-violet-500/20 bg-violet-500/5 disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <Scale className={cn("w-4 h-4", !autoBalancedReady && "animate-pulse")} />
-                                    <span>Auto Balanced</span>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
                                     onClick={exitCompareMode}
                                     className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] text-text-muted hover:text-red-400 grayscale hover:grayscale-0 transition-all font-bold uppercase tracking-tight border border-transparent hover:border-red-500/20"
                                 >
@@ -1448,7 +1563,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     variant="primary"
                                     size="sm"
                                     onClick={applyTestBuild}
-                                    className="col-span-2 h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] font-bold uppercase tracking-tight bg-accent-primary shadow-lg shadow-accent-primary/10 hover:scale-105 transition-transform"
+                                    className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] font-bold uppercase tracking-tight bg-accent-primary shadow-lg shadow-accent-primary/10 hover:scale-105 transition-transform"
                                 >
                                     <ArrowRight className="w-4 h-4" />
                                     <span>Apply Test</span>

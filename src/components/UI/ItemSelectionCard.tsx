@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Bookmark, Shield, Minus, Plus } from 'lucide-react';
+import { X, Bookmark, Shield, Minus, Plus, Check } from 'lucide-react';
 import { ItemSlot, MountSlot, PetSlot } from '../../types/Profile';
 import { AscensionStars } from './AscensionStars';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getRarityBgStyle, getRarityBorderStyle } from '../../lib/utils';
@@ -15,6 +15,8 @@ interface ItemSelectionCardProps {
     slotLabel: string;
     isSelected?: boolean;
     hasDiff?: boolean;
+    /** Marks a saved build that is currently equipped on the active profile. */
+    isEquipped?: boolean;
     globalAscensionLevel?: number;
     isSaved?: boolean;
     itemName: string;
@@ -75,6 +77,7 @@ export function ItemSelectionCard({
     slotLabel,
     isSelected,
     hasDiff,
+    isEquipped,
     globalAscensionLevel = 0,
     isSaved,
     itemName,
@@ -110,7 +113,9 @@ export function ItemSelectionCard({
                 isCompact ? "min-h-[130px]" : "min-h-[160px]",
                 isSelected
                     ? "border-accent-primary bg-accent-primary/10 shadow-lg shadow-accent-primary/20"
-                    : "border-border hover:border-accent-primary/50",
+                    : isEquipped
+                        ? "border-green-500/60 hover:border-green-400"
+                        : "border-border hover:border-accent-primary/50",
                 hasDiff && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
             )}
             style={
@@ -119,6 +124,14 @@ export function ItemSelectionCard({
                     : { background: getAgeBgStyle((item as ItemSlot)?.age || 0).background?.toString().replace('0.5', isSelected ? '0.3' : '0.15').replace('0.2', isSelected ? '0.15' : '0.08') }
             }
         >
+            {/* Equipped badge */}
+            {isEquipped && (
+                <div className="absolute top-1 left-1/2 -translate-x-1/2 z-30 flex items-center gap-0.5 bg-green-500 text-white text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full shadow-sm border border-green-300/50">
+                    <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                    Equipped
+                </div>
+            )}
+
             {/* Top Row Overlay: Level/Ascension (Left) and Actions (Right) */}
             <div className="w-full px-2 z-20 flex flex-wrap justify-between items-start gap-1 mb-1">
                 <div className="flex flex-col gap-1 min-w-0">

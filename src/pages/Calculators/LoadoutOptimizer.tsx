@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { Heart, Zap, Activity, Check, Trophy, Info, PawPrint, Bike, Undo2 } from 'lucide-react';
+import { Heart, Zap, Activity, Check, Trophy, Info, PawPrint, Bike, Undo2, Layers } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useLoadoutSweep, SweepMetric, LoadoutCombo, ExpandedLoadout } from '../../hooks/useLoadoutSweep';
@@ -44,7 +44,8 @@ function describeSubstats(stats?: { statId: string; value: number }[]): string {
 export default function LoadoutOptimizer() {
     const { profile, updateNestedProfile } = useProfile();
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
-    const { status, progress, results, evaluatedCount, totalCombos, rank, expand, isReady } = useLoadoutSweep();
+    const [respectSavedLevels, setRespectSavedLevels] = useState(true);
+    const { status, progress, results, evaluatedCount, totalCombos, rank, expand, isReady } = useLoadoutSweep(respectSavedLevels);
 
     const [metric, setMetric] = useState<SweepMetric>('balanced');
     const [showComparison, setShowComparison] = useState(false);
@@ -145,6 +146,30 @@ export default function LoadoutOptimizer() {
                     })}
                 </div>
                 <p className="text-xs text-text-muted mt-2">{activeMetric.blurb}</p>
+
+                {/* Level basis toggle */}
+                <div className="mt-3 flex items-center gap-3 flex-wrap">
+                    <button
+                        onClick={() => setRespectSavedLevels(v => !v)}
+                        role="switch"
+                        aria-checked={respectSavedLevels}
+                        title="On: score each saved build at its own level. Off: score every candidate at level 1 so only secondary stats decide. Equipping always keeps the saved level."
+                        className={cn(
+                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all",
+                            respectSavedLevels
+                                ? "bg-accent-primary/20 border-accent-primary/40 text-text-primary"
+                                : "bg-transparent border-border text-text-secondary hover:bg-white/5"
+                        )}
+                    >
+                        <Layers className="w-4 h-4" />
+                        Level basis: {respectSavedLevels ? 'Saved' : 'Level 1'}
+                    </button>
+                    <span className="text-xs text-text-muted">
+                        {respectSavedLevels
+                            ? "Using each saved build's own level."
+                            : 'Ignoring saved levels — comparing everything at level 1.'}
+                    </span>
+                </div>
             </div>
 
             {/* Sweep progress */}
