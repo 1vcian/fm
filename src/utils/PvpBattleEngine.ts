@@ -373,7 +373,7 @@ export class PvpBattleEngine {
             this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
         } else {
             this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
-            this.processMovementAndCombat(this.player1, this.player1, dt, startOfTickDistance, !p1Status.isDead);
+            this.processMovementAndCombat(this.player1, this.player2, dt, startOfTickDistance, !p1Status.isDead);
         }
     }
 
