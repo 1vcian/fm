@@ -7,33 +7,49 @@
 
 import type { WeaponInfo } from './BattleHelper';
 import { SKILL_MECHANICS } from './constants';
-import { StatEngine } from './statEngine';
+import { StatEngine, type AggregatedStats } from './statEngine';
 import { PetSlot, MountSlot, UserProfile } from '../types/Profile';
 
 // --- Shared Helpers ---
 
-const getAscMulti = (category: string, level: number, target: string = 'Damage', ascensionConfigsLibrary: any = null) => {
-    let multi = 0;
-    if (level > 0 && ascensionConfigsLibrary?.[category]?.AscensionConfigPerLevel) {
-        const configs = ascensionConfigsLibrary[category].AscensionConfigPerLevel;
-        for (let i = 0; i < level && i < configs.length; i++) {
-            const contributions = configs[i].StatContributions || [];
-            for (const s of contributions) {
-                const sType = s.StatNode?.UniqueStat?.StatType;
-                const sTarget = s.StatNode?.StatTarget?.$type;
-                if (sType === target) {
-                    if (category === 'Skills') {
-                        const isActive = sTarget === 'ActiveSkillStatTarget';
-                        if (target === 'Damage' && isActive) multi += s.Value;
-                        if (target === 'Health' && isActive) multi += s.Value;
-                    } else {
-                        multi += s.Value;
-                    }
-                }
-            }
-        }
-    }
-    return multi;
+const getPetAscensionHealthMultiplier = (level: number, ascensionConfigsLibrary: any): number => {
+    const configs = ascensionConfigsLibrary?.Pets?.AscensionConfigPerLevel;
+    if (level <= 0 || !configs?.length) return 1;
+
+    const config = configs[Math.min(level - 1, configs.length - 1)];
+    const healthStat = config?.StatContributions?.find((stat: any) => {
+        const type = stat.StatNode?.UniqueStat?.StatType;
+        return type === 'Health' || type === 'AscensionHealth';
+    });
+    return healthStat ? healthStat.Value + 1 : 1;
+};
+
+const calculatePetHealth = (
+    pet: PetSlot,
+    petUpgradeLibrary: any,
+    petLibrary: any,
+    petBalancingLibrary: any,
+    ascensionConfigsLibrary?: any,
+    healthBonus: number = 0,
+    ascensionLevel: number = 0
+): number => {
+    const upgradeData = petUpgradeLibrary?.[pet.rarity];
+    if (!upgradeData?.LevelInfo) return 0;
+
+    const levelIndex = Math.max(0, pet.level - 1);
+    const levelInfo = upgradeData.LevelInfo.find((entry: any) => entry.Level === levelIndex)
+        || upgradeData.LevelInfo[0];
+    const healthStat = levelInfo?.PetStats?.Stats?.find(
+        (stat: any) => stat.StatNode?.UniqueStat?.StatType === 'Health'
+    );
+    if (!healthStat) return 0;
+
+    const key = `{'Rarity': '${pet.rarity}', 'Id': ${pet.id}}`;
+    const petType = petLibrary?.[key]?.Type || 'Balanced';
+    const typeMultiplier = petBalancingLibrary?.[petType]?.HealthMultiplier ?? 1;
+    const ascensionMultiplier = getPetAscensionHealthMultiplier(ascensionLevel, ascensionConfigsLibrary);
+
+    return (healthStat.Value || 0) * typeMultiplier * (1 + healthBonus) * ascensionMultiplier;
 };
 
 // --- Types ---
@@ -259,8 +275,8 @@ export class PvpBattleEngine {
     constructor(player1Stats: PvpPlayerStats, player2Stats: PvpPlayerStats) {
         this.player1 = this.createEntity(1, true, player1Stats, 2);
         this.player2 = this.createEntity(2, false, player2Stats, 23);
-        this.player1Skills = this.createSkillStates(player1Stats.skills, true);
-        this.player2Skills = this.createSkillStates(player2Stats.skills, false);
+        this.player1Skills = this.createSkillStates(player1Stats.skills, player1Stats.skillCooldownMulti);
+        this.player2Skills = this.createSkillStates(player2Stats.skills, player2Stats.skillCooldownMulti);
         this.initializeRegen(this.player1, player1Stats);
         this.initializeRegen(this.player2, player2Stats);
         this.addLog('BATTLE_START', `Battle started between ${player1Stats.skills.length} skills and ${player2Stats.skills.length} skills`);
@@ -298,7 +314,8 @@ export class PvpBattleEngine {
         entity.regenSnapshotTimer = 0;
     }
 
-    private createSkillStates(skills: PvpSkillConfig[], _isPlayer1: boolean): SkillState[] {
+    private createSkillStates(skills: PvpSkillConfig[], cooldownReduction: number): SkillState[] {
+        const cooldownMultiplier = Math.max(0.1, 1 - cooldownReduction);
         return skills.map(skill => {
             const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
             const count = Math.max(1, skill.count || mechanics.count || 1);
@@ -329,7 +346,8 @@ export class PvpBattleEngine {
                 activeHeal = healthPerHit;
             }
             return {
-                id: skill.id, activeDuration: skill.duration, cooldown: skill.cooldown,
+                id: skill.id, activeDuration: skill.duration,
+                cooldown: Math.max(0.1, skill.cooldown * cooldownMultiplier),
                 state: 'Startup', timer: SKILL_STARTUP_TIME, damage: activeDamage, healAmount: activeHeal,
                 isBuff: isBuffSkill, bonusDamage: bonusDamage, bonusMaxHealth: bonusMaxHealth,
                 count: count, interval: mechanics.interval || 0.1, delay: mechanics.delay || 0,
@@ -657,8 +675,8 @@ export function simulatePvpBattleMulti(player1Stats: PvpPlayerStats, player2Stat
 
 export function enemyConfigToPvpStats(
     enemyConfig: any, weaponLibrary?: any, pvpBaseConfig?: any,
-    _mountUpgradeLibrary?: any, petLibrary?: any, petBalancingLibrary?: any,
-    _ascensionConfigsLibrary?: any
+    _mountUpgradeLibrary?: any, petUpgradeLibrary?: any, petLibrary?: any,
+    petBalancingLibrary?: any, ascensionConfigsLibrary?: any
 ): PvpPlayerStats {
     let weaponInfo: WeaponInfo | undefined;
     if (enemyConfig.weaponId && weaponLibrary) {
@@ -723,17 +741,15 @@ export function enemyConfigToPvpStats(
         enemyConfig.pets.forEach((pet: any) => {
             if (pet) {
                 if (pet.hp && pet.hp > 0) calculatedPetHp += pet.hp;
-                else if (pet.id !== undefined && petLibrary && petBalancingLibrary) {
-                    const key = `{'Rarity': '${pet.rarity}', 'Id': ${pet.id}}`;
-                    const petData = petLibrary[key];
-                    if (petData) {
-                        const bal = petBalancingLibrary[petData.Type];
-                        if (bal) {
-                            const levelIdx = Math.max(0, pet.level - 1);
-                            calculatedPetHp += (bal.BaseHealthPerLevel?.[levelIdx] || 0) + (bal.HealthPerRarity?.[petData.Rarity] || 0);
-                        }
-                    }
-                }
+                else calculatedPetHp += calculatePetHealth(
+                    pet,
+                    petUpgradeLibrary,
+                    petLibrary,
+                    petBalancingLibrary,
+                    ascensionConfigsLibrary,
+                    0,
+                    enemyConfig.petAscensionLevel || 0
+                );
             }
         });
     }
@@ -742,14 +758,14 @@ export function enemyConfigToPvpStats(
     const setHpFactor = enemyConfig.hasCompleteSet ? 0.10 : (enemyConfig.stats.setHpMulti || 0);
     const globalSkinSetFactor = skinHpFactor + setHpFactor;
 
-    // Perfect Reverse: Values provided by user (Total HP, Pet HP, etc.) are already scaled by ASC/Tech in-game.
-    const petHpInGame = calculatedPetHp;
-    const skillPassiveHpInGame = enemyConfig.skillPassiveHp || 0;
-    const mountHpInGame = enemyConfig.mount?.hp || 0;
-    const totalSystemHpInGame = petHpInGame + skillPassiveHpInGame + mountHpInGame;
+    const commonHealthMultiplier = 1 + healthMulti;
+    const petHp = calculatedPetHp;
+    const skillPassiveHp = enemyConfig.skillPassiveHp || 0;
+    const mountHp = enemyConfig.mount?.hp || 0;
+    const totalSystemHp = (petHp + skillPassiveHp + mountHp) * commonHealthMultiplier;
 
     const totalHpBeforeGlobal = (enemyConfig.stats.hp || 10000) / Math.max(0.01, globalSkinSetFactor);
-    let derivedEquipHpWithMulti = totalHpBeforeGlobal - totalSystemHpInGame;
+    let derivedEquipHpWithMulti = totalHpBeforeGlobal - totalSystemHp;
     derivedEquipHpWithMulti = Math.max(0, derivedEquipHpWithMulti);
 
     const pvpHpBaseMulti = pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0;
@@ -758,9 +774,9 @@ export function enemyConfigToPvpStats(
     const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
 
     const pvpEquipHp = derivedEquipHpWithMulti * pvpHpBaseMulti;
-    const pvpPetHp = petHpInGame * pvpHpPetMulti;
-    const pvpSkillHp = skillPassiveHpInGame * pvpHpSkillMulti;
-    const pvpMountHp = mountHpInGame * pvpHpMountMulti;
+    const pvpPetHp = petHp * commonHealthMultiplier * pvpHpPetMulti;
+    const pvpSkillHp = skillPassiveHp * commonHealthMultiplier * pvpHpSkillMulti;
+    const pvpMountHp = mountHp * commonHealthMultiplier * pvpHpMountMulti;
 
     const pvpTotalHp = (pvpEquipHp + pvpPetHp + pvpSkillHp + pvpMountHp) * globalSkinSetFactor;
 
@@ -781,9 +797,8 @@ export function enemyConfigToPvpStats(
 }
 
 export function aggregatedStatsToPvpStats(
-    stats: any, equippedSkills: any[], skillLibrary: any,
-    weaponLibrary?: any, weaponSlot?: any, pvpBaseConfig?: any,
-    ascensionLevels: Record<string, number> = {}, ascensionConfigsLibrary: any = null
+    stats: AggregatedStats, equippedSkills: any[], skillLibrary: any,
+    weaponLibrary?: any, weaponSlot?: any, pvpBaseConfig?: any
 ): PvpPlayerStats {
     const skills: PvpSkillConfig[] = equippedSkills.map(skill => {
         const skillData = skillLibrary?.[skill.id];
@@ -802,29 +817,19 @@ export function aggregatedStatsToPvpStats(
         };
     });
 
-    const commonHealthMulti = 1 + (stats.secondaryHealthMulti || 0);
-    const equipHealthMulti = stats.healthMultiplier || commonHealthMulti;
-    const forgeAscHpBonus = Math.max(0, equipHealthMulti - commonHealthMulti);
+    const commonHealthMulti = stats.healthMultiplier || 1;
+    const equipHealthMulti = stats.equipHealthMultiplier || commonHealthMulti;
     const globalSkinSetFactor = (1 + (stats.skinHealthMulti || 0)) + (stats.setHealthMulti || 0);
-    const totalSystemHp = (stats.petHealth || 0) + (stats.skillPassiveHealth || 0) + (stats.mountHealth || 0);
-
-    const totalHpBeforeGlobal = (stats.totalHealth || 10000) / Math.max(0.01, globalSkinSetFactor);
-    let derivedEquipHp = (totalHpBeforeGlobal - totalSystemHp) / Math.max(0.01, equipHealthMulti);
-    derivedEquipHp = Math.max(0, derivedEquipHp);
 
     const pvpHpBaseMulti = pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0;
     const pvpHpPetMulti = pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5;
     const pvpHpSkillMulti = pvpBaseConfig?.PvpHpSkillMultiplier ?? 0.5;
     const pvpHpMountMulti = pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0;
 
-    const petAscMultiHp = getAscMulti('Pets', ascensionLevels.pets || 0, 'Health', ascensionConfigsLibrary);
-    const skillAscMultiHp = getAscMulti('Skills', ascensionLevels.skills || 0, 'Health', ascensionConfigsLibrary);
-    const mountAscMultiHp = getAscMulti('Mounts', ascensionLevels.mounts || 0, 'Health', ascensionConfigsLibrary);
-
-    const pvpEquipHp = derivedEquipHp * (commonHealthMulti + (forgeAscHpBonus * pvpHpBaseMulti));
-    const pvpPetHp = (stats.petHealth || 0) * (1 + petAscMultiHp) * pvpHpPetMulti;
-    const pvpSkillHp = (stats.skillPassiveHealth || 0) * (1 + skillAscMultiHp) * pvpHpSkillMulti;
-    const pvpMountHp = (stats.mountHealth || 0) * (1 + mountAscMultiHp) * pvpHpMountMulti;
+    const pvpEquipHp = (stats.basePlayerHealth + stats.itemHealth) * equipHealthMulti * pvpHpBaseMulti;
+    const pvpPetHp = stats.petHealth * commonHealthMulti * pvpHpPetMulti;
+    const pvpSkillHp = stats.skillPassiveHealth * commonHealthMulti * pvpHpSkillMulti;
+    const pvpMountHp = stats.mountHealth * commonHealthMulti * pvpHpMountMulti;
 
     const pvpTotalHp = (pvpEquipHp + pvpPetHp + pvpSkillHp + pvpMountHp) * globalSkinSetFactor;
 
@@ -868,20 +873,13 @@ export function profileToEnemyConfig(profile: UserProfile, libs: any, existingSt
     const techModifiers = engine.getTechModifiers();
     const petBonusHp = techModifiers['PetBonusHealth'] || 0;
     const petAscLevel = profile.misc?.petAscensionLevel || 0;
-    const petAscMulti = getAscMulti('Pets', petAscLevel, 'Health', libs.ascensionConfigsLibrary);
-    const petDeScale = 1 + petBonusHp + petAscMulti;
-
-    const skillBonusHp = techModifiers['SkillPassiveHealth'] || 0;
-    const skillAscLevel = profile.misc?.skillAscensionLevel || 0;
-    const skillAscMulti = getAscMulti('Skills', skillAscLevel, 'Health', libs.ascensionConfigsLibrary);
-    const skillDeScale = 1 + skillBonusHp + skillAscMulti;
 
     const config: EnemyConfig = {
         name: profile.name || 'Imported Profile',
         level: profile.misc?.forgeLevel || 1,
         weaponId: profile.items.Weapon?.idx || 0,
         weapon: profile.items.Weapon || null,
-        skillPassiveHp: Math.round((stats.skillPassiveHealth / Math.max(0.01, stats.healthMultiplier || 1)) / Math.max(0.01, skillDeScale)),
+        skillPassiveHp: stats.skillPassiveHealth,
         stats: {
             damage: stats.totalDamage,
             hp: stats.totalHealth,
@@ -943,20 +941,22 @@ export function profileToEnemyConfig(profile: UserProfile, libs: any, existingSt
             return false;
         })(),
         passiveStats: {},
-        pets: profile.pets?.active.map((p: any) => ({ ...p, hp: p.hp ? Math.round(p.hp / Math.max(0.01, petDeScale)) : 0 })) || [],
+        pets: profile.pets?.active.map((pet: PetSlot) => ({
+            ...pet,
+            hp: calculatePetHealth(
+                pet,
+                libs.petUpgradeLibrary,
+                libs.petLibrary,
+                libs.petBalancingLibrary,
+                libs.ascensionConfigsLibrary,
+                petBonusHp,
+                petAscLevel
+            )
+        })) || [],
         mount: (() => {
             const m = profile.mount?.active;
             if (!m) return null;
-            const mountAscLevel = profile.misc?.mountAscensionLevel || 0;
-            let mountAscMulti = 0;
-            if (mountAscLevel > 0 && libs.ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
-                const configs = libs.ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
-                for (let i = 0; i < mountAscLevel && i < configs.length; i++) {
-                    configs[i].StatContributions?.forEach((s: any) => { if (s.StatNode?.UniqueStat?.StatType === 'Health') mountAscMulti += s.Value; });
-                }
-            }
-            const deScale = (1 + (techModifiers['MountHealth'] || 0) + mountAscMulti);
-            return { ...m, hp: Math.round((stats.mountHealth || 0) / Math.max(0.01, deScale)) };
+            return { ...m, hp: stats.mountHealth || 0 };
         })()
     };
     const ps = ['DamageMulti', 'HealthMulti', 'CriticalChance', 'CriticalMulti', 'BlockChance', 'LifeSteal', 'DoubleDamageChance', 'HealthRegen', 'SkillDamageMulti', 'SkillCooldownMulti', 'AttackSpeed'];
@@ -977,6 +977,6 @@ export function profileToEnemyConfig(profile: UserProfile, libs: any, existingSt
     setP('SkillCooldownMulti', getNet('SkillCooldownMulti', stats.skillCooldownReduction));
     setP('AttackSpeed', getNet('AttackSpeed', stats.attackSpeedMultiplier, true));
     setP('DamageMulti', getNet('DamageMulti', stats.secondaryDamageMulti || 0));
-    setP('HealthMulti', getNet('HealthMulti', stats.secondaryHealthMulti || 0));
+    setP('HealthMulti', getNet('HealthMulti', stats.healthMultiplier || 1, true));
     return config;
 }
