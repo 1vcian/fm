@@ -81,6 +81,28 @@ export const getPerfection = (item: ItemSlot, secondaryStatLibrary: any): number
 };
 
 /**
+ * Average perfection across a set of gear (items, pets, mount) — anything carrying
+ * secondaryStats. Entries without secondary stats (or nulls) are skipped, so the
+ * result is the mean of each piece's own perfection. Returns null if nothing qualifies.
+ */
+export const getAveragePerfection = (
+    entries: ({ secondaryStats?: { statId: string; value: number }[] } | null | undefined)[],
+    secondaryStatLibrary: any
+): number | null => {
+    let total = 0;
+    let count = 0;
+    for (const entry of entries) {
+        if (!entry) continue;
+        const p = getPerfection(entry as ItemSlot, secondaryStatLibrary);
+        if (p !== null) {
+            total += p;
+            count++;
+        }
+    }
+    return count > 0 ? total / count : null;
+};
+
+/**
  * Calculates perfection for a single stat
  */
 export const getStatPerfection = (statIdx: string, value: number, secondaryStatLibrary: any): number | null => {

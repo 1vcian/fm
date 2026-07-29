@@ -708,6 +708,10 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
 
                                             const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
                                             const isSelected = selectedSavedIndex === originalIdx;
+                                            const isEquipped = profile.pets.active.some(ap =>
+                                                ap.id === savedPet.id && ap.rarity === savedPet.rarity &&
+                                                JSON.stringify(ap.secondaryStats) === JSON.stringify(savedPet.secondaryStats)
+                                            );
 
                                             return (
                                                 <ItemSelectionCard
@@ -720,6 +724,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                     rarity={savedPet.rarity}
                                                     isSaved={true}
                                                     isSelected={isSelected}
+                                                    isEquipped={isEquipped}
                                                     hideAgeStyles={true}
                                                     perfection={getPerfection(savedPet)}
                                                     getStatPerfection={getStatPerfection}

@@ -637,6 +637,10 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                     Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedMount.id && v.rarity === savedMount.rarity)
                                                     : null;
                                                 const isSelected = selectedSavedIndex === originalIdx;
+                                                const activeMount = profile.mount.active;
+                                                const isEquipped = !!activeMount &&
+                                                    activeMount.id === savedMount.id && activeMount.rarity === savedMount.rarity &&
+                                                    JSON.stringify(activeMount.secondaryStats) === JSON.stringify(savedMount.secondaryStats);
 
                                                 return (
                                                     <ItemSelectionCard
@@ -647,6 +651,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                         itemName={savedMount.customName || (spriteInfo ? (spriteInfo[1] as any).name : `Mount #${savedMount.id}`)}
                                                         itemImage={null}
                                                         isSelected={isSelected}
+                                                        isEquipped={isEquipped}
                                                         rarity={savedMount.rarity}
                                                         hideAgeStyles={true}
                                                         perfection={getPerfection(savedMount)}

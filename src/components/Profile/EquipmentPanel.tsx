@@ -595,7 +595,16 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
     const mountData = mount ? getMountStats() : null;
     const mountStats = mountData ? { damage: mountData.damage, health: mountData.health } : null;
     const currentAscension = mountData?.ascLevel || 0;
-    const isDifferent = variant === 'test' && testMount?.id !== originalMount?.id;
+    // Full-content diff (matches the pet cards), so an auto-optimized swap to a
+    // different level/stat variant of the same mount id also flags as changed.
+    const isDifferent = variant === 'test' && (() => {
+        const cur = testMount;
+        const orig = originalMount;
+        if (!cur && !orig) return false;
+        if (!cur || !orig) return true;
+        return cur.id !== orig.id || cur.rarity !== orig.rarity || cur.level !== orig.level ||
+            JSON.stringify(cur.secondaryStats) !== JSON.stringify(orig.secondaryStats);
+    })();
 
     const perfection = useMemo(() => {
         if (!mount || !secondaryStatLibrary) return null;

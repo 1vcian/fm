@@ -48,7 +48,12 @@ const mountKey = (m: MountSlot) => `${m.id}|${m.rarity}|${m.level}|${JSON.string
  * a full roster is tens of thousands of StatEngine runs. Results are cached, so
  * switching the ranking metric only re-sorts — it never re-sweeps.
  */
-export function useLoadoutSweep(enabled: boolean = true) {
+/**
+ * @param respectSavedLevels When true (default) each saved build is scored at its own
+ * stored level. When false, every candidate is scored at level 1 so only secondary
+ * stats decide — equipping still uses the saved level.
+ */
+export function useLoadoutSweep(respectSavedLevels: boolean = true) {
     const { profile } = useProfile();
 
     const profileRef = useRef(profile);
@@ -177,12 +182,19 @@ export function useLoadoutSweep(enabled: boolean = true) {
 
     const buildTempProfile = useCallback((combo: LoadoutCombo): UserProfile => {
         const p = profileRef.current;
+        // Off mode: score every candidate at level 1 so only secondary stats decide.
+        const petSet = respectSavedLevels
+            ? combo.petSet
+            : combo.petSet.map(pet => ({ ...pet, level: 1 }));
+        const mount = (respectSavedLevels || !combo.mount)
+            ? combo.mount
+            : { ...combo.mount, level: 1 };
         return {
             ...p,
-            pets: { ...p.pets, active: combo.petSet },
-            mount: { ...p.mount, active: combo.mount }
+            pets: { ...p.pets, active: petSet },
+            mount: { ...p.mount, active: mount }
         };
-    }, []);
+    }, [respectSavedLevels]);
 
     // --- Time-sliced sweep --------------------------------------------------
     const [status, setStatus] = useState<SweepStatus>('idle');
@@ -190,7 +202,7 @@ export function useLoadoutSweep(enabled: boolean = true) {
     const [results, setResults] = useState<SweepResult[]>([]);
 
     useEffect(() => {
-        if (!enabled || !isReady || combos.length === 0) return;
+        if (!isReady || combos.length === 0) return;
 
         let cancelled = false;
         let frame = 0;
@@ -235,7 +247,7 @@ export function useLoadoutSweep(enabled: boolean = true) {
             cancelled = true;
             cancelAnimationFrame(frame);
         };
-    }, [enabled, combos, libs, isReady, engineKey, buildTempProfile]);
+    }, [combos, libs, isReady, engineKey, buildTempProfile]);
 
     // --- Scoring ------------------------------------------------------------
     // Each metric is normalised by its own max across the sweep so that combining
@@ -250,7 +262,7 @@ export function useLoadoutSweep(enabled: boolean = true) {
         return { dps, lifesteal, heal };
     }, [results]);
 
-    /** Normalised 0..1 score for a result under the given metric. */
+    /** 0..1 score for a result under the given metric (relative to the sweep's best). */
     const scoreOf = useCallback((r: SweepResult, metric: SweepMetric): number => {
         const dpsScore = maxima.dps > 0 ? r.dps / maxima.dps : 0;
         const lsScore = maxima.lifesteal > 0 ? r.lifestealPerSec / maxima.lifesteal : 0;
@@ -260,7 +272,13 @@ export function useLoadoutSweep(enabled: boolean = true) {
             case 'dps': return dpsScore;
             case 'lifesteal': return lsScore;
             case 'heal': return healScore;
-            case 'balanced': return 0.5 * dpsScore + 0.5 * healScore;
+            // Geometric mean of DPS and HPS, not a 0.5/0.5 average: the product rewards
+            // being strong on BOTH axes and collapses if either is weak, which is what a
+            // balanced build is. sqrt(dps/max · heal/max) ranks identically to the raw
+            // product dps·heal (the extra constants and sqrt are monotonic), and stays in
+            // 0..1 only so the "% of best" column can render it. Matches the Substats
+            // Calculator's dps·hps and useProfileOptimizer's balanced metric.
+            case 'balanced': return Math.sqrt(dpsScore * healScore);
         }
     }, [maxima]);
 

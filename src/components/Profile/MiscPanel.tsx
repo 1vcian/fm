@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useForgeUpgradeStats } from '../../hooks/useForgeCalculator';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { SpriteIcon } from '../UI/SpriteIcon';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Sparkles } from 'lucide-react';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAnvilTexturePath } from '../../utils/ascensionUtils';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { getAveragePerfection } from '../../utils/itemCalculations';
+import { PerfectionMeter } from '../UI/PerfectionMeter';
 
 export function MiscPanel() {
     const { profile, updateNestedProfile } = useProfile();
@@ -16,7 +18,14 @@ export function MiscPanel() {
     const { data: forgeData } = useGameData<any>('ForgeUpgradeLibrary.json');
     const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
     const { data: ascData } = useGameData<any>('AscensionConfigsLibrary.json');
+    const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { selectedVersion } = useGameDataContext();
+
+    // Average perfection across all equipped gear: the 8 items + active pets + mount.
+    const avgPerfection = useMemo(() => getAveragePerfection(
+        [...Object.values(profile.items), ...profile.pets.active, profile.mount.active],
+        secondaryStatLibrary
+    ), [profile.items, profile.pets.active, profile.mount.active, secondaryStatLibrary]);
     // Determine max forge level from config
     // If there are 34 upgrade entries, it means we can reach Level 35
     const maxForgeLevel = forgeData ? Math.max(...Object.keys(forgeData).map(Number)) + 1 : 99;
@@ -203,37 +212,56 @@ export function MiscPanel() {
                     )}
                 </Card>
 
-                {/* Egg Slots */}
-                <Card className="p-4 bg-bg-secondary/40 border-border/50">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1">
-                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/HatchBed.png`} alt="Egg Slots" className="w-full h-full object-contain" />
+                {/* Egg Slots + Average Perfection (share one grid column, each half width) */}
+                <div className="grid grid-cols-2 gap-4 content-start">
+                    {/* Egg Slots */}
+                    <Card className="p-4 bg-bg-secondary/40 border-border/50">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1 shrink-0">
+                                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/HatchBed.png`} alt="Egg Slots" className="w-full h-full object-contain" />
+                            </div>
+                            <div className="min-w-0">
+                                <div className="font-bold">Egg Slots</div>
+                                <div className="text-xs text-text-muted">Max hatching ({minEggSlots}-{maxEggSlots})</div>
+                            </div>
                         </div>
-                        <div>
-                            <div className="font-bold">Egg Slots</div>
-                            <div className="text-xs text-text-muted">Max hatching capacity ({minEggSlots}-{maxEggSlots})</div>
+                        <div className="flex items-center justify-between bg-bg-input p-2 rounded-lg border border-border">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateMisc('eggSlots', Math.max(minEggSlots, profile.misc.eggSlots - 1))}
+                                disabled={profile.misc.eggSlots <= minEggSlots}
+                            >
+                                <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className="font-mono font-bold text-lg">{profile.misc.eggSlots}</span>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateMisc('eggSlots', Math.min(maxEggSlots, profile.misc.eggSlots + 1))}
+                                disabled={profile.misc.eggSlots >= maxEggSlots}
+                            >
+                                <Plus className="w-4 h-4" />
+                            </Button>
                         </div>
-                    </div>
-                    <div className="flex items-center justify-between bg-bg-input p-2 rounded-lg border border-border">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateMisc('eggSlots', Math.max(minEggSlots, profile.misc.eggSlots - 1))}
-                            disabled={profile.misc.eggSlots <= minEggSlots}
-                        >
-                            <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="font-mono font-bold text-lg">{profile.misc.eggSlots}</span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateMisc('eggSlots', Math.min(maxEggSlots, profile.misc.eggSlots + 1))}
-                            disabled={profile.misc.eggSlots >= maxEggSlots}
-                        >
-                            <Plus className="w-4 h-4" />
-                        </Button>
-                    </div>
-                </Card>
+                    </Card>
+
+                    {/* Average Perfection */}
+                    <Card className="p-4 bg-bg-secondary/40 border-border/50">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1 shrink-0">
+                                <Sparkles className="w-5 h-5 text-accent-primary" />
+                            </div>
+                            <div className="min-w-0">
+                                <div className="font-bold">Avg Perfection</div>
+                                <div className="text-xs text-text-muted">Across all equipped gear</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center bg-bg-input p-2.5 rounded-lg border border-border">
+                            <PerfectionMeter value={avgPerfection} className="w-full gap-3" barClassName="h-2.5" />
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
     );

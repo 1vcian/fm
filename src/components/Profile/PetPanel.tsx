@@ -2,7 +2,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw, Heart } from 'lucide-react';
+import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw, Heart, Scale } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { PetSlot, MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
@@ -215,16 +215,17 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     // Optimizer searches saved pets AND saved mounts, so enable when either pool has entries.
     const autoDisabled = (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
 
-    const handleAutoOptimize = (metric: 'dps' | 'power' | 'lifesteal') => {
+    // Only rendered for the default (non-compare) panel. Compare mode drives its
+    // own optimizer from the comparison strip (see StatsSummaryPanel).
+    const handleAutoOptimize = (metric: 'dps' | 'power' | 'lifesteal' | 'balanced') => {
         setPreviousPets([...activePets]);
-        if (variant === 'default') setPreviousMount(profile.mount.active);
+        setPreviousMount(profile.mount.active);
 
         const best = optimizeLoadout(metric);
         if (!best) return;
 
         updatePets(best.pets);
-        // Mount is a single global slot with no per-variant override, so only apply in default.
-        if (variant === 'default') updateNestedProfile('mount', { active: best.mount });
+        updateNestedProfile('mount', { active: best.mount });
     };
 
     const handleRevert = () => {
@@ -341,6 +342,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                         {panelTitle}
                     </h2>
                     
+                    {variant === 'default' && (
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <Button
                             variant="outline"
@@ -375,6 +377,17 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             <Heart className="w-3 h-3" />
                             AUTO LIFESTEAL/SEC
                         </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit"
+                            onClick={() => handleAutoOptimize('balanced')}
+                            disabled={!isReady || autoDisabled}
+                            title="Select best 3 pets + mount for a balance of DPS and HPS (same scoring as the Loadout Optimizer)"
+                        >
+                            <Scale className="w-3 h-3" />
+                            AUTO BALANCED
+                        </Button>
                         {(previousPets || previousMount !== undefined) && (
                             <Button 
                                 variant="ghost" 
@@ -387,6 +400,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             </Button>
                         )}
                     </div>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-end">
