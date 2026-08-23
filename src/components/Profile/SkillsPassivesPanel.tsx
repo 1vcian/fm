@@ -34,7 +34,6 @@ export function SkillsPassivesPanel() {
     const globalStats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const [activeRarity, setActiveRarity] = useState<string | null>('Common');
-    const [frequencyWindow, setFrequencyWindow] = useState<number>(60.00);
     const [previousPassives, setPreviousPassives] = useState<Record<string, number> | null>(null);
     const [isUndoVisible, setIsUndoVisible] = useState(false);
 
@@ -249,22 +248,6 @@ export function SkillsPassivesPanel() {
                         />
                     </div>
                 </div>
-            </div>
-
-            <div className="flex items-center gap-2 mb-4 bg-bg-input/50 p-2 rounded-lg border border-border/30">
-                <span className="text-xs text-text-muted">Window:</span>
-                <Input
-                    type="number"
-                    step="1"
-                    min="1"
-                    value={frequencyWindow}
-                    onChange={(e) => {
-                        const num = parseFloat(e.target.value);
-                        if (!isNaN(num) && num >= 0) setFrequencyWindow(num);
-                    }}
-                    className="w-16 h-7 text-xs text-right bg-bg-primary border-border/50"
-                />
-                <span className="text-xs text-text-muted">sec</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">

@@ -680,7 +680,18 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center justify-between mt-2 bg-bg-input rounded p-1 border border-border/50">
+                                                <div className="flex items-center justify-between gap-0.5 mt-2 bg-bg-input rounded p-1 border border-border/50">
+                                                    <button
+                                                        onClick={() => handleLevelChange(globalId, Math.max(0, currentLevel - 10), maxLevel)}
+                                                        disabled={currentLevel === 0}
+                                                        title="-10"
+                                                        className={cn(
+                                                            "w-7 h-6 rounded flex items-center justify-center font-bold text-[10px] transition-colors",
+                                                            currentLevel > 0
+                                                                ? "bg-bg-secondary hover:bg-white/10"
+                                                                : "text-text-muted cursor-not-allowed"
+                                                        )}
+                                                    >-10</button>
                                                     <button
                                                         onClick={() => handleLevelChange(globalId, currentLevel - 1, maxLevel)}
                                                         disabled={currentLevel === 0}
@@ -708,6 +719,17 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                                                 : "text-text-muted cursor-not-allowed"
                                                         )}
                                                     >+</button>
+                                                    <button
+                                                        onClick={() => handleLevelChange(globalId, Math.min(maxLevel, currentLevel + 10), maxLevel)}
+                                                        disabled={currentLevel >= maxLevel}
+                                                        title="+10"
+                                                        className={cn(
+                                                            "w-7 h-6 rounded flex items-center justify-center font-bold text-[10px] transition-colors",
+                                                            currentLevel < maxLevel
+                                                                ? "bg-bg-secondary hover:bg-white/10"
+                                                                : "text-text-muted cursor-not-allowed"
+                                                        )}
+                                                    >+10</button>
                                                 </div>
 
                                                 {currentLevel > 0 && clanEffect && (

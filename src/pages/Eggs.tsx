@@ -7,43 +7,8 @@ import { Calculator, Plus, Egg, Info, Minus, RefreshCcw, Trophy } from 'lucide-r
 import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { useProfile } from '../context/ProfileContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
-import { getAscensionTexturePath } from '../utils/ascensionUtils';
 import { useGameDataContext } from '../context/GameDataContext';
-
-function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity: string; size?: number; className?: string; ascensionLevel?: number }) {
-
-    const rarityIndex: Record<string, number> = {
-        'Common': 0, 'Rare': 1, 'Epic': 2,
-        'Legendary': 3, 'Ultimate': 4, 'Mythic': 5
-    };
-    const { selectedVersion } = useGameDataContext();
-
-    const idx = rarityIndex[rarity] ?? 0;
-    const col = idx % 4;
-    const row = Math.floor(idx / 4);
-
-    // For a 4x4 grid, we use standard CSS sprite percentage positioning
-    const xPos = (col / 3) * 100;
-    const yPos = (row / 3) * 100;
-
-    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel, selectedVersion);
-
-    return (
-        <div
-            className={cn("inline-block shrink-0", className)}
-            style={{
-                width: size,
-                height: size,
-                backgroundImage: `url(${texturePath})`,
-                backgroundPosition: `${xPos}% ${yPos}%`,
-                backgroundSize: '400% 400%', // 4x4 grid means the background image is 400% of the container size
-                backgroundRepeat: 'no-repeat',
-                imageRendering: 'pixelated'
-            }}
-            title={rarity}
-        />
-    );
-}
+import { EggIcon } from '../components/UI/EggIcon';
 
 export default function Eggs() {
     const { profile, updateNestedProfile } = useProfile();

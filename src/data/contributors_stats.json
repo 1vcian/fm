@@ -1,13 +1,21 @@
 [
   {
-    "name": "Lucian",
+    "name": "1vcian",
     "email": "medrihanlucian@gmail.com",
     "login": "1vcian",
-    "additions": 5068075,
-    "deletions": 1057261,
-    "commits": 332,
+    "additions": 6323364,
+    "deletions": 1070607,
+    "commits": 404,
     "avatar_url": "https://avatars.githubusercontent.com/u/15808247?v=4",
     "html_url": "https://github.com/1vcian"
+  },
+  {
+    "name": "Athos",
+    "email": "athosgiovanni@gmail.com",
+    "login": null,
+    "additions": 2325,
+    "deletions": 206,
+    "commits": 3
   },
   {
     "name": "simon-m",

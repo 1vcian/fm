@@ -306,15 +306,8 @@ export default function AppShell() {
 
     return (
         <div className="flex h-screen bg-bg-primary text-text-primary overflow-hidden font-sans text-left">
-            {/* Hover zone to open sidebar */}
-            <div
-                className="fixed top-0 left-0 bottom-0 w-4 z-[45] group cursor-pointer"
-                onMouseEnter={() => setIsSidebarOpen(true)}
-            >
-                <div className="h-full w-full group-hover:bg-accent-primary/5 transition-colors" />
-            </div>
-
-            {/* Sidebar Navigation */}
+            {/* Sidebar opens/closes only via the Header menu button (left) — the old edge
+                hover-zone auto-opened whenever the cursor grazed the screen edge, which felt random. */}
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             {/* Main Content Area */}
@@ -396,9 +389,12 @@ export default function AppShell() {
                     whileTap={{ scale: 0.95 }}
                     layout
                     className={cn(
-                        "fixed bottom-8 right-8 z-[100] group flex items-center gap-3 py-3 md:py-4 rounded-full overflow-visible transition-all duration-300",
+                        "fixed bottom-8 z-[100] group flex items-center gap-3 py-3 md:py-4 rounded-full overflow-visible transition-all duration-300",
                         maxAgeVisuals.bg,
                         isSidebarOpen ? "px-3 md:px-4" : "px-5 md:px-6",
+                        // Slide clear of the Character-Stats drawer (450px) when it's open so it
+                        // stops overlapping the stats; normal bottom-right otherwise.
+                        isStatsOpen ? "right-4 lg:right-[474px]" : "right-8",
                         "shadow-[0_8px_25px_-5px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(0,0,0,0.6)]"
                     )}
                 >

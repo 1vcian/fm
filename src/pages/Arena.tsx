@@ -5,14 +5,18 @@ import { Swords, Trophy, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // Constants
-const LEAGUE_NAMES = ['Unranked', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+// 2.8.2 split the Diamond tier into Diamond 1/2/3 (Diamond 3 = highest league).
+// Colors/gradients/icons fall back to the last entry for any league beyond this list.
+const LEAGUE_NAMES = ['Unranked', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond 1', 'Diamond 2', 'Diamond 3'];
 const LEAGUE_COLORS = [
     'border-slate-500 text-slate-500', // Unranked
     'border-[#cd7f32] text-[#cd7f32]', // Bronze
     'border-[#c0c0c0] text-[#c0c0c0]', // Silver
     'border-[#ffd700] text-[#ffd700]', // Gold
     'border-[#26c6da] text-[#26c6da]', // Platinum (Cyan)
-    'border-[#9c27b0] text-[#9c27b0]', // Diamond (Purple)
+    'border-[#9c27b0] text-[#9c27b0]', // Diamond 1 (Purple)
+    'border-[#ab47bc] text-[#ab47bc]', // Diamond 2 (Lighter Purple)
+    'border-[#e040fb] text-[#e040fb]', // Diamond 3 (Bright Magenta — highest)
 ];
 const LEAGUE_BG_GRADIENTS = [
     'from-slate-500/10 to-transparent',
@@ -21,6 +25,8 @@ const LEAGUE_BG_GRADIENTS = [
     'from-[#ffd700]/10 to-transparent',
     'from-[#26c6da]/10 to-transparent',
     'from-[#9c27b0]/10 to-transparent',
+    'from-[#ab47bc]/10 to-transparent',
+    'from-[#e040fb]/10 to-transparent',
 ];
 
 /*
@@ -59,14 +65,19 @@ export default function Arena() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {LEAGUE_NAMES.map((name, idx) => {
+                {Array.from({ length: Math.max(
+                    LEAGUE_NAMES.length,
+                    leagueData ? Object.keys(leagueData).length : 0,
+                    rewardsData ? Object.keys(rewardsData).length : 0,
+                ) }).map((_, idx) => {
+                    const name = LEAGUE_NAMES[idx] ?? `League ${idx + 1}`;
                     const league = leagueData?.[String(idx)];
                     const thresholds = league
                         ? { p: league.PromotionEnd, d: league.DemotionStart }
                         : { p: 0, d: 0 };
                     const rewardData = rewardsData ? (rewardsData[String(idx)] || rewardsData[idx]) : null;
-                    const colorClass = LEAGUE_COLORS[idx];
-                    const bgClass = LEAGUE_BG_GRADIENTS[idx];
+                    const colorClass = LEAGUE_COLORS[idx] ?? LEAGUE_COLORS[LEAGUE_COLORS.length - 1];
+                    const bgClass = LEAGUE_BG_GRADIENTS[idx] ?? LEAGUE_BG_GRADIENTS[LEAGUE_BG_GRADIENTS.length - 1];
 
                     return (
                         <Card key={idx} className={cn("relative overflow-hidden border-2", colorClass.split(' ')[0])}>
@@ -172,7 +183,9 @@ function getLeagueIconName(idx: number): string {
         'SilverShield',   // Silver
         'GoldShield',     // Gold
         'PlatinumShield', // Platinum
-        'MasterShield'    // Diamond (using MasterShield asset which is usually purple/top tier)
+        'Diamond',        // Diamond 1
+        'Diamond2',       // Diamond 2
+        'Diamond3'        // Diamond 3
     ];
     return shields[idx] || 'Battle';
 }

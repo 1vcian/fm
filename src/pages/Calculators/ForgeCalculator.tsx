@@ -228,7 +228,7 @@ export default function ForgeCalculator() {
                 if (def?.Cost) coins += def.Cost * (1 - forgeUpgradeCostReduction);
             }
         }
-        const mult = (1 + forgeSpendBonus) * (1 + spendDayBoost);
+        const mult = (1 + forgeSpendBonus + spendDayBoost);
         const coinPts = Math.floor(coins / coinsPerReward) * coinReward * mult;
         const gemPts = (gemsSpent || 0) * gemReward * mult;
         return { coinsPerReward, coinReward, gemReward, coins, coinPts, gemPts, total: coinPts + gemPts };
@@ -253,7 +253,7 @@ export default function ForgeCalculator() {
                     if (finalIdx !== -1) {
                         const reward = task.Rewards.find(r => r.$type === "WarPointsReward");
                         if (reward) {
-                            pointsMap[finalIdx] = reward.Amount * (1 + forgeWarBonus) * (1 + dayBoost);
+                            pointsMap[finalIdx] = reward.Amount * (1 + forgeWarBonus + dayBoost);
                         }
                     }
                 }

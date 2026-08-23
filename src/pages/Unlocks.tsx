@@ -200,7 +200,7 @@ function getFeatureIcon(feature: string): string {
     if (f.includes('dungeon')) return 'Battle';
     if (f.includes('arena')) return 'Battle';
     if (f.includes('techtree')) return 'Potion';
-    if (f.includes('guild')) return 'MasterShield';
+    if (f.includes('guild')) return 'Diamond';
     if (f.includes('rateus')) return 'Star';
     if (f.includes('login') || f.includes('name')) return 'Male';
     return 'CommonChest';

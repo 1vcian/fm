@@ -228,8 +228,8 @@ export function useEggsCalculator() {
             const baseMerge = getWarPointsForTask(guildWarConfig, `Merge${rarity}Pet`);
 
             points[rarity] = {
-                hatch: baseHatch * (1 + hatchWarBonus) * (1 + dayBoost),
-                merge: baseMerge * (1 + petMergeWarBonus) * (1 + dayBoost)
+                hatch: baseHatch * (1 + hatchWarBonus + dayBoost),
+                merge: baseMerge * (1 + petMergeWarBonus + dayBoost)
             };
         });
 

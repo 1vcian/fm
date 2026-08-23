@@ -12,6 +12,8 @@ import { cn } from '../../lib/utils';
 import { useState, useMemo } from 'react';
 import { MAX_ACTIVE_SKILLS, SKILL_MECHANICS } from '../../utils/constants';
 import { SkillSelectorModal } from './SkillSelectorModal';
+import { NukeAdvisor } from './NukeAdvisor';
+import { SectionSyncButton } from './SectionSyncButton';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath, getNormalizedTarget } from '../../utils/ascensionUtils';
@@ -28,11 +30,9 @@ interface SkillPanelProps {
     variant?: 'default' | 'original' | 'test';
     title?: string;
     compareSkills?: SkillSlot[] | null;
-    considerAnimation?: boolean;
-    setConsiderAnimation?: (value: boolean) => void;
 }
 
-export function SkillPanel({ variant = 'default', title, compareSkills, considerAnimation = false, setConsiderAnimation }: SkillPanelProps) {
+export function SkillPanel({ variant = 'default', title, compareSkills }: SkillPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
     const { selectedVersion } = useGameDataContext();
     const {
@@ -88,11 +88,11 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
 
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
     const globalStats = useGlobalStats();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
-    const [frequencyWindow, setFrequencyWindow] = useState(60);
     const [previousSkills, setPreviousSkills] = useState<SkillSlot[] | null>(null);
 
     const updateSkills = (newSkills: SkillSlot[]) => {
@@ -322,36 +322,11 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {variant === 'default' && !isComparing && <SectionSyncButton preset="skills" label="Sync" />}
                     <AscensionStars
                         value={skillAscensionLevel}
                         onChange={handleAscensionChange}
                         size="sm"
-                    />
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap mb-4">
-                {setConsiderAnimation && (
-                    <button
-                        onClick={() => setConsiderAnimation(!considerAnimation)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded border transition-colors ${considerAnimation
-                            ? 'bg-accent-primary text-black border-accent-primary'
-                            : 'bg-transparent text-text-muted border-text-muted/30 hover:border-text-muted'
-                            }`}
-                        title="Toggle Animation Duration (+0.5s)"
-                    >
-                        ANIM {considerAnimation ? 'ON' : 'OFF'}
-                    </button>
-                )}
-                <div className="flex items-center gap-2 bg-bg-input/50 p-1.5 rounded border border-border/30">
-                    <span className="text-xs text-text-muted whitespace-nowrap px-1">Window:</span>
-                    <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        value={frequencyWindow}
-                        onChange={(e) => setFrequencyWindow(parseFloat(e.target.value) || 1)}
-                        className="w-16 h-8 text-center font-mono font-bold text-xs bg-bg-secondary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                 </div>
             </div>
@@ -481,56 +456,55 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                     </div>
 
                                     {(() => {
+                                        // Hit Frequence — same cast-timing model as the Last-Second Nuke
+                                        // advisor (BattleEngine): first cast at 3.2s, then every
+                                        // max(0.5, CD x (1-reduction)) + active duration.
                                         const reduction = globalStats?.skillCooldownReduction || 0;
                                         const activeDuration = stats.duration || 0;
                                         const cdComponent = stats.cooldown * Math.max(0.1, 1 - reduction);
-                                        const effCd = cdComponent + activeDuration;
-                                        const ANIM_DURATION = considerAnimation ? 0.5 : 0;
-                                        const START_TIME = 5.0;
-                                        const WINDOW = frequencyWindow;
+                                        const period = Math.max(0.5, cdComponent) + activeDuration;
+                                        const START_TIME = 3.2;
+                                        const T = typeof pvpBaseConfig?.PvpMatchTimerSeconds === 'number'
+                                            ? pvpBaseConfig.PvpMatchTimerSeconds : 60;
 
                                         let activations = 0;
                                         let lastHit = 0;
                                         let targetCd = 0;
 
-                                        if (WINDOW >= START_TIME) {
-                                            const firstHitTime = START_TIME + ANIM_DURATION;
-                                            if (firstHitTime <= WINDOW) {
-                                                const availableTime = WINDOW - firstHitTime;
-                                                const additionalActivations = Math.floor(availableTime / effCd);
-                                                activations = 1 + additionalActivations;
-                                                lastHit = firstHitTime + (additionalActivations * effCd);
-
-                                                const numerator = WINDOW - START_TIME - ANIM_DURATION;
-                                                if (numerator > 0 && activations > 0) {
-                                                    targetCd = Math.max(0, (numerator / activations) - activeDuration);
-                                                }
-                                            }
+                                        if (T > START_TIME) {
+                                            activations = Math.floor((T - START_TIME) / period) + 1;
+                                            lastHit = START_TIME + (activations - 1) * period;
+                                            // effective CD needed to fit one more cast inside the window
+                                            const need = (T - START_TIME) / activations - activeDuration;
+                                            targetCd = Math.max(0, need);
                                         }
 
-                                        const diff = cdComponent - targetCd;
+                                        const diff = Math.max(0.5, cdComponent) - targetCd;
 
                                         return (
-                                            <div className="grid grid-cols-3 gap-1 text-[9px]">
-                                                <div className="bg-bg-input/30 rounded flex flex-col items-center py-0.5" title="Activations in window">
-                                                    <span className="text-[7px] text-text-muted uppercase">Hits</span>
-                                                    <span className="font-bold">{activations}</span>
-                                                </div>
-                                                <div className="bg-bg-input/30 rounded flex flex-col items-center py-0.5" title="Time of last activation">
-                                                    <span className="text-[7px] text-text-muted uppercase">Last</span>
-                                                    <span className="font-bold">{lastHit.toFixed(1)}s</span>
-                                                </div>
-                                                <div
-                                                    className={cn(
-                                                        "rounded flex flex-col items-center py-0.5",
-                                                        diff < 0 ? "bg-red-400/10 text-red-400" : "bg-accent-primary/10 text-accent-primary"
-                                                    )}
-                                                    title={`Needed CDR change: ${((Math.abs(diff) / stats.cooldown) * 100).toFixed(2)}%`}
-                                                >
-                                                    <span className="text-[7px] uppercase">To+1</span>
-                                                    <div className="flex flex-col items-center leading-none">
-                                                        <span className="font-bold">{Math.abs(diff).toFixed(2)}s</span>
-                                                        <span className="text-[7px] opacity-80">({((Math.abs(diff) / stats.cooldown) * 100).toFixed(1)}%)</span>
+                                            <div className="rounded border border-border/30 bg-bg-input/20 p-0.5">
+                                                <div className="text-[7px] text-text-muted uppercase font-bold tracking-wide text-center mb-0.5">Hit Frequence</div>
+                                                <div className="grid grid-cols-3 gap-1 text-[9px]">
+                                                    <div className="bg-bg-input/30 rounded flex flex-col items-center py-0.5" title={`Activations in ${T}s`}>
+                                                        <span className="text-[7px] text-text-muted uppercase">Hits</span>
+                                                        <span className="font-bold">{activations}</span>
+                                                    </div>
+                                                    <div className="bg-bg-input/30 rounded flex flex-col items-center py-0.5" title="Time of last activation">
+                                                        <span className="text-[7px] text-text-muted uppercase">Last</span>
+                                                        <span className="font-bold">{lastHit.toFixed(1)}s</span>
+                                                    </div>
+                                                    <div
+                                                        className={cn(
+                                                            "rounded flex flex-col items-center py-0.5",
+                                                            diff < 0 ? "bg-red-400/10 text-red-400" : "bg-accent-primary/10 text-accent-primary"
+                                                        )}
+                                                        title={`Needed CDR change: ${((Math.abs(diff) / stats.cooldown) * 100).toFixed(2)}%`}
+                                                    >
+                                                        <span className="text-[7px] uppercase">To+1</span>
+                                                        <div className="flex flex-col items-center leading-none">
+                                                            <span className="font-bold">{Math.abs(diff).toFixed(2)}s</span>
+                                                            <span className="text-[7px] opacity-80">({((Math.abs(diff) / stats.cooldown) * 100).toFixed(1)}%)</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -555,6 +529,12 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                     </div>
                 )}
             </div>
+
+            {variant === 'default' && equippedSkills.length > 0 && (
+                <div className="mt-4">
+                    <NukeAdvisor skills={equippedSkills} />
+                </div>
+            )}
 
             <SkillSelectorModal
                 isOpen={isModalOpen || editingIdx !== null}

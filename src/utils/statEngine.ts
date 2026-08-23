@@ -4,7 +4,7 @@
  */
 
 import { UserProfile } from '../types/Profile';
-import { SKILL_MECHANICS } from './constants';
+import { SKILL_MECHANICS, attackIntervalSeconds, doubleDelaySeconds } from './constants';
 import { getNormalizedTarget } from './ascensionUtils';
 import {
     StatAttribution, StatContribution, SourceRef, canonicalStatKey,
@@ -1609,10 +1609,16 @@ export class StatEngine {
 
         // 4. Multiplier Layers
         // - Global/Common Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
-        const itemDmgMulti = this.excludeSubstats ? 0 : this.secondaryStats.damageMulti;
-        const itemHpMulti = this.excludeSubstats ? 0 : this.secondaryStats.healthMulti;
+        // NEW-STATS TOGGLE (excludeSubstats): the item DMG%/HP% (and Melee/Ranged) substats are
+        // excluded from POWER ONLY. The Damage/Health readouts ALWAYS include them, so flipping
+        // the toggle changes Power alone and never the displayed damage/health.
+        const itemDmgMulti = this.secondaryStats.damageMulti;
+        const itemHpMulti = this.secondaryStats.healthMulti;
         const commonDamageMulti = this.stats.damageMultiplier + itemDmgMulti;
         const commonHealthMulti = this.stats.healthMultiplier + itemHpMulti;
+        // Power-only variant of the same layer
+        const commonDamageMultiPow = this.stats.damageMultiplier + (this.excludeSubstats ? 0 : itemDmgMulti);
+        const commonHealthMultiPow = this.stats.healthMultiplier + (this.excludeSubstats ? 0 : itemHpMulti);
 
         // Merge other secondary stats into final results (summing Tech Tree + Items/Pets)
         this.stats.criticalChance = this.combine(this.stats.criticalChance, this.secondaryStats.criticalChance, 'Additive');
@@ -1690,13 +1696,30 @@ export class StatEngine {
         const healthAfterGlobalMultis = totalHpBeforeGlobal * globalFactorHp;
 
         // 7. Melee/Ranged Specific Multipliers (Applied to everything at the end)
-        const itemMeleeDmgMulti = this.excludeSubstats ? 0 : this.secondaryStats.meleeDamageMulti;
-        const itemRangedDmgMulti = this.excludeSubstats ? 0 : this.secondaryStats.rangedDamageMulti;
+        const itemMeleeDmgMulti = this.secondaryStats.meleeDamageMulti;
+        const itemRangedDmgMulti = this.secondaryStats.rangedDamageMulti;
         const specificDamageMulti = isWeaponMelee
             ? (1 + itemMeleeDmgMulti)
             : (1 + itemRangedDmgMulti);
+        // Power-only variant (Melee/Ranged substats dropped when the New-Stats toggle is on)
+        const specificDamageMultiPow = isWeaponMelee
+            ? (1 + (this.excludeSubstats ? 0 : itemMeleeDmgMulti))
+            : (1 + (this.excludeSubstats ? 0 : itemRangedDmgMulti));
 
         const finalDamage = damageAfterGlobalMultis * specificDamageMulti;
+
+        // Parallel POWER chain: identical arithmetic with the power-only multiplier variants, so
+        // Power reflects the New/Old toggle while Damage/Health stay invariant.
+        const equipDamageMultiPow = commonDamageMultiPow * (this.forgeAscensionDamageMulti || 1);
+        const equipHealthMultiPow = commonHealthMultiPow * (this.forgeAscensionHealthMulti || 1);
+        const powDmgBeforeGlobal =
+            (this.stats.basePlayerDamage + weaponWithMelee + otherItemDamage) * equipDamageMultiPow
+            + (this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMultiPow;
+        const powHpBeforeGlobal =
+            (this.stats.basePlayerHealth + this.stats.itemHealth) * equipHealthMultiPow
+            + (this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMultiPow;
+        const powerDamageTotal = powDmgBeforeGlobal * globalFactorDmg * specificDamageMultiPow;
+        const powerHealthTotal = powHpBeforeGlobal * globalFactorHp;
 
         this.debugLogs.push(`After SpecificMulti (×${specificDamageMulti.toFixed(3)}): Damage=${finalDamage.toFixed(0)}`);
 
@@ -1883,7 +1906,10 @@ export class StatEngine {
         const baseDmg = this.stats.basePlayerDamage; // 10.0
         const baseHp = this.stats.basePlayerHealth;  // 80.0
 
-        const basePower = ((finalDamage - baseDmg) * powerDmgMulti + (healthAfterGlobalMultis - baseHp)) * 3;
+        // Power tracks the New/Old toggle ALONE: it is computed from the parallel power chain
+        // (item DMG%/HP% + Melee/Ranged substats dropped in New mode), while the displayed
+        // damage/health always include those substats and therefore never move with the toggle.
+        const basePower = ((powerDamageTotal - baseDmg) * powerDmgMulti + (powerHealthTotal - baseHp)) * 3;
         this.stats.power = Math.round(basePower);
 
         // Attribution: Power is a formula over the two totals, not a sum of sources.
@@ -1891,11 +1917,11 @@ export class StatEngine {
         if (this.trackAttribution) {
             this.track(TOTAL_POWER_KEY, {
                 kind: 'base', id: 'power:damage', label: 'Total damage (above base)', op: 'add',
-                value: finalDamage - baseDmg, detail: `x${powerDmgMulti} - see Total Damage for its sources`
+                value: powerDamageTotal - baseDmg, detail: `x${powerDmgMulti} - see Total Damage for its sources`
             });
             this.track(TOTAL_POWER_KEY, {
                 kind: 'base', id: 'power:health', label: 'Total health (above base)', op: 'add',
-                value: healthAfterGlobalMultis - baseHp, detail: 'see Total Health for its sources'
+                value: powerHealthTotal - baseHp, detail: 'see Total Health for its sources'
             });
             this.track(TOTAL_POWER_KEY, {
                 kind: 'base', id: 'power:scale', label: 'Power scaling constant', value: 3, op: 'mul'
@@ -1985,7 +2011,13 @@ export class StatEngine {
                         if (baseSkillDmg > 0) {
                             const mechanics = SKILL_MECHANICS[String(skill.id)] || { count: 1 };
                             const hitCount = mechanics.count || 1;
-                            const totalDmgPerActivation = baseSkillDmg * effectiveMultiplier * hitCount;
+                            // Library damage is the TOTAL per activation. `count` is a DIVISOR for
+                            // multi-projectile / multi-pulse skills (total stays = Damage) and is a
+                            // MULTIPLIER only when damageIsPerHit (each hit deals the full Damage).
+                            // Mirrors BattleSimulator; RE'd from libil2cpp.so (GetSkillDamageCount).
+                            const buffedTotal = baseSkillDmg * effectiveMultiplier;
+                            const perHit = mechanics.damageIsPerHit ? buffedTotal : buffedTotal / hitCount;
+                            const totalDmgPerActivation = perHit * hitCount;
                             this.stats.skillDps += totalDmgPerActivation / finalCd;
                         }
                     }
@@ -2022,16 +2054,14 @@ export class StatEngine {
         const speedMult = this.stats.attackSpeedMultiplier;
         const baseDuration = this.stats.weaponAttackDuration || 1.5;
         const baseWindup = this.stats.weaponWindupTime || 0.5;
-        const baseRecovery = Math.max(0, baseDuration - baseWindup);
 
-        const steppedWindup = Math.floor((baseWindup / speedMult) * 10) / 10;
-        const steppedRecovery = Math.floor((baseRecovery / speedMult) * 10) / 10;
-        const steppedCycle = Math.max(0.4, steppedWindup + steppedRecovery + 0.2);
-
-        // DOUBLE HIT SEQUENTIAL TIMING (base delay = 25% of windup time)
-        const baseDoubleDelay = baseWindup * 0.25;
-        this.stats.doubleHitDelay = baseDoubleDelay;
-        const steppedDoubleDelay = Math.max(0.1, Math.ceil((baseDoubleDelay / speedMult) * 10) / 10);
+        // Reverse-engineered from libil2cpp.so (2.8.2): combat runs at 10 sim-ticks/s with one
+        // continuous AttackTimer. The single-attack interval is WINDUP-INDEPENDENT
+        // (= ceil(AttackDuration/inc)+1 ticks); only the double second-strike delay depends on windup
+        // (the timer is re-seeded to windup*0.75). See constants.ts attackIntervalSeconds / doubleDelaySeconds.
+        const steppedCycle = attackIntervalSeconds(speedMult, baseDuration);
+        const steppedDoubleDelay = doubleDelaySeconds(speedMult, baseWindup);
+        this.stats.doubleHitDelay = baseWindup * 0.25;
         const doubleHitCycle = steppedCycle + steppedDoubleDelay;
 
         // WEIGHTED AVERAGE REAL DPS (The "Second Table" logic)
@@ -2075,18 +2105,9 @@ export class StatEngine {
     private publishAttribution() {
         if (!this.trackAttribution) return;
 
-        // excludeSubstats zeroes item/pet/mount contributions for these four keys only
-        // (see the itemDmgMulti/itemMeleeDmgMulti guards above). Drop the matching entries
-        // so the modal never lists a card that contributed nothing in this mode.
-        if (this.excludeSubstats) {
-            const substatExcludedKeys = ['DamageMulti', 'HealthMulti', 'MeleeDamageMulti', 'RangedDamageMulti'];
-            for (const key of substatExcludedKeys) {
-                const entries = this.attribution.byStat[key];
-                if (!entries) continue;
-                this.attribution.byStat[key] = entries.filter(e => !e.ref);
-            }
-        }
-
+        // NOTE: excludeSubstats now affects POWER ONLY — the Damage/Health totals always include
+        // the item DMG%/HP%/Melee/Ranged substats, so their attribution entries must stay listed
+        // (they really do contribute to the displayed damage/health in both modes).
         this.stats.attribution = this.attribution;
     }
 } // end class

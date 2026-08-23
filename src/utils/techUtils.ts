@@ -73,7 +73,9 @@ export function getTechNodeDescription(nodeType: string, effect: any): string {
         "GuildPotionsFromMissions": "Increases Guild Potions earned from Clan Missions.",
         "GuildPotionsFromPersonalWar": "Increases Guild Potions earned from Personal Wars.",
         "GuildPotionsFromClanWarWin": "Increases Guild Potions earned from winning Clan Wars.",
-        "GuildPotionsFromClanWarLose": "Increases Guild Potions earned from losing Clan Wars."
+        "GuildPotionsFromClanWarLose": "Increases Guild Potions earned from losing Clan Wars.",
+        "GuildTechRaceScoreMultiplier": "Increases your Clan's score gained in the Guild Tech Race.",
+        "GuildTechRaceRewardMultiplier": "Increases the rewards earned from the Guild Tech Race."
     };
 
     if (clanDescriptions[nodeType]) {

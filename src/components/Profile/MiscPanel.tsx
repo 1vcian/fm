@@ -5,12 +5,16 @@ import { useForgeUpgradeStats } from '../../hooks/useForgeCalculator';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { SpriteIcon } from '../UI/SpriteIcon';
-import { Plus, Minus, Sparkles } from 'lucide-react';
+import { Plus, Minus, Sparkles, Coins, ChevronDown, GitBranch } from 'lucide-react';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAnvilTexturePath } from '../../utils/ascensionUtils';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { getAveragePerfection } from '../../utils/itemCalculations';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
+import { ResourcesEditor } from './ResourcesEditor';
+import { TechTreePanel } from './TechTreePanel';
+import { SectionSyncButton } from './SectionSyncButton';
+import { cn } from '../../lib/utils';
 
 export function MiscPanel() {
     const { profile, updateNestedProfile } = useProfile();
@@ -19,6 +23,11 @@ export function MiscPanel() {
     const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
     const { data: ascData } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
+    // tree libraries — used only for the spoiler's completeness badge
+    const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
+    const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');
+    const { data: guildPositionLibrary } = useGameData<any>('GuildTechTreePositionLibrary.json');
+    const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
     const { selectedVersion } = useGameDataContext();
 
     // Average perfection across all equipped gear: the 8 items + active pets + mount.
@@ -38,6 +47,36 @@ export function MiscPanel() {
     // Excel 21->22 is Key 21.
     // So if Level=21, pass 21.
     const [isNextLevelStarted, setIsNextLevelStarted] = useState(false);
+    const [resourcesOpen, setResourcesOpen] = useState(false);
+    const [treeOpen, setTreeOpen] = useState(false);
+
+    // Overall tech-tree recap for the spoiler title (across all 4 trees) + completeness/staleness.
+    const treeRecap = useMemo(() => {
+        const trees = (profile.techTree || {}) as Record<string, Record<string, number>>;
+        const per: Record<string, number> = {};
+        let nodes = 0, levels = 0;
+        for (const t of ['Forge', 'Power', 'SkillsPetTech', 'Clan']) {
+            let c = 0;
+            for (const lv of Object.values(trees[t] || {})) {
+                if (typeof lv === 'number' && lv > 0) { c++; nodes++; levels += lv; }
+            }
+            per[t] = c;
+        }
+        // max attainable levels across all four trees -> "to complete" badge
+        let maxLevels = 0;
+        for (const t of ['Forge', 'Power', 'SkillsPetTech']) {
+            const nds = techTreePositionLibrary?.[t]?.Nodes;
+            if (nds) for (const n of nds) maxLevels += techTreeLibrary?.[n.Type]?.MaxLevel || 5;
+        }
+        if (guildPositionLibrary && guildUpgradeLibrary) {
+            for (const cat of Object.keys(guildPositionLibrary)) {
+                for (const type of guildPositionLibrary[cat]?.Nodes || []) maxLevels += guildUpgradeLibrary[type]?.MaxLevel || 20;
+            }
+        }
+        const pct = maxLevels > 0 ? Math.min(100, Math.round((levels / maxLevels) * 100)) : null;
+        const staleDays = profile.techTreeUpdatedAt ? Math.floor((Date.now() - profile.techTreeUpdatedAt) / 86400000) : null;
+        return { nodes, levels, per, pct, staleDays };
+    }, [profile.techTree, profile.techTreeUpdatedAt, techTreeLibrary, techTreePositionLibrary, guildPositionLibrary, guildUpgradeLibrary]);
     const upgradeStats = useForgeUpgradeStats(profile.misc.forgeLevel + (isNextLevelStarted ? 1 : 0));
 
 
@@ -212,8 +251,8 @@ export function MiscPanel() {
                     )}
                 </Card>
 
-                {/* Egg Slots + Average Perfection (share one grid column, each half width) */}
-                <div className="grid grid-cols-2 gap-4 content-start">
+                {/* Egg Slots with Average Perfection stacked below it */}
+                <div className="grid grid-cols-1 gap-4 content-start">
                     {/* Egg Slots */}
                     <Card className="p-4 bg-bg-secondary/40 border-border/50">
                         <div className="flex items-center gap-3 mb-4">
@@ -262,6 +301,72 @@ export function MiscPanel() {
                         </div>
                     </Card>
                 </div>
+            </div>
+
+            {/* Tech Tree (collapsible) — overall recap in the title; shared with every calculator.
+                The header is a DIV (not a button) so the clan-tree SectionSyncButton can nest. */}
+            <div className="border border-border/50 rounded-xl bg-bg-secondary/30 overflow-hidden">
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setTreeOpen(o => !o)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTreeOpen(o => !o); } }}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-input/40 transition cursor-pointer select-none"
+                >
+                    <span className="flex items-center gap-2 font-bold min-w-0">
+                        <GitBranch className="w-4 h-4 text-accent-primary shrink-0" /> Tech Tree
+                        <span className="text-[11px] font-normal text-text-muted truncate">
+                            {treeRecap.nodes} nodes · {treeRecap.levels} levels
+                            {treeRecap.per.Clan > 0 && ` · ${treeRecap.per.Clan} clan`}
+                        </span>
+                        {treeRecap.pct !== null && treeRecap.pct < 100 && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
+                                to complete · {treeRecap.pct}%
+                            </span>
+                        )}
+                        {(treeRecap.staleDays === null || treeRecap.staleDays >= 2) && (
+                            <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border shrink-0',
+                                treeRecap.staleDays === null
+                                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                    : 'bg-red-500/15 text-red-400 border-red-500/30')}>
+                                {treeRecap.staleDays === null ? 'not confirmed yet' : `not updated · ${treeRecap.staleDays}d`}
+                            </span>
+                        )}
+                    </span>
+                    <span className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+                        {/* Clan tech tree AutoSync: scroll the in-game clan tree, screenshot every section */}
+                        <SectionSyncButton preset="clanTree" />
+                        <ChevronDown
+                            className={cn('w-4 h-4 text-text-muted transition-transform shrink-0 cursor-pointer', treeOpen && 'rotate-180')}
+                            onClick={() => setTreeOpen(o => !o)}
+                        />
+                    </span>
+                </div>
+                {treeOpen && (
+                    <div className="p-4 border-t border-border/50">
+                        <TechTreePanel />
+                    </div>
+                )}
+            </div>
+
+            {/* Resources (collapsible) — full player inventory, shared with the Clan hub */}
+            <div className="border border-border/50 rounded-xl bg-bg-secondary/30 overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setResourcesOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-input/40 transition"
+                >
+                    <span className="flex items-center gap-2 font-bold">
+                        <Coins className="w-4 h-4 text-accent-primary" /> Resources
+                        <span className="text-[10px] font-normal text-text-muted hidden sm:inline">coins · gems · eggs · keys …</span>
+                    </span>
+                    <ChevronDown className={cn('w-4 h-4 text-text-muted transition-transform', resourcesOpen && 'rotate-180')} />
+                </button>
+                {resourcesOpen && (
+                    <div className="p-4 border-t border-border/50">
+                        <ResourcesEditor />
+                    </div>
+                )}
             </div>
         </div>
     );

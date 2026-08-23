@@ -10,6 +10,7 @@ import { ItemSelectorModal } from './ItemSelectorModal';
 import { MountSelectorModal } from './MountSelectorModal';
 import { PetSelectorModal } from './PetSelectorModal';
 import { InputModal } from '../UI/InputModal';
+import { SectionSyncButton } from './SectionSyncButton';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
@@ -273,6 +274,13 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                         {panelTitle}
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                        {variant === 'default' && !isComparing && (
+                            <div className="flex items-center gap-1.5">
+                                <SectionSyncButton preset="item" label="Sync" />
+                                <SectionSyncButton preset="mount" label="Mount" />
+                                <SectionSyncButton preset="skin" label="Skins" />
+                            </div>
+                        )}
                         <div className="flex items-center gap-2 bg-bg-input/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/50">
                             <AscensionStars
                                 value={globalAscensionLevel}

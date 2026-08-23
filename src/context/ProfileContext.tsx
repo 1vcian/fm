@@ -224,25 +224,28 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, [profiles, activeProfileId, saveAllProfiles, importedProfile]);
 
     const updateProfile = useCallback((updates: Partial<UserProfile>) => {
+        // Any techTree write stamps techTreeUpdatedAt (used to flag stale tree data in the UI).
+        const stamped = updates.techTree ? { ...updates, techTreeUpdatedAt: Date.now() } : updates;
         if (importedProfile) {
             // Allow updates to local shared profile state without persistence
-            setImportedProfile(prev => prev ? { ...prev, ...updates } : null);
+            setImportedProfile(prev => prev ? { ...prev, ...stamped } : null);
         } else {
             setProfiles(prev => prev.map(p =>
-                p.id === activeProfileId ? { ...p, ...updates } : p
+                p.id === activeProfileId ? { ...p, ...stamped } : p
             ));
         }
     }, [activeProfileId, importedProfile]);
 
     const updateNestedProfile = useCallback((section: keyof UserProfile, data: any) => {
+        const stamp = section === 'techTree' ? { techTreeUpdatedAt: Date.now() } : {};
         if (importedProfile) {
             setImportedProfile(prev => {
                 if (!prev) return null;
                 const sectionValue = prev[section];
                 if (typeof sectionValue === 'object' && sectionValue !== null) {
-                    return { ...prev, [section]: { ...sectionValue, ...data } };
+                    return { ...prev, ...stamp, [section]: { ...sectionValue, ...data } };
                 }
-                return { ...prev, [section]: data };
+                return { ...prev, ...stamp, [section]: data };
             });
         } else {
             setProfiles(prev => prev.map(p => {
@@ -251,13 +254,14 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 if (typeof sectionValue === 'object' && sectionValue !== null) {
                     return {
                         ...p,
+                        ...stamp,
                         [section]: {
                             ...sectionValue,
                             ...data
                         }
                     };
                 }
-                return { ...p, [section]: data };
+                return { ...p, ...stamp, [section]: data };
             }));
         }
     }, [activeProfileId, importedProfile]);

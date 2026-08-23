@@ -17,6 +17,7 @@ import Dungeons from './pages/Dungeons';
 import TechTree from './pages/TechTree';
 import Arena from './pages/Arena';
 import GuildWar from './pages/GuildWar';
+import Clan from './pages/Clan';
 
 import Unlocks from './pages/Unlocks';
 import Offline from './pages/Offline';
@@ -70,6 +71,7 @@ function App() {
                                     <Route path="tech-tree" element={<TechTree />} />
                                     <Route path="arena" element={<Arena />} />
                                     <Route path="guild-war" element={<GuildWar />} />
+                                    <Route path="clan" element={<Clan />} />
                                     <Route path="verify" element={<Verify />} />
 
                                     <Route path="unlocks" element={<Unlocks />} />

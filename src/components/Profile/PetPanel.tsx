@@ -14,6 +14,7 @@ import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 
 import { InputModal } from '../UI/InputModal';
+import { SectionSyncButton } from './SectionSyncButton';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
@@ -403,8 +404,9 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                     )}
                 </div>
 
-                <div className="flex items-center justify-end">
-                    <AscensionStars 
+                <div className="flex items-center justify-end gap-2">
+                    {variant === 'default' && !isComparing && <SectionSyncButton preset="pet" label="Sync" />}
+                    <AscensionStars
                         value={petAscensionLevel}
                         onChange={handleAscensionChange}
                         size="sm"

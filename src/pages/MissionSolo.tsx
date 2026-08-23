@@ -463,10 +463,11 @@ export default function MissionSolo() {
                     {filteredMissions.map((battle) => {
                         const scaledDmg = getScaledValue(battle.BaseDamage);
                         const scaledHp = getScaledValue(battle.BaseHealth);
-                        const multiplier = baseConfig?.HealthAndDamageLevelMultiplier || 1.524;
-                        // The game uses a fixed baseline for suggested power regardless of the specific mission stats
-                        const fixedBasePower = 144000;
-                        const suggestedPower = fixedBasePower * Math.pow(multiplier, clanPoints - 1);
+                        // Suggested power is mission-SPECIFIC: 0.8 × UnitCount × (8·Damage + Health),
+                        // on the per-level-scaled enemy stats (scaling already applied by getScaledValue).
+                        // Calibrated to in-game values: Law L33 82.5B, Alien L33 49.5B, Black Sails L34 89.5B,
+                        // Star Blades L34 125B. (The old fixed 144000 was just Star Blades' 9×16000, hardcoded.)
+                        const suggestedPower = 0.8 * (battle.UnitCount || 1) * (8 * scaledDmg + scaledHp);
 
                         const result = missionResults[battle.MissionId];
                         const winRate = result?.winProbability || 0;
@@ -527,7 +528,7 @@ export default function MissionSolo() {
                                             {formatNumber(suggestedPower)}
                                         </div>
                                         <div className="text-[8px] font-bold text-text-muted mt-0.5 opacity-0 group-hover/power:opacity-100 transition-all translate-y-2 group-hover/power:translate-y-0 relative z-10 text-center px-2">
-                                            Formula: BasePower × {multiplier.toFixed(3)} ^ (Lvl-1)
+                                            Formula: 0.8 × {battle.UnitCount} units × (8×Dmg + HP)
                                         </div>
                                     </div>
 

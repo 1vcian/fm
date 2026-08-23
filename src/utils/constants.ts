@@ -27,12 +27,12 @@ export const MAX_ACTIVE_SKILLS = 3;
  * Skill Mechanics Definitions
  * Defines hit counts, AOE status, and timing/intervals for skills.
  * 
- * Key Rules (from game analysis):
- * - Library damage values are TOTAL damage (not per hit)
- * - isSingleTarget skills target nearest enemy, re-target if dies mid-combo
- * - isAOE skills hit all enemies
- * 
- * Sources: skills.txt, skill2.txt, skill_mechanics_analysis.md
+ * Key Rules (reverse-engineered from libil2cpp.so 2.8.2 — SkillBuilder.GetSkillDamageCount,
+ * HandleAreaProjectiles / AoeDamage; confirmed level/rarity/ascension-INVARIANT):
+ * - Library `Damage` is the TOTAL per activation; only Damage/Health scale per level.
+ * - `count` is a DIVISOR by default (Damage split into `count` projectiles/pulses -> total = Damage);
+ *   it becomes a MULTIPLIER only when `damageIsPerHit` (each hit deals the full Damage).
+ * - isSingleTarget: target nearest, re-target on kill. isAOE: hit every unit in radius.
  */
 export const SKILL_MECHANICS: {
     [key: string]: {
@@ -63,8 +63,8 @@ export const SKILL_MECHANICS: {
     "Arrows": { count: 3, isSingleTarget: true, delay: 0.2, descriptionIsPerHit: true },
     "3": { count: 5, isSingleTarget: true, delay: 0.2, descriptionIsPerHit: true }, // Shuriken (Per Shuriken)
     "Shuriken": { count: 5, isSingleTarget: true, delay: 0.2, descriptionIsPerHit: true },
-    "11": { count: 5, isAOE: true, interval: 0.2, delay: 0.1, descriptionIsPerHit: true }, // Lightning (Per Hit)
-    "Lightning": { count: 3.5, isAOE: true, interval: 0.2, delay: 0.1, descriptionIsPerHit: true },
+    "11": { count: 5, isAOE: true, interval: 0.2, delay: 0.1, descriptionIsPerHit: true }, // Lightning: Damage split into 5 (RE)
+    "Lightning": { count: 5, isAOE: true, interval: 0.2, delay: 0.1, descriptionIsPerHit: true },
 
     // --- Multi-Hit AOE Skills ---
     "4": { count: 8, isAOE: true, interval: 0.15, descriptionIsPerHit: true }, // Shout (Per Hit)
@@ -77,8 +77,8 @@ export const SKILL_MECHANICS: {
     // --- Single Hit AOE Skills ---
     "7": { count: 2, isAOE: true, delay: 0.25 }, // Stampede (Avg 2 hits/target, Per Hit)
     "Stampede": { count: 2, isAOE: true, delay: 0.25, damageIsPerHit: true },
-    "8": { count: 1, isAOE: true, delay: 0.5 }, // Thorns (Total)
-    "Thorns": { count: 1, isAOE: true, delay: 0.5 },
+    "8": { count: 3, isAOE: true, delay: 0.5, damageIsPerHit: true }, // Thorns: 3 full-damage pulses (RE)
+    "Thorns": { count: 3, isAOE: true, delay: 0.5, damageIsPerHit: true },
     "9": { count: 1, isAOE: true, delay: 1.5 }, // Bomb (Total)
     "Bomb": { count: 1, isAOE: true, delay: 1.5 },
     "10": { count: 1, isAOE: true, delay: 0.5 }, // Worm (Total)
@@ -92,3 +92,31 @@ export const SKILL_MECHANICS: {
     "17": { count: 10, isAOE: false, isSingleTarget: true, interval: 0.8, isDuration: true, damageIsPerHit: true, descriptionIsPerHit: true }, // Drone
     "Drone": { count: 10, isAOE: false, isSingleTarget: true, interval: 0.8, isDuration: true, damageIsPerHit: true, descriptionIsPerHit: true },
 };
+
+// === Attack timing (reverse-engineered from libil2cpp.so, Forge Master 2.8.2) ===
+// Combat runs at 10 sim-ticks/s. One continuous AttackTimer per unit: it counts 0 -> windup
+// (fires the hit) -> AttackDuration (resets), with NO reset at the windup fire. Per tick the
+// timer advances by dt*attackSpeedMultiplier, where dt = floor(2^32/10)/2^32 ~= 0.09999999976s.
+// All quantities are FD6 raw (value*1e6); the multiply truncates toward zero.
+export const SIM_DT_RAW = 429496729; // floor(2^32 / 10)
+
+// Per-tick timer increment in FD6 raw units for a given attack-speed multiplier (>=1).
+export function attackIncRaw(mult: number): number {
+    return Math.floor((SIM_DT_RAW * Math.round(mult * 1e6)) / 4294967296) || 1;
+}
+
+// Single-attack interval (seconds): ceil(AttackDuration / inc) ticks + 1 idle re-acquire tick,
+// each tick = 0.1s. WINDUP-INDEPENDENT (windup & recovery share one timer). AttackDuration is
+// 1.5s for every weapon. Reproduces the measured breakpoint table exactly.
+export function attackIntervalSeconds(mult: number, attackDuration = 1.5): number {
+    const inc = attackIncRaw(mult);
+    return (Math.ceil(Math.round(attackDuration * 1e6) / inc) + 1) * 0.1;
+}
+
+// Double-attack second-strike delay (seconds): the timer is re-seeded to windup*0.75, so it must
+// climb the remaining 0.25*windup to re-fire: ceil(0.25*windup / inc) ticks, minimum 1 tick (0.1s).
+// WINDUP-DEPENDENT — this is the ONLY place the weapon's windup changes attack timing.
+export function doubleDelaySeconds(mult: number, windup: number): number {
+    const inc = attackIncRaw(mult);
+    return Math.max(1, Math.ceil((Math.round(windup * 1e6) * 0.25) / inc)) * 0.1;
+}

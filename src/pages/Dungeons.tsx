@@ -361,7 +361,7 @@ export default function Dungeons() {
         if (!warDayConfig) return { Hammer: 1000, Skill: 1000, Egg: 1000, Potion: 1000 };
 
         const getPoints = (taskName: string) =>
-            getWarPointsForTask(warDayConfig, taskName) * (1 + dungeonKeyWarBonus) * (1 + dungeonDayBoost);
+            getWarPointsForTask(warDayConfig, taskName) * (1 + dungeonKeyWarBonus + dungeonDayBoost);
 
         return {
             Hammer: getPoints('UseHammerThiefDungeonKey') || 1000,

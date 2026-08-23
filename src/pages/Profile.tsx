@@ -1,6 +1,6 @@
 import { useProfile } from '../context/ProfileContext';
 import { useComparison } from '../context/ComparisonContext';
-import { Download, Upload, Trash2, Copy, Clipboard } from 'lucide-react';
+import { Download, Upload, Trash2, Copy, Clipboard, ScanSearch, Swords } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -8,11 +8,12 @@ import { EquipmentPanel } from '../components/Profile/EquipmentPanel';
 import { PetPanel } from '../components/Profile/PetPanel';
 import { SkillPanel } from '../components/Profile/SkillPanel';
 import { MiscPanel } from '../components/Profile/MiscPanel';
-import { TechTreePanel } from '../components/Profile/TechTreePanel';
 import { StatsSummaryPanel } from '../components/Profile/StatsSummaryPanel';
 import { ProfileHeaderPanel } from '../components/Profile/ProfileHeaderPanel';
 import { SkillsPassivesPanel } from '../components/Profile/SkillsPassivesPanel';
 import { SkinSetPanel } from '../components/Profile/SkinSetPanel';
+import { AutoSyncModal } from '../components/Profile/AutoSyncModal';
+import { PvpModal } from '../components/Profile/PvpModal';
 
 
 export default function Profile() {
@@ -32,8 +33,10 @@ export default function Profile() {
     } = useComparison();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [considerAnimation, setConsiderAnimation] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [showAutoSync, setShowAutoSync] = useState(false);
+    const [showPvp, setShowPvp] = useState(false);
+    const SHOW_PVP = false; // Simplified PvP hidden until the enemy-panel reader is ready
     const [jsonToImport, setJsonToImport] = useState('');
 
     const handleImportClick = () => {
@@ -87,6 +90,44 @@ export default function Profile() {
 
             {/* Content */}
             <div className="space-y-6">
+                {/* AutoSync — read your profile from screenshots */}
+                <button
+                    onClick={() => setShowAutoSync(true)}
+                    className="w-full group relative overflow-hidden rounded-2xl border border-accent-primary/40 bg-gradient-to-r from-accent-primary/20 via-accent-primary/10 to-accent-secondary/15 p-5 flex items-center gap-4 hover:border-accent-primary/70 transition active:scale-[0.99]"
+                >
+                    <div className="w-14 h-14 rounded-2xl bg-accent-primary/25 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+                        <ScanSearch className="w-8 h-8 text-accent-primary" />
+                    </div>
+                    <div className="text-left min-w-0">
+                        <div className="text-xl font-black text-white flex items-center gap-2">
+                            AutoSync <span className="text-[9px] uppercase tracking-widest bg-accent-primary/30 text-accent-primary px-1.5 py-0.5 rounded">beta</span>
+                        </div>
+                        <div className="text-sm text-text-secondary">Upload your in-game screenshots — it reads gear, pets, mount &amp; resources and lets you review every change.</div>
+                    </div>
+                    <div className="ml-auto hidden sm:flex items-center text-accent-primary font-bold gap-1 pr-2 group-hover:translate-x-1 transition-transform">Scan →</div>
+                </button>
+                {showAutoSync && <AutoSyncModal onClose={() => setShowAutoSync(false)} />}
+
+                {/* Simplified PvP — duel your build vs an opponent screenshot (hidden for now) */}
+                {SHOW_PVP && (<>
+                <button
+                    onClick={() => setShowPvp(true)}
+                    className="w-full group relative overflow-hidden rounded-2xl border border-red-500/40 bg-gradient-to-r from-red-500/20 via-red-500/10 to-accent-primary/10 p-4 flex items-center gap-4 hover:border-red-500/70 transition active:scale-[0.99]"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-red-500/25 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+                        <Swords className="w-7 h-7 text-red-400" />
+                    </div>
+                    <div className="text-left min-w-0">
+                        <div className="text-lg font-black text-white flex items-center gap-2">
+                            Simplified PvP <span className="text-[9px] uppercase tracking-widest bg-red-500/30 text-red-300 px-1.5 py-0.5 rounded">beta</span>
+                        </div>
+                        <div className="text-sm text-text-secondary">Upload an opponent's profile screenshot and duel it against your build.</div>
+                    </div>
+                    <div className="ml-auto hidden sm:flex items-center text-red-400 font-bold gap-1 pr-2 group-hover:translate-x-1 transition-transform">Fight →</div>
+                </button>
+                {showPvp && <PvpModal onClose={() => setShowPvp(false)} />}
+                </>)}
+
                 <MiscPanel />
                 
                 <SkinSetPanel />
@@ -132,14 +173,11 @@ export default function Profile() {
                             <SkillPanel
                                 variant="original"
                                 title="Equipped Skills"
-                                considerAnimation={considerAnimation}
-                                setConsiderAnimation={setConsiderAnimation}
                             />
                             <SkillPanel
                                 variant="test"
                                 title="Test Build Skills"
                                 compareSkills={originalSkills}
-                                considerAnimation={considerAnimation}
                             />
                         </div>
                     </div>
@@ -147,13 +185,11 @@ export default function Profile() {
                     <>
                         <EquipmentPanel />
                         <PetPanel />
-                        <SkillPanel considerAnimation={considerAnimation} setConsiderAnimation={setConsiderAnimation} />
+                        <SkillPanel />
                     </>
                 )}
 
                 <SkillsPassivesPanel />
-
-                <TechTreePanel />
             </div>
 
             {/* Import JSON Modal */}

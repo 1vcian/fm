@@ -155,7 +155,7 @@ export function useSkillsCalculator() {
         // Read from whatever day holds the task (independent of day layout) + clan boost.
         rarities.forEach(rarity => {
             const base = getWarPointsForTask(guildWarConfig, `Summon${rarity}Skill`);
-            points[rarity] = base * (1 + skillSummonWarBonus) * (1 + dayBoost);
+            points[rarity] = base * (1 + skillSummonWarBonus + dayBoost);
         });
 
         return points;

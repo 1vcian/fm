@@ -4,3 +4,7 @@ dist
 .DS_Store
 pseudocodice_esportato.c
 .env
+
+# Reverse-engineering toolkit (xapk -> il2cpp dump -> config parser -> assets).
+# Local-only: heavy tool binaries + game archives, never part of the published app.
+reverseForge/

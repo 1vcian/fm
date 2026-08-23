@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8" /><title>clanTree probe</title></head>
+<body>
+<pre id="s">loading…</pre>
+<script type="module">
+import { readClanTree } from '/src/utils/ocr/clanTreeReader.ts';
+import { loadImage, imageToCanvas } from '/src/utils/ocr/imagePrep.ts';
+const s = document.getElementById('s');
+try {
+    const manifest = await (await fetch('/__ct_imgs/manifest.json')).json();
+    const shots = [];
+    for (const m of manifest) {
+        s.textContent = `reading ${m.key}…`;
+        const t0 = performance.now();
+        const canvas = imageToCanvas(await loadImage(m.url));
+        const r = await readClanTree(canvas);
+        shots.push({
+            key: m.key,
+            ms: Math.round(performance.now() - t0),
+            guildPotions: r.guildPotions ?? null,
+            confidence: r.confidence,
+            nodes: r.nodes.map(n => ({ globalId: n.globalId, nodeType: n.nodeType, level: n.level, max: n.max, confidence: n.confidence })),
+        });
+    }
+    window.__CT_PROBE__ = JSON.stringify(shots);
+    s.textContent = 'done';
+} catch (e) {
+    window.__CT_ERROR__ = String(e && e.stack || e);
+    s.textContent = 'error: ' + e;
+}
+</script>
+</body>
+</html>

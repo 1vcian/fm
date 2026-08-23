@@ -57,6 +57,9 @@ export interface UserProfile {
     iconIndex: number; // Index in CardIcons.png spritesheet (8x8 = 64 icons)
     version: number;
     isShared?: boolean;
+    /** Last time any tech tree (Forge/Power/SkillsPetTech/Clan) was edited — stamped centrally in
+     *  ProfileContext so the Profile tree spoiler can flag stale (>2d) tree data. */
+    techTreeUpdatedAt?: number;
 
     items: {
         Weapon: ItemSlot | null;
@@ -123,6 +126,11 @@ export interface UserProfile {
         };
         skillCalculatorLevel?: number;
         skillCalculatorTickets?: number;
+        // Resource counts also edited from the Clan/Profile "Resources" panel. These are the
+        // SAME keys the individual calculators read, so the panel and the calculators stay in sync.
+        coins?: number;         // no calculator consumes it yet (informational)
+        guildPotions?: number;  // no calculator consumes it yet (informational)
+        ownedEggs?: { [rarity: string]: number }; // shared with the Egg hatch calculator
         mountCalculatorLevel?: number;
         mountCalculatorProgress?: number;
         mountCalculatorWinders?: number;
@@ -212,6 +220,8 @@ export const INITIAL_PROFILE: UserProfile = {
         mountCalculatorProgress: 0,
         mountCalculatorWinders: 0,
         techPotions: 0,
+        coins: 0,
+        guildPotions: 0,
         dungeonKeyCounts: {
             Hammer: 0,
             Skill: 0,

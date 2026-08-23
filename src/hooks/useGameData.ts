@@ -11,8 +11,22 @@ const GLOBAL_CONFIG_FILES = [
     'IconsMap.json',
     'TechTreeMapping.json',
     'AutoItemMapping.json',
-    'ClanTechTreeIconsMap.json'
+    'ClanTechTreeIconsMap.json',
+    'Localization.json'
 ];
+
+/**
+ * Config versions from this timestamp on were parsed with the fixed Metaplay parser
+ * (type-aware VarInt decode). In those versions the fixed-point magnitudes (FD6/F1D:
+ * guild ValuePerLevel, player StatValuePerLevel, tech Duration, …) are stored at their
+ * REAL in-game value, so the legacy "* 2" compensation must NOT be applied. Older
+ * versions were parsed with the buggy parser (values serialized at half) and still need
+ * the * 2. Gate on the version string (folders are zero-padded timestamps).
+ */
+const VARINT_FIX_VERSION = '2026_08_21_00_29';
+function isVarintFixed(version?: string | null): boolean {
+    return !!version && version >= VARINT_FIX_VERSION;
+}
 
 function parseValue(val: any): number {
     if (val === null || val === undefined) return 0;
@@ -37,16 +51,17 @@ function parseValue(val: any): number {
  * boundary, so every consumer reads the real (doubled) ValuePerLevel directly and
  * no ad-hoc "* 2" is scattered around the codebase.
  */
-function normalizeGuildUpgradeLibrary(json: any): any {
+function normalizeGuildUpgradeLibrary(json: any, fixed: boolean): any {
     if (!json || typeof json !== 'object') return json;
     const normalized: Record<string, any> = {};
     for (const nodeType of Object.keys(json)) {
         const def = json[nodeType];
         if (def && typeof def === 'object') {
-            // number form is stored halved (x2 restores it); the {Raw:{v:{s0,s1}}}
-            // form is decoded by parseValue via /500000, which already includes the x2.
+            // Fixed-parser versions already store the real value -> no x2.
+            // Legacy versions store it halved: number form x2, or {Raw:{v:{s0,s1}}}
+            // decoded by parseValue via /500000 (which already folds in the x2).
             const raw = def.ValuePerLevel;
-            const effective = (typeof raw === 'number') ? raw * 2 : parseValue(raw);
+            const effective = (typeof raw === 'number') ? (fixed ? raw : raw * 2) : parseValue(raw);
             normalized[nodeType] = { ...def, ValuePerLevel: effective };
         } else {
             normalized[nodeType] = def;
@@ -90,13 +105,16 @@ async function fetchAndReconstruct(selectedVersion: string, fileName: string): P
                 maxLevel = firstTier.StatValuePerLevel ? firstTier.StatValuePerLevel.length : 1;
             }
 
+            // Fixed-parser versions store StatValuePerLevel at real value (no x2);
+            // legacy versions store it halved and need the runtime x2.
+            const mult = isVarintFixed(selectedVersion) ? 1 : 2;
             const buildStats = (tier: any, tierLevels: number) => (nodeDef.StatNodes || []).map((statNode: any) => {
                 let val1 = 0;
                 let val2 = 0;
                 if (tier) {
-                    val1 = parseValue(tier.StatValuePerLevel?.[0]) * 2;
+                    val1 = parseValue(tier.StatValuePerLevel?.[0]) * mult;
                     if (tierLevels > 1) {
-                        val2 = parseValue(tier.StatValuePerLevel?.[1]) * 2;
+                        val2 = parseValue(tier.StatValuePerLevel?.[1]) * mult;
                     } else {
                         val2 = val1;
                     }
@@ -225,7 +243,7 @@ export function useGameData<T>(fileName: string) {
                 }
                 const json = await response.json();
                 if (fileName === 'GuildTechTreeUpgradeLibrary.json') {
-                    return normalizeGuildUpgradeLibrary(json);
+                    return normalizeGuildUpgradeLibrary(json, isVarintFixed(selectedVersion));
                 }
                 return json;
             })();

@@ -124,8 +124,8 @@ export function useMountsCalculator() {
             const baseSummon = getWarPointsForTask(guildWarDayConfigLibrary, `Summon${rarity}Mount`);
             const baseMerge = getWarPointsForTask(guildWarDayConfigLibrary, `Merge${rarity}Mount`);
             pointsBreakdown[rarity] = {
-                summon: baseSummon * (1 + mountSummonWarBonus) * (1 + dayBoost),
-                merge: baseMerge * (1 + mountMergeWarBonus) * (1 + dayBoost)
+                summon: baseSummon * (1 + mountSummonWarBonus + dayBoost),
+                merge: baseMerge * (1 + mountMergeWarBonus + dayBoost)
             };
         });
 

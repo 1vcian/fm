@@ -137,7 +137,7 @@ export function useTreeOptimizer(warBonusOverride?: number, dayBoostOverride?: n
         // Apply the clan tech tree war-point boost (+ optional day boost) uniformly.
         const dayBoost = dayBoostOverride ?? 0;
         for (const tier of Object.keys(tierPoints)) {
-            tierPoints[Number(tier)] = tierPoints[Number(tier)] * (1 + techUpgradeWarBonus) * (1 + dayBoost);
+            tierPoints[Number(tier)] = tierPoints[Number(tier)] * (1 + techUpgradeWarBonus + dayBoost);
         }
 
         // Initialize Virtual Tree (based on My/Max/Empty mode)

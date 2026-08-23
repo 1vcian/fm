@@ -153,7 +153,9 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                     dps: dpsContrib
                 };
             } else {
-                const dmgPerHit = baseSkillValue * effectiveMultiplier;
+                // `count` is a divisor unless damageIsPerHit (see SKILL_MECHANICS / statEngine).
+                const buffedTotal = baseSkillValue * effectiveMultiplier;
+                const dmgPerHit = mechanics.damageIsPerHit ? buffedTotal : buffedTotal / hitCount;
                 const totalDmgPerActivation = dmgPerHit * hitCount;
                 const dps = totalDmgPerActivation / finalCd;
 
@@ -418,7 +420,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                                 <div className="text-[10px] text-white/40 mt-1 font-mono">
                                                     {stats.doubleDamageChance > 0 
                                                         ? `Weighted avg of Normal (${realCycleTime.toFixed(2)}s) and Double (${stats.realDoubleHitCycle.toFixed(2)}s) cycles`
-                                                        : `Rounded to 0.1s frame steps + 0.2s fixed delay`}
+                                                        : `Quantised to the 0.1s attack interval (10-tick engine)`}
                                                 </div>
                                             )}
                                         </div>

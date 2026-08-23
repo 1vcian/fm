@@ -1668,6 +1668,18 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                             {...infoProps(TOTAL_DAMAGE_KEY, 'Total Damage', formatValue(stats.totalDamage), formatValue, mulBreakdown('Damage Multiplier', stats.damageMultiplier, stats.damageBreakdown))}
                                         />
                                         <StatRow
+                                            icon={<Swords className="w-4 h-4" />}
+                                            label="Melee DMG"
+                                            value={formatValue(stats.meleeDamage)}
+                                            color="text-amber-400"
+                                        />
+                                        <StatRow
+                                            icon={<Crosshair className="w-4 h-4" />}
+                                            label="Ranged DMG"
+                                            value={formatValue(stats.rangedDamage)}
+                                            color="text-sky-400"
+                                        />
+                                        <StatRow
                                             icon={<Heart className="w-4 h-4" />}
                                             label="Total Health"
                                             value={formatValue(stats.totalHealth)}

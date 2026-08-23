@@ -19,11 +19,13 @@
         "framer-motion": "^11.0.0",
         "lucide-react": "^0.300.0",
         "lz-string": "^1.5.0",
+        "onnxruntime-web": "^1.27.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.21.0",
         "react-toastify": "^11.0.5",
-        "tailwind-merge": "^2.2.0"
+        "tailwind-merge": "^2.2.0",
+        "tesseract.js": "^7.0.0"
     },
     "devDependencies": {
         "@types/node": "^25.0.6",
@@ -35,6 +37,7 @@
         "autoprefixer": "^10.4.16",
         "eslint": "^8.55.0",
         "eslint-plugin-react-refresh": "^0.4.5",
+        "playwright": "^1.62.1",
         "postcss": "^8.4.32",
         "tailwindcss": "^3.4.0",
         "ts-node": "^10.9.2",
