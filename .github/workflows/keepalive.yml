@@ -35,8 +35,11 @@ jobs:
           # Accept either tab of "Secrets and variables > Actions": a repository *secret* is the
           # right home for these, but putting them under *Variables* is an easy mistake and the
           # anon key is public anyway, so both are honoured rather than silently ignored.
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+          # The VITE_ prefix only means "expose this to the browser bundle" to Vite; it carries no
+          # meaning in Actions. Since the same two values are also kept as VITE_* for local dev,
+          # both spellings are accepted here so a copy-paste from .env just works.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL || secrets.VITE_SUPABASE_URL || vars.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY }}
         run: |
           set -u
 
@@ -46,7 +49,9 @@ jobs:
             [ -n "${SUPABASE_URL}" ]      && echo "SUPABASE_URL: found"      || echo "SUPABASE_URL: MISSING"
             [ -n "${SUPABASE_ANON_KEY}" ] && echo "SUPABASE_ANON_KEY: found" || echo "SUPABASE_ANON_KEY: MISSING"
             echo "Nothing to keep alive. Add them under Settings > Secrets and variables > Actions"
-            echo "as REPOSITORY secrets (the 'Secrets' tab), named exactly as above."
+            echo "as REPOSITORY secrets (the 'Secrets' tab). Accepted names, in order of preference:"
+            echo "  SUPABASE_URL      (or VITE_SUPABASE_URL)"
+            echo "  SUPABASE_ANON_KEY (or VITE_SUPABASE_ANON_KEY)"
             exit 0
           fi
 
