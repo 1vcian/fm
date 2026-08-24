@@ -1,0 +1,947 @@
+{
+  "SantaSet": {
+    "Id": "SantaSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 2,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "SkiSet": {
+    "Id": "SkiSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 2,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "SnowmanSet": {
+    "Id": "SnowmanSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 2,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "FlowerSet": {
+    "Id": "FlowerSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "DruidSet": {
+    "Id": "DruidSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "LeprechaunSet": {
+    "Id": "LeprechaunSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "BunnySet": {
+    "Id": "BunnySet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "ClownSet": {
+    "Id": "ClownSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "MillionaireSet": {
+    "Id": "MillionaireSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "FishbowlSet": {
+    "Id": "FishbowlSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "EagleSet": {
+    "Id": "EagleSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "SkaterSet": {
+    "Id": "SkaterSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "CatSet": {
+    "Id": "CatSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "SharkSet": {
+    "Id": "SharkSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "MushroomSet": {
+    "Id": "MushroomSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "AnubisSet": {
+    "Id": "AnubisSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "BoxerSet": {
+    "Id": "BoxerSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "DarkPlanetWarriorSet": {
+    "Id": "DarkPlanetWarriorSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "CubeguySet": {
+    "Id": "CubeguySet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "LavamanSet": {
+    "Id": "LavamanSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  },
+  "ChefSet": {
+    "Id": "ChefSet",
+    "BonusTiers": [
+      {
+        "RequiredPieces": 3,
+        "BonusStats": {
+          "Stats": [
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Damage",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            },
+            {
+              "StatNode": {
+                "UniqueStat": {
+                  "StatType": "Health",
+                  "StatNature": "Multiplier"
+                },
+                "LegacyTarget": null,
+                "Layer": "Skins",
+                "Condition": "None",
+                "Target": {
+                  "Kind": "Player",
+                  "Qualifiers": []
+                }
+              },
+              "Value": 0.10000000149011612
+            }
+          ]
+        },
+        "StatsLevelIncrement": 0.0
+      }
+    ]
+  }
+}

@@ -12,7 +12,7 @@
     "columns": 8,
     "rows": 8
   },
-  "total_sprites": 59,
+  "total_sprites": 61,
   "mapping": {
     "WeaponBonus": {
       "name": "WeaponBonus",
@@ -895,6 +895,36 @@
       "sprite_rect": {
         "x": 512,
         "y": 384,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GuildTechRaceRewardMultiplier": {
+      "name": "GuildTechRaceRewardMultiplier",
+      "category": "ClanTechPotions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 128,
+        "y": 640,
+        "width": 128,
+        "height": 128
+      }
+    },
+    "GuildTechRaceScoreMultiplier": {
+      "name": "GuildTechRaceScoreMultiplier",
+      "category": "ClanTechPotions",
+      "texture": "ClanTechTreeIcons.png",
+      "texture_size": {
+        "width": 1024,
+        "height": 1024
+      },
+      "sprite_rect": {
+        "x": 256,
+        "y": 640,
         "width": 128,
         "height": 128
       }
