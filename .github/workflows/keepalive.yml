@@ -1,0 +1,79 @@
+name: Supabase keep-alive
+
+# Supabase free projects pause after ~1 week of inactivity (docs/BACKEND_PLAN.md §8).
+# One tiny REST call a day keeps the project warm.
+#
+# Design notes:
+#  * Exits 0 quietly when the secrets are absent, so forks and pre-backend clones stay green.
+#  * Never prints the key. The URL and key are only ever passed to curl through the environment;
+#    GitHub also masks registered secrets in logs, but we do not rely on that.
+#  * Tolerates 4xx: any HTTP answer proves the project is awake, which is the whole point. A
+#    missing table (before the schema of §4 is applied) must not turn the build red.
+#  * This is NOT monitoring. It does not protect against a real outage or an over-quota pause,
+#    and the app is designed to degrade to local-only when the API is unreachable.
+
+on:
+  schedule:
+    # 04:17 UTC daily — off-peak, and an odd minute to avoid the top-of-hour Actions stampede.
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Supabase REST
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -u
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "SUPABASE_URL / SUPABASE_ANON_KEY are not configured — nothing to keep alive."
+            echo "Set them in Settings > Secrets and variables > Actions to enable this job."
+            exit 0
+          fi
+
+          # Strip a trailing slash so the concatenation below cannot produce '//rest'.
+          BASE="${SUPABASE_URL%/}"
+          ENDPOINT="${BASE}/rest/v1/clans?select=id&limit=1"
+
+          # Up to 3 attempts: a paused project can take a few seconds to wake up.
+          for attempt in 1 2 3; do
+            # -s: no progress meter. -o /dev/null: never print a body (it could contain data).
+            # No -f and no -v: we want the status code, not an early exit, and never a header dump.
+            code=$(curl -s -o /dev/null -w '%{http_code}' \
+                     --max-time 20 \
+                     -H "apikey: ${SUPABASE_ANON_KEY}" \
+                     -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+                     -H 'Accept: application/json' \
+                     "${ENDPOINT}" || echo 000)
+
+            echo "Attempt ${attempt}: HTTP ${code}"
+
+            # 2xx = fine. 4xx = the API answered (missing table, RLS denial) => project is awake.
+            case "${code}" in
+              2??|4??)
+                echo "Supabase project responded — keep-alive done."
+                exit 0
+                ;;
+            esac
+
+            if [ "${attempt}" -lt 3 ]; then
+              sleep 15
+            fi
+          done
+
+          # 000 (network/DNS failure) or 5xx after 3 tries: worth a red run, it means the project
+          # is unreachable or paused and needs a look.
+          echo "::error::Supabase REST endpoint did not respond successfully after 3 attempts."
+          exit 1
