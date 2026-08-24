@@ -32,14 +32,21 @@ jobs:
     steps:
       - name: Ping Supabase REST
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Accept either tab of "Secrets and variables > Actions": a repository *secret* is the
+          # right home for these, but putting them under *Variables* is an easy mistake and the
+          # anon key is public anyway, so both are honoured rather than silently ignored.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
         run: |
           set -u
 
           if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
-            echo "SUPABASE_URL / SUPABASE_ANON_KEY are not configured — nothing to keep alive."
-            echo "Set them in Settings > Secrets and variables > Actions to enable this job."
+            # Name which one is missing (never the value) — the usual causes are a typo in the
+            # name, using the *Variables* tab, or an Environment secret instead of a repository one.
+            [ -n "${SUPABASE_URL}" ]      && echo "SUPABASE_URL: found"      || echo "SUPABASE_URL: MISSING"
+            [ -n "${SUPABASE_ANON_KEY}" ] && echo "SUPABASE_ANON_KEY: found" || echo "SUPABASE_ANON_KEY: MISSING"
+            echo "Nothing to keep alive. Add them under Settings > Secrets and variables > Actions"
+            echo "as REPOSITORY secrets (the 'Secrets' tab), named exactly as above."
             exit 0
           fi
 
