@@ -7,8 +7,9 @@ name: Supabase keep-alive
 #  * Exits 0 quietly when the secrets are absent, so forks and pre-backend clones stay green.
 #  * Never prints the key. The URL and key are only ever passed to curl through the environment;
 #    GitHub also masks registered secrets in logs, but we do not rely on that.
-#  * Tolerates 4xx: any HTTP answer proves the project is awake, which is the whole point. A
-#    missing table (before the schema of §4 is applied) must not turn the build red.
+#  * Calls public.ping(), the one function granted to anon (0001_init.sql). Any HTTP answer proves
+#    the project is awake, so a 4xx still passes — but it is flagged as a warning, because against
+#    ping() it means the grant or the function is missing, not merely a locked-down table.
 #  * This is NOT monitoring. It does not protect against a real outage or an over-quota pause,
 #    and the app is designed to degrade to local-only when the API is unreachable.
 
@@ -57,7 +58,11 @@ jobs:
 
           # Strip a trailing slash so the concatenation below cannot produce '//rest'.
           BASE="${SUPABASE_URL%/}"
-          ENDPOINT="${BASE}/rest/v1/clans?select=id&limit=1"
+          # ping() is the ONE function granted to anon precisely for this job (0001_init.sql §GRANTS).
+          # Hitting a table instead would always answer 401 (anon is revoked on every table by
+          # design), which still proves the project is awake but hides a real misconfiguration in
+          # the noise — with ping a non-2xx is genuinely worth looking at.
+          ENDPOINT="${BASE}/rest/v1/rpc/ping"
 
           # Up to 3 attempts: a paused project can take a few seconds to wake up.
           for attempt in 1 2 3; do
@@ -72,10 +77,17 @@ jobs:
 
             echo "Attempt ${attempt}: HTTP ${code}"
 
-            # 2xx = fine. 4xx = the API answered (missing table, RLS denial) => project is awake.
+            # 2xx is the expected answer from ping(). A 4xx still proves the project is awake
+            # (so the job passes — waking it up is the point), but it is called out: against
+            # rpc/ping a 401/404 means the grant or the function is gone, not just a locked table.
             case "${code}" in
-              2??|4??)
+              2??)
                 echo "Supabase project responded — keep-alive done."
+                exit 0
+                ;;
+              4??)
+                echo "::warning::Project is awake but ping() answered HTTP ${code} — check that"
+                echo "::warning::0001_init.sql granted execute on public.ping() to anon."
                 exit 0
                 ;;
             esac
