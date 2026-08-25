@@ -3,27 +3,22 @@ import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeMode } from '../context/TreeModeContext';
 import { useTreeModifiers } from './useCalculatedStats';
-import { isWarPointDay } from '../utils/guildWarUtils';
+import { optimizeTechTree, type TechUpgrade } from '../utils/techOptimizer';
 
-export interface TechUpgrade {
-    tree: string;
-    nodeId: number;
-    nodeName: string;
-    type: string;
-    fromLevel: number;
-    toLevel: number;
-    cost: number;
-    duration: number;
-    points: number;
-    warPoints: number;
-    tier: number;
-    sprite_rect?: { x: number; y: number; width: number; height: number };
-    gemCost?: number;
-    isWarDay?: boolean;
-    endDate?: Date;
-}
+export type { TechUpgrade } from '../utils/techOptimizer';
 
-
+/**
+ * The Tree Calculator's optimiser, and nothing more.
+ *
+ * The algorithm itself lives in `src/utils/techOptimizer.ts` as a pure function — see that file's
+ * header for why it was moved out (short version: this hook writes the profile on mount, so a data
+ * layer such as the clan share cannot mount it, and `src/utils/warPoints.ts` calls the pure core
+ * instead). What stays here is exactly what cannot be pure: the game-data fetches, the two pieces
+ * of local state, the potions write-back, the My/Max/Empty display toggle, and `applyUpgrades`.
+ *
+ * Behaviour is unchanged from the pre-extraction version, including the `'max'` early return and
+ * its deliberately partial result object.
+ */
 export function useTreeOptimizer(warBonusOverride?: number, dayBoostOverride?: number) {
     const { profile, updateProfile } = useProfile();
     const { treeMode } = useTreeMode();
@@ -64,255 +59,47 @@ export function useTreeOptimizer(warBonusOverride?: number, dayBoostOverride?: n
         });
     }, [potions]);
 
-    // 3. Tech Bonuses Helper
-    const calculateTechBonuses = (tree: Record<string, Record<number, number>>) => {
-        let costReduction = 0;
-        let speedBonus = 0;
-
-        Object.entries(tree).forEach(([treeName, treeNodes]) => {
-            const treeDef = mapping?.trees?.[treeName];
-            if (!treeDef || !treeDef.nodes) return;
-
-            treeDef.nodes.forEach((node: any) => {
-                const nodeType = node.type;
-                if (nodeType !== 'TechNodeUpgradeCost' && nodeType !== 'TechResearchTimer') return;
-
-                const nodeConfig = library[nodeType];
-                if (!nodeConfig) return;
-
-                const nodeLevel = treeNodes[node.id] || 0;
-                if (nodeLevel > 0 && nodeConfig.Stats?.[0]) {
-                    const stat = nodeConfig.Stats[0];
-                    const val = stat.Value + ((nodeLevel - 1) * stat.ValueIncrease);
-                    if (nodeType === 'TechNodeUpgradeCost') {
-                        costReduction += val;
-                    } else if (nodeType === 'TechResearchTimer') {
-                        speedBonus += val;
-                    }
-                }
-            });
-        });
-
-        return {
-            costReduction: Math.min(0.95, costReduction), // Cap at 95%
-            speedBonus
-        };
-    };
-
-    // 4. Optimization Logic
-
+    // 3. Optimization
     const optimization = useMemo(() => {
         if (!mapping || !library || !upgradeLibrary || !dayConfig || !forgeConfig) return null;
 
-        // Map Tier -> Points (with fallbacks)
-        const tierPoints: Record<number, number> = {
-            0: 300,   // I
-            1: 7500,  // II
-            2: 20000, // III
-            3: 35000, // IV
-            4: 62000  // V
-        };
+        if (treeMode === 'max') {
+            // If mode is max, we can't really optimize further.
+            //
+            // The cast keeps this branch byte-identical to the pre-extraction code: it returns a
+            // PARTIAL object, so `optimization.totalGemsUsed` is `undefined` in Max mode and the
+            // Tree Calculator renders an empty cell rather than a "0". Filling the missing fields
+            // in would be tidier and would also change what is on screen, so it stays a hole and
+            // the cast documents it.
+            return { totalPoints: 0, actions: [], timeUsed: 0, potionsUsed: 0 } as unknown as ReturnType<typeof optimizeTechTree>;
+        }
 
-        // Extract dynamic points from dayConfig if available
-        if (dayConfig) {
-            const taskToTier: Record<string, number> = {
-                'FinishITechTreeUpgrade': 0,
-                'FinishIITechTreeUpgrade': 1,
-                'FinishIIITechTreeUpgrade': 2,
-                'FinishIVTechTreeUpgrade': 3,
-                'FinishVTechTreeUpgrade': 4
+        // 'empty' plans from a blank tree; 'my' plans from the profile. Resolving the toggle HERE
+        // is what lets `warPoints.ts` call the same core against the real tree unconditionally —
+        // a member with the header on "Max" must never publish a fabricated projection.
+        const techTree = treeMode === 'empty'
+            ? { Forge: {}, Power: {}, SkillsPetTech: {}, Clan: {} }
+            : {
+                Forge: { ...profile.techTree.Forge },
+                Power: { ...profile.techTree.Power },
+                SkillsPetTech: { ...profile.techTree.SkillsPetTech },
+                Clan: { ...profile.techTree.Clan },
             };
 
-            Object.values(dayConfig).forEach((dayData: any) => {
-                dayData.Tasks?.forEach((task: any) => {
-                    const tier = taskToTier[task.Task];
-                    if (tier !== undefined) {
-                        const amount = task.Rewards?.find((r: any) => r.$type === "WarPointsReward")?.Amount;
-                        if (amount) tierPoints[tier] = amount;
-                    }
-                });
-            });
-        }
-
-        // Apply the clan tech tree war-point boost (+ optional day boost) uniformly.
-        const dayBoost = dayBoostOverride ?? 0;
-        for (const tier of Object.keys(tierPoints)) {
-            tierPoints[Number(tier)] = tierPoints[Number(tier)] * (1 + techUpgradeWarBonus + dayBoost);
-        }
-
-        // Initialize Virtual Tree (based on My/Max/Empty mode)
-        const currentTree: Record<string, Record<number, number>> = {
-            Forge: { ...profile.techTree.Forge },
-            Power: { ...profile.techTree.Power },
-            SkillsPetTech: { ...profile.techTree.SkillsPetTech },
-            Clan: { ...profile.techTree.Clan }
-        };
-
-        if (treeMode === 'max') {
-            // If mode is max, we can't really optimize further
-            return { totalPoints: 0, actions: [], timeUsed: 0, potionsUsed: 0 };
-        }
-        if (treeMode === 'empty') {
-            currentTree.Forge = {};
-            currentTree.Power = {};
-            currentTree.SkillsPetTech = {};
-            currentTree.Clan = {};
-        }
-
-        let totalPoints = 0;
-        let totalWarPoints = 0;
-        const baseTimeLimitSeconds = timeLimitHours * 3600;
-        const planStartMs = new Date().getTime(); // Use current time as plan start for war day calculation
-
-        // Track resources
-        let accumulatedTimeSeconds = 0;
-        let accumulatedGemCost = 0;
-        const gemLimit = (profile.misc.useGemsInCalculators ? profile.misc.gemCount : 0);
-        let potionsRemaining = potions;
-
-        const actions: TechUpgrade[] = [];
-        const gemCostPerSecond = forgeConfig.TechTreeGemSkipCostPerSecond || 0.003;
-
-        // Simple Greedy Simulation
-        const maxIter = 500; // Safety break
-        let iter = 0;
-
-        // We continue as long as we can potentially perform an action.
-        // Determining "can perform" is handled inside by the search for a candidate.
-        while (iter < maxIter) {
-            iter++;
-
-            // Calculate current bonuses
-            const bonuses = calculateTechBonuses(currentTree);
-
-            const possibleUpgrades: TechUpgrade[] = [];
-
-            // Find all available upgrades
-            Object.entries(mapping.trees || {}).forEach(([treeName, treeDef]: [string, any]) => {
-                treeDef.nodes.forEach((node: any) => {
-                    const currentLvl = currentTree[treeName]?.[node.id] || 0;
-                    const nodeType = node.type;
-                    const nodeConfig = library[nodeType];
-                    const maxLvl = nodeConfig?.MaxLevel || 0;
-
-                    if (currentLvl < maxLvl) {
-                        // Check requirements
-                        const reqsMet = (node.requirements || []).every((reqId: number) => {
-                            return (currentTree[treeName]?.[reqId] || 0) >= 1;
-                        });
-
-                        if (reqsMet) {
-                            const tier = node.tier || 0;
-                            const upgradeData = upgradeLibrary[tier.toString()];
-                            if (upgradeData) {
-                                const levelData = upgradeData.Levels.find((l: any) => l.Level === currentLvl);
-                                if (levelData) {
-                                    // Apply bonuses
-                                    const finalCost = Math.ceil(levelData.Cost * (1 - bonuses.costReduction));
-                                    const finalDuration = Math.ceil(levelData.Duration / (1 + bonuses.speedBonus));
-
-                                    possibleUpgrades.push({
-                                        tree: treeName,
-                                        nodeId: node.id,
-                                        nodeName: nodeType,
-                                        type: nodeType,
-                                        fromLevel: currentLvl,
-                                        toLevel: currentLvl + 1,
-                                        cost: finalCost,
-                                        duration: finalDuration,
-                                        points: tierPoints[tier] || 0,
-                                        warPoints: 0, // Calculated on selection based on completion date
-                                        tier,
-                                        sprite_rect: node.sprite_rect
-                                    });
-                                }
-                            }
-                        }
-                    }
-                });
-            });
-
-            if (possibleUpgrades.length === 0) break;
-
-            // Sort by efficiency (Points / Duration)
-            possibleUpgrades.sort((a, b) => (b.points / (b.duration || 1)) - (a.points / (a.duration || 1)));
-
-            // Find first one that fits budget (Potions, Gems, and Time)
-            const best = possibleUpgrades.find(upg => {
-                // Check Potion Cost
-                if (upg.cost > potionsRemaining) return false;
-
-                // Check Time + Gem Cost
-                const startTimeSec = accumulatedTimeSeconds;
-                const endTimeSec = startTimeSec + upg.duration;
-                let neededGems = 0;
-
-                if (endTimeSec > baseTimeLimitSeconds) {
-                    // If no gems allowed, this node doesn't fit
-                    if (gemLimit <= 0) return false;
-                    
-                    const overlap = Math.min(upg.duration, endTimeSec - Math.max(startTimeSec, baseTimeLimitSeconds));
-                    if (overlap > 0) {
-                        neededGems = Math.ceil(overlap * gemCostPerSecond);
-                    }
-                }
-
-                if (neededGems > (gemLimit - accumulatedGemCost)) return false;
-
-                return true;
-            });
-
-            if (best) {
-                // Re-calculate gem cost to attach
-                const startTimeSec = accumulatedTimeSeconds;
-                const endTimeSec = startTimeSec + best.duration;
-                let gemCost = 0;
-                if (endTimeSec > baseTimeLimitSeconds) {
-                    const overlap = Math.min(best.duration, endTimeSec - Math.max(startTimeSec, baseTimeLimitSeconds));
-                    if (overlap > 0) {
-                        gemCost = Math.ceil(overlap * gemCostPerSecond);
-                    }
-                }
-
-                // Calculate completion date for war point check
-                const endDate = new Date(planStartMs + endTimeSec * 1000);
-                const isWar = isWarPointDay(endDate, 'tech', dayConfig);
-                const warPts = isWar ? best.points : 0;
-
-                actions.push({ ...best, gemCost, warPoints: warPts, isWarDay: isWar, endDate });
-
-                totalPoints += best.points;
-                totalWarPoints += warPts;
-                potionsRemaining -= best.cost;
-                accumulatedTimeSeconds += best.duration;
-                accumulatedGemCost += gemCost;
-
-                // Update virtual tree
-                if (!currentTree[best.tree]) currentTree[best.tree] = {};
-                currentTree[best.tree][best.nodeId] = best.toLevel;
-            } else {
-                // No upgrades fit our remaining resources
-                break;
-            }
-        }
-
-        // Calculate total time used
-        const usedSeconds = accumulatedTimeSeconds;
-        const gemTimeSeconds = Math.max(0, usedSeconds - baseTimeLimitSeconds);
-        const baseTimeSeconds = Math.min(usedSeconds, baseTimeLimitSeconds);
-
-        return {
-            totalPoints,
-            totalWarPoints,
-            actions,
-            timeUsed: usedSeconds / 3600,
-            baseTimeUsed: baseTimeSeconds / 3600,
-            gemTimeUsed: gemTimeSeconds / 3600,
-            potionsUsed: potions - potionsRemaining,
-            remainingPotions: potionsRemaining,
-            finalBonuses: calculateTechBonuses(currentTree),
-            totalGemsUsed: accumulatedGemCost
-        };
+        return optimizeTechTree({
+            mapping,
+            library,
+            upgradeLibrary,
+            dayConfig,
+            forgeConfig,
+            techTree,
+            potions,
+            timeLimitHours,
+            gemBudget: (profile.misc.useGemsInCalculators ? profile.misc.gemCount : 0),
+            warBonus: techUpgradeWarBonus,
+            dayBoost: dayBoostOverride ?? 0,
+            planStartMs: new Date().getTime(),
+        });
 
     }, [mapping, library, upgradeLibrary, dayConfig, treeMode, profile.techTree, timeLimitHours, potions, forgeConfig, techUpgradeWarBonus, dayBoostOverride, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
 

@@ -234,7 +234,7 @@ export default function Items() {
             {loading ? (
                 <div className="text-center py-24">
                     <div className="text-accent-primary animate-spin mb-4 text-4xl">⟳</div>
-                    <div className="text-text-muted text-lg animate-pulse">Forging Items...</div>
+                    <div className="text-text-muted text-lg animate-pulse">Forging Items</div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 px-4 sm:px-0">

@@ -118,7 +118,7 @@ export default function Skins() {
     }, [weaponLibrary]);
 
     if (loading) {
-        return <div className="p-8 text-center text-text-muted">Loading Skins & Sets...</div>;
+        return <div className="p-8 text-center text-text-muted">Loading Skins & Sets</div>;
     }
 
     if (!skinsData || Object.keys(skinsData).length === 0) {
@@ -309,7 +309,7 @@ function SkinCard({ skin, bgStyle, timing, onShowBreakpoints }: {
                 />
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-col">
-                        <span className="font-bold text-lg group-hover:text-accent-primary transition-colors truncate">
+                        <span className="font-bold text-lg group-hover:text-accent-primary transition-colors whitespace-nowrap overflow-hidden text-clip">
                             {skin.SkinId.Type}
                         </span>
                         <div className="flex items-center gap-2 mb-1">

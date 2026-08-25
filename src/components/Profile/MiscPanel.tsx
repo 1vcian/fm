@@ -303,7 +303,7 @@ export function MiscPanel() {
                 </div>
             </div>
 
-            {/* Tech Tree (collapsible) — overall recap in the title; shared with every calculator.
+            {/* Tech Tree (collapsible)— overall recap in the title; shared with every calculator.
                 The header is a DIV (not a button) so the clan-tree SectionSyncButton can nest. */}
             <div className="border border-border/50 rounded-xl bg-bg-secondary/30 overflow-hidden">
                 <div
@@ -315,7 +315,7 @@ export function MiscPanel() {
                 >
                     <span className="flex items-center gap-2 font-bold min-w-0">
                         <GitBranch className="w-4 h-4 text-accent-primary shrink-0" /> Tech Tree
-                        <span className="text-[11px] font-normal text-text-muted truncate">
+                        <span className="text-[11px] font-normal text-text-muted whitespace-nowrap overflow-hidden text-clip">
                             {treeRecap.nodes} nodes · {treeRecap.levels} levels
                             {treeRecap.per.Clan > 0 && ` · ${treeRecap.per.Clan} clan`}
                         </span>
@@ -349,7 +349,7 @@ export function MiscPanel() {
                 )}
             </div>
 
-            {/* Resources (collapsible) — full player inventory, shared with the Clan hub */}
+            {/* Resources (collapsible). Full player inventory, shared with the Clan hub */}
             <div className="border border-border/50 rounded-xl bg-bg-secondary/30 overflow-hidden">
                 <button
                     type="button"
@@ -358,7 +358,7 @@ export function MiscPanel() {
                 >
                     <span className="flex items-center gap-2 font-bold">
                         <Coins className="w-4 h-4 text-accent-primary" /> Resources
-                        <span className="text-[10px] font-normal text-text-muted hidden sm:inline">coins · gems · eggs · keys …</span>
+                        <span className="text-[10px] font-normal text-text-muted hidden sm:inline">coins · gems · eggs · keys </span>
                     </span>
                     <ChevronDown className={cn('w-4 h-4 text-text-muted transition-transform', resourcesOpen && 'rotate-180')} />
                 </button>

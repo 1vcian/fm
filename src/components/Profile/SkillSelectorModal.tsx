@@ -246,7 +246,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                 <div className="relative flex-1">
                                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                                     <input
-                                        placeholder="Search skills..."
+                                        placeholder="Search skills"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary"
@@ -282,7 +282,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                     />
                                                 </div>
                                             )}
-                                            <span className="text-[9px] font-bold text-center truncate w-full">{skill.id}</span>
+                                            <span className="text-[9px] font-bold text-center whitespace-nowrap overflow-hidden text-clip w-full">{skill.id}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -420,7 +420,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                                 <input
-                                    placeholder="Search skills..."
+                                    placeholder="Search skills"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary"
@@ -457,7 +457,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                 />
                                             </div>
                                         )}
-                                        <span className="text-[10px] font-bold text-center truncate w-full px-1">{skill.id}</span>
+                                        <span className="text-[10px] font-bold text-center whitespace-nowrap overflow-hidden text-clip w-full px-1">{skill.id}</span>
                                     </button>
                                 ))}
                             </div>
@@ -510,7 +510,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                         {selectedStats.damage > 0 && (
                                             <div className="bg-bg-input p-2 rounded border border-border/50">
                                                 <div className="text-text-muted text-[10px] uppercase">Damage</div>
-                                                <div className="font-mono font-bold text-accent-primary text-sm truncate" title={selectedStats.damage.toLocaleString()}>
+                                                <div className="font-mono font-bold text-accent-primary text-sm whitespace-nowrap overflow-hidden text-clip" title={selectedStats.damage.toLocaleString()}>
                                                     {formatCompactNumber(selectedStats.damage)}
                                                 </div>
                                             </div>
@@ -518,7 +518,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                         {selectedStats.health > 0 && (
                                             <div className="bg-bg-input p-2 rounded border border-border/50">
                                                 <div className="text-text-muted text-[10px] uppercase">Health</div>
-                                                <div className="font-mono font-bold text-green-400 text-sm truncate" title={selectedStats.health.toLocaleString()}>
+                                                <div className="font-mono font-bold text-green-400 text-sm whitespace-nowrap overflow-hidden text-clip" title={selectedStats.health.toLocaleString()}>
                                                     {formatCompactNumber(selectedStats.health)}
                                                 </div>
                                             </div>

@@ -25,7 +25,7 @@ export default function PvpArena() {
                         
                         <div className="space-y-2">
                             <h1 className="text-3xl font-black tracking-tighter text-white uppercase">
-                                Not ready yet...
+                                Not ready yet
                             </h1>
                             <p className="text-lg font-medium text-gray-300">
                                 We are working hard to finish the simulator.

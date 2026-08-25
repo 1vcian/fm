@@ -218,7 +218,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     >
                         <div className="flex items-center gap-2 min-w-0">
                             <ProfileIcon iconIndex={profile.iconIndex} size={28} className="border-0 shrink-0" />
-                            <span className="font-semibold text-sm text-left truncate text-text-primary max-w-[130px]">{profile.name}</span>
+                            <span className="font-semibold text-sm text-left whitespace-nowrap overflow-hidden text-clip text-text-primary max-w-[130px]">{profile.name}</span>
                         </div>
                         <ChevronDown className={cn("w-4 h-4 text-text-muted transition-transform shrink-0", isDropdownOpen && "rotate-180")} />
                     </button>
@@ -246,7 +246,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 className="flex-1 flex items-center gap-2 min-w-0 text-left text-xs font-semibold"
                                             >
                                                 <ProfileIcon iconIndex={p.iconIndex} size={24} className="border-0 shrink-0" />
-                                                <span className="truncate">{p.name}</span>
+                                                <span className="whitespace-nowrap overflow-hidden text-clip">{p.name}</span>
                                             </button>
 
                                             {p.id === activeProfileId && (

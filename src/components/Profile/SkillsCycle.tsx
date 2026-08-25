@@ -28,7 +28,7 @@ const SWEEP_MAX = 0.25;   // 25% (SkillCooldownMulti rolls are 1%–7% each, 3+ 
 const GRID_N = Math.round(SWEEP_MAX / SWEEP_STEP);
 
 interface CastInfo { count: number; last: number; period: number; }
-interface NukeWindow { from: number; to: number; casts: number; }
+interface CycleWindow { from: number; to: number; casts: number; }
 
 function castModel(T: number, baseCd: number, duration: number, r: number): CastInfo {
     const period = Math.max(MIN_COOLDOWN, baseCd * (1 - r)) + duration;
@@ -37,7 +37,7 @@ function castModel(T: number, baseCd: number, duration: number, r: number): Cast
     return { count: n + 1, last: START_TIME + n * period, period };
 }
 
-function isNuke(T: number, info: CastInfo): boolean {
+function landsInFinalSecond(T: number, info: CastInfo): boolean {
     // last cast lands inside the final second: [T-1, T)
     return info.count > 0 && info.last >= T - 1 - EPS && info.last < T;
 }
@@ -63,17 +63,17 @@ interface SkillAdvice {
     baseCd: number;
     duration: number;
     isBuff: boolean;
-    windows: NukeWindow[];
+    windows: CycleWindow[];
     current: CastInfo & { inWindow: boolean };
-    nearest: { window: NukeWindow; delta: number } | null;
+    nearest: { window: CycleWindow; delta: number } | null;
     coverage: { pct: number; lastSecCovered: boolean } | null;
 }
 
-interface NukeAdvisorProps {
+interface SkillsCycleProps {
     skills: SkillSlot[];
 }
 
-export function NukeAdvisor({ skills }: NukeAdvisorProps) {
+export function SkillsCycle({ skills }: SkillsCycleProps) {
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
     const globalStats = useGlobalStats();
@@ -100,14 +100,14 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
             const duration = cfg.ActiveDuration || 0;
             const isBuff = BUFF_SKILLS.includes(cfg.Type || slot.id) && duration > 0;
 
-            // Sweep 0 -> 25% at 0.1% steps, merge contiguous nuking steps (same cast count) into windows
-            const windows: NukeWindow[] = [];
+            // Sweep 0 -> 25% at 0.1% steps, merge contiguous aligned steps (same cast count) into windows
+            const windows: CycleWindow[] = [];
             if (!isBuff && baseCd > 0) {
-                let open: NukeWindow | null = null;
+                let open: CycleWindow | null = null;
                 for (let i = 0; i <= GRID_N; i++) {
                     const r = i * SWEEP_STEP;
                     const info = castModel(T, baseCd, duration, r);
-                    if (isNuke(T, info)) {
+                    if (landsInFinalSecond(T, info)) {
                         if (open && open.casts === info.count && Math.round(open.to / SWEEP_STEP) === i - 1) {
                             open.to = r;
                         } else {
@@ -121,7 +121,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
             }
 
             const now = castModel(T, baseCd, duration, currentR);
-            const inWindow = !isBuff && isNuke(T, now);
+            const inWindow = !isBuff && landsInFinalSecond(T, now);
 
             let nearest: SkillAdvice['nearest'] = null;
             if (!isBuff && !inWindow && windows.length > 0) {
@@ -161,7 +161,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
         // Combined recommendation across DAMAGE skills only
         const dmgSkills = perSkill.filter(s => !s.isBuff && s.baseCd > 0);
         let combined: {
-            allNuke: boolean;
+            allAligned: boolean;
             score: number;
             of: number;
             ranges: { from: number; to: number; totalCasts: number }[];
@@ -175,7 +175,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                 let score = 0, total = 0;
                 for (const s of dmgSkills) {
                     const info = castModel(T, s.baseCd, s.duration, r);
-                    if (isNuke(T, info)) score++;
+                    if (landsInFinalSecond(T, info)) score++;
                     total += info.count;
                 }
                 return { score, total };
@@ -216,7 +216,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                 const recommendedR = currentIsOptimal ? currentR : (best.from + best.to) / 2;
 
                 combined = {
-                    allNuke: maxScore === dmgSkills.length,
+                    allAligned: maxScore === dmgSkills.length,
                     score: maxScore,
                     of: dmgSkills.length,
                     ranges,
@@ -226,7 +226,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                 };
             } else {
                 combined = {
-                    allNuke: false, score: 0, of: dmgSkills.length,
+                    allAligned: false, score: 0, of: dmgSkills.length,
                     ranges: [], best: { from: currentR, to: currentR, totalCasts: 0 },
                     recommendedR: currentR,
                     currentScore: 0
@@ -246,7 +246,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
     const headerStatus = combined === null
         ? null
         : currentOptimal
-            ? { label: combined.allNuke ? 'NUKING' : `${combined.currentScore}/${combined.of} NUKE`, className: 'bg-green-500/15 text-green-400 border-green-500/30' }
+            ? { label: combined.allAligned ? 'ALIGNED' : `${combined.currentScore}/${combined.of} ALIGNED`, className: 'bg-green-500/15 text-green-400 border-green-500/30' }
             : { label: combined.score > 0 ? `GO ${pct(recommendedR)}` : 'NO WINDOW', className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
 
     return (
@@ -258,7 +258,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
             >
                 <div className="flex items-center gap-2">
                     <Timer className="w-4 h-4 text-accent-primary" />
-                    <span className="text-xs font-bold text-text-primary uppercase tracking-wide">Last-Second Nuke</span>
+                    <span className="text-xs font-bold text-text-primary uppercase tracking-wide">Skills Cycle</span>
                     <span className="text-[10px] font-mono text-text-muted">CDR {pct(currentR)}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -320,18 +320,18 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                             ) : (
                                 <>
                                     <span className="font-bold">
-                                        {combined.allNuke
-                                            ? `All ${combined.of} damage skill${combined.of > 1 ? 's' : ''} nuke`
-                                            : `Best compromise: ${combined.score}/${combined.of} damage skills nuke`}
+                                        {combined.allAligned
+                                            ? `All ${combined.of} damage skill${combined.of > 1 ? "s" : ""} land a final cast`
+                                            : `Best compromise: ${combined.score}/${combined.of} damage skills land a final cast`}
                                     </span>
                                     <span className="text-text-secondary"> at </span>
                                     <span className="font-mono font-bold">
                                         {combined.best.from === combined.best.to
                                             ? pct(combined.best.from)
-                                            : `${pct(combined.best.from)}–${pct(combined.best.to)}`}
+                                            : `${pct(combined.best.from)}-${pct(combined.best.to)}`}
                                     </span>
                                     {currentOptimal ? (
-                                        <span> — you are in the window.</span>
+                                        <span>. You are in the window.</span>
                                     ) : (
                                         <span>
                                             {' '}— you are at <span className="font-mono">{pct(currentR)}</span>, adjust by{' '}
@@ -374,7 +374,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                                     ) : (
                                         <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-amber-500/15 text-amber-400 border-amber-500/30">
                                             {s.nearest
-                                                ? `at ${pct(currentR)} → ${s.nearest.delta >= 0 ? '+' : '−'}${pct(Math.abs(s.nearest.delta))} to ${pct(s.nearest.window.from)}–${pct(s.nearest.window.to)}`
+                                                ? `at ${pct(currentR)} → ${s.nearest.delta >= 0 ? '+' : '−'}${pct(Math.abs(s.nearest.delta))} to ${pct(s.nearest.window.from)}-${pct(s.nearest.window.to)}`
                                                 : `no window ≤ ${pct(SWEEP_MAX, 0)}`}
                                             {' '}· last {s.current.last.toFixed(1)}s
                                         </span>
@@ -395,7 +395,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                                                             : 'bg-bg-secondary/60 text-text-secondary border-border/40'
                                                     )}
                                                 >
-                                                    {pct(w.from)}–{pct(w.to)} <span className="opacity-70">({w.casts}x)</span>
+                                                    {pct(w.from)}-{pct(w.to)} <span className="opacity-70">({w.casts}x)</span>
                                                 </span>
                                             );
                                         })}
@@ -442,7 +442,7 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                                 const lastT = times.length > 0 ? times[times.length - 1] : -1;
                                 return (
                                     <div key={s.id} className="flex items-center gap-1.5">
-                                        <span className={cn('w-20 shrink-0 truncate text-right text-[9px] font-bold', `text-rarity-${s.rarity.toLowerCase()}`)}>
+                                        <span className={cn('w-20 shrink-0 whitespace-nowrap overflow-hidden text-clip text-right text-[9px] font-bold', `text-rarity-${s.rarity.toLowerCase()}`)}>
                                             {prettyName(s.id)}
                                         </span>
                                         <div className="relative flex-1 h-5 rounded bg-bg-secondary/70 border border-border/30 overflow-hidden">
@@ -496,8 +496,8 @@ export function NukeAdvisor({ skills }: NukeAdvisorProps) {
                     {/* Model footnote */}
                     <p className="text-[9px] text-text-muted leading-snug">
                         Engine model: first cast at {START_TIME}s (skill startup), then every eff. CD + active duration;
-                        eff. CD = max({MIN_COOLDOWN}s, CD × (1 − reduction)). A skill "nukes" when its final cast lands in
-                        the last second [{(T - 1).toFixed(0)}–{T}s). Sweep: 0–{pct(SWEEP_MAX, 0)} in {pct(SWEEP_STEP)} steps.
+                        eff. CD = max({MIN_COOLDOWN}s, CD × (1 − reduction)). A skill is "aligned" when its final cast lands in
+                        the last second [{(T - 1).toFixed(0)}-{T}s). Sweep: 0-{pct(SWEEP_MAX, 0)} in {pct(SWEEP_STEP)} steps.
                         {configDuration !== null && ` Battle length ${configDuration}s from PvpBaseConfig (PvpMatchTimerSeconds).`}
                     </p>
                 </div>

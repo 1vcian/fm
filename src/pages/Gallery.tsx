@@ -83,7 +83,7 @@ export default function Gallery() {
             list = list.filter(t => t.toLowerCase().includes(lower));
         }
 
-        // Se abbiamo i manifest per la versione attiva
+        // Only when we have the manifests for the active version
         if (md5Manifest[activeVersion]) {
             if (showOnlyChanges && compareVersion && md5Manifest[compareVersion]) {
                 // Filtra solo le differenze (aggiunte, rimosse o modificate)
@@ -206,7 +206,7 @@ export default function Gallery() {
                     <div className="relative w-full md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                         <Input
-                            placeholder="Search textures..."
+                            placeholder="Search textures"
                             className="pl-9 h-10"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -222,7 +222,7 @@ export default function Gallery() {
                             }}
                             className="bg-transparent text-xs font-bold text-text-secondary px-2 py-1 outline-none cursor-pointer hover:text-white transition-colors"
                         >
-                            <option value="">Compare Version...</option>
+                            <option value="">Compare Version</option>
                             {/* Filtriamo mostrando solo le versioni diverse da activeVersion E che hanno il manifest md5 */}
                             {versions
                                 .filter(v => v !== activeVersion && md5Manifest[v] && Object.keys(md5Manifest[v]).length > 0)
@@ -260,7 +260,7 @@ export default function Gallery() {
                         else diffStatus = 'changed';
                     }
 
-                    // Se l'immagine è rimossa, usiamo la source della compareVersion altrimenti usa l'activeVersion
+                    // A removed image has no source in the active version, so fall back to the compared one
                     const previewVersion = diffStatus === 'removed' && compareVersion ? compareVersion : activeVersion;
 
                     return (
@@ -300,7 +300,7 @@ export default function Gallery() {
                                     </div>
                                 )}
                             </div>
-                            <div className={cn("mt-2 text-[10px] font-medium truncate px-1", diffStatus === 'removed' ? "text-red-400/80 line-through" : "text-text-muted")} title={texture}>
+                            <div className={cn("mt-2 text-[10px] font-medium whitespace-nowrap overflow-hidden text-clip px-1", diffStatus === 'removed' ? "text-red-400/80 line-through" : "text-text-muted")} title={texture}>
                                 {texture}
                             </div>
 
@@ -314,7 +314,7 @@ export default function Gallery() {
                                         <Download size={14} />
                                     </Button>
                                 </div>
-                                <span className="text-[10px] font-black text-white uppercase tracking-widest px-2 text-center truncate w-full">
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest px-2 text-center whitespace-nowrap overflow-hidden text-clip w-full">
                                     {texture}
                                 </span>
                             </div>
@@ -336,7 +336,7 @@ export default function Gallery() {
                     <div className="w-full max-w-6xl flex flex-col gap-6" onClick={(e) => e.stopPropagation()}>
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             <div className="min-w-0 text-center lg:text-left">
-                                <h2 className="text-lg md:text-2xl font-black text-white uppercase tracking-tight truncate px-2" title={selectedImage}>
+                                <h2 className="text-lg md:text-2xl font-black text-white uppercase tracking-tight whitespace-nowrap overflow-hidden text-clip px-2" title={selectedImage}>
                                     {selectedImage}
                                 </h2>
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-1">

@@ -224,7 +224,7 @@ export default function MissionSolo() {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-text-muted animate-pulse">
                 <Target className="w-12 h-12 mb-4 opacity-20" />
-                <p>Forging Mission Data...</p>
+                <p>Forging Mission Data</p>
             </div>
         );
     }
@@ -444,13 +444,13 @@ export default function MissionSolo() {
                             ) : (
                                 <Zap className="w-4 h-4 fill-current" />
                             )}
-                            {isSimulatingAll ? 'Simulating...' : 'Simulate All'}
+                            {isSimulatingAll ? 'Simulating' : 'Simulate All'}
                         </button>
 
                         <div className="relative w-full md:w-64">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                             <input
-                                placeholder="Filter missions..."
+                                placeholder="Filter missions"
                                 className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-accent-primary outline-none transition-all"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}

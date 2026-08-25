@@ -71,7 +71,7 @@ export default function ProgressPassWiki() {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-text-muted animate-pulse">
                 <TrendingUp className="w-12 h-12 mb-4 opacity-20" />
-                <p>Loading Progress Pass configurations...</p>
+                <p>Loading Progress Pass configurations</p>
             </div>
         );
     }

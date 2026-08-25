@@ -60,7 +60,7 @@ export const SecondaryStatCard: React.FC<SecondaryStatCardProps> = ({
                 {range && (
                     <div className="flex justify-between text-[8px] text-text-muted uppercase font-bold tracking-tighter">
                         <span>Range</span>
-                        <span>{(range.min * 100).toFixed(1)}% — {(range.max * 100).toFixed(1)}%</span>
+                        <span>{(range.min * 100).toFixed(1)}%. {(range.max * 100).toFixed(1)}%</span>
                     </div>
                 )}
             </div>

@@ -18,7 +18,7 @@ const METRICS: { id: SweepMetric; label: string; icon: typeof Heart; blurb: stri
     },
     {
         id: 'dps', label: 'DPS', icon: Zap,
-        blurb: 'Maximises real-time total DPS — weapon, skill and skill-buff damage on the stepped breakpoint model.'
+        blurb: 'Maximises real-time total DPS. Weapon, skill and skill-buff damage on the stepped breakpoint model.'
     },
     {
         id: 'heal', label: 'HPS', icon: Activity,
@@ -167,7 +167,7 @@ export default function LoadoutOptimizer() {
                     <span className="text-xs text-text-muted">
                         {respectSavedLevels
                             ? "Using each saved build's own level."
-                            : 'Ignoring saved levels — comparing everything at level 1.'}
+                            : 'Ignoring saved levels. Comparing everything at level 1.'}
                     </span>
                 </div>
             </div>
@@ -176,7 +176,7 @@ export default function LoadoutOptimizer() {
             {(!isReady || status !== 'done') && (
                 <div className="bg-bg-card/60 rounded-2xl border border-border p-4 md:p-5 space-y-3">
                     <div className="flex items-center justify-between text-xs text-text-secondary">
-                        <span>{isReady ? `Evaluating ${totalCombos.toLocaleString()} combinations…` : 'Loading game data…'}</span>
+                        <span>{isReady ? `Evaluating ${totalCombos.toLocaleString()} combinations` : 'Loading game data'}</span>
                         <span className="font-mono font-bold text-accent-primary">{progress}%</span>
                     </div>
                     <div className="h-2 bg-bg-input rounded-full overflow-hidden">
@@ -252,7 +252,7 @@ export default function LoadoutOptimizer() {
 
             {status === 'done' && results.length === 0 && (
                 <div className="text-center py-10 bg-bg-input/20 rounded-2xl border border-dashed border-white/10 text-text-muted text-sm italic">
-                    Nothing to optimise — save some pet and mount builds on your profile first.
+                    Nothing to optimise. Save some pet and mount builds on your profile first.
                 </div>
             )}
 

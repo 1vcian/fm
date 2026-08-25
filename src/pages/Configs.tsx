@@ -331,7 +331,7 @@ export default function Configs() {
                     {target.split('\n').map((line, i) => (
                         <div key={i} className="bg-green-500/10 text-green-300 px-2 font-mono text-xs flex">
                             <span className="opacity-50 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                            <span className="whitespace-pre truncate">+ {line}</span>
+                            <span className="whitespace-pre whitespace-nowrap overflow-hidden text-clip">+ {line}</span>
                         </div>
                     ))}
                 </div>
@@ -344,7 +344,7 @@ export default function Configs() {
                     {base.split('\n').map((line, i) => (
                         <div key={i} className="bg-red-500/10 text-red-300 px-2 font-mono text-xs flex">
                             <span className="opacity-50 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                            <span className="whitespace-pre truncate line-through">- {line}</span>
+                            <span className="whitespace-pre whitespace-nowrap overflow-hidden text-clip line-through">- {line}</span>
                         </div>
                     ))}
                 </div>
@@ -367,7 +367,7 @@ export default function Configs() {
                 diffRows.push(
                     <div key={`same-${i}`} className="px-2 font-mono text-xs text-text-secondary flex">
                         <span className="opacity-30 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                        <span className="whitespace-pre truncate">  {searchTerm ? renderHighlightedContentInLine(tLine, searchTerm, matchCounter, (c) => matchCounter = c) : tLine}</span>
+                        <span className="whitespace-pre whitespace-nowrap overflow-hidden text-clip">  {searchTerm ? renderHighlightedContentInLine(tLine, searchTerm, matchCounter, (c) => matchCounter = c) : tLine}</span>
                     </div>
                 );
             } else {
@@ -376,7 +376,7 @@ export default function Configs() {
                     diffRows.push(
                         <div key={`rem-${i}`} className="bg-red-500/10 text-red-300 px-2 font-mono text-xs flex animate-in fade-in slide-in-from-left-1">
                             <span className="opacity-50 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                            <span className="whitespace-pre truncate">- {searchTerm ? renderHighlightedContentInLine(bLine, searchTerm, matchCounter, (c) => matchCounter = c) : bLine}</span>
+                            <span className="whitespace-pre whitespace-nowrap overflow-hidden text-clip">- {searchTerm ? renderHighlightedContentInLine(bLine, searchTerm, matchCounter, (c) => matchCounter = c) : bLine}</span>
                         </div>
                     );
                 }
@@ -385,7 +385,7 @@ export default function Configs() {
                     diffRows.push(
                         <div key={`add-${i}`} className="bg-green-500/10 text-green-300 px-2 font-mono text-xs flex animate-in fade-in slide-in-from-right-1">
                             <span className="opacity-50 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                            <span className="whitespace-pre truncate">+ {searchTerm ? renderHighlightedContentInLine(tLine, searchTerm, matchCounter, (c) => matchCounter = c) : tLine}</span>
+                            <span className="whitespace-pre whitespace-nowrap overflow-hidden text-clip">+ {searchTerm ? renderHighlightedContentInLine(tLine, searchTerm, matchCounter, (c) => matchCounter = c) : tLine}</span>
                         </div>
                     );
                 }
@@ -581,7 +581,7 @@ export default function Configs() {
                     <div className="relative">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                         <Input
-                            placeholder="Global Search..."
+                            placeholder="Global Search"
                             className="pl-9"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -615,12 +615,12 @@ export default function Configs() {
                                     <FileJson className={cn("w-4 h-4 shrink-0 opacity-70", selectedFile === file && "text-accent-primary")} />
                                     <div className="flex flex-col overflow-hidden text-left">
                                         <span className={cn(
-                                            "truncate",
+                                            "whitespace-nowrap overflow-hidden text-clip",
                                             isCompareMode && comparison?.removed.includes(file) && "line-through opacity-50"
                                         )}>
                                             {file.replace('.json', '')}
                                         </span>
-                                        {!hasContent && <span className="text-[10px] text-text-muted italic">Loading...</span>}
+                                        {!hasContent && <span className="text-[10px] text-text-muted italic">Loading</span>}
                                     </div>
                                 </div>
                                 {getFileStatus(file)}
@@ -643,7 +643,7 @@ export default function Configs() {
                             <div className="flex flex-col min-w-0">
                                 <h3 className="font-semibold text-text-primary flex items-center gap-2">
                                     <FileJson className="w-5 h-5 text-accent-tertiary" />
-                                    <span className="truncate">{selectedFile}</span>
+                                    <span className="whitespace-nowrap overflow-hidden text-clip">{selectedFile}</span>
                                 </h3>
                                 {isCompareMode && (
                                     <div className="text-[10px] flex gap-2 mt-0.5">

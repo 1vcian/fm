@@ -182,7 +182,7 @@ export default function Skills() {
                     <div className="relative w-full md:w-40">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                         <Input
-                            placeholder="Search..."
+                            placeholder="Search"
                             className="pl-9"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -224,7 +224,7 @@ export default function Skills() {
             </Card>
 
             {loading ? (
-                <div className="text-center py-12 text-text-muted">Loading Skills...</div>
+                <div className="text-center py-12 text-text-muted">Loading Skills</div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {skills.map(skill => {
@@ -274,7 +274,7 @@ export default function Skills() {
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-text-primary text-lg leading-tight truncate">{skill.type}</h3>
+                                        <h3 className="font-bold text-text-primary text-lg leading-tight whitespace-nowrap overflow-hidden text-clip">{skill.type}</h3>
                                         <span className={cn(
                                             "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-white/5 mt-1 inline-block",
                                             `text-rarity-${skill.rarity.toLowerCase()}`

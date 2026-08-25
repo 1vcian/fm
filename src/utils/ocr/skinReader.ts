@@ -3,7 +3,7 @@
 // A "skin screenshot" is the game's per-slot skin popup: a grey card titled "<Type> Skins"
 // with a grid of skin tiles, plus a WHITE detail card showing the selected skin's name
 // (e.g. "Goldfish"), its bonus ("+6.78% Damage") and — for set skins — the set-bonus line
-// "(Fishbowl Set Bonus 1/3) ...".
+// "(Fishbowl Set Bonus 1/3) ".
 //
 // Individual skin display names ("Goldfish") do NOT exist anywhere in the parsed configs:
 // skins are identified only by {Type, Idx} (SkinsLibrary) and grouped by BaseSetId
@@ -22,6 +22,7 @@ import { cropCanvas, binarize, detectBrightCard, type Rect } from './imagePrep';
 import { ocrPageLines } from './ocrEngine';
 import { normalizeName, similarity, bestMatch } from './parse';
 import { splitCamel } from './gameDictionary';
+import { countStars } from './starCounter';
 import type { GameDictionaries } from './gameLocalization';
 import type { DetectedSkinEquip } from './readerTypes';
 
@@ -197,6 +198,96 @@ function detectSkinDetailCard(src: HTMLCanvasElement): Rect | null {
     return { x: xMin, y: y0, w: xMax - xMin, h: y1 - y0 };
 }
 
+// ---- Outline-based tile localisation (colour-invariant; see detectOutlinedTile).
+// Every gate below is a fraction of the detected card, so nothing here is a pixel literal.
+const INK_PCTL = 0.99;      // luminance percentile taken as the card's own "bright"
+const INK_FRAC = 0.65;      // ink = luminance < this * bright (measured safe over 0.55..0.75)
+const TILE_W_MIN = 0.08, TILE_W_MAX = 0.45;   // tile side as a fraction of card width
+const TILE_H_MIN = 0.10, TILE_H_MAX = 0.90;   // outline bbox height as a fraction of card height
+const TILE_AR_LO = 0.55, TILE_AR_HI = 1.45;   // square-ish (stars/pill overhang stretch it)
+
+/**
+ * Locate the SUBJECT TILE inside a popup card, by its outline instead of its fill.
+ *
+ * The existing tile finders (imagePrep.findColoredTiles / detectPopupTile / findStarTiles) all
+ * key on a bright SATURATED fill, because an item tile is age-coloured and a pet/mount tile is
+ * rarity-coloured. A skin tile is neither — it is a near-white tile on a white card — so those
+ * detectors return nothing usable (measured on the real 3-star skin fixture: detectPopupTile =
+ * null, detectUnitTile = a 37x37 fragment of the weapon art, findStarTiles[0] = an unrelated blob)
+ * and the star counter never gets a tile rect to work with. That, not the gold isolation, is why
+ * skin popups read 0 stars: handed the right rect, the topology counter already returned 3.
+ *
+ * What every tile in this game DOES share, whatever colour the game ships next, is the shape:
+ * a rounded square drawn with a near-black outline. So threshold the card at a fraction of its
+ * OWN bright level (invariant to the card and tile colours), take 8-connected components of that
+ * ink, and keep the biggest square-ish one whose side is a plausible fraction of the card. The
+ * "Lv." pill and the ascension stars hang below the frame, so the component's WIDTH is the honest
+ * measure of the tile: the rect is squared off from it (tiles are square).
+ *
+ * Returns a rect in SOURCE px, or null when the card has no tile-shaped outline in it.
+ */
+export function detectOutlinedTile(src: HTMLCanvasElement, card: Rect): Rect | null {
+    const c = clampRect(card, src.width, src.height);
+    if (c.w < 16 || c.h < 16) return null;
+    const px = src.getContext('2d', { willReadFrequently: true })!.getImageData(c.x, c.y, c.w, c.h).data;
+    const n = c.w * c.h;
+    const gray = new Uint8Array(n);
+    const hist = new Int32Array(256);
+    for (let i = 0, p = 0; p < n; i += 4, p++) {
+        const g = Math.min(255, Math.round(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]));
+        gray[p] = g; hist[g]++;
+    }
+    // card's own bright level (99th pct) -> "ink" is anything well below it
+    let acc = 0, bright = 255;
+    for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= INK_PCTL * n) { bright = v; break; } }
+    const inkMax = INK_FRAC * bright;
+
+    // 8-connected components of the ink, iterative (an outline ring can be thousands of px)
+    const seen = new Uint8Array(n);
+    const stack = new Int32Array(n);
+    let best: Rect | null = null, bestArea = 0;
+    for (let s0 = 0; s0 < n; s0++) {
+        if (seen[s0] || gray[s0] >= inkMax) continue;
+        let top = 0;
+        stack[top++] = s0; seen[s0] = 1;
+        let minx = s0 % c.w, maxx = minx, miny = (s0 / c.w) | 0, maxy = miny;
+        while (top > 0) {
+            const p = stack[--top], x = p % c.w, y = (p / c.w) | 0;
+            if (x < minx) minx = x; if (x > maxx) maxx = x;
+            if (y < miny) miny = y; if (y > maxy) maxy = y;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+                const nx = x + dx, ny = y + dy;
+                if (nx < 0 || nx >= c.w || ny < 0 || ny >= c.h) continue;
+                const q = ny * c.w + nx;
+                if (!seen[q] && gray[q] < inkMax) { seen[q] = 1; stack[top++] = q; }
+            }
+        }
+        const bw = maxx - minx + 1, bh = maxy - miny + 1;
+        // gates are all fractions of the CARD, so they hold on any device size
+        if (bw < TILE_W_MIN * c.w || bw > TILE_W_MAX * c.w) continue;
+        if (bh < TILE_H_MIN * c.h || bh > TILE_H_MAX * c.h) continue;
+        const ar = bw / bh;
+        if (ar < TILE_AR_LO || ar > TILE_AR_HI) continue;
+        // the round close (X) button straddles the card's bottom-centre edge and is square too —
+        // the same exclusion imagePrep's tile finders apply
+        const cxf = (minx + bw / 2) / c.w, cyf = (miny + bh / 2) / c.h;
+        if (cyf > 0.85 && Math.abs(cxf - 0.5) < 0.14) continue;
+        if (bw * bh > bestArea) { bestArea = bw * bh; best = { x: c.x + minx, y: c.y + miny, w: bw, h: bw }; }
+    }
+    return best;
+}
+
+/** The white detail card of a skin popup, with the generic fallbacks readSkin uses. */
+function skinCard(src: HTMLCanvasElement): Rect | null {
+    return detectSkinDetailCard(src) ?? detectBrightCard(src);
+}
+
+/** The skin tile of a skin popup (see detectOutlinedTile), or null. */
+export function detectSkinTile(src: HTMLCanvasElement): Rect | null {
+    const card = skinCard(src);
+    return card ? detectOutlinedTile(src, card) : null;
+}
+
 /**
  * Prepare the popup-title band for OCR. The detail card dims everything behind it, so the
  * outlined title ends up barely brighter than the popup's grey background (plain thresholds
@@ -254,6 +345,16 @@ function prepareTitleBand(src: HTMLCanvasElement, rect: Rect): HTMLCanvasElement
     return scale > 1 ? cropCanvas(out, { x: 0, y: 0, w: ow, h: oh }, scale) : out;
 }
 
+/** A skin read plus the ascension stars on its tile. The stars belong to the FORGE (they are the
+ *  same 0..3 pips every item/pet/mount tile carries), so they are reported next to the skin
+ *  rather than inside it — DetectedSkinEquip itself is shared with the profile-writing path. */
+export interface DetectedSkinRead extends DetectedSkinEquip {
+    /** 0..3 ascension stars read off the skin tile, or null when the tile was not found. */
+    stars: number | null;
+    /** The skin tile the stars were counted in (evidence / debugging). */
+    tile?: Rect;
+}
+
 /**
  * Read one skin-popup screenshot. Returns the detected skin (resolved to {Type, Idx} when the
  * set-bonus line + popup title identify it) with a crop of the white detail card for the modal.
@@ -263,15 +364,15 @@ export async function readSkin(
     src: HTMLCanvasElement,
     skinDict: SkinDict,
     dicts?: GameDictionaries,
-): Promise<DetectedSkinEquip> {
+): Promise<DetectedSkinRead> {
     const W = src.width, H = src.height;
     const warnings: string[] = [];
 
     // 1. Locate the white detail card (name + bonuses). Fallback: generic lower-middle band.
-    let card = detectSkinDetailCard(src) ?? detectBrightCard(src);
+    let card = skinCard(src);
     if (!card) {
         card = clampRect({ x: W * 0.05, y: H * 0.46, w: W * 0.9, h: H * 0.22 }, W, H);
-        warnings.push('White detail card not found — used a default region.');
+        warnings.push('White detail card not found. Used a default region.');
     }
     card = clampRect(card, W, H);
 
@@ -346,7 +447,7 @@ export async function readSkin(
             if (titleCanvas) slot = slotFromText(await ocrPageLines(titleCanvas));
         } catch { /* title unreadable */ }
     }
-    if (!slot) warnings.push('Popup title not readable — confirm the slot.');
+    if (!slot) warnings.push('Popup title not readable. Confirm the slot.');
 
     // 5. Resolve (setId, type) -> idx.
     const skinType = slot ? SLOT_TO_SKIN_TYPE[slot] : undefined;
@@ -364,13 +465,23 @@ export async function readSkin(
     if (!entry) {
         warnings.push(setId
             ? `Matched set "${setId}" but no ${skinType ?? 'known'} skin exists in it.`
-            : 'Skin not identified — standalone skins have no set line and cannot be matched by name.');
+            : 'Skin not identified. Standalone skins have no set line and cannot be matched by name.');
     }
+
+    // 6. Ascension stars on the skin tile (forge ascension). The tile is found by its OUTLINE,
+    //    since a skin tile has no saturated fill for the colour-keyed tile finders to latch onto.
+    const tile = detectOutlinedTile(src, card);
+    let stars: number | null = null;
+    if (tile) {
+        try { stars = countStars(src, tile); } catch { stars = null; }
+    }
+    if (stars === null) warnings.push('Skin tile not found. Ascension stars not read.');
 
     const resolvedSlot = entry ? (SKIN_TYPE_TO_SLOT[entry.type] ?? slot ?? undefined) : (slot ?? undefined);
     const confidence = entry ? (slot ? 0.9 : 0.6) : 0.3;
 
     return {
+        stars, tile: tile ?? undefined,
         slot: resolvedSlot,
         skinType: entry?.type ?? skinType,
         skinIdx: entry?.idx,

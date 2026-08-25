@@ -30,7 +30,7 @@ export function SandboxPanel({ fields, onReset, children, isModified }: { fields
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-purple-300 text-xs font-black uppercase tracking-wider">
                     <FlaskConical size={14} />
-                    Sandbox — simulate tree bonuses
+                    Sandbox. Simulate tree bonuses
                 </div>
                 {modified && (
                     <button

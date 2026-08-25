@@ -1,3 +1,5 @@
+import { newProfileUuid } from '../services/profileIdMigration';
+
 export interface ItemSlot {
     age: number; // Tier/Level bracket (corresponds to "Age" in JSON)
     idx: number; // Index within the tier (corresponds to "Idx" in JSON)
@@ -158,9 +160,19 @@ export interface UserProfile {
     };
 }
 
-// Generate unique ID
+/**
+ * Generate a unique profile id.
+ *
+ * This is a **UUID**, not the old `profile_<epoch>_<random>` string, because the id doubles as
+ * the primary key of `public.profiles`, whose `id` column is `uuid` — the old format made every
+ * first sync fail with `22P02 invalid input syntax for type uuid` (BACKEND_PLAN.md §7b).
+ * Existing local profiles are rewritten once by `ensureProfileIdsMigrated()`
+ * (`src/services/profileIdMigration.ts`), which also documents why renaming ids is safe.
+ *
+ * The generator lives in that module so the migration and the mint can never disagree.
+ */
 export function generateProfileId(): string {
-    return `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return newProfileUuid();
 }
 
 export const INITIAL_PROFILE: UserProfile = {

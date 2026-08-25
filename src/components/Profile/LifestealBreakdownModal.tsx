@@ -58,8 +58,8 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                         <div className="flex items-center gap-2 md:gap-3 min-w-0">
                             <Heart className="w-5 h-5 md:w-6 md:h-6 text-purple-400 shrink-0" />
                             <div className="min-w-0">
-                                <h3 className="text-base md:text-xl font-bold text-white tracking-tight truncate">Lifesteal/sec Breakdown</h3>
-                                <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] truncate">Math Analysis</p>
+                                <h3 className="text-base md:text-xl font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-clip">Lifesteal/sec Breakdown</h3>
+                                <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden text-clip">Math Analysis</p>
                             </div>
                         </div>
 
@@ -131,7 +131,7 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                                         <span className="text-base md:text-lg font-mono font-bold text-white break-all">{formatVal(sourceWeaponDps)}</span>
                                     </div>
                                     <div className="pt-3 border-t border-white/5 text-[9px] md:text-[10px] text-white/30 italic leading-relaxed">
-                                        Lifesteal applies to weapon hits only — skill damage does not lifesteal.
+                                        Lifesteal applies to weapon hits only. Skill damage does not lifesteal.
                                     </div>
                                 </div>
 
@@ -197,7 +197,7 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                         {blockChance > 0 && (
                             <div className="flex flex-col min-w-0">
                                 <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Effective (Block-Amplified)</span>
-                                <span className="text-sm md:text-xl font-bold text-purple-300 leading-none truncate">
+                                <span className="text-sm md:text-xl font-bold text-purple-300 leading-none whitespace-nowrap overflow-hidden text-clip">
                                     {formatVal(effectiveLifesteal)}
                                 </span>
                             </div>

@@ -61,8 +61,34 @@ export interface BattleConfig {
 
 export interface AgeScaling {
     AgeIdx: number;
-    Damage: { Raw: number };
-    Health: { Raw: number };
+    /** Either the legacy `{ Raw }` wrapper or, from 2026_08_21 on, a plain number. See ageScale. */
+    Damage: { Raw: number } | number;
+    Health: { Raw: number } | number;
+}
+
+/**
+ * Read one enemy age-scaling magnitude, whichever of the two shapes the config uses.
+ *
+ * Up to 2026_07 the extraction wrote these as `{"Damage": {"Raw": 500}}`. From 2026_08_21, the
+ * build parsed with the fixed Metaplay parser, they are plain numbers: `{"Damage": 10.0}`. Reading
+ * `.Raw` off a number gives `undefined`, which reached the engine as an enemy with no health at
+ * all, so every battle ran to its tick cap and the progress predictor never produced a result.
+ *
+ * The two forms differ by a constant factor of 50, measured across all 11 ages for both fields:
+ *
+ *     age 0    Raw 500        plain 10.0        ratio 50.0
+ *     age 5    Raw 256000     plain 5120.0      ratio 50.0
+ *     age 10   Raw 786432000  plain 15728640.0  ratio 50.0
+ *
+ * The engine is calibrated against the legacy magnitude, so the plain form is brought up to it
+ * rather than the other way round. Anything else silently makes every enemy 50 times weaker.
+ */
+const AGE_SCALE_FIXED_POINT = 50;
+
+export function ageScale(value: { Raw: number } | number | null | undefined): number {
+    if (typeof value === 'number') return value * AGE_SCALE_FIXED_POINT;
+    if (value && typeof value.Raw === 'number') return value.Raw;
+    return 0;
 }
 
 export interface WeaponInfo {
@@ -143,7 +169,7 @@ export function calculateEnemyHp(
     _weaponInfo: WeaponInfo | null,
     _libs: LibraryData
 ): number {
-    const baseHp = ageScaling.Health.Raw;
+    const baseHp = ageScale(ageScaling.Health);
     return baseHp;
 }
 
@@ -155,7 +181,7 @@ export function calculateEnemyDmg(
     enemyRangedMulti: number,
     _libs: LibraryData
 ): number {
-    const baseDmg = ageScaling.Damage.Raw;
+    const baseDmg = ageScale(ageScaling.Damage);
     const atkRange = weaponInfo?.AttackRange ?? 0;
     if (weaponInfo && atkRange > 1.0) {
         return baseDmg * enemyRangedMulti;

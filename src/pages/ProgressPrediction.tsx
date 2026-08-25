@@ -497,7 +497,7 @@ function MainBattleView({
                             </div>
                         )}
                         <div className="text-xs text-gray-400">
-                            {maxBeatable ? `Max: ${maxBeatable.difficulty === 1 ? 'Hard' : 'Normal'} ${maxBeatable.ageIdx + 1}-${maxBeatable.battleIdx + 1}` : 'Calculating...'}
+                            {maxBeatable ? `Max: ${maxBeatable.difficulty === 1 ? 'Hard' : 'Normal'} ${maxBeatable.ageIdx + 1}-${maxBeatable.battleIdx + 1}` : 'Calculating'}
                         </div>
                     </div>
                 </div>
@@ -594,7 +594,7 @@ function DungeonView({
     const [isRecalculating, setIsRecalculating] = useState(false);
 
     // Find max level on mount
-    // In DungeonView, trova questo useEffect e sostituiscilo:
+    // In DungeonView, find this useEffect and replace it:
 
     // Find max level on mount
     useEffect(() => {
@@ -785,7 +785,7 @@ function DungeonView({
                             {isSimulating && (
                                 <div className="flex items-center gap-2 text-[10px] text-accent-primary animate-pulse bg-surface-secondary px-2 py-1 rounded-full border border-accent-primary/20">
                                     <div className="w-2 h-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                                    Simulating 1,000+ battles...
+                                    Simulating 1,000+ battles
                                 </div>
                             )}
                             <button onClick={() => setSelectedLevel(maxLevel)} className="text-sm text-accent-primary hover:underline flex items-center gap-1">
@@ -907,7 +907,7 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
                                 {isRecalculating ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                        ...
+                                        
                                     </>
                                 ) : (
                                     <>
@@ -1002,7 +1002,7 @@ export default function ProgressPrediction() {
             <div className="max-w-7xl mx-auto flex items-center justify-center h-[60vh]">
                 <div className="text-center space-y-4">
                     <div className="animate-spin w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full mx-auto" />
-                    <p className="text-text-secondary">Loading game data...</p>
+                    <p className="text-text-secondary">Loading game data</p>
                 </div>
             </div>
         );
@@ -1161,7 +1161,7 @@ export default function ProgressPrediction() {
                                 </div>
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2 text-accent-primary font-bold text-lg leading-tight">
-                                        Calculating Predictions...
+                                        Calculating Predictions
                                     </div>
                                     <div className="w-64 h-2 bg-surface-tertiary rounded-full mt-2 overflow-hidden border border-white/5">
                                         <div 
@@ -1170,7 +1170,7 @@ export default function ProgressPrediction() {
                                         />
                                     </div>
                                     <div className="text-[10px] text-text-muted mt-1.5 uppercase font-bold tracking-widest flex justify-between">
-                                        <span>Analyzing strategy...</span>
+                                        <span>Analyzing strategy</span>
                                         <span>{simProgress.current} / {simProgress.total}</span>
                                     </div>
                                 </div>

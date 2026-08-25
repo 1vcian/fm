@@ -169,7 +169,7 @@ export default function SecondaryStatsWiki() {
                                 <tr>
                                     <td colSpan={5} className="px-6 py-20 text-center">
                                         <RefreshCw className="w-8 h-8 animate-spin mx-auto text-accent-primary opacity-20" />
-                                        <p className="text-sm text-text-muted mt-2">Loading data...</p>
+                                        <p className="text-sm text-text-muted mt-2">Loading data</p>
                                     </td>
                                 </tr>
                             ) : (

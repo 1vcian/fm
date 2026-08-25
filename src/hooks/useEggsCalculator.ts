@@ -36,7 +36,6 @@ export function useEggsCalculator() {
     const { data: guildWarConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: techTreeMapping } = useGameData<any>('TechTreeMapping.json');
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
-    const { data: dungeonEggData } = useGameData<any>('DungeonRewardEggLibrary.json');
     const { data: petConfig } = useGameData<any>('PetBaseConfig.json');
     const { profile, updateNestedProfile } = useProfile();
     const { treeMode } = useTreeMode();
@@ -170,26 +169,23 @@ export function useEggsCalculator() {
         return times;
     }, [eggLibrary, profile, techTreeLibrary, techTreeMapping, treeMode]);
 
-    // --- Drop Rate Logic (Dynamic from Stage) ---
-    const stageDropRates = useMemo(() => {
-        if (!dungeonEggData) return [];
-
-        // Data index is (Level - 1) string
-        const levelKey = (selectedStage - 1).toString();
-        const dropRates = dungeonEggData[levelKey];
-
-        if (!dropRates) return [];
-
-        const tiers = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
-
-        return tiers.map(tier => {
-            const probability = dropRates[tier] || 0;
-            return {
-                tier,
-                probability
-            };
-        }).filter(item => item.probability > 0 || item.tier === 'Common'); // Keep at least one or filter zeros? Keeping zeros might be informative.
-    }, [dungeonEggData, selectedStage]);
+    /*
+     * Per-stage egg drop rates are gone, and not by omission.
+     *
+     * Up to the 2026_04_09 extraction the game shipped DungeonRewardEggLibrary.json: 100 levels,
+     * each with a Common/Rare/Epic/Legendary/Ultimate/Mythic probability, because the egg dungeon
+     * paid out an egg of a random rarity. No extraction since has contained that file, so this hook
+     * spent every render since asking for a config that was not there and handing back an empty
+     * list, which nothing read.
+     *
+     * The egg dungeon now pays a plain currency instead: DungeonRewardLibrary.json prices its "Pet"
+     * entry in Eggshells (200 base, +0.65 per level), which pages/Dungeons.tsx already reads with
+     * every other dungeon's reward. Rarity has moved to the point of spending, in
+     * EggSummonConfig.json, which useEggSummonCalculator already owns.
+     *
+     * So there is nothing to re-point this at. Reviving it against the summon table would put
+     * summon odds on screen under the words "drop rate", which is a different number.
+     */
 
     // --- War Logic ---
     // Clan tech tree boosts to war points earned (already effective values, see useGameData).
@@ -425,7 +421,6 @@ export function useEggsCalculator() {
         // Info / Manual
         selectedStage, setSelectedStage,
         dungeonKeys, setDungeonKeys,
-        stageDropRates,
         todayTotalDrops: dungeonKeys * (2 + eggDungeonBonus), // Corrected Formula: Base(2) + Bonus
         hatchingTimes: hatchValuesProfile, // Use real profile times now
         warPoints,

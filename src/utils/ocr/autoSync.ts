@@ -5,7 +5,7 @@
 import type { UserProfile, ItemSlot, PetSlot, MountSlot } from '../../types/Profile';
 import { extractScreenshot, type ScreenExtraction, type DetItem, type DetUnit, type DetSubstat } from './extract';
 import { readScreenshots } from './autoSyncPipeline';
-import type { ScreenReadResult, Substat, CurrencyCrops } from './readerTypes';
+import type { ScreenReadResult, Substat, CurrencyCrops, ForgeAscensionRead } from './readerTypes';
 import { setOcrProgress, type OcrProgress } from './ocrEngine';
 import type { GameDictionaries } from './gameLocalization';
 import { RARITY_NAMES } from './templateParams';
@@ -68,7 +68,32 @@ export interface ChangeRow {
     cropUrl?: string;   // picture of what we read (for the visual modal)
     slot?: string;      // items: the chosen target slot (editable)
     detected?: Detected;
+    /** Name to give the auto-saved preset/bookmark (see planPresetSaves). Undefined = no preset. */
+    presetName?: string;
 }
+
+/**
+ * A preset/bookmark that applying the accepted rows would ADD (never a duplicate, never an
+ * overwrite). Used by the diff UI to warn "will also save to presets" BEFORE applying, and by
+ * applyChanges to actually write them. Only the three collections the app already has a
+ * "saved preset" concept for: savedItems[slot], pets.savedBuilds, mount.savedBuilds.
+ * Skins live ON an item, so a skin change saves the item (skin included) to savedItems.
+ */
+export interface PresetSave {
+    kind: 'item' | 'pet' | 'mount';
+    slot?: string;      // items only: the target equipment slot
+    key?: string;       // pets only: the `${rarity}_${id}` collection key
+    name: string;       // customName written on the preset
+    rowIds: string[];   // rows that produced it (so the UI can badge them)
+}
+
+/** Preset identity checks — the SAME fuzzy match the panels use, so we never duplicate their rows. */
+const sameSavedItem = (a: ItemSlot, b: ItemSlot) =>
+    a.age === b.age && a.idx === b.idx && a.level === b.level &&
+    JSON.stringify(a.secondaryStats) === JSON.stringify(b.secondaryStats);
+const sameSavedUnit = (a: { id: number; rarity: string; level: number; secondaryStats?: any }, b: { id: number; rarity: string; level: number; secondaryStats?: any }) =>
+    a.id === b.id && a.rarity === b.rarity && a.level === b.level &&
+    JSON.stringify(a.secondaryStats) === JSON.stringify(b.secondaryStats);
 
 export const ITEM_SLOTS = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
 
@@ -118,7 +143,7 @@ function toItemSlot(d: DetItem, existing: ItemSlot | null): ItemSlot {
         level: d.level ?? existing?.level ?? 1,
         rarity: existing?.rarity ?? 'Common',
         secondaryStats: d.substats.filter(s => s.statId).map(s => ({ statId: s.statId!, value: s.value })),
-        skin: existing?.skin, // OCR doesn't read skins here — keep whatever is already set
+        skin: existing?.skin, // OCR doesn't read skins here. Keep whatever is already set
     };
 }
 
@@ -195,13 +220,14 @@ export function buildChanges(extractions: ScreenExtraction[], profile: UserProfi
             const cur = (profile.items as any)[slot] as ItemSlot | null;
             rows.push({
                 id: `item-${n++}`, category: 'item',
-                label: d.name || 'Item — confirm slot',
+                label: d.name || 'Item. Confirm slot',
                 detail: `Lv.${newItem.level} · ${substatSummary(newItem.secondaryStats)}`,
                 action: cur ? 'replace' : 'add', confidence: d.confidence,
                 before: cur ? `Lv.${cur.level} · ${substatSummary(cur.secondaryStats)}` : null,
                 after: `Lv.${newItem.level} · ${substatSummary(newItem.secondaryStats)}`,
                 accepted: d.confidence >= ACCEPT_THRESHOLD,
                 warnings: ex.warnings, patch, cropUrl: d.cropUrl, slot, detected,
+                presetName: d.name || undefined,
             });
         }
         // --- pets / mounts ---
@@ -226,6 +252,7 @@ export function buildChanges(extractions: ScreenExtraction[], profile: UserProfi
                     patch: { t: 'pet', key, slotIndex, pet },
                     cropUrl: d.cropUrl,
                     detected: { rarity: d.rarity, id: d.id, level: d.level, stars: d.stars, substats: d.substats },
+                    presetName: d.name || `${d.rarity} Pet #${d.id}`,
                 });
             } else {
                 const cur = profile.mount.active;
@@ -243,6 +270,7 @@ export function buildChanges(extractions: ScreenExtraction[], profile: UserProfi
                     patch: { t: 'mount', mount },
                     cropUrl: d.cropUrl,
                     detected: { rarity: d.rarity, id: d.id, level: d.level, stars: d.stars, substats: d.substats },
+                    presetName: d.name || `${d.rarity} Mount #${d.id}`,
                 });
             }
         }
@@ -310,13 +338,67 @@ function getMiscPath(misc: UserProfile['misc'], path: string): unknown {
     return path.split('.').reduce<any>((acc, k) => (acc == null ? undefined : acc[k]), misc);
 }
 
+/** One numeric read of the same field from one screenshot, with the crop it came from. */
+interface NumRead { value: number; cropUrl?: string }
+
+/**
+ * Consensus over repeated reads of ONE field across a batch of screenshots: the modal value, with
+ * the agreement and the crop of a screenshot that voted for it. Ties go to the LAST reader in the
+ * list — for a counter like hammers the later screenshot is the more recent state, and for a level
+ * the two candidates are adjacent anyway. Returns null for an empty list.
+ */
+function mergeByMajority(reads: NumRead[]): { value: number; agree: number; votes: number; cropUrl?: string } | null {
+    if (!reads.length) return null;
+    const tally = new Map<number, number>();
+    for (const r of reads) tally.set(r.value, (tally.get(r.value) ?? 0) + 1);
+    let value = reads[reads.length - 1].value, agree = 0;
+    for (const [v, c] of tally) if (c > agree || (c === agree && v === reads[reads.length - 1].value)) { value = v; agree = c; }
+    const src = reads.filter(r => r.value === value).find(r => r.cropUrl) ?? reads.find(r => r.value === value);
+    return { value, agree, votes: reads.length, cropUrl: src?.cropUrl };
+}
+
+/** "★★" / "none" — how an ascension count reads in a diff row. */
+function starText(n: number): string { return n > 0 ? '★'.repeat(n) : 'none'; }
+
+/** Agreement below this means the item tiles disagreed badly: present the value as one to check,
+ *  never as a confident reading. A single tile (one item popup) has agreement 1 by construction —
+ *  the vote COUNT is what discounts it, through VOTE_WEIGHT. */
+const FORGE_AGREE_OK = 0.7;
+/** Confidence multiplier by how many item tiles voted (1 tile = one item popup; 3+ = a full card). */
+const VOTE_WEIGHT: Record<number, number> = { 1: 0.7, 2: 0.85 };
+/** A reading taken off a player profile card can never exceed this: the classifier cannot tell the
+ *  user's own card from an opponent's, so the value is a suggestion to confirm, not a reading. */
+const FORGE_SOFT_MAX_CONF = 0.35;
+
+/** A read taken from a popup on a player profile card cannot say whose card it is (the frame has
+ *  no currency header — see ClassifyResult.authoritative). Such a row is offered with this warning
+ *  and never pre-accepted, exactly like the forge-ascension lattice read. */
+const CARD_READ_WARNING = 'Read from a detail popup on a player profile card. The reader cannot tell '
+    + 'your own card from an opponent\'s. Confirm this is yours before accepting.';
+/** Whether one screenshot's subject may be pre-accepted at all. */
+const mayAccept = (res: ScreenReadResult): boolean => res.authoritative !== false;
+/** A profile-card read can never exceed this confidence — the same ceiling the forge-ascension
+ *  lattice read uses. Without it the row renders as a certainty the reader cannot back: the name
+ *  and stats may be read perfectly and still belong to somebody else's account. */
+const CARD_MAX_CONF = 0.35;
+const cardConf = (res: ScreenReadResult, conf: number): number =>
+    res.authoritative === false ? Math.min(conf, CARD_MAX_CONF) : conf;
+/** `res.warnings` plus the profile-card caveat when the read was not authoritative. */
+const withCardWarning = (res: ScreenReadResult, extra: string[] = []): string[] =>
+    res.authoritative === false ? [...res.warnings, ...extra, CARD_READ_WARNING] : [...res.warnings, ...extra];
+
 /** Diff ScreenReadResult[] (new template pipeline) against the profile into reviewable rows. */
 export function buildChangesFromReads(results: ScreenReadResult[], profile: UserProfile): ChangeRow[] {
     const rows: ChangeRow[] = [];
     let n = 0;
     const seenCurrency = new Set<string>();
     const petSlotsTaken = new Set<number>();
-    let seenForgeLevel = false, seenHammers = false;
+    // Cross-screenshot reads, merged by consensus after the loop (see mergeByMajority / the forge
+    // ascension block). Never first-wins: a batch of item popups re-reads the same forge row on
+    // every shot, and one bad OCR pass must not be able to outvote the rest.
+    const forgeLevelReads: NumRead[] = [];
+    const hammerReads: NumRead[] = [];
+    const forgeAscReads: ForgeAscensionRead[] = [];
 
     for (const res of results) {
         // --- items --- (always shown so the user can confirm the slot visually)
@@ -334,13 +416,14 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
             const cur = (profile.items as any)[slot] as ItemSlot | null;
             rows.push({
                 id: `item-${n++}`, category: 'item',
-                label: d.name || 'Item — confirm slot',
+                label: d.name || 'Item. Confirm slot',
                 detail: `Lv.${newItem.level} · ${substatSummary(newItem.secondaryStats)}`,
-                action: cur ? 'replace' : 'add', confidence: d.confidence,
+                action: cur ? 'replace' : 'add', confidence: cardConf(res, d.confidence),
                 before: cur ? `Lv.${cur.level} · ${substatSummary(cur.secondaryStats)}` : null,
                 after: `Lv.${newItem.level} · ${substatSummary(newItem.secondaryStats)}`,
-                accepted: d.confidence >= ACCEPT_THRESHOLD,
-                warnings: res.warnings, patch, cropUrl: d.cropUrl, slot, detected,
+                accepted: mayAccept(res) && d.confidence >= ACCEPT_THRESHOLD,
+                warnings: withCardWarning(res), patch, cropUrl: d.cropUrl, slot, detected,
+                presetName: d.name || undefined,
             });
         }
         // --- pets / mounts ---
@@ -371,17 +454,18 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
                     label: `Pet: ${d.name || key} (${rarity})`,
                     detail: `Lv.${pet.level} · ${substatSummary(pet.secondaryStats)}`,
                     action: curSlot ? 'update' : 'add',
-                    confidence: d.confidence,
+                    confidence: cardConf(res, d.confidence),
                     before: curSlot ? `Lv.${curSlot.level} · ${substatSummary(curSlot.secondaryStats || [])}` : null,
                     after: `Lv.${pet.level} · ${substatSummary(pet.secondaryStats || [])}`,
-                    accepted: d.confidence >= ACCEPT_THRESHOLD,
-                    warnings: res.warnings,
+                    accepted: mayAccept(res) && d.confidence >= ACCEPT_THRESHOLD,
+                    warnings: withCardWarning(res),
                     patch: { t: 'pet', key, slotIndex, pet },
                     cropUrl: d.cropUrl,
                     detected: {
                         rarity, id, level: d.level, stars: d.stars, substats: detSubs,
                         levelCropUrl: d.levelCropUrl, mainCropUrl: d.mainStat?.cropUrl,
                     },
+                    presetName: d.name || `${rarity} Pet #${id}`,
                 });
             } else {
                 const cur = profile.mount.active;
@@ -400,17 +484,18 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
                     label: `Mount: ${d.name || `${rarity} #${id}`}`,
                     detail: `Lv.${mount.level} · ${substatSummary(mount.secondaryStats || [])}`,
                     action: cur ? 'replace' : 'add',
-                    confidence: d.confidence,
+                    confidence: cardConf(res, d.confidence),
                     before: cur ? `Lv.${cur.level} · ${substatSummary(cur.secondaryStats || [])}` : null,
                     after: `Lv.${mount.level} · ${substatSummary(mount.secondaryStats || [])}`,
-                    accepted: d.confidence >= ACCEPT_THRESHOLD,
-                    warnings: res.warnings,
+                    accepted: mayAccept(res) && d.confidence >= ACCEPT_THRESHOLD,
+                    warnings: withCardWarning(res),
                     patch: { t: 'mount', mount },
                     cropUrl: d.cropUrl,
                     detected: {
                         rarity, id, level: d.level, stars: d.stars, substats: detSubs,
                         levelCropUrl: d.levelCropUrl, mainCropUrl: d.mainStat?.cropUrl,
                     },
+                    presetName: d.name || `${rarity} Mount #${id}`,
                 });
             }
         }
@@ -427,7 +512,9 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
                 const star = (v: number) => v > 0 ? ` ★${v}` : '';
                 rows.push({
                     id: `skill-${n++}`, category: 'skill',
-                    label: splitCamel(sk.skillId),
+                    // NEVER empty: a nameless diff row is unreviewable. splitCamel can return ''
+                    // for an odd/blank skillId, so fall back to the raw id and then to 'Skill'.
+                    label: splitCamel(sk.skillId) || sk.skillId || 'Skill',
                     detail: `Lv.${cur}${star(curAsc)} → Lv.${sk.level}${star(asc ?? curAsc)}`,
                     action: cur ? 'update' : 'add',
                     confidence: res.confidence || 0.5,
@@ -450,62 +537,65 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
             const statsRec: Record<string, number> = {};
             for (const s of d.stats) statsRec[s.statType] = s.value;
             const skin = { idx: skinIdx, type: d.skinType, stats: statsRec };
-            const warnings = [...res.warnings];
-            if (!cur) warnings.push(`No ${slot} item in the profile — the skin is applied to the slot's item, sync the item first.`);
+            const extra: string[] = [];
+            if (!cur) extra.push(`No ${slot} item in the profile. The skin is applied to the slot's item, sync the item first.`);
             rows.push({
                 id: `skinEquip-${n++}`, category: 'skinEquip',
                 label: `Skin: ${d.name || `${d.setId ?? ''} ${d.skinType ?? ''}`.trim() || `#${d.skinIdx}`}`,
                 detail: skinSummary(skin),
                 action: cur?.skin ? 'replace' : 'add',
-                confidence: d.confidence,
+                confidence: cardConf(res, d.confidence),
                 before: cur ? skinSummary(cur.skin) : null,
                 after: skinSummary(skin),
-                accepted: !!cur && d.confidence >= ACCEPT_THRESHOLD,
-                warnings,
+                accepted: mayAccept(res) && !!cur && d.confidence >= ACCEPT_THRESHOLD,
+                warnings: withCardWarning(res, extra),
                 patch: { t: 'skinEquip', slot, skin },
                 cropUrl: d.cropUrl, slot,
-                detected: { idx: d.skinIdx, name: d.name, setId: d.setId, skinType: d.skinType, skinStats: d.stats },
+                // `stars` is the FORGE ascension read off the skin tile — read-only evidence on this
+                // row (a skin has no ascension field of its own, exactly like an item), and a vote in
+                // the Forge Ascension row below. It is SET ONLY WHEN READ: null/undefined means the
+                // tile was not found, and an absent `stars` is how the modal knows not to claim a
+                // reading. Never `?? 0` — that would turn "unread" into "this forge has no stars".
+                detected: {
+                    idx: d.skinIdx, name: d.name, setId: d.setId, skinType: d.skinType, skinStats: d.stats,
+                    ...(d.stars != null ? { stars: d.stars } : {}),
+                },
+                // skins have no preset collection of their own — they live ON the slot's item, so
+                // the bookmark is the item WITH the skin, named after the skin that was applied.
+                presetName: `${d.name || d.setId || `Skin #${skinIdx}`} skin`,
             });
         }
-        // --- forge level / hammers / skill ascension --- (fixed-UI extras; only when read with
-        // confidence AND changed; forge level + hammers come from ITEM screens only — the
-        // readers never attempt them on pet/mount/skills screens)
-        if (res.forgeLevel != null && !seenForgeLevel && res.forgeLevel !== profile.misc.forgeLevel) {
-            seenForgeLevel = true;
-            rows.push({
-                id: `cur-${n++}`, category: 'currency',
-                label: 'Forge Level',
-                detail: `${profile.misc.forgeLevel ?? 0} → ${res.forgeLevel}`,
-                action: 'update',
-                confidence: 0.9,
-                before: String(profile.misc.forgeLevel ?? 0),
-                after: String(res.forgeLevel),
-                accepted: true,
-                warnings: [],
-                patch: { t: 'currency', miscKey: 'forgeLevel', value: res.forgeLevel },
-                cropUrl: res.forgeLevelCropUrl,
+        // --- forge level / hammers --- collected here, decided AFTER the loop by majority: a batch
+        // of item popups shows the same forge button and the same hammer pill on every shot, so
+        // "the first screenshot that read something wins" threw seven confirmations away. Both
+        // still come from ITEM screens ONLY — readForgeLevel is called for type==='item' and
+        // SCREEN_CURR.item is the only entry listing 'hammer' (owner's explicit requirement).
+        if (res.forgeLevel != null) forgeLevelReads.push({ value: res.forgeLevel, cropUrl: res.forgeLevelCropUrl });
+        if (res.currencies?.hammer != null && res.currencies.hammer >= 0) {
+            hammerReads.push({ value: res.currencies.hammer, cropUrl: res.currencyCrops?.hammer });
+        }
+        if (res.forgeAscension) forgeAscReads.push(res.forgeAscension);
+        // A SKIN popup's tile carries the same 0..3 forge pips every item/pet/mount tile does, and
+        // the skin tile is the one place a 3-star example is legible, so it votes in the same
+        // consensus. Three guards, each closing a way to fabricate a value:
+        //  - `stars != null`: a tile that was never found must not vote 0 ("no ascension" is a
+        //    reading, and claiming it from nothing is the failure this feature refuses to ship);
+        //  - `skinIdx != null`: only a read that RESOLVED to a real skin is evidence about the
+        //    forge. A pet popup mistaken for a skin popup would otherwise feed the PET's own
+        //    ascension into the forge's — the exact confusion readForgeAscension refuses screens
+        //    for — and an unresolved read is precisely the one we cannot vouch for;
+        //  - authority follows the screenshot: a skin popup on the user's own equipment screen is
+        //    authoritative, one on somebody's profile card is not.
+        if (res.skin?.stars != null && res.skin.tile && res.skin.skinIdx != null) {
+            const s = res.skin.stars, tile = res.skin.tile;
+            forgeAscReads.push({
+                value: s, votes: 1, agree: 1, agreement: 1, tally: { [s]: 1 },
+                authoritative: res.authoritative !== false,
+                source: 'popup', tiles: [{ rect: tile, stars: s, row: 0, col: 0 }],
+                tileW: tile.w, rows: 1, cols: 1, cropUrl: res.skin.cropUrl,
             });
         }
-        {
-            const hammers = res.currencies?.hammer;
-            const curHammers = Number(profile.misc.forgeCalculator?.hammers ?? 0);
-            if (hammers != null && hammers >= 0 && !seenHammers && hammers !== curHammers) {
-                seenHammers = true;
-                rows.push({
-                    id: `cur-${n++}`, category: 'currency',
-                    label: 'Hammers',
-                    detail: `${fmt(curHammers)} → ${fmt(hammers)}`,
-                    action: 'update',
-                    confidence: 0.9,
-                    before: fmt(curHammers),
-                    after: fmt(hammers),
-                    accepted: true,
-                    warnings: [],
-                    patch: { t: 'forgeHammers', value: hammers },
-                    cropUrl: res.currencyCrops?.hammer,
-                });
-            }
-        }
+        // --- skill ascension ---
         if (res.skillAscension != null && res.skillAscension !== (profile.misc.skillAscensionLevel ?? 0)) {
             rows.push({
                 id: `cur-${n++}`, category: 'currency',
@@ -544,6 +634,120 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
         }
     }
 
+    // --- forge level + hammers --- one row each, decided by majority across the ITEM screenshots.
+    {
+        const fl = mergeByMajority(forgeLevelReads);
+        if (fl && fl.value !== profile.misc.forgeLevel) {
+            rows.push({
+                id: `cur-${n++}`, category: 'currency',
+                label: 'Forge Level',
+                detail: `${profile.misc.forgeLevel ?? 0} → ${fl.value}`,
+                action: 'update',
+                confidence: fl.votes > 1 ? Math.max(0.5, fl.agree / fl.votes) * 0.95 : 0.9,
+                before: String(profile.misc.forgeLevel ?? 0),
+                after: fl.votes > 1 ? `${fl.value} (${fl.agree}/${fl.votes})` : String(fl.value),
+                accepted: true,
+                warnings: fl.agree < fl.votes
+                    ? [`The ${fl.votes} item screenshots did not agree on the forge level; ${fl.agree} of them read ${fl.value}.`]
+                    : [],
+                patch: { t: 'currency', miscKey: 'forgeLevel', value: fl.value },
+                cropUrl: fl.cropUrl,
+            });
+        }
+        const hm = mergeByMajority(hammerReads);
+        const curHammers = Number(profile.misc.forgeCalculator?.hammers ?? 0);
+        if (hm && hm.value !== curHammers) {
+            rows.push({
+                id: `cur-${n++}`, category: 'currency',
+                label: 'Hammers',
+                detail: `${fmt(curHammers)} → ${fmt(hm.value)}`,
+                action: 'update',
+                confidence: hm.votes > 1 ? Math.max(0.5, hm.agree / hm.votes) * 0.95 : 0.9,
+                before: fmt(curHammers),
+                after: hm.votes > 1 ? `${fmt(hm.value)} (${hm.agree}/${hm.votes})` : fmt(hm.value),
+                accepted: true,
+                warnings: hm.agree < hm.votes
+                    ? [`The ${hm.votes} item screenshots did not agree on the hammer count; ${hm.agree} of them read ${fmt(hm.value)}.`]
+                    : [],
+                patch: { t: 'forgeHammers', value: hm.value },
+                cropUrl: hm.cropUrl,
+            });
+        }
+    }
+
+    // --- forge ascension --- ONE row, from the stars on the ITEM TILES across every screenshot.
+    //
+    // The ascension shared between items IS the forge's ascension (owner's rule) and it is read
+    // from the item tiles, never from the anvil sprite. Every equipped item carries the same stars,
+    // so this is a CONSENSUS: pool every item tile every screenshot exposed, take the modal star
+    // count, and report the agreement. One misread tile cannot move the answer, and a badly split
+    // vote is surfaced as a value to check instead of a reading to trust.
+    //
+    // AUTHORITY, not just confidence: only 'item' screens (the user's own item popup) are
+    // authoritative. A player profile card shows all 8 item tiles at once and is the only place
+    // 2- and 3-star examples appear, but the classifier cannot tell the user's own card from an
+    // opponent's — so those votes are used ONLY when no item screenshot contributed, and then
+    // never above FORGE_SOFT_MAX_CONF and never pre-accepted.
+    {
+        const hard = forgeAscReads.filter(r => r.authoritative);
+        const use = hard.length ? hard : forgeAscReads;
+        const stars: number[] = [];
+        for (const r of use) for (const t of r.tiles) stars.push(t.stars);
+        if (stars.length) {
+            const authoritative = hard.length > 0;
+            const tally: Record<number, number> = {};
+            for (const s of stars) tally[s] = (tally[s] ?? 0) + 1;
+            // modal value; a tie goes to the LOWER count — the one failure mode measured on real
+            // screenshots is a phantom star (the hole in a "0" of "Lv.102" on a gold Divine tile),
+            // which can only ever add one. A tie also puts agreement at <= 0.5, so the row is
+            // marked "check" regardless of which way it broke.
+            const ranked = Object.entries(tally).map(([v, c]) => [Number(v), c] as const)
+                .sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+            const value = ranked[0][0], agree = ranked[0][1];
+            const agreement = agree / stars.length;
+            const solid = agreement >= FORGE_AGREE_OK;
+            let confidence = agreement * (VOTE_WEIGHT[stars.length] ?? 1) * 0.95;
+            if (!authoritative) confidence = Math.min(confidence, FORGE_SOFT_MAX_CONF);
+            const cur = profile.misc.forgeAscensionLevel ?? 0;
+
+            if (value !== cur) {
+                const warnings: string[] = [];
+                if (!authoritative) {
+                    warnings.push('Read from the item tiles of a player profile card. The reader cannot tell '
+                        + 'your own card from an opponent\'s. Confirm this is your forge before accepting.');
+                }
+                if (!solid) {
+                    warnings.push(`The item tiles disagreed: ${ranked.map(([v, c]) => `${c}x${starText(v)}`).join(', ')}. `
+                        + 'Check the crop before accepting.');
+                }
+                // The compact resource row renders label / crop / "before -> after" and nothing
+                // else, so the reason to check has to live in `after` to be seen at all.
+                const note = !authoritative ? 'card. Check' : solid ? `${agree}/${stars.length} tiles` : `${agree}/${stars.length}. Check`;
+                rows.push({
+                    id: `cur-${n++}`, category: 'currency',
+                    label: 'Forge Ascension',
+                    detail: `${starText(cur)} → ${starText(value)} (${note})`,
+                    action: 'update',
+                    confidence,
+                    before: starText(cur),
+                    after: `${starText(value)} (${note})`,
+                    accepted: authoritative && solid && confidence >= ACCEPT_THRESHOLD,
+                    warnings,
+                    patch: { t: 'currency', miscKey: 'forgeAscensionLevel', value },
+                    // `detected.stars` is what makes this row EDITABLE as a 0-3 picker in the modal
+                    // (AutoSyncModal.rowAscension already falls back to it), which is where an
+                    // ascension read off an item / skin tile belongs: the forge has one ascension,
+                    // the tiles only show it. Set even when it equals 0 — this is a real reading.
+                    detected: { stars: value },
+                    // show a screenshot whose OWN reading was the consensus, so the crop can never
+                    // contradict the number next to it
+                    cropUrl: (use.find(r => r.value === value)
+                        ?? use.find(r => r.tiles.some(t => t.stars === value)))?.cropUrl,
+                });
+            }
+        }
+    }
+
     // --- clan tech tree --- (merged ACROSS screenshots: overlapping scroll shots re-read the
     // same nodes, so per-node reads are combined by majority level, ties broken by the best
     // icon-NCC confidence — the proto_clantree merge rules. One row per CHANGED node.)
@@ -578,7 +782,7 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
             if (cur === level) continue;
             rows.push({
                 id: `clanTree-${n++}`, category: 'clanTree',
-                label: getTechNodeName(nodeType),
+                label: getTechNodeName(nodeType) || splitCamel(nodeType) || `Node #${best.globalId}`,
                 detail: `Lv ${cur} → ${level}`,
                 action: cur > 0 ? 'update' : 'add',
                 confidence: best.conf,
@@ -627,8 +831,36 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
     return rows;
 }
 
-/** Build the updateProfile payload from the accepted rows. */
-export function applyChanges(profile: UserProfile, rows: ChangeRow[]): Partial<UserProfile> {
+/**
+ * End state the accepted rows resolve to, BEFORE presets are considered. Split out of
+ * applyChanges so planPresetSaves can predict the exact same objects the apply will write
+ * (item + skinEquip rows on one slot merge into a single final item, etc.).
+ */
+interface Resolved {
+    items: UserProfile['items'];
+    collection: Record<string, PetSlot>;
+    activePets: (PetSlot | null)[];
+    mount: MountSlot | null;
+    misc: any;
+    passives: Record<string, number>;
+    equipped: UserProfile['skills']['equipped'];
+    skillCollection: UserProfile['skills']['collection'];
+    clanLevels: Record<number, number>;
+    touched: { items: boolean; pets: boolean; mount: boolean; misc: boolean; skills: boolean; tree: boolean };
+    /** Which slots/identities the accepted rows produced, with the rows that produced them. */
+    itemTargets: Map<string, { name?: string; rowIds: string[] }>;
+    petTargets: Map<string, { name?: string; rowIds: string[] }>;
+    mountTarget: { name?: string; rowIds: string[] } | null;
+}
+
+function noteTarget(m: Map<string, { name?: string; rowIds: string[] }>, key: string, r: ChangeRow) {
+    const e = m.get(key) ?? { name: undefined, rowIds: [] };
+    e.rowIds.push(r.id);
+    e.name = e.name ?? r.presetName;
+    m.set(key, e);
+}
+
+function resolveChanges(profile: UserProfile, rows: ChangeRow[]): Resolved {
     const accepted = rows.filter(r => r.accepted);
     const items = { ...profile.items };
     const collection = { ...profile.pets.collection };
@@ -640,10 +872,13 @@ export function applyChanges(profile: UserProfile, rows: ChangeRow[]): Partial<U
     const skillCollection = { ...(profile.skills?.collection || {}) };
     const clanLevels: Record<number, number> = {};
     let touchedItems = false, touchedPets = false, touchedMount = false, touchedMisc = false, touchedSkills = false, touchedTree = false;
+    const itemTargets = new Map<string, { name?: string; rowIds: string[] }>();
+    const petTargets = new Map<string, { name?: string; rowIds: string[] }>();
+    const mountTargets = new Map<string, { name?: string; rowIds: string[] }>(); // single 'mount' key
 
     for (const r of accepted) {
         const p = r.patch;
-        if (p.t === 'item') { (items as any)[p.slot] = p.item; touchedItems = true; }
+        if (p.t === 'item') { (items as any)[p.slot] = p.item; touchedItems = true; noteTarget(itemTargets, p.slot, r); }
         else if (p.t === 'pet') {
             // SLOT-addressed: the row's slotIndex (user-editable in the modal) says which of the
             // MAX_ACTIVE_PETS active slots this pet occupies; duplicates of the same identity in
@@ -653,8 +888,12 @@ export function applyChanges(profile: UserProfile, rows: ChangeRow[]): Partial<U
             while (activePets.length <= slot) activePets.push(null);
             activePets[slot] = p.pet;
             touchedPets = true;
+            noteTarget(petTargets, p.key, r);
         }
-        else if (p.t === 'mount') { mount = p.mount; touchedMount = true; }
+        else if (p.t === 'mount') {
+            mount = p.mount; touchedMount = true;
+            noteTarget(mountTargets, 'mount', r);
+        }
         else if (p.t === 'currency') {
             // dot-path keys address nested misc fields (stored as STRINGS there)
             if (p.miscKey.includes('.')) {
@@ -692,23 +931,118 @@ export function applyChanges(profile: UserProfile, rows: ChangeRow[]): Partial<U
             // Skins live ON the slot's item — apply only when the slot has one (an 'item' patch
             // accepted in the same run counts, since `items` is updated in row order above).
             const cur = (items as any)[p.slot] as ItemSlot | null;
-            if (cur) { (items as any)[p.slot] = { ...cur, skin: p.skin }; touchedItems = true; }
+            if (cur) {
+                (items as any)[p.slot] = { ...cur, skin: p.skin };
+                touchedItems = true;
+                noteTarget(itemTargets, p.slot, r);
+            }
         }
     }
 
+    return {
+        items, collection, activePets, mount, misc, passives, equipped, skillCollection, clanLevels,
+        touched: { items: touchedItems, pets: touchedPets, mount: touchedMount, misc: touchedMisc, skills: touchedSkills, tree: touchedTree },
+        itemTargets, petTargets, mountTarget: mountTargets.get('mount') ?? null,
+    };
+}
+
+/**
+ * Presets the accepted rows would ADD. Never overwrites and never duplicates: an identity that
+ * already sits in the collection (same fuzzy match the panels use) is skipped, so re-syncing the
+ * same screenshot twice adds nothing the second time.
+ */
+function planFromResolved(profile: UserProfile, res: Resolved): PresetSave[] {
+    const out: PresetSave[] = [];
+
+    for (const [slot, meta] of res.itemTargets) {
+        const item = (res.items as any)[slot] as ItemSlot | null;
+        if (!item) continue;
+        const existing = profile.savedItems?.[slot] ?? [];
+        if (existing.some(s => sameSavedItem(s, item))) continue;
+        out.push({ kind: 'item', slot, name: meta.name || `${slot} Lv.${item.level}`, rowIds: meta.rowIds });
+    }
+
+    const petBuilds = profile.pets?.savedBuilds ?? [];
+    for (const [key, meta] of res.petTargets) {
+        const pet = res.collection[key];
+        if (!pet) continue;
+        if (petBuilds.some(s => sameSavedUnit(s, pet))) continue;
+        out.push({ kind: 'pet', key, name: meta.name || `Pet #${pet.id}`, rowIds: meta.rowIds });
+    }
+
+    if (res.mountTarget && res.mount) {
+        const mountBuilds = profile.mount?.savedBuilds ?? [];
+        if (!mountBuilds.some(s => sameSavedUnit(s, res.mount!))) {
+            out.push({ kind: 'mount', name: res.mountTarget.name || `Mount #${res.mount.id}`, rowIds: res.mountTarget.rowIds });
+        }
+    }
+    return out;
+}
+
+/**
+ * What applying the accepted rows would ALSO bookmark. Pure — the diff UI calls it to show the
+ * "will also save to presets" note before the user commits.
+ */
+export function planPresetSaves(profile: UserProfile, rows: ChangeRow[]): PresetSave[] {
+    return planFromResolved(profile, resolveChanges(profile, rows));
+}
+
+/**
+ * Build the updateProfile payload from the accepted rows.
+ * With `savePresets` (default on) the applied objects are ALSO appended to the collections the
+ * app already treats as bookmarks — savedItems[slot], pets.savedBuilds, mount.savedBuilds —
+ * skipping anything already saved. planPresetSaves() previews exactly these writes.
+ */
+export function applyChanges(
+    profile: UserProfile,
+    rows: ChangeRow[],
+    opts: { savePresets?: boolean } = {},
+): Partial<UserProfile> {
+    const savePresets = opts.savePresets !== false;
+    const res = resolveChanges(profile, rows);
+    const { touched } = res;
+    const presets = savePresets ? planFromResolved(profile, res) : [];
+
     const out: Partial<UserProfile> = {};
-    if (touchedItems) out.items = items;
-    if (touchedPets) out.pets = { ...profile.pets, collection, active: activePets.filter((s): s is PetSlot => !!s).slice(0, MAX_ACTIVE_PETS) };
-    if (touchedMount) out.mount = { ...profile.mount, active: mount };
-    if (touchedMisc) out.misc = misc;
+    if (touched.items) out.items = res.items;
+    if (touched.pets) out.pets = { ...profile.pets, collection: res.collection, active: res.activePets.filter((s): s is PetSlot => !!s).slice(0, MAX_ACTIVE_PETS) };
+    if (touched.mount) out.mount = { ...profile.mount, active: res.mount };
+    if (touched.misc) out.misc = res.misc;
     // skills store per-skill levels in `passives` ({ skillId -> level }); same key the Skills panel
     // edits. equipped/collection carry the per-skill ascensionLevel the selector modal reads.
-    if (touchedSkills) out.skills = { ...profile.skills, passives, equipped, collection: skillCollection };
+    if (touched.skills) out.skills = { ...profile.skills, passives: res.passives, equipped: res.equipped, collection: res.skillCollection };
     // clan tree levels: a NEW techTree object so ProfileContext.updateProfile stamps techTreeUpdatedAt
-    if (touchedTree) {
+    if (touched.tree) {
         out.techTree = {
             ...profile.techTree,
-            Clan: { ...(profile.techTree?.Clan ?? {}), ...clanLevels },
+            Clan: { ...(profile.techTree?.Clan ?? {}), ...res.clanLevels },
+        };
+    }
+
+    // --- presets / bookmarks --- (append-only; same shapes EquipmentPanel / PetPanel / MountPanel write)
+    const itemPresets = presets.filter(p => p.kind === 'item');
+    if (itemPresets.length) {
+        const savedItems: UserProfile['savedItems'] = { ...(profile.savedItems ?? {}) };
+        for (const p of itemPresets) {
+            const item = (res.items as any)[p.slot!] as ItemSlot;
+            savedItems[p.slot!] = [...(savedItems[p.slot!] ?? []), { ...item, customName: p.name }];
+        }
+        out.savedItems = savedItems;
+    }
+    const petPresets = presets.filter(p => p.kind === 'pet');
+    if (petPresets.length) {
+        const added: PetSlot[] = [];
+        for (const p of petPresets) {
+            const pet = p.key ? res.collection[p.key] : undefined;
+            if (pet) added.push({ ...pet, customName: p.name });
+        }
+        out.pets = { ...(out.pets ?? profile.pets), savedBuilds: [...(profile.pets?.savedBuilds ?? []), ...added] };
+    }
+    const mountPreset = presets.find(p => p.kind === 'mount');
+    if (mountPreset && res.mount) {
+        out.mount = {
+            ...(out.mount ?? profile.mount),
+            savedBuilds: [...(profile.mount?.savedBuilds ?? []), { ...res.mount, customName: mountPreset.name }],
         };
     }
     return out;

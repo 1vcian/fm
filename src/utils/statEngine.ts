@@ -448,7 +448,7 @@ export class StatEngine {
         visited: Set<number> = new Set()
     ): boolean {
         const cacheKey = `${treeName}:${nodeId}`;
-        // 1. Controllo Cache: Se lo abbiamo già calcolato in questo ciclo, ritorna il risultato immediato
+        // 1. Cache check: if this was already computed in this pass, return it straight away
         if (this.nodeValidityCache.has(cacheKey)) {
             return this.nodeValidityCache.get(cacheKey)!;
         }
@@ -487,7 +487,7 @@ export class StatEngine {
 
         visited.delete(nodeId); // Backtrack
 
-        // 2. Salva il risultato in Cache
+        // 2. Store the result in the cache
         this.nodeValidityCache.set(cacheKey, isValid);
         return isValid;
     }
@@ -502,7 +502,7 @@ export class StatEngine {
         // routed through the DEFAULT_STATS deep clone above.
         this.attribution = { byStat: {}, formula: {} };
 
-        // Pulisci la cache ad ogni nuovo calcolo
+        // Clear the caches on every fresh calculation
         this.nodeValidityCache.clear();
         this.validNodesCache.clear();
 
@@ -1629,19 +1629,24 @@ export class StatEngine {
         this.stats.healthRegen = this.combine(this.stats.healthRegen, this.secondaryStats.healthRegen, 'Multiplier');
         this.stats.lifeSteal = this.combine(this.stats.lifeSteal, this.secondaryStats.lifeSteal, 'Multiplier');
         this.stats.skillCooldownReduction = this.combine(this.stats.skillCooldownReduction, this.secondaryStats.skillCooldownMulti, 'OneMinusMultiplier');
-        // Skill multipliers: add item substats as additive bonus
-        // SkillDamageMulti applies to both Damage and Healing of active skills
-        this.stats.skillDamageMultiplier += this.secondaryStats.skillDamageMulti;
-        this.stats.skillHealthMultiplier += (this.secondaryStats.skillHealthMulti + this.secondaryStats.skillDamageMulti);
+        // Skill multipliers: SkillDamageMulti applies to both Damage and Healing of active skills.
+        // The item substats sit in the game's GeneralCompounding stat layer while the tech tree
+        // SkillDamage node sits in the TechTree layer (SecondaryStatLibrary / TechNodesLibrary
+        // "Layer" fields, StatLayer enum in dump.cs). Contributions are bucketed per layer and the
+        // buckets multiply, so tree and substats compound rather than sum.
+        this.stats.skillDamageMultiplier = (1 + this.stats.skillDamageMultiplier)
+            * (1 + this.secondaryStats.skillDamageMulti) - 1;
+        this.stats.skillHealthMultiplier = (1 + this.stats.skillHealthMultiplier)
+            * (1 + this.secondaryStats.skillHealthMulti + this.secondaryStats.skillDamageMulti) - 1;
         this.stats.moveSpeed = this.combine(this.stats.moveSpeed, this.secondaryStats.moveSpeed, 'Additive');
 
         // Populate detailed breakdowns for secondary stats
         this.stats.skillDamageBreakdown.substats = this.secondaryStats.skillDamageMulti;
         this.stats.skillHealthBreakdown.substats = (this.secondaryStats.skillHealthMulti + this.secondaryStats.skillDamageMulti);
 
-        // Apply Skill Ascension to skill multipliers (MIRRORS Forge Ascension for equipment)
-        // Pattern: skillEffective = (1 + techBonus + itemBonus) * skillAscension
-        // At this point skillDamageMultiplier = techBonus + itemBonus (both are additive bonuses)
+        // Apply Skill Ascension to skill multipliers (its own Ascensions stat layer)
+        // Pattern: skillEffective = (1 + techBonus) * (1 + itemBonus) * skillAscension
+        // At this point skillDamageMultiplier holds that compounded bonus, ascension excluded
         const skillAscDmg = this.stats.skillDamageBreakdown.ascension || 1;
         const skillAscHp = this.stats.skillHealthBreakdown.ascension || 1;
         this.stats.skillDamageMultiplier = (1 + this.stats.skillDamageMultiplier) * skillAscDmg;

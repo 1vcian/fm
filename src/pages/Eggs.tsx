@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useEggsCalculator } from '../hooks/useEggsCalculator';
 import { useEggSummonCalculator } from '../hooks/useEggSummonCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/UI/Card';
@@ -9,6 +9,8 @@ import { useProfile } from '../context/ProfileContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { useGameDataContext } from '../context/GameDataContext';
 import { EggIcon } from '../components/UI/EggIcon';
+import { PlannerAlarms } from '../components/Planner/PlannerAlarms';
+import { eggLanes } from '../utils/plannerSchedule';
 
 export default function Eggs() {
     const { profile, updateNestedProfile } = useProfile();
@@ -47,6 +49,23 @@ export default function Eggs() {
     useEffect(() => {
         setCheckedItems({});
     }, [timelineHash]);
+
+    /**
+     * The hatch plan, reduced to "what finishes in which slot, and how long after THAT SLOT comes
+     * free".
+     *
+     * `optimization.timeline` is `TimelineEvent[][]` — one lane per hatch slot, `startTime`/`endTime`
+     * in MINUTES from an implicit zero, with no `Date` anywhere. Each lane's zero is the moment that
+     * slot comes free, which is exactly what that slot's own alarm anchor supplies, so the lanes go
+     * to `PlannerAlarms` as lanes and each one is timed from its own reading. Keyed on `timelineHash`
+     * rather than on `optimization` so a re-render that did not change the schedule does not look
+     * like a new plan to the queue.
+     */
+    const alarmLanes = useMemo(
+        () => eggLanes(optimization?.timeline || []),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [timelineHash],
+    );
 
     // Format Helpers
     const formatTime = (seconds: number) => {
@@ -581,6 +600,22 @@ export default function Eggs() {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Alarms. Renders nothing at all when the build has no backend or nobody is
+                            signed in — push is sign-in-only, by the owner's decision.
+
+                            `slotCount` comes from `availableSlots` and NOT from the timeline: the
+                            panel has to go on asking about slot 4 while the plan for it is empty,
+                            and the player changing their slot count must add or drop an anchor
+                            without disturbing the ones already set. */}
+                        <PlannerAlarms
+                            planner="eggs"
+                            route="#/eggs"
+                            lanes={alarmLanes}
+                            slotCount={availableSlots}
+                            laneLabel={(i) => `slot ${i + 1}`}
+                            assumption="Each slot is timed from its own reading, so the only thing still assumed is that you reload a slot the moment its egg pops and follow the order shown for that slot."
+                        />
 
                         <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
                             <CardHeader>

@@ -218,6 +218,14 @@ export function findColorNameBand(src: HTMLCanvasElement, want: 'orange' | 'purp
         }
     }
     if (xHi <= xLo) return null;
+    // SCALE AUDIT (task #43): the -4 / +9 padding is the one true PIXEL LITERAL in this file — at
+    // 576px wide it is ~15% of the band height, at 1290 only ~7%, so the band tightens as the device
+    // grows. It is left in place because nothing downstream depends on it any more:
+    // templateReaders.readNameBand treats this band as one of five candidates and scores them by
+    // dictionary hit, and growBandToInk re-derives the band from the ink itself (which is what fixed
+    // the 923px iPhone case). Measured consequence at 576/768/923/1290: the resolved pet/mount/skin
+    // ID and rarity never move; only the raw display-name STRING jitters. See
+    // reverseForge/scale_probe.mjs.
     return { x: xLo, y: Math.max(0, y0 - 4), w: xHi - xLo, h: (y1 - y0) + 9 };
 }
 

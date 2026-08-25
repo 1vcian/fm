@@ -240,7 +240,7 @@ export async function extractScreenshot(src: Blob | string, dicts: GameDictionar
             level: tileLevel ?? findLevel(lines, nameCy), stars, main, substats,
         };
         res.item.cropUrl = regionDataUrl(base, { x0: 0.02, y0: 0.575, x1: 0.98, y1: 0.85 });
-        if (!ident) warnings.push('Item not recognised — please confirm the slot/item.');
+        if (!ident) warnings.push('Item not recognised. Please confirm the slot/item.');
         // Cross-check: a slot implies its main-stat kind. If the OCR'd name matched a slot
         // whose expected main stat contradicts the detected one, the name read is suspect.
         if (res.item.main && res.item.slot) {
@@ -248,7 +248,7 @@ export async function extractScreenshot(src: Blob | string, dicts: GameDictionar
             const got = res.item.main.kind;
             if ((expectDamage && got === 'health') || (!expectDamage && got === 'damage')) {
                 res.item.confidence *= 0.5;
-                warnings.push('Detected name and main stat disagree — please confirm this item.');
+                warnings.push('Detected name and main stat disagree. Please confirm this item.');
             }
         }
         res.currencies = extractCurrencies(lines, screen, 'item', H2);
@@ -270,14 +270,14 @@ export async function extractScreenshot(src: Blob | string, dicts: GameDictionar
             damage: dmg, health: hp, substats,
         };
         res.unit.cropUrl = regionDataUrl(base, { x0: 0.02, y0: 0.40, x1: 0.98, y1: 0.80 });
-        if (!nm) warnings.push('Pet/mount not recognised — please confirm which one.');
+        if (!nm) warnings.push('Pet/mount not recognised. Please confirm which one.');
         res.currencies = extractCurrencies(lines, screen, kind, H2);
     } else if (screen === 'aggregate') {
         res.aggregate = extractAggregate(lines, base, W);
         res.aggregate.substats = substats; // use the dict-matched substats
     } else if (screen === 'skills') {
         res.currencies = extractCurrencies(lines, screen, null, H2);
-        warnings.push('Skill grid parsing is approximate — confirm skill levels.');
+        warnings.push('Skill grid parsing is approximate. Confirm skill levels.');
     }
     return res;
 }

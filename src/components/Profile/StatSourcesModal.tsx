@@ -185,8 +185,8 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
     const renderTextLine = (c: StatContribution) => (
         <div key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 bg-bg-input/30 rounded-lg border border-border/30">
             <div className="min-w-0">
-                <div className="text-sm text-text-primary truncate">{c.label}</div>
-                {c.detail && <div className="text-[11px] text-text-muted truncate">{c.detail}</div>}
+                <div className="text-sm text-text-primary whitespace-nowrap overflow-hidden text-clip">{c.label}</div>
+                {c.detail && <div className="text-[11px] text-text-muted whitespace-nowrap overflow-hidden text-clip">{c.detail}</div>}
             </div>
             <div className="font-mono font-bold text-sm text-accent-primary shrink-0">
                 +{formatValue(c.value)}
@@ -212,7 +212,7 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 md:p-5 border-b border-border bg-bg-secondary/40">
                     <div className="min-w-0">
-                        <h3 className="text-xl md:text-2xl font-bold text-white tracking-tight truncate">{label}</h3>
+                        <h3 className="text-xl md:text-2xl font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-clip">{label}</h3>
                         <div className="text-sm text-text-muted">
                             Total <span className="font-mono font-bold text-accent-primary">{totalDisplay}</span>
                         </div>

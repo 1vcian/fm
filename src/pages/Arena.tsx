@@ -16,7 +16,7 @@ const LEAGUE_COLORS = [
     'border-[#26c6da] text-[#26c6da]', // Platinum (Cyan)
     'border-[#9c27b0] text-[#9c27b0]', // Diamond 1 (Purple)
     'border-[#ab47bc] text-[#ab47bc]', // Diamond 2 (Lighter Purple)
-    'border-[#e040fb] text-[#e040fb]', // Diamond 3 (Bright Magenta — highest)
+    'border-[#e040fb] text-[#e040fb]', // Diamond 3 (Bright Magenta. Highest)
 ];
 const LEAGUE_BG_GRADIENTS = [
     'from-slate-500/10 to-transparent',
@@ -129,7 +129,7 @@ export default function Arena() {
                                     </h3>
 
                                     <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {loading && <div className="text-xs text-text-muted">Loading...</div>}
+                                        {loading && <div className="text-xs text-text-muted">Loading</div>}
                                         {!loading && !rewardData && <div className="text-xs text-text-muted opacity-50">No reward data found</div>}
                                         {rewardData && rewardData.Rank?.map((r, rIdx) => (
                                             <div key={rIdx} className="text-sm flex flex-col gap-1 bg-bg-primary/20 p-2 rounded">

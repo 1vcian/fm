@@ -6,16 +6,55 @@
 // screenshots, public/autosync/tpl/*.png) plus a coloured-component count and a league-emblem
 // hue test, via a priority cascade. Device-agnostic: normalizes to the canonical 576px width
 // the templates were cut at.
-import { loadImage, imageToCanvas } from './imagePrep';
+//
+// SCREEN vs SUBJECT (task C1). Everything above identifies the SCREEN — and it does so from the
+// currency header, which is furniture of the user's own inventory screens. Measured on every real
+// fixture: a detail popup opened from a PLAYER PROFILE CARD (Power Rankings, PvP, an enemy panel)
+// carries no currency header at all, so the header band holds nothing to match. On
+// reverseForge/fixtures/real_3star_{mount,skin}_popup.jpeg the band (y 0.045..0.145) is inside the
+// frame's black letterbox — max luminance 30 — and on the 8 dim profile-card captures it is
+// literally CONSTANT (std 0.00), which makes bestNCC return -1 for every currency because every
+// candidate window has zero variance. Those frames are not unclassifiable, they are just not
+// classifiable FROM THE HEADER: the popup itself is still there, in the foreground, undimmed.
+// So `subject` is decided separately, from the popup, and `authoritative` records whether the
+// verdict came with a currency header (the user's own screen) or without one (a card that may be
+// somebody else's — a read the caller must never pre-accept). `type` keeps its exact old meaning
+// and value set, so every existing consumer of it is unaffected.
+import { loadImage, imageToCanvas, findStarTiles, detectPopupCard, detectPopupTile, type Rect } from './imagePrep';
+import { detectOutlinedTile } from './skinReader';
 
 export type ScreenTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 'enemy' | 'unknown';
 
+/**
+ * What the FOREGROUND of the frame is about, which is not always what the screen is:
+ *  - every ScreenTemplate value, when the screen itself is the subject;
+ *  - 'skin'  — a per-slot skin popup (white detail card, DESATURATED subject tile). The skin popup
+ *              shares the coins+gems header with the item popup, so the header alone cannot tell
+ *              them apart; the tile's chroma can, and does (see subjectFromPopup).
+ *  - 'unit'  — a pet-OR-mount-OR-item detail popup on a frame with no header. Measured on the real
+ *              fixtures, these three are geometrically IDENTICAL (same white card, same
+ *              rarity/age-coloured tile with a "Lv." pill, same one-or-two stat lines) and differ
+ *              only in the NAME text, so the classifier refuses to guess between them and hands
+ *              the frame to the readers, whose closed pet/mount dictionaries can decide.
+ */
+export type ScreenSubject = ScreenTemplate | 'skin' | 'unit';
+
 export interface ClassifyResult {
     type: ScreenTemplate;
+    /** The popup-aware verdict the readers should be routed on (see ScreenSubject). */
+    subject: ScreenSubject;
+    /**
+     * False when the subject was identified WITHOUT a currency header, i.e. from a popup on a
+     * player profile card. The frame cannot say whose card it is, so such a read is a suggestion
+     * to confirm, never a value to apply — the same rule ForgeAscensionRead.authoritative encodes.
+     */
+    authoritative: boolean;
     currencies: Record<string, number>; // NCC score per currency
     tiles: number;
     emblem: number;
     confidence: number;
+    /** Evidence for a popup-derived subject (observability only). */
+    popup?: { card: Rect; tile: Rect | null; chroma: number | null };
 }
 
 const CANON_W = 576;         // canonical working width (the icon templates were cut at 576w)
@@ -29,7 +68,7 @@ const XBAND: Record<string, [number, number]> = {
 };
 const SCALES = [0.7, 0.85, 1.0, 1.15, 1.3, 1.5];
 const CLOCKWINDER_TH = 0.80;
-const TUBE_TH = 0.75;        // clan tech tree header icon (test tube) — checked before ticket
+const TUBE_TH = 0.75;        // clan tech tree header icon (test tube). Checked before ticket
 
 interface GrayImg { d: Float32Array; w: number; h: number; }
 let tplCache: Record<string, GrayImg> | null = null;
@@ -239,6 +278,167 @@ function emblemScore(canon: HTMLCanvasElement): number {
     return n ? on / n : 0;
 }
 
+// =============================================================================================
+// POPUP SUBJECT — what the foreground card is, for frames whose header says nothing.
+// =============================================================================================
+
+/** Mean chroma (max-min channel spread) over a rect, subsampled. An age/rarity-coloured tile
+ *  measures ~120+; a skin tile (near-white art on a white card) stays far below. */
+export function meanChroma(canvas: HTMLCanvasElement, r: Rect): number {
+    const x = Math.max(0, Math.min(canvas.width - 1, Math.round(r.x)));
+    const y = Math.max(0, Math.min(canvas.height - 1, Math.round(r.y)));
+    const w = Math.max(1, Math.min(canvas.width - x, Math.round(r.w)));
+    const h = Math.max(1, Math.min(canvas.height - y, Math.round(r.h)));
+    const d = canvas.getContext('2d', { willReadFrequently: true })!.getImageData(x, y, w, h).data;
+    const step = Math.max(1, Math.floor(w * h / 20000)); // ~20k samples max
+    let sum = 0, n = 0;
+    for (let p = 0; p < w * h; p += step) {
+        const i = p * 4;
+        sum += Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]);
+        n++;
+    }
+    return n ? sum / n : 0;
+}
+
+/** Min mean chroma over the subject tile for the popup to be an age/rarity-coloured
+ *  item/pet/mount tile rather than a skin's near-white one. Same value guidedSync used. */
+export const ITEM_TILE_MIN_CHROMA = 60;
+/** The SKIN modal is a taller modal than the item/pet/mount detail card — it carries the
+ *  set-bonus block. As a fraction of the frame height, measured on every real fixture: skin
+ *  popups 0.264, every other detail popup 0.109..0.171. */
+const SKIN_CARD_MIN_H = 0.20;
+
+// ---- Relative popup-card detection.
+// imagePrep.detectPopupCard keys on an ABSOLUTE near-white level (min channel > 232) and
+// detectBrightCard on an absolute mean luminance (> 200). Both are blind to the case that matters
+// here: measured on reverseForge/fixtures/real_3star_mount_popup.jpeg the popup card's rows sit at
+// mean luminance 61..72 while the frame's median row is 18 — a perfectly obvious foreground card
+// that no absolute white gate can see. So the card is found RELATIVE to the frame's own median
+// row luminance, which is the same principle starCounter's DARK_FRAC uses for the star outline.
+const CARD_LUM_RATIO = 2.2;    // row mean must be this multiple of the frame's median row mean
+const CARD_LUM_MARGIN = 12;    // ...and this far above it in absolute terms (a near-black frame
+//                                would otherwise let sensor noise clear the ratio)
+const CARD_MIN_H = 0.06;       // card band >= 6% of the frame height
+const CARD_MIN_W = 0.40;       // card >= 40% of the frame width
+
+/** The brightest contiguous horizontal band of the frame, relative to the frame itself — the
+ *  foreground card of a popup. Returns null when nothing stands out that far from the rest. */
+function detectRelativeCard(src: HTMLCanvasElement): Rect | null {
+    const W = src.width, H = src.height;
+    if (W < 16 || H < 16) return null;
+    const data = src.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, W, H).data;
+    const step = Math.max(1, Math.floor(W / 200));
+    const rowMean = new Float32Array(H);
+    for (let y = 0; y < H; y++) {
+        let sum = 0, n = 0;
+        for (let x = 0; x < W; x += step) {
+            const i = (y * W + x) * 4;
+            sum += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+            n++;
+        }
+        rowMean[y] = sum / n;
+    }
+    const sorted = Float32Array.from(rowMean).sort();
+    const med = sorted[H >> 1];
+    const cut = Math.max(med * CARD_LUM_RATIO, med + CARD_LUM_MARGIN);
+    let bestStart = 0, bestLen = 0, cur = -1;
+    for (let y = 0; y <= H; y++) {
+        if (y < H && rowMean[y] > cut) { if (cur < 0) cur = y; }
+        else if (cur >= 0) { if (y - cur > bestLen) { bestStart = cur; bestLen = y - cur; } cur = -1; }
+    }
+    if (bestLen < CARD_MIN_H * H) return null;
+    // horizontal extent: columns whose mean over the band clears the same cut
+    const yStep = Math.max(1, Math.floor(bestLen / 40));
+    let xMin = W, xMax = -1;
+    for (let x = 0; x < W; x++) {
+        let sum = 0, n = 0;
+        for (let y = bestStart; y < bestStart + bestLen; y += yStep) {
+            const i = (y * W + x) * 4;
+            sum += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+            n++;
+        }
+        if (sum / n > cut) { if (x < xMin) xMin = x; if (x > xMax) xMax = x; }
+    }
+    if (xMax - xMin < CARD_MIN_W * W) return null;
+    return { x: xMin, y: bestStart, w: xMax - xMin, h: bestLen };
+}
+
+const inside = (t: Rect, c: Rect): boolean => {
+    const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
+    return cx >= c.x && cx <= c.x + c.w && cy >= c.y && cy <= c.y + c.h;
+};
+/** The round close (X) button straddles a card's bottom-centre edge and is square too. */
+const isCloseButton = (t: Rect, c: Rect): boolean => {
+    const cxf = (t.x + t.w / 2 - c.x) / c.w, cyf = (t.y + t.h / 2 - c.y) / c.h;
+    return cyf > 0.85 && Math.abs(cxf - 0.5) < 0.14;
+};
+
+export interface PopupSubject {
+    subject: 'skin' | 'unit' | null;   // null = no popup evidence, caller keeps its own verdict
+    card: Rect | null;
+    tile: Rect | null;
+    chroma: number | null;
+}
+
+/**
+ * Decide what a popup's SUBJECT is, from the popup alone.
+ *
+ * `headerCard` picks which card finder to trust: with a currency header on screen the popup is
+ * drawn over an undimmed game screen and imagePrep's near-white finders apply; without one the
+ * whole frame is dimmed behind the popup and only the relative finder above can see the card.
+ *
+ * The verdict then comes from the SUBJECT TILE's chroma, which is the one thing that separates
+ * these popups without reading a word of text:
+ *   - a saturated tile (age or rarity coloured)  -> 'unit'  (item / pet / mount — the readers'
+ *     closed name dictionaries decide which; measured, the three are otherwise identical)
+ *   - a card with no saturated tile but a square OUTLINED one -> 'skin' (near-white skin tile)
+ *   - no card, or a card with no tile-shaped thing in it -> null (refuse)
+ */
+export function subjectFromPopup(src: HTMLCanvasElement, headerCard: boolean): PopupSubject {
+    if (headerCard) {
+        // WITH a header the popup sits on an undimmed screen, so imagePrep's near-white card and
+        // saturated-tile finders apply — this branch is byte-for-byte the rule that validated
+        // 17/17 on the example set as guidedSync.refineItemToSkin.
+        const card = detectPopupCard(src);
+        if (!card) return { subject: null, card: null, tile: null, chroma: null };
+        const tile = detectPopupTile(src);
+        // no saturated tile in the white card at all -> a skin's near-white tile
+        if (!tile) return { subject: 'skin', card, tile: null, chroma: null };
+        // ignore the round close (X) button that overlaps the card's bottom-centre edge — the same
+        // exclusion findColoredTiles/findStarTiles apply; a real subject tile never sits there
+        const tcx = tile.x + tile.w / 2, tcy = tile.y + tile.h / 2;
+        if (tcy > card.y + card.h * 0.85 && Math.abs(tcx - (card.x + card.w / 2)) < card.w * 0.14) {
+            return { subject: 'skin', card, tile: null, chroma: null };
+        }
+        const chroma = meanChroma(src, tile);
+        return { subject: chroma >= ITEM_TILE_MIN_CHROMA ? 'unit' : 'skin', card, tile, chroma };
+    }
+    // WITHOUT a header the whole frame is dimmed behind the popup, so both the card and the tile
+    // have to be found relative to the frame. detectOutlinedTile keys on the tile's OUTLINE rather
+    // than its fill, which is the only tile finder here that is blind to colour — and colour is
+    // exactly what is being measured, so measuring it on a colour-keyed detection would be circular.
+    const card = detectRelativeCard(src);
+    if (!card) return { subject: null, card: null, tile: null, chroma: null };
+    const outlined = detectOutlinedTile(src, card);
+    const satTiles = findStarTiles(src).filter(t => inside(t, card) && !isCloseButton(t, card));
+    const tile = outlined ?? satTiles[0] ?? null;
+    // no tile-shaped thing in the card -> nothing to read; refuse rather than guess
+    if (!tile) return { subject: null, card, tile: null, chroma: null };
+    const chroma = meanChroma(src, tile);
+    // TWO independent measurements have to agree for 'skin', because either one alone is
+    // ambiguous. Measured over every header-less real fixture (14 with a tile):
+    //   tile chroma        skins 12, 13, 40   |  pets/mounts 44, 85, 85, 85, 87  |  items 24..93
+    //   card height / H    skins 0.264 x3     |  everything else 0.109..0.171
+    // Chroma alone cannot do it: a Primitive item's tile IS white (age colour 241,241,241), so a
+    // white tile is genuinely either a skin or a Primitive item — no colour test can separate
+    // those two, ever. The card's height settles it, and does so structurally rather than by a
+    // fitted margin: the skin modal is a different, taller modal (it has to hold the set-bonus
+    // block), and its height is a fraction of the screen on every device.
+    const tall = card.h >= SKIN_CARD_MIN_H * src.height;
+    const desaturated = chroma < ITEM_TILE_MIN_CHROMA;
+    return { subject: tall && desaturated ? 'skin' : 'unit', card, tile, chroma };
+}
+
 export async function classifyScreen(input: HTMLImageElement | HTMLCanvasElement | Blob | string): Promise<ClassifyResult> {
     const img = (input instanceof HTMLImageElement || input instanceof HTMLCanvasElement) ? input : await loadImage(input);
     const canon = canvasAtWidth(img, CANON_W);
@@ -267,15 +467,45 @@ export async function classifyScreen(input: HTMLImageElement | HTMLCanvasElement
     // ticket 0.647 vs 0.64, egg 0.620 vs 0.61), so 0.63 reproduces the proto's decision boundary.
     const TH = 0.63;
     let type: ScreenTemplate;
+    let header = true;                  // did the CURRENCY HEADER decide this?
     if (cur.tube > TUBE_TH) type = 'clanTree';
     else if (cur.ticket > TH) type = 'skills';
     else if (cur.egg > TH) type = 'pet';
     else if (cur.clock > CLOCKWINDER_TH) type = 'mount';
     else if (cur.coin > 0.42 || cur.gem > TH) type = 'item';
-    else if (tiles >= 6) type = 'enemy';
-    else if (emblem > 0.03) type = 'enemy';
-    else type = 'unknown';
+    else if (tiles >= 6) { type = 'enemy'; header = false; }
+    else if (emblem > 0.03) { type = 'enemy'; header = false; }
+    else { type = 'unknown'; header = false; }
+
+    // ---- SUBJECT: what the popup in the foreground is about (see ScreenSubject).
+    // Two cases only, so nothing that already classifies can be taken away by this stage:
+    //   * type 'item' — the item and skin popups share the coins+gems header, so the subject tile's
+    //     chroma is what tells them apart. The header is on screen, so the read is authoritative.
+    //   * type 'unknown' — nothing on the frame's furniture matched. Look for a popup card relative
+    //     to the frame's own brightness; a subject tile in it means there IS something to read, and
+    //     the missing header means the screen behind it is not the user's own inventory, so the
+    //     read is NOT authoritative.
+    // 'enemy' / 'pet' / 'mount' / 'skills' / 'clanTree' keep their verdict untouched: those came
+    // from positive evidence about the whole screen, which outranks a popup guess.
+    let subject: ScreenSubject = type;
+    let authoritative = true;
+    let popup: ClassifyResult['popup'];
+    if (type === 'item' || type === 'unknown') {
+        const p = subjectFromPopup(canon, header);
+        if (p.card) popup = { card: p.card, tile: p.tile, chroma: p.chroma };
+        if (type === 'item') {
+            // conservative: with no card found there is nothing to test, so 'item' stands
+            if (p.subject === 'skin') subject = 'skin';
+        } else if (p.subject) {
+            subject = p.subject;
+            authoritative = false;
+        }
+    }
 
     const conf = Math.max(cur.ticket, cur.egg, cur.tube, cur.clock, cur.coin, cur.gem, tiles >= 6 || emblem > 0.03 ? 0.6 : 0);
-    return { type, currencies: cur, tiles, emblem, confidence: Math.min(1, Math.max(0, conf)) };
+    return {
+        type, subject, authoritative,
+        currencies: cur, tiles, emblem,
+        confidence: Math.min(1, Math.max(0, conf)), popup,
+    };
 }

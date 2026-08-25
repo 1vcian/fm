@@ -1,92 +1,56 @@
 import { useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { useGameData } from '../hooks/useGameData';
-import { Unlock, AlertCircle, Shield, Info } from 'lucide-react';
+import { useFeatureUnlocks, type FeatureUnlock } from '../hooks/useFeatureUnlocks';
+import { Unlock, AlertCircle, Shield, Info, ListChecks } from 'lucide-react';
 import { cn } from '../lib/utils';
-
 // Constants for Ages as they might not be in a simple config list
 const AGES = ['Primitive', 'Medieval', 'Early-Modern', 'Modern', 'Space', 'Interstellar', 'Multiverse', 'Quantum', 'Underworld', 'Divine'];
 const AGE_COLORS = ['#F1F1F1', '#5DD8FF', '#5CFE89', '#FDFF5D', '#FF5D5D', '#D55DFF', '#75FFEE', '#886DFF', '#A77373', '#FF9E0D'];
 
-// Mapping for cleaner display names if JSON keys are raw
-const FEATURE_NAMES: Record<string, string> = {
-    PlatformLogin: 'Platform Login',
-    PlayerNameChange: 'Name Change',
-    IdleCash: 'Idle Cash',
-    Shop: 'Shop',
-    StarterPackage: 'Starter Package',
-    Dungeons: 'Dungeons',
-    Dungeon_Hammer: 'Hammer Thief',
-    AutoForge: 'Auto Forge',
-    SkillCollection: 'Skills',
-    SkillSlot0: 'Skill Slot 1',
-    Dungeon_Skill: 'Ghost Town',
-    Pets: 'Pets',
-    PetSlot0: 'Pet Slot 1',
-    Dungeon_Pet: 'Pet Dungeon',
-    Chat: 'Chat',
-    Arena: 'Arena',
-    SkillSlot1: 'Skill Slot 2',
-    TechTree: 'Tech Tree',
-    Dungeon_Potion: 'Invasion',
-    PetSlot1: 'Pet Slot 2',
-    Guilds: 'Guilds',
-    SkillSlot2: 'Skill Slot 3',
-    Hammer_1: 'Extra Hammer 1',
-    PetSlot2: 'Pet Slot 3',
-    Hammer_2: 'Extra Hammer 2',
-    RateUs_2: 'Rate Us (Phase 2)',
-    Missions: 'Missions',
-    SwitchWorlds: 'Switch Worlds',
-    PrivacySettings: 'Privacy Settings',
-    GuildAnnouncement: 'Guild Announcement',
-};
-
-interface UnlockCondition {
-    AgeIdx: number;
-    BattleIdx: number;
-    RequireCompliance?: boolean;
-    FeatureToggle?: boolean;
-}
 
 export default function Unlocks() {
-    const { data: unlockData, loading, error } = useGameData<Record<string, UnlockCondition>>('UnlockConditions.json');
+    const { features, loading, failed, version } = useFeatureUnlocks();
+
+    const showCompliance = features.some(f => f.requiresCompliance);
+
+    // Features with no story gate cannot be placed on the timeline, so they get their
+    // own section rather than being dropped or parked in an age they do not belong to.
+    const conditional = useMemo(
+        () => features.filter(f => f.ageIdx === null).sort((a, b) => a.name.localeCompare(b.name)),
+        [features]
+    );
 
     const timeline = useMemo(() => {
-        if (!unlockData) return [];
-
-        // Group by Age
-        const byAge: Record<number, { feature: string; data: UnlockCondition }[]> = {};
-
-        Object.entries(unlockData).forEach(([feature, data]) => {
-            const age = data.AgeIdx;
-            if (!byAge[age]) byAge[age] = [];
-            byAge[age].push({ feature, data });
+        const byAge: Record<number, FeatureUnlock[]> = {};
+        features.forEach(feature => {
+            if (feature.ageIdx === null) return;
+            if (!byAge[feature.ageIdx]) byAge[feature.ageIdx] = [];
+            byAge[feature.ageIdx].push(feature);
         });
 
-        // Convert to array and sort
         return Object.entries(byAge)
-            .map(([ageStr, features]) => {
+            .map(([ageStr, entries]) => {
                 const age = parseInt(ageStr);
-                // Sort features within age by battle stage
-                features.sort((a, b) => a.data.BattleIdx - b.data.BattleIdx);
+                entries.sort((a, b) => (a.battleIdx ?? 0) - (b.battleIdx ?? 0));
                 return {
                     age,
                     ageName: AGES[age] || `Age ${age + 1}`,
                     color: AGE_COLORS[age] || '#FFF',
-                    features
+                    features: entries
                 };
             })
             .sort((a, b) => a.age - b.age);
-    }, [unlockData]);
+    }, [features]);
 
-    if (loading) return <div className="text-center p-12 text-text-muted animate-pulse">Loading Unlock Data...</div>;
-    if (error) return (
-        <div className="text-center p-12 text-red-400 flex flex-col items-center gap-2">
+    if (loading) return <div className="text-center p-12 text-text-muted animate-pulse">Loading Unlock Data</div>;
+    if (failed) return (
+        <div className="text-center p-12 text-amber-300 flex flex-col items-center gap-2">
             <AlertCircle className="w-8 h-8" />
-            <p>Failed to load unlocks data.</p>
-            <p className="text-xs text-text-muted">{error}</p>
+            <p>This game version does not carry the feature unlock table.</p>
+            <p className="text-xs text-text-muted">
+                Nothing to show for version {version}. Pick another game version at the top of the page.
+            </p>
         </div>
     );
 
@@ -114,12 +78,14 @@ export default function Unlocks() {
                     </p>
                 </div>
                 <div className="flex flex-col gap-3 justify-center">
-                    <div className="flex items-center gap-3 text-xs">
-                        <div className="w-8 h-8 rounded bg-accent-primary/10 flex items-center justify-center shrink-0">
-                            <Shield className="w-4 h-4 text-blue-400" />
+                    {showCompliance && (
+                        <div className="flex items-center gap-3 text-xs">
+                            <div className="w-8 h-8 rounded bg-accent-primary/10 flex items-center justify-center shrink-0">
+                                <Shield className="w-4 h-4 text-blue-400" />
+                            </div>
+                            <span className="text-text-secondary"><span className="font-bold text-blue-400">Compliance Required:</span> This feature requires platform login or social verification.</span>
                         </div>
-                        <span className="text-text-secondary"><span className="font-bold text-blue-400">Compliance Required:</span> This feature requires platform login or social verification.</span>
-                    </div>
+                    )}
                     <div className="flex items-center gap-3 text-xs opacity-50">
                         <div className="w-8 h-8 rounded bg-bg-tertiary flex items-center justify-center shrink-0 border border-red-500/20">
                             <AlertCircle className="w-4 h-4 text-red-400" />
@@ -146,58 +112,105 @@ export default function Unlocks() {
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {group.features.map(({ feature, data }) => (
-                                <Card key={feature} className={cn(
-                                    "flex items-center gap-4 p-4 hover:border-accent-primary/50 transition-colors relative group",
-                                    data.FeatureToggle && "opacity-40 grayscale pointer-events-none"
-                                )}>
-                                    <div className="w-10 h-10 rounded bg-accent-primary/10 flex items-center justify-center shrink-0">
-                                        <GameIcon name={getFeatureIcon(feature)} className="w-6 h-6" />
-                                    </div>
-                                    <div className="overflow-hidden flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="font-semibold truncate" title={FEATURE_NAMES[feature] || feature}>
-                                                {FEATURE_NAMES[feature] || feature}
-                                            </div>
-                                            {Boolean(data.RequireCompliance) && (
-                                                <div className="shrink-0 group-hover:scale-110 transition-transform" title="Requires Compliance / Social Login">
-                                                    <Shield className="w-3.5 h-3.5 text-blue-400" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-sm text-text-muted flex items-center justify-between">
-                                            <span>Stage {group.age + 1}-{data.BattleIdx + 1}</span>
-                                            {data.FeatureToggle && (
-                                                <span className="text-[10px] font-black uppercase tracking-tighter text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
-                                                    Locked / Off
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </Card>
+                            {group.features.map(feature => (
+                                <FeatureCard
+                                    key={feature.id}
+                                    feature={feature}
+                                    stage={`Stage ${group.age + 1}-${(feature.battleIdx ?? 0) + 1}`}
+                                />
                             ))}
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Detailed Table View if needed, or just keep timeline which is nicer */}
+            {conditional.length > 0 && (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 border-t border-border pt-8">
+                        <ListChecks className="w-5 h-5 text-accent-primary" />
+                        <div>
+                            <h2 className="text-xl font-bold">Other Requirements</h2>
+                            <p className="text-xs text-text-muted">
+                                These features are not tied to a battle stage, so they open on their own conditions.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {conditional.map(feature => (
+                            <FeatureCard key={feature.id} feature={feature} />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
+    );
+}
+
+function FeatureCard({ feature, stage }: { feature: FeatureUnlock; stage?: string }) {
+    const chips = feature.extraRequirements;
+
+    return (
+        <Card className={cn(
+            "flex items-start gap-4 p-4 hover:border-accent-primary/50 transition-colors relative group",
+            feature.forceLocked && "opacity-40 grayscale"
+        )}>
+            <div className="w-10 h-10 rounded bg-accent-primary/10 flex items-center justify-center shrink-0">
+                <GameIcon name={getFeatureIcon(feature.id)} className="w-6 h-6" />
+            </div>
+            <div className="overflow-hidden flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <div className="font-semibold whitespace-nowrap overflow-hidden text-clip" title={feature.description || feature.name}>
+                        {feature.name}
+                    </div>
+                    {feature.requiresCompliance && (
+                        <div className="shrink-0 group-hover:scale-110 transition-transform" title="Requires Compliance / Social Login">
+                            <Shield className="w-3.5 h-3.5 text-blue-400" />
+                        </div>
+                    )}
+                </div>
+
+                <div className="text-sm text-text-muted flex items-center justify-between gap-2">
+                    <span className="whitespace-nowrap overflow-hidden text-clip">{stage || (chips.length === 0 ? 'Available from the start' : 'Conditional')}</span>
+                    {feature.forceLocked && (
+                        <span className="text-[10px] font-black uppercase tracking-tighter text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20 shrink-0">
+                            Locked / Off
+                        </span>
+                    )}
+                </div>
+
+                {chips.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                        {chips.map(chip => (
+                            <span
+                                key={chip}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary border border-border text-text-secondary"
+                            >
+                                {chip}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </Card>
     );
 }
 
 function getFeatureIcon(feature: string): string {
     const f = feature.toLowerCase();
-    if (f.includes('hammer')) return 'Hammer';
-    if (f.includes('coin') || f.includes('idle')) return 'Coin';
-    if (f.includes('shop') || f.includes('starter')) return 'GemSquare';
-    if (f.includes('skill')) return 'SkillTicket';
-    if (f.includes('pet') || f.includes('egg')) return 'Egg';
+    // The dungeon keys have to be tested first: every one of these ids also contains
+    // the plain resource word, so a later branch can never be reached.
     if (f.includes('dungeon_hammer')) return 'HammerKey';
     if (f.includes('dungeon_skill')) return 'SkillKey';
     if (f.includes('dungeon_pet')) return 'PetKey';
     if (f.includes('dungeon_potion')) return 'PotionKey';
     if (f.includes('dungeon')) return 'Battle';
+    if (f.includes('ascension')) return 'Star';
+    if (f.includes('hammer')) return 'Hammer';
+    if (f.includes('coin') || f.includes('idle')) return 'Coin';
+    if (f.includes('shop') || f.includes('starter')) return 'GemSquare';
+    if (f.includes('skill')) return 'SkillTicket';
+    if (f.includes('pet') || f.includes('egg')) return 'Egg';
     if (f.includes('arena')) return 'Battle';
     if (f.includes('techtree')) return 'Potion';
     if (f.includes('guild')) return 'Diamond';

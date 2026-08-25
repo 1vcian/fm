@@ -306,7 +306,7 @@ export default function AppShell() {
 
     return (
         <div className="flex h-screen bg-bg-primary text-text-primary overflow-hidden font-sans text-left">
-            {/* Sidebar opens/closes only via the Header menu button (left) — the old edge
+            {/* Sidebar opens/closes only via the Header menu button (left). The old edge
                 hover-zone auto-opened whenever the cursor grazed the screen edge, which felt random. */}
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 

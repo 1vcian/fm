@@ -538,7 +538,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                         <div className="relative mb-4">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                             <input
-                                placeholder={activeTab === 'library' ? "Search pet library..." : "Search saved builds..."}
+                                placeholder={activeTab === 'library' ? "Search pet library" : "Search saved builds"}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full bg-bg-input border border-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary transition-all"
@@ -581,7 +581,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                 )}
                                             </div>
                                             <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-0.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <span className="text-[9px] text-white truncate block text-center font-bold">
+                                                <span className="text-[9px] text-white whitespace-nowrap overflow-hidden text-clip block text-center font-bold">
                                                     {pet.name || `Pet #${pet.id}`}
                                                 </span>
                                             </div>
@@ -796,7 +796,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                         updateNestedProfile('pets', { savedBuilds: newSaved });
                                                     }
                                                 }}
-                                                placeholder="Set a custom name..."
+                                                placeholder="Set a custom name"
                                                 className="w-full bg-bg-input/50 border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-accent-primary transition-all pr-10"
                                             />
                                             <Settings className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted opacity-30 group-hover:opacity-60 transition-opacity" />

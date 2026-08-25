@@ -17,8 +17,8 @@ function ResourceCard({ icon, label, value, onChange, ring, hint }: {
                     {icon}
                 </div>
                 <div className="min-w-0">
-                    <div className="text-xs font-bold truncate leading-tight">{label}</div>
-                    {hint && <div className="text-[9px] text-text-muted truncate">{hint}</div>}
+                    <div className="text-xs font-bold whitespace-nowrap overflow-hidden text-clip leading-tight">{label}</div>
+                    {hint && <div className="text-[9px] text-text-muted whitespace-nowrap overflow-hidden text-clip">{hint}</div>}
                 </div>
             </div>
             <div className="flex items-center justify-between bg-bg-input rounded-lg border border-border">
@@ -136,7 +136,7 @@ export function ResourcesEditor() {
 
             <p className="text-[11px] text-text-muted flex items-start gap-2">
                 <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent-primary" />
-                These are the same values the calculators use — edit them here or inside a calculator, they stay in sync.
+                These are the same values the calculators use. Edit them here or inside a calculator, they stay in sync.
                 (Coins and Guild Potions aren&apos;t consumed by any calculator yet.)
             </p>
         </div>

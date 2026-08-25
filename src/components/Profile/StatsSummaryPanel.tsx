@@ -698,7 +698,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 <div className="text-center">
                     <AnimatedClock className="w-12 h-12 mx-auto mb-4 text-accent-primary" />
                     <div className="animate-spin w-8 h-8 border-4 border-accent-primary border-t-transparent rounded-full mx-auto" />
-                    <p className="mt-4 text-text-muted font-bold animate-pulse">Calculating Stats...</p>
+                    <p className="mt-4 text-text-muted font-bold animate-pulse">Calculating Stats</p>
                 </div>
             </Card>
         );
@@ -1256,7 +1256,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     }
                                 }}
                             >
-                                <option value="" disabled>Load Profile...</option>
+                                <option value="" disabled>Load Profile</option>
                                 {profiles.filter(p => p.id !== activeProfileId).map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
@@ -1282,80 +1282,85 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 )}
 
                 {isComparing && !actualHideActions && (
-                <div className="flex items-center justify-between gap-2 flex-wrap w-full pt-2">
+                <div className="flex flex-wrap items-center gap-2 w-full pt-2 sm:justify-between">
                     {/* Equipped build perfection (far left) */}
-                    <div className="flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-bg-input/30 min-w-[120px] shrink-0">
+                    <div className="order-1 flex-1 sm:order-none sm:flex-none flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-bg-input/30 sm:min-w-[120px] shrink-0">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/70 text-center">Equipped Perfection</span>
                         <PerfectionMeter value={originalPerfection} className="gap-2" />
                     </div>
 
                     {/* Auto Test Build controls (center) */}
-                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/60 mr-0.5">Auto Test Build</span>
+                    <div className="order-3 w-full sm:order-none sm:w-auto grid grid-cols-5 gap-1 sm:flex sm:items-center sm:justify-center sm:gap-1.5 sm:flex-wrap">
+                    <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-widest text-text-muted/60 mr-0.5">Auto Test Build</span>
                     <button
                         onClick={() => setRespectSavedLevels(v => !v)}
                         role="switch"
                         aria-checked={respectSavedLevels}
                         title="On: score saved builds at their own level. Off: score everything at level 1, so only secondary stats decide. Equipping always keeps the saved level."
                         className={cn(
-                            "h-7 px-2 text-[10px] font-bold rounded border gap-1 inline-flex items-center active:scale-95 transition-all w-fit",
+                            "h-7 px-2 text-[10px] font-bold rounded border gap-1 inline-flex items-center justify-center active:scale-95 transition-all w-full sm:w-fit",
                             respectSavedLevels
                                 ? "border-accent-primary/40 bg-accent-primary/10 text-accent-primary"
                                 : "border-border bg-bg-input/30 text-text-muted hover:text-text-primary"
                         )}
                     >
                         <Layers className="w-3 h-3" />
-                        {respectSavedLevels ? 'SAVED LVL' : 'LVL 1'}
+                        <span className="hidden sm:inline">{respectSavedLevels ? 'SAVED LVL' : 'LVL 1'}</span>
+                        <span className="sm:hidden">{respectSavedLevels ? 'LVL' : 'L1'}</span>
                     </button>
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
+                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
                         onClick={() => handleAutoOptimizeTest('dps')}
                         disabled={autoOptimizeDisabled}
                         title="Set best 3 pets + mount for Max DPS on the Test build"
                     >
                         <Sword className="w-3 h-3" />
-                        AUTO DPS
+                        <span className="hidden sm:inline">AUTO DPS</span>
+                        <span className="sm:hidden">DPS</span>
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
+                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
                         onClick={() => handleAutoOptimizeTest('power')}
                         disabled={autoOptimizeDisabled}
                         title="Set best 3 pets + mount for Max Power on the Test build"
                     >
                         <Zap className="w-3 h-3" />
-                        AUTO POWER
+                        <span className="hidden sm:inline">AUTO POWER</span>
+                        <span className="sm:hidden">PWR</span>
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
+                        className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
                         onClick={() => handleAutoOptimizeTest('lifesteal')}
                         disabled={autoOptimizeDisabled}
                         title="Set best 3 pets + mount for Max Lifesteal/sec on the Test build"
                     >
                         <Heart className="w-3 h-3" />
-                        AUTO LIFESTEAL/SEC
+                        <span className="hidden sm:inline">AUTO LIFESTEAL/SEC</span>
+                        <span className="sm:hidden">LS/S</span>
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit"
+                        className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
                         onClick={() => handleAutoOptimizeTest('balanced')}
                         disabled={autoOptimizeDisabled}
                         title="Set best 3 pets + mount for a balance of DPS and HPS on the Test build (same scoring as the Loadout Optimizer)"
                     >
                         <Scale className="w-3 h-3" />
-                        AUTO BALANCED
+                        <span className="hidden sm:inline">AUTO BALANCED</span>
+                        <span className="sm:hidden">BAL</span>
                     </Button>
                     {(previousTestPets || previousTestMount !== undefined) && (
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-fit"
+                            className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
                             onClick={handleRevertTest}
                         >
                             <RotateCcw className="w-3 h-3" />
@@ -1365,7 +1370,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     </div>
 
                     {/* Test build perfection (far right) */}
-                    <div className="flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-accent-primary/30 bg-accent-primary/5 min-w-[120px] shrink-0">
+                    <div className="order-2 flex-1 sm:order-none sm:flex-none flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-accent-primary/30 bg-accent-primary/5 sm:min-w-[120px] shrink-0">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-accent-primary/80 text-center">Test Perfection</span>
                         <PerfectionMeter value={testPerfection} className="gap-2" />
                     </div>
@@ -1534,7 +1539,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 }
                                             }}
                                         >
-                                            <option value="" disabled>Load...</option>
+                                            <option value="" disabled>Load</option>
                                             {profiles.filter(p => p.id !== activeProfileId).map(p => (
                                                 <option key={p.id} value={p.id}>{p.name}</option>
                                             ))}
@@ -2109,7 +2114,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <div className="grid grid-cols-2 gap-2">
                                     {treeBonusEntries.map(([key, value]) => (
                                         <div key={key} className="p-2 bg-bg-input/30 rounded-lg border border-border/30">
-                                            <div className="text-[10px] text-text-muted truncate mb-1" title={key}>{key}</div>
+                                            <div className="text-[10px] text-text-muted whitespace-nowrap overflow-hidden text-clip mb-1" title={key}>{key}</div>
                                             <div className="font-mono font-bold text-green-400 text-xs">+{(value * 100).toFixed(1)}%</div>
                                         </div>
                                     ))}

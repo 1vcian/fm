@@ -157,7 +157,7 @@ export default function FAQ() {
                                         <img src={c.avatar_url} alt={c.login} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <div className="font-bold text-xs truncate text-text-primary group-hover:text-accent-primary transition-colors">
+                                        <div className="font-bold text-xs whitespace-nowrap overflow-hidden text-clip text-text-primary group-hover:text-accent-primary transition-colors">
                                             {c.login}
                                         </div>
                                         <div className="flex flex-col gap-0.5 mt-1">

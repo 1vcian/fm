@@ -200,8 +200,8 @@ export default function ForgeCalculator() {
         fields: [
             { key: 'warForging', label: 'War points: forging', value: forgeWarBonus, profileValue: profileForgeWarBonus, min: 0, max: clanMax['WarPointsFromForging'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warForging: v })) },
             { key: 'warForgeSpend', label: 'War points: forge spend', value: forgeSpendBonus, profileValue: profileForgeSpendBonus, min: 0, max: clanMax['WarPointsFromForgeSpend'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warForgeSpend: v })) },
-            { key: 'dayBoost', label: 'Day boost — crafting (today)', value: dayBoost, profileValue: profileDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
-            { key: 'spendDayBoost', label: 'Day boost — forge spend (today)', value: spendDayBoost, profileValue: profileSpendDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, spendDayBoost: v })) },
+            { key: 'dayBoost', label: 'Day boost. Crafting (today)', value: dayBoost, profileValue: profileDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
+            { key: 'spendDayBoost', label: 'Day boost. Forge spend (today)', value: spendDayBoost, profileValue: profileSpendDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, spendDayBoost: v })) },
         ],
     };
 
@@ -864,7 +864,7 @@ export default function ForgeCalculator() {
         </div>
     );
 
-    if (!dropChances || !techTreeLib || !techTreeMap || !balancingConfig || !brackets) return <div className="p-10 text-center text-text-muted">Loading Configuration...</div>;
+    if (!dropChances || !techTreeLib || !techTreeMap || !balancingConfig || !brackets) return <div className="p-10 text-center text-text-muted">Loading Configuration</div>;
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -897,7 +897,7 @@ export default function ForgeCalculator() {
 
             <SandboxPanel fields={sandboxControls.fields} onReset={sandboxControls.reset} />
 
-            {/* Forge Upgrade War Points — hidden for now (WIP: forge N→M with auto coins/steps/gems + completed toggle) */}
+            {/* Forge Upgrade War Points. Hidden for now (WIP: forge N→M with auto coins/steps/gems + completed toggle) */}
             {false && (
             <div className="card p-4 border-accent-primary/20 bg-bg-secondary/30 backdrop-blur-md">
                 <div className="flex items-center gap-2 mb-3">

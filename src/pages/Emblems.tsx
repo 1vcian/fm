@@ -1,27 +1,34 @@
 
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
 import { Button } from '../components/UI/Button';
-import { useGameData } from '../hooks/useGameData';
 import { cn } from '../lib/utils';
 import { Download, Shield, RefreshCw } from 'lucide-react';
-import { useGameDataContext } from '../context/GameDataContext';
+import { useEmblemArtVersion, useEmblemColors, useEmblemImage } from '../components/UI/Emblem';
+import {
+    EMBLEM_ICON_COUNT,
+    EMBLEM_ICON_SHEET,
+    EMBLEM_SHAPE_COUNT,
+    EMBLEM_SHAPE_SHEET,
+    emblemCellBackground,
+} from '../utils/emblem';
 
-// Constants
-const EMBLEM_SIZE = 128; // Final output size
-const SHAPES_GRID = 4; // 4x4
-const ICONS_GRID = 8; // 8x8
-
-interface GuildEmblemColor {
-    ColorId: number;
-    ColorType: 'Background' | 'Foreground';
-    HexCode: string;
-}
+/**
+ * The emblem designer.
+ *
+ * Nothing in here composes an emblem any more: the holder + tinted shape +
+ * tinted symbol layering, and the multiply-then-alpha-mask tint, live in
+ * src/utils/emblem.ts and are shared with <ClanBadge>. This page picks four
+ * values, hands them to useEmblemImage() and shows/exports the PNG that comes
+ * back. The 128px export size and pixelRatio 1 are pinned here so the exported
+ * file is the same 128x128 on every screen.
+ */
+const EMBLEM_SIZE = 128; // exported PNG edge
 
 export default function Emblems() {
-    const { data: colorsConfig } = useGameData<Record<string, GuildEmblemColor>>('GuildEmblemColors.json');
-    const { selectedVersion } = useGameDataContext();
+    const colors = useEmblemColors();
+    const artVersion = useEmblemArtVersion();
 
     const [activeTab, setActiveTab] = useState<'pattern' | 'symbol'>('pattern');
     const [foregroundColorId, setForegroundColorId] = useState<number>(8);
@@ -29,52 +36,7 @@ export default function Emblems() {
     const [shapeIndex, setShapeIndex] = useState<number>(0);
     const [iconIndex, setIconIndex] = useState<number>(0);
 
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const imagesRef = useRef<{ holder: HTMLImageElement; shapes: HTMLImageElement; icons: HTMLImageElement } | null>(null);
-    const [imagesLoaded, setImagesLoaded] = useState(false);
-
-    // Data processing
-    const backgroundColors = useMemo(() => {
-        if (!colorsConfig) return [];
-        return Object.values(colorsConfig)
-            .filter(c => c.ColorType === 'Background')
-            .sort((a, b) => a.ColorId - b.ColorId);
-    }, [colorsConfig]);
-
-    const foregroundColors = useMemo(() => {
-        if (!colorsConfig) return [];
-        return Object.values(colorsConfig)
-            .filter(c => c.ColorType === 'Foreground')
-            .sort((a, b) => a.ColorId - b.ColorId);
-    }, [colorsConfig]);
-
-    // Pre-load images once
-    useEffect(() => {
-        const holderImg = new Image();
-        const shapesImg = new Image();
-        const iconsImg = new Image();
-        let loadedCount = 0;
-
-        const handleLoad = () => {
-            loadedCount++;
-            if (loadedCount === 3) {
-                imagesRef.current = { holder: holderImg, shapes: shapesImg, icons: iconsImg };
-                setImagesLoaded(true);
-            }
-        };
-
-        holderImg.onload = handleLoad;
-        shapesImg.onload = handleLoad;
-        iconsImg.onload = handleLoad;
-
-        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
-        const textureBase = `${import.meta.env.BASE_URL}Texture2D/${versionPath}`;
-
-        holderImg.src = `${textureBase}EmblemHolder.png`;
-        shapesImg.src = `${textureBase}EmblemShapes.png`;
-        iconsImg.src = `${textureBase}EmblemIcons.png`;
-    }, [selectedVersion]);
+    const { background: backgroundColors, foreground: foregroundColors } = colors;
 
     // Initialize defaults
     useEffect(() => {
@@ -87,70 +49,18 @@ export default function Emblems() {
         }
     }, [foregroundColors, backgroundColors, foregroundColorId, backgroundColorId]);
 
-    const getHex = (id: number) => colorsConfig?.[id]?.HexCode || '#FFFFFF';
+    const getHex = (id: number) => colors.byId.get(id)?.HexCode || '#FFFFFF';
 
-    // Drawing Logic
-    useEffect(() => {
-        if (!colorsConfig || !imagesLoaded || !imagesRef.current) return;
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const { holder: holderImg, shapes: shapesImg, icons: iconsImg } = imagesRef.current;
-
-        const draw = () => {
-            ctx.clearRect(0, 0, EMBLEM_SIZE, EMBLEM_SIZE);
-
-            const drawLayer = (img: HTMLImageElement, color: string,
-                sx: number, sy: number, sw: number, sh: number,
-                dx: number = 0, dy: number = 0, dw: number = EMBLEM_SIZE, dh: number = EMBLEM_SIZE
-            ) => {
-                const offCanvas = document.createElement('canvas');
-                offCanvas.width = dw;
-                offCanvas.height = dh;
-                const offCtx = offCanvas.getContext('2d');
-                if (!offCtx) return;
-
-                offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
-                offCtx.globalCompositeOperation = 'multiply';
-                offCtx.fillStyle = color;
-                offCtx.fillRect(0, 0, dw, dh);
-                offCtx.globalCompositeOperation = 'destination-in';
-                offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
-                ctx.drawImage(offCanvas, dx, dy);
-            };
-
-            // 1. PATTERN
-            const sCols = SHAPES_GRID;
-            const sW = shapesImg.width / sCols;
-            const sH = shapesImg.height / SHAPES_GRID;
-            const sX = (shapeIndex % sCols) * sW;
-            const sY = Math.floor(shapeIndex / sCols) * sH;
-            const shapeSize = EMBLEM_SIZE * 0.75;
-            const shapePos = (EMBLEM_SIZE - shapeSize) / 2;
-            drawLayer(shapesImg, getHex(backgroundColorId), sX, sY, sW, sH, shapePos, shapePos + 8, shapeSize, shapeSize);
-
-            // 2. SYMBOL
-            const iCols = ICONS_GRID;
-            const iW = iconsImg.width / iCols;
-            const iH = iconsImg.height / ICONS_GRID;
-            const iX = (iconIndex % iCols) * iW;
-            const iY = Math.floor(iconIndex / iCols) * iH;
-            const iconSize = EMBLEM_SIZE * 0.5;
-            const iconPos = (EMBLEM_SIZE - iconSize) / 2;
-            drawLayer(iconsImg, getHex(foregroundColorId), iX, iY, iW, iH, iconPos, iconPos, iconSize, iconSize);
-
-            // 3. BASE (Holder)
-            drawLayer(holderImg, getHex(foregroundColorId), 0, 0, holderImg.width, holderImg.height, 0, -48, EMBLEM_SIZE, EMBLEM_SIZE);
-
-            setPreviewUrl(canvas.toDataURL('image/png'));
-        };
-
-        draw();
-
-    }, [colorsConfig, imagesLoaded, foregroundColorId, backgroundColorId, shapeIndex, iconIndex]);
+    const { src: previewUrl } = useEmblemImage(
+        {
+            shape: shapeIndex,
+            icon: iconIndex,
+            shapeColorId: backgroundColorId,
+            iconColorId: foregroundColorId,
+        },
+        EMBLEM_SIZE,
+        { pixelRatio: 1 },
+    );
 
     const handleDownload = () => {
         if (previewUrl) {
@@ -164,13 +74,13 @@ export default function Emblems() {
     };
 
     const handleRandomize = () => {
-        if (!colorsConfig) return;
+        if (!colors.loaded) return;
         const bgKeys = backgroundColors.map(c => c.ColorId);
         const fgKeys = foregroundColors.map(c => c.ColorId);
         setForegroundColorId(fgKeys[Math.floor(Math.random() * fgKeys.length)] || fgKeys[0]);
         setBackgroundColorId(bgKeys[Math.floor(Math.random() * bgKeys.length)]);
-        setShapeIndex(Math.floor(Math.random() * 16));
-        setIconIndex(Math.floor(Math.random() * 64));
+        setShapeIndex(Math.floor(Math.random() * EMBLEM_SHAPE_COUNT));
+        setIconIndex(Math.floor(Math.random() * EMBLEM_ICON_COUNT));
     };
 
     return (
@@ -206,12 +116,11 @@ export default function Emblems() {
                         <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="relative w-64 h-64 shadow-2xl rounded-xl transition-transform duration-300 hover:scale-105">
                             <div className="absolute inset-0 rounded-xl opacity-30 pattern-dots" />
-                            <canvas ref={canvasRef} width={EMBLEM_SIZE} height={EMBLEM_SIZE} className="hidden" />
                             {previewUrl ? (
                                 <img src={previewUrl} alt="Preview" className="w-full h-full object-contain relative z-10 drop-shadow-2xl" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-text-muted animate-pulse">
-                                    Loading...
+                                    Loading
                                 </div>
                             )}
                         </div>
@@ -293,7 +202,7 @@ export default function Emblems() {
                             {activeTab === 'pattern' && (
                                 <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                     <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-                                        {Array.from({ length: 16 }).map((_, i) => (
+                                        {Array.from({ length: EMBLEM_SHAPE_COUNT }).map((_, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => setShapeIndex(i)}
@@ -305,11 +214,7 @@ export default function Emblems() {
                                                 )}
                                             >
                                                 <div className="w-full h-full opacity-60 group-hover:opacity-100 transition-opacity"
-                                                    style={{
-                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}EmblemShapes.png)`,
-                                                        backgroundPosition: `${(i % 4) * (100 / 3)}% ${Math.floor(i / 4) * (100 / 3)}%`,
-                                                        backgroundSize: '400% 400%',
-                                                    }}
+                                                    style={emblemCellBackground(EMBLEM_SHAPE_SHEET, i, artVersion)}
                                                 />
                                             </button>
                                         ))}
@@ -320,7 +225,7 @@ export default function Emblems() {
                             {activeTab === 'symbol' && (
                                 <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                     <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
-                                        {Array.from({ length: 64 }).map((_, i) => (
+                                        {Array.from({ length: EMBLEM_ICON_COUNT }).map((_, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => setIconIndex(i)}
@@ -332,11 +237,7 @@ export default function Emblems() {
                                                 )}
                                             >
                                                 <div className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
-                                                    style={{
-                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}EmblemIcons.png)`,
-                                                        backgroundPosition: `${(i % 8) * (100 / 7)}% ${Math.floor(i / 8) * (100 / 7)}%`,
-                                                        backgroundSize: '800% 800%'
-                                                    }}
+                                                    style={emblemCellBackground(EMBLEM_ICON_SHEET, i, artVersion)}
                                                 />
                                             </button>
                                         ))}
@@ -350,4 +251,3 @@ export default function Emblems() {
         </div>
     );
 }
-

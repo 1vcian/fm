@@ -184,8 +184,8 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                         <div className="flex items-center gap-2 md:gap-3 min-w-0">
                             <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-orange-400 shrink-0" />
                             <div className="min-w-0">
-                                <h3 className="text-base md:text-xl font-bold text-white tracking-tight truncate">DPS Breakdown</h3>
-                                <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] truncate">Math Analysis</p>
+                                <h3 className="text-base md:text-xl font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-clip">DPS Breakdown</h3>
+                                <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden text-clip">Math Analysis</p>
                             </div>
                         </div>
                         
@@ -458,7 +458,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                 {buffSkills.map((s: any, i) => (
                                     <div key={i} className="bg-purple-500/5 rounded-2xl p-4 md:p-5 border border-purple-500/10 space-y-4 min-w-0">
                                         <div className="flex justify-between items-start gap-4">
-                                            <div className="text-xs md:text-sm font-bold text-purple-300 uppercase tracking-tight truncate">{s.name}</div>
+                                            <div className="text-xs md:text-sm font-bold text-purple-300 uppercase tracking-tight whitespace-nowrap overflow-hidden text-clip">{s.name}</div>
                                             <div className="text-right shrink-0">
                                                 <div className="text-base md:text-lg font-mono font-bold text-white">+{formatVal(s.dps)}</div>
                                                 <div className="text-[8px] md:text-[9px] text-purple-400 font-bold uppercase font-sans">Avg DPS</div>
@@ -509,7 +509,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                 {damageSkills.map((s: any, i) => (
                                     <div key={i} className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-4 min-w-0">
                                         <div className="flex justify-between items-center pb-3 border-b border-white/5 gap-4">
-                                            <div className="text-xs md:text-sm font-bold text-white uppercase truncate">{s.name}</div>
+                                            <div className="text-xs md:text-sm font-bold text-white uppercase whitespace-nowrap overflow-hidden text-clip">{s.name}</div>
                                             <div className="text-right shrink-0">
                                                 <div className="text-lg md:text-xl font-mono font-bold text-blue-400">{formatVal(s.dps)}</div>
                                                 <div className="text-[8px] md:text-[9px] text-white/40 font-bold uppercase font-sans">Avg DPS</div>
@@ -520,7 +520,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                             <div className="space-y-2">
                                                 <div className="text-[9px] md:text-[10px] text-blue-300/60 font-bold uppercase font-sans">Power</div>
                                                 <div className="flex justify-between items-baseline text-[10px] md:text-[11px] font-mono gap-2">
-                                                    <span className="text-white/40 truncate">Hit</span>
+                                                    <span className="text-white/40 whitespace-nowrap overflow-hidden text-clip">Hit</span>
                                                     <span className="text-white font-bold">{formatVal(s.base * s.multi)}</span>
                                                 </div>
                                                 <div className="flex justify-between items-baseline text-[10px] md:text-[11px] pt-1 border-t border-white/5 font-mono gap-2">
@@ -610,14 +610,14 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                     <div className="flex-1 flex flex-wrap items-center justify-between md:justify-start gap-x-4 gap-y-3 md:gap-8 min-w-0">
                         <div className="flex flex-col min-w-0">
                             <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Weapon</span>
-                            <span className="text-sm md:text-xl font-bold text-orange-400 leading-none truncate">
+                            <span className="text-sm md:text-xl font-bold text-orange-400 leading-none whitespace-nowrap overflow-hidden text-clip">
                                 {formatVal(displayWeaponDps)}
                             </span>
                         </div>
                         <div className="text-white/10 font-bold text-sm md:text-base">+</div>
                         <div className="flex flex-col min-w-0">
                             <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Skills</span>
-                            <span className="text-sm md:text-xl font-bold text-blue-400 leading-none truncate">
+                            <span className="text-sm md:text-xl font-bold text-blue-400 leading-none whitespace-nowrap overflow-hidden text-clip">
                                 {formatVal(stats.skillDps + (stats.skillBuffDps || 0))}
                             </span>
                         </div>

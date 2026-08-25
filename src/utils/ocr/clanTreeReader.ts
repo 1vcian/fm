@@ -3,16 +3,28 @@
 // icon-NCC agreement, header guild potions read, partial nodes SKIPPED never misread).
 //
 // PIPELINE (per screenshot, normalized to 576px width):
-//   1. Section cards: rows y in [CLIP_TOP, CLIP_BOTTOM] whose fraction of card-gray
-//      (|rgb-240|<10) pixels over x in [36,540) exceeds 0.15 -> contiguous runs = cards.
+//   0. Scroll band: the clip is DERIVED from content, never from screen-height constants (the
+//      game UI scales with WIDTH, so every horizontal param is device-independent once the shot
+//      is normalized to 576px, but vertical offsets move with aspect ratio / safe areas).
+//      clipBottom  = 8px above the dark separator line that caps the bottom tab strip (the
+//                    full-width flat #d8d8d8 band holding Skills/Pets/Tech Tree).
+//      clipTop     = 21px below the bottom of the last non-card gray run above the first card
+//                    (the MVP pill) — the header is width-scaled, so that gap is a constant.
+//      Fallbacks (cropped shots): the legacy 304 / H-218 offsets.
+//   1. Section cards: rows y in [clipTop, clipBottom] whose fraction of card-gray
+//      (|rgb-240|<10) pixels over x in [36,540) exceeds 0.15 -> contiguous runs; a run is a
+//      card when it is >=CARD_MIN_H tall, its trimmed gray span is >=200px wide and that span
+//      is CENTRED on the page (the MVP pill is gray and 172px wide but left-aligned).
 //   2. Node circles: the proto ran cv2.HoughCircles then kept circles passing a dark-ring
 //      annulus test inside a card band. Here the annulus test IS the detector (the proto's
 //      col/row pitch makes full Hough unnecessary): a coarse grid scan over each card band
 //      samples the ring at r~35.5, candidates are refined +-4px to the minimum of the exact
 //      proto annulus mean (radii 34..37) and accepted when that mean < RING_DARK_MAX.
 //      Dedup at the Hough minDist (60px).
-//   3. Guards (partial nodes are SKIPPED, never misread): circle fully inside the scroll clip
-//      and the level text line fully visible (cy+TEXT_BOT <= CLIP_BOTTOM+2).
+//   3. Guards (partial nodes are SKIPPED, never misread): the ring probe only scans the part of
+//      a card band where a WHOLE circle fits inside the clip (so a dark bottom-sheet overlay
+//      cannot steal a real node's slot during the minDist dedup), and the level text line must
+//      be fully visible (cy+TEXT_BOT <= clipBottom+2).
 //   4. Level text: band [cx-58,cx+58] x [cy+34,cy+80]. White Baloo with a dark outline drawn
 //      straight on the card: 4x cubic upscale, dark mask = max(R,G,B) < 120, white cores =
 //      bright (min>170, retry 140) holes of the dark mask (components of the inverse not
@@ -27,7 +39,10 @@
 //      partial row must be the category's final row; offsets step by the column count); icon
 //      scores + "read /max == library MaxLevel" agreement vote among the rest. Reading-order
 //      position -> nodeType via the FLATTENED library order = the app's global node id.
-//   8. Header potions: crop x[58,150] y[96,140], white digits in the dark pill, digit charset.
+//   8. Header potions: crop x[58,150], y clipTop-208..clipTop-164 (the header is width-scaled,
+//      so the pill sits at a fixed offset above the scroll clip), white digits in the dark pill,
+//      digit charset; an abbreviated count ("2.69k") is detected from the trailing k/m/b glyph
+//      and the widened gap where the decimal point was dropped.
 //
 // Deliberate deviations from the proto (documented): no 3x3 median blur before ring detection
 // (the annulus decision is a ~670px mean — single-pixel noise is irrelevant), canvas-cubic in
@@ -43,13 +58,21 @@ import type { DetectedClanTree, DetectedClanNode } from './readerTypes';
 
 // ------------------------------------------------------------------ proto PARAMS (576x1280)
 const CANON_W = 576;
-const CLIP_TOP = 304;          // scroll viewport top clip (header-anchored)
-const CLIP_BOTTOM_FROM_H = 218;// CLIP_BOTTOM = H - 218 (bottom-sheet anchored; 1062 @ H=1280)
+const CLIP_TOP_FALLBACK = 304;   // 576x1280 scroll-viewport top, used only if the header anchor
+const CLIP_BOTTOM_FROM_H = 218;  // and the tab-strip anchor cannot be found (cropped shots)
 const CARD_GRAY = 240, CARD_TOL = 10, CARD_X0 = 36, CARD_X1 = 540;
 const CARD_ROW_FRAC = 0.15, CARD_MIN_H = 40;
+const RUN_MIN_H = 10;            // shortest gray row-run considered at all (header pill parts)
+const CARD_MIN_SPAN = 200;       // narrowest real card: the 2-column Special card spans ~270px
+const CARD_CENTRE_TOL = 34;      // cards are centred on the page; the MVP pill is left-aligned
+const SPAN_TRIM = 0.02;          // trimmed percentile for a row's gray span (kills stray pixels)
+const BAR_PALE = 216, BAR_PALE_TOL = 14, BAR_PALE_FRAC = 0.9; // bottom tab strip fill
+const BAR_DARK_MAX = 110, BAR_DARK_FRAC = 0.95;               // its dark cap line
+const BAR_SEP_GAP = 8;           // clipBottom = (first dark cap row) - 8
+const HEADER_PILL_GAP = 21;      // MVP-pill bottom -> scroll-viewport top (width-scaled header)
 const ROW_TOL = 20;            // circle row clustering tolerance
 const COL_PITCH = 117.7;       // circle column pitch
-const MIN_DIST = 60;           // Hough minDist — circle dedup radius
+const MIN_DIST = 60;           // Hough minDist. Circle dedup radius
 const RING_R = 38;             // nominal node circle radius
 const RING_DARK_MAX = 110;     // annulus mean gray must be below this (dark navy ring)
 const TEXT_BAND = [-58, 34, 58, 80] as const; // level-text crop rel. to centre (x0,y0,x1,y1)
@@ -61,7 +84,11 @@ const GLYPH_MIN_AREA = 60, GLYPH_MIN_H_FRAC = 0.45;
 const ICON_SCALES = [46, 50, 54];
 const ICON_OFFS = 6, ICON_OFF_STEP = 2;
 const TITLE_BAND_H = 46;
-const POTION_CROP = [58, 96, 150, 140] as const;
+const POTION_X = [58, 150] as const;          // x window of the header potion pill
+const POTION_DY = [-208, -164] as const;      // y window relative to clipTop (=[96,140] @ 304)
+const POTION_SUFFIX = ['k', 'm', 'b'] as const;
+const POTION_SUFFIX_MARGIN = 0.03;            // suffix glyph must beat the digit fit by this
+const POTION_DOT_GAP = 0.45;                  // dropped '.' -> gap > 0.45 * mean glyph width
 const VOTE_MAX_BONUS = 0.25;
 const VOTE_TITLE_BONUS = 0.20;
 const LEVEL_CHARSET = '0123456789/Max'.split('');
@@ -250,30 +277,108 @@ function canonCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
     return c;
 }
 
-/** Contiguous card-gray row runs inside the scroll clip -> [top, bottom] card bands. */
-function findCards(px: Uint8ClampedArray, W: number, H: number, clipBottom: number): [number, number][] {
-    const rows = new Uint8Array(H);
-    for (let y = CLIP_TOP; y <= Math.min(clipBottom, H - 1); y++) {
-        let cnt = 0;
-        for (let x = CARD_X0; x < CARD_X1; x++) {
-            const p = (y * W + x) * 4;
-            if (Math.abs(px[p] - CARD_GRAY) < CARD_TOL &&
-                Math.abs(px[p + 1] - CARD_GRAY) < CARD_TOL &&
-                Math.abs(px[p + 2] - CARD_GRAY) < CARD_TOL) cnt++;
+function median(v: number[]): number {
+    if (!v.length) return 0;
+    const s = [...v].sort((a, b) => a - b);
+    return s[s.length >> 1];
+}
+
+interface Layout {
+    clipTop: number;
+    clipBottom: number;
+    cards: [number, number][];
+}
+
+/**
+ * Derive the scroll viewport and the section-card bands from CONTENT.
+ *
+ * Everything horizontal is device-independent once the shot is normalized to 576px width (the
+ * game lays the tree out in width-scaled units), but every vertical offset moves with the aspect
+ * ratio and the platform's safe areas — an iPhone 923x2000 shot normalizes to 576x1248 and its
+ * scroll band sits 49px higher than the 576x1280 Android one the params were measured on. So:
+ *   - clipBottom comes from the bottom tab strip: a full-width flat pale (#d8d8d8) band capped
+ *     by a 2-3px dark line. The scroll content is clipped BAR_SEP_GAP above that line.
+ *   - clipTop comes from the header: the MVP pill is the last gray run above the first card and
+ *     the (width-scaled) header puts the viewport HEADER_PILL_GAP below its bottom.
+ *   - cards are gray row-runs that are tall enough, wide enough AND centred; that last test is
+ *     what separates a narrow 2-column card (centred, ~270px) from the MVP pill (left-aligned,
+ *     ~172px) without needing a clip constant to hide the header.
+ */
+function findLayout(px: Uint8ClampedArray, W: number, H: number): Layout {
+    const frac = new Float32Array(H), span = new Float32Array(H), mid = new Float32Array(H);
+    const pale = new Float32Array(H), dark = new Float32Array(H);
+    const gray = new Uint8Array(W);
+    for (let y = 0; y < H; y++) {
+        let win = 0, nGray = 0, nPale = 0, nDark = 0;
+        for (let x = 0; x < W; x++) {
+            const p = (y * W + x) * 4, r = px[p], g = px[p + 1], b = px[p + 2];
+            const isGray = Math.abs(r - CARD_GRAY) < CARD_TOL && Math.abs(g - CARD_GRAY) < CARD_TOL
+                && Math.abs(b - CARD_GRAY) < CARD_TOL;
+            gray[x] = isGray ? 1 : 0;
+            if (isGray) { nGray++; if (x >= CARD_X0 && x < CARD_X1) win++; }
+            if (Math.abs(r - BAR_PALE) < BAR_PALE_TOL && Math.abs(g - BAR_PALE) < BAR_PALE_TOL
+                && Math.abs(b - BAR_PALE) < BAR_PALE_TOL) nPale++;
+            if (Math.max(r, g, b) < BAR_DARK_MAX) nDark++;
         }
-        rows[y] = cnt / (CARD_X1 - CARD_X0) > CARD_ROW_FRAC ? 1 : 0;
+        frac[y] = win / (CARD_X1 - CARD_X0);
+        pale[y] = nPale / W; dark[y] = nDark / W;
+        // trimmed gray span of the row (2nd..98th percentile => stray header pixels ignored)
+        if (nGray >= 10) {
+            const trim = Math.max(1, Math.floor(nGray * SPAN_TRIM));
+            let acc = 0, x0 = 0, x1 = W - 1;
+            for (let x = 0; x < W; x++) if (gray[x] && ++acc > trim) { x0 = x; break; }
+            acc = 0;
+            for (let x = W - 1; x >= 0; x--) if (gray[x] && ++acc > trim) { x1 = x; break; }
+            span[y] = x1 - x0; mid[y] = (x0 + x1) / 2;
+        }
     }
-    const cards: [number, number][] = [];
-    let y = CLIP_TOP;
-    while (y <= clipBottom) {
-        if (rows[y]) {
+    // bottom tab strip: >=2 fully dark cap rows, then the flat pale band within 5 rows
+    let barRow = -1;
+    for (let y = H >> 1; y < H - 7 && barRow < 0; y++) {
+        if (dark[y] < BAR_DARK_FRAC || dark[y + 1] < BAR_DARK_FRAC) continue;
+        let n = 0;
+        for (let k = 2; k <= 7; k++) if (pale[y + k] >= BAR_PALE_FRAC) n++;
+        if (n >= 3) barRow = y;
+    }
+    let clipBottom = H - CLIP_BOTTOM_FROM_H;
+    if (barRow - BAR_SEP_GAP > H / 4) clipBottom = barRow - BAR_SEP_GAP;
+    clipBottom = Math.max(1, Math.min(H - 1, clipBottom));
+
+    // gray row-runs, classified into cards vs header furniture
+    interface Run { top: number; bot: number; wide: boolean; card: boolean }
+    const runs: Run[] = [];
+    for (let y = 0; y <= clipBottom;) {
+        if (frac[y] > CARD_ROW_FRAC) {
             const y0 = y;
-            while (y <= clipBottom && rows[y]) y++;
-            if (y - y0 >= CARD_MIN_H) cards.push([y0, y - 1]);
-        }
-        y++;
+            while (y <= clipBottom && frac[y] > CARD_ROW_FRAC) y++;
+            const bot = y - 1;
+            if (bot - y0 + 1 >= RUN_MIN_H) {
+                const sp: number[] = [], mi: number[] = [];
+                for (let r = y0; r <= bot; r++) if (span[r] > 0) { sp.push(span[r]); mi.push(mid[r]); }
+                // "wide" = card-shaped (a centred, wide gray slab); a wide run too short to hold
+                // a node row is still card, not header furniture, so it must not anchor clipTop.
+                const wide = median(sp) >= CARD_MIN_SPAN && Math.abs(median(mi) - W / 2) <= CARD_CENTRE_TOL;
+                runs.push({ top: y0, bot, wide, card: wide && bot - y0 + 1 >= CARD_MIN_H });
+            }
+        } else y++;
     }
-    return cards;
+
+    const firstWide = runs.find(r => r.wide);
+    let clipTop = CLIP_TOP_FALLBACK;
+    if (firstWide) {
+        let anchor = -1;
+        for (const r of runs) if (!r.wide && r.bot < firstWide.top) anchor = Math.max(anchor, r.bot);
+        clipTop = anchor >= 0 ? Math.min(anchor + HEADER_PILL_GAP, firstWide.top) : firstWide.top;
+    }
+    clipTop = Math.max(0, Math.min(clipTop, clipBottom - 1));
+
+    const cards: [number, number][] = [];
+    for (const r of runs) {
+        if (!r.card) continue;
+        const top = Math.max(r.top, clipTop), bot = Math.min(r.bot, clipBottom);
+        if (bot - top + 1 >= CARD_MIN_H) cards.push([top, bot]);
+    }
+    return { clipTop, clipBottom, cards };
 }
 
 /** Precomputed (dy,dx) offsets of the proto's exact annulus (radii RING_R-4 .. RING_R-1). */
@@ -306,7 +411,8 @@ function annulusMean(gray: Float32Array, W: number, H: number, cx: number, cy: n
  *  The annulus test alone is decisive here: inside a card band nothing but a node ring can
  *  keep a 76px-diameter, 3px-wide annulus dark (text glyphs and connector lines are far too
  *  small, overlay badges cover only a small arc), matching the proto's zero-extras result. */
-function findCircles(gray: Float32Array, W: number, H: number, cards: [number, number][]): { x: number; y: number }[] {
+function findCircles(gray: Float32Array, W: number, H: number, cards: [number, number][],
+    clipTop: number, clipBottom: number): { x: number; y: number }[] {
     // coarse ring probe: 24 samples at the annulus mid-radius
     const RS = RING_R - 2.5;
     const probe: number[] = [];
@@ -317,7 +423,11 @@ function findCircles(gray: Float32Array, W: number, H: number, cards: [number, n
     interface Cand { x: number; y: number; m: number }
     const cands: Cand[] = [];
     for (const [top, bot] of cards) {
-        const yLo = Math.max(RING_R, top - 8), yHi = Math.min(H - 1 - RING_R, bot + 8);
+        // only where a WHOLE ring fits inside the scroll clip: a partial node is unusable anyway,
+        // and a dark bottom-sheet overlay sitting on the clip edge must not win the minDist dedup
+        // against the real (fully visible) node ring it overlaps.
+        const yLo = Math.max(RING_R, top - 8, clipTop + RING_R);
+        const yHi = Math.min(H - 1 - RING_R, bot + 8, clipBottom - RING_R);
         for (let y = yLo; y <= yHi; y += 3) {
             for (let x = Math.max(RING_R, CARD_X0 + 24); x <= Math.min(W - 1 - RING_R, CARD_X1 - 24); x += 3) {
                 let s = 0;
@@ -338,6 +448,7 @@ function findCircles(gray: Float32Array, W: number, H: number, cards: [number, n
             if (m < bm) { bm = m; bx = c.x + dx; by = c.y + dy; }
         }
         if (bm > RING_DARK_MAX) continue;
+        if (by - RING_R < clipTop || by + RING_R > clipBottom) continue;   // refine may drift out
         if (accepted.some(a => Math.abs(a.x - bx) < MIN_DIST && Math.abs(a.y - by) < MIN_DIST)) continue;
         accepted.push({ x: bx, y: by });
     }
@@ -434,12 +545,38 @@ function readLevelText(band: HTMLCanvasElement, bank: GlyphBank): { kind: LevelK
     return { kind: null, lvl: null, mx: null };
 }
 
-function readPotion(canvas: HTMLCanvasElement, bank: GlyphBank): number | null {
-    const [x0, y0, x1, y1] = POTION_CROP;
-    const crop = cropCanvas(canvas, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+function potionRect(clipTop: number): Rect {
+    return { x: POTION_X[0], y: clipTop + POTION_DY[0], w: POTION_X[1] - POTION_X[0], h: POTION_DY[1] - POTION_DY[0] };
+}
+
+/** The pill abbreviates large counts ("2.69k"). The '.' is below the glyph-height floor and is
+ *  dropped by extractCores, so recover it from the gap it left behind. */
+function potionValue(cores: Core[], digits: string, suffix: string): number {
+    const mult = suffix === 'k' ? 1e3 : suffix === 'm' ? 1e6 : 1e9;
+    let wide = -1, bg = 0, wAvg = 0;
+    for (let i = 0; i < digits.length; i++) wAvg += cores[i].w;
+    wAvg /= Math.max(1, digits.length);
+    for (let i = 1; i < digits.length; i++) {
+        const gap = cores[i].x - (cores[i - 1].x + cores[i - 1].w);
+        if (gap > bg) { bg = gap; wide = i; }
+    }
+    const dot = bg > POTION_DOT_GAP * wAvg && wide > 0 ? wide : digits.length;
+    return Math.round(parseFloat(`${digits.slice(0, dot)}.${digits.slice(dot) || '0'}`) * mult);
+}
+
+function readPotion(canvas: HTMLCanvasElement, bank: GlyphBank, clipTop: number): number | null {
+    const crop = cropCanvas(canvas, potionRect(clipTop));
     for (const thr of [BRIGHT_THR, 140]) {
-        const s = classifyText(extractCores(crop, bank, thr), bank, DIGITS);
-        if (s.length >= 2 && /^\d+$/.test(s)) return parseInt(s, 10);
+        const cores = extractCores(crop, bank, thr);
+        const s = classifyText(cores, bank, DIGITS);
+        if (s.length < 2 || !/^\d+$/.test(s) || cores.length !== s.length) continue;
+        // is the trailing glyph really a k/m/b magnitude suffix rather than a digit?
+        const last = cores[cores.length - 1];
+        let sfx = '', sv = -Infinity;
+        for (const c of POTION_SUFFIX) { const v = scoreGlyphChar(bank, last.g, c); if (v > sv) { sv = v; sfx = c; } }
+        if (!sfx || sv <= scoreGlyphChar(bank, last.g, s[s.length - 1]) + POTION_SUFFIX_MARGIN) return parseInt(s, 10);
+        const digits = s.slice(0, -1);
+        if (digits.length) return potionValue(cores, digits, sfx);
     }
     return null;
 }
@@ -526,19 +663,16 @@ export async function readClanTree(input: HTMLCanvasElement): Promise<DetectedCl
     const [bank, libs] = await Promise.all([loadGlyphBank(), getLibs()]);
     const canvas = canonCanvas(input);
     const W = canvas.width, H = canvas.height;
-    const clipBottom = H - CLIP_BOTTOM_FROM_H;
     const px = canvas.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, W, H).data;
     const gray = new Float32Array(W * H);
     for (let i = 0, p = 0; p < W * H; i += 4, p++) gray[p] = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
 
-    const cards = findCards(px, W, H, clipBottom);
-    const circles = findCircles(gray, W, H, cards);
+    const { clipTop, clipBottom, cards } = findLayout(px, W, H);
+    const circles = findCircles(gray, W, H, cards, clipTop, clipBottom);
     const dbg: any[] | undefined = (globalThis as any).__CLANTREE_DEBUG__;
-    if (dbg) dbg.push({ W, H, clipBottom, cards, circles: circles.map(c => ({ ...c, ann: Math.round(annulusMean(gray, W, H, c.x, c.y)) })) });
-    const guildPotions = readPotion(canvas, bank);
-    const potionCropUrl = guildPotions != null
-        ? evidenceCropUrl(canvas, { x: POTION_CROP[0], y: POTION_CROP[1], w: POTION_CROP[2] - POTION_CROP[0], h: POTION_CROP[3] - POTION_CROP[1] }, 140)
-        : undefined;
+    if (dbg) dbg.push({ W, H, clipTop, clipBottom, cards, circles: circles.map(c => ({ ...c, ann: Math.round(annulusMean(gray, W, H, c.x, c.y)) })), titles: [] as (string | null)[] });
+    const guildPotions = readPotion(canvas, bank, clipTop);
+    const potionCropUrl = guildPotions != null ? evidenceCropUrl(canvas, potionRect(clipTop), 140) : undefined;
 
     const nodes: DetectedClanNode[] = [];
     let acceptedCircles = 0, readCircles = 0;
@@ -547,17 +681,21 @@ export async function readClanTree(input: HTMLCanvasElement): Promise<DetectedCl
         const cs = circles.filter(c => top - 8 <= c.y && c.y <= bot + 8)
             .sort((a, b) => a.y - b.y || a.x - b.x);
         if (!cs.length) continue;
-        // guards: full circle + full text line inside the scroll clip (partial nodes SKIPPED)
-        const ok = cs.filter(c =>
-            c.y - RING_R >= CLIP_TOP && c.y + RING_R <= clipBottom && c.y + TEXT_BOT <= clipBottom + 2);
-        if (!ok.length) continue;
 
         // rows / columns
-        const rows: { x: number; y: number }[][] = [];
-        for (const c of ok) {
-            const row = rows.find(r => Math.abs(r[0].y - c.y) < ROW_TOL);
-            if (row) row.push(c); else rows.push([c]);
+        const allRows: { x: number; y: number }[][] = [];
+        for (const c of cs) {
+            const row = allRows.find(r => Math.abs(r[0].y - c.y) < ROW_TOL);
+            if (row) row.push(c); else allRows.push([c]);
         }
+        // Guards are applied per ROW, on its median centre (partial nodes SKIPPED, never misread).
+        // Per-circle would let the +-4px ring-refine jitter split one grid row into a "partial"
+        // row and then fail the final-row check, dropping the whole card.
+        const rows = allRows.filter(r => {
+            const cy = median(r.map(c => c.y));
+            return cy - RING_R >= clipTop && cy + RING_R <= clipBottom && cy + TEXT_BOT <= clipBottom + 2;
+        });
+        if (!rows.length) continue;
         rows.sort((a, b) => a[0].y - b[0].y);
         for (const r of rows) r.sort((a, b) => a.x - b.x);
         const minCx = Math.min(...rows.flat().map(c => c.x));
@@ -582,11 +720,12 @@ export async function readClanTree(input: HTMLCanvasElement): Promise<DetectedCl
             nd.icons = iconScores(px, W, H, nd.cx, nd.cy, libs.pyr);
         }
 
-        const topCut = top <= CLIP_TOP + 4;
+        const topCut = top <= clipTop + 4;
         const botCut = bot >= clipBottom - 4;
-        const tb0 = Math.max(CLIP_TOP, top - TITLE_BAND_H);
+        const tb0 = Math.max(clipTop, top - TITLE_BAND_H);
         const titleCat = await ocrTitle(canvas, tb0, top - 2, libs);
-        const titleTrusted = titleCat !== null && (top - TITLE_BAND_H) >= CLIP_TOP;
+        const titleTrusted = titleCat !== null && (top - TITLE_BAND_H) >= clipTop;
+        if (dbg) dbg[dbg.length - 1].titles.push(`${top}-${bot} ${titleCat}${titleTrusted ? '!' : '?'} tc=${topCut} bc=${botCut}`);
 
         // candidate (category, offset) vote
         const nVis = cardNodes.length;

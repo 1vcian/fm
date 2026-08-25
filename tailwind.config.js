@@ -1,3 +1,5 @@
+import plugin from 'tailwindcss/plugin.js';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -86,5 +88,12 @@ export default {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    // Tailwind 3.4 ships no pointer variant, so `pointer-coarse:` silently compiled to nothing.
+    // Cards that get denser still have to be pressable with a thumb, which needs the real query.
+    plugin(({ addVariant }) => {
+      addVariant('pointer-coarse', '@media (pointer: coarse)');
+      addVariant('pointer-fine', '@media (pointer: fine)');
+    }),
+  ],
 }

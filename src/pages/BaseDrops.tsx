@@ -123,7 +123,7 @@ export default function BaseDrops() {
         if (isLoading && !targetData) return (
             <div className="p-20 flex flex-col items-center justify-center gap-4">
                 <RefreshCw className="w-8 h-8 animate-spin text-accent-primary" />
-                <span className="text-text-muted">Fetching drop table data...</span>
+                <span className="text-text-muted">Fetching drop table data</span>
             </div>
         );
 

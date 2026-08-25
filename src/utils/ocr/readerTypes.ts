@@ -2,6 +2,7 @@
 // canvas + the game dictionaries and returns one of these structured results; the pipeline maps
 // them to the profile store and the modal renders an editable image-diff.
 import type { ScreenTemplate } from './templateClassifier';
+import type { Rect } from './imagePrep';
 
 export interface Substat {
     statId: string | null;   // canonical id (from the localized substats dict), null if unmatched
@@ -94,7 +95,7 @@ export interface CurrencyCrops {
 export interface DetectedSkinEquip {
     slot?: string;                                 // profile items key hint (Helmet, Body, Weapon)
     skinType?: string;                             // SkinId.Type ('Helmet' | 'Armour' | 'Weapon')
-    skinIdx?: number;                              // SkinId.Idx — set only when resolved
+    skinIdx?: number;                              // SkinId.Idx. Set only when resolved
     setId?: string;                                // BaseSetId (e.g. 'FishbowlSet')
     name?: string;                                 // raw OCR'd skin name (e.g. 'Goldfish')
     stats: { statType: string; value: number }[];  // fraction values (0.0678 = +6.78%)
@@ -102,19 +103,73 @@ export interface DetectedSkinEquip {
     cropUrl?: string;                              // data-URL of the detail card (for the modal)
     confidence: number;                            // 0..1
     warnings: string[];
+    /**
+     * Ascension stars (0..3) read off the SKIN TILE, or null when the tile was not found.
+     *
+     * These are the FORGE's ascension — the same 0..3 pips every item/pet/mount tile carries — not
+     * a property of the skin, which has no ascension of its own. They live here because the skin
+     * tile is what they were counted on; autoSync turns them into a vote in the forge-ascension
+     * consensus (see buildChangesFromReads).
+     *
+     * null and undefined BOTH mean "not read" and must never be flattened to 0 on the way to the
+     * modal: 0 is a real reading ("this forge has no ascension") and claiming it from a tile we
+     * never found is exactly the fabricated-value failure this feature refuses to ship.
+     * skinReader.DetectedSkinRead narrows this to the required `number | null`.
+     */
+    stars?: number | null;
+    /** The skin tile the stars were counted in (evidence / debugging). */
+    tile?: Rect;
+}
+
+/** One item tile that voted in the forge-ascension consensus. */
+export interface ForgeStarVote {
+    rect: Rect;              // the LATTICE-canonical tile rect the stars were read from
+    stars: number;           // 0..3
+    row: number; col: number; // lattice position (0,0 for a single popup tile)
+}
+
+/**
+ * The forge's ascension as read from the STARS ON THE ITEM TILES (task #39). Every equipped item
+ * shows the same forge ascension, so the answer is the MODAL value over the tiles on screen and
+ * `agreement` says how much of the screen backed it — a badly split vote is a value to check, not
+ * a reading to trust. `authoritative` is false when the tiles came from a player profile card
+ * (own or enemy) instead of the user's own item popup: such a read must never be applied
+ * confidently, because the card may be somebody else's.
+ */
+export interface ForgeAscensionRead {
+    value: number | null;    // modal star count across `tiles`, null when nothing voted
+    votes: number;           // how many item tiles voted
+    agree: number;           // how many of them voted for `value`
+    agreement: number;       // agree / votes (0..1)
+    tally: Record<number, number>;
+    authoritative: boolean;
+    source: 'popup' | 'lattice';
+    tiles: ForgeStarVote[];
+    tileW: number; rows: number; cols: number;
+    cropUrl?: string;        // evidence: the "Lv.NNN ★" bands of the tiles that voted
 }
 
 export interface ScreenReadResult {
     screen: ScreenTemplate | 'skin';
+    /**
+     * False when the subject was read from a popup on a PLAYER PROFILE CARD — a frame with no
+     * currency header, so nothing on it says whose card it is (ClassifyResult.authoritative).
+     * Absent/undefined means "the user's own screen". A non-authoritative read is offered as a
+     * suggestion to confirm and is never pre-accepted, the same rule
+     * ForgeAscensionRead.authoritative already encodes for the item-tile lattice.
+     */
+    authoritative?: boolean;
     item?: DetectedItem;
     unit?: DetectedUnit;
     skills?: DetectedSkill[];
     clanTree?: DetectedClanTree;
+    /** Skin popup read. `skin.stars` is the ascension read off the skin tile (null = unread). */
     skin?: DetectedSkinEquip;
     currencies?: DetectedCurrencies;
     currencyCrops?: CurrencyCrops;   // evidence crops for the currencies above (observability only)
     forgeLevel?: number | null;      // "Forge Level NN" button on the forge row (item screens only)
     forgeLevelCropUrl?: string;      // evidence crop of the forge-button band
+    forgeAscension?: ForgeAscensionRead; // stars on the ITEM TILES -> misc.forgeAscensionLevel
     skillAscension?: number | null;  // gold star count (0..3) on the skills screen widget
     warnings: string[];
     confidence: number;

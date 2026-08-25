@@ -836,7 +836,7 @@ export default function TechTree() {
                 loading ? (
                     <div className="flex-1 flex flex-col items-center justify-center opacity-50">
                         <div className="w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mb-4" />
-                        <span className="font-bold text-text-muted uppercase tracking-widest text-sm">Decoding Tech Mapping...</span>
+                        <span className="font-bold text-text-muted uppercase tracking-widest text-sm">Decoding Tech Mapping</span>
                     </div>
                 ) : (
                     <div className="flex-1 flex overflow-hidden relative border border-border rounded-2xl bg-bg-secondary/10 backdrop-blur-sm">
@@ -890,7 +890,7 @@ export default function TechTree() {
 
                                                                 <div className="min-w-0 flex-1 flex flex-col justify-between h-full py-1">
                                                                     <div>
-                                                                        <h4 className="text-xs font-bold text-text-primary truncate">
+                                                                        <h4 className="text-xs font-bold text-text-primary whitespace-nowrap overflow-hidden text-clip">
                                                                             {getTechNodeName(node.type)}
                                                                         </h4>
                                                                         <p className="text-[9px] text-text-muted mt-0.5 font-bold uppercase tracking-tight">
@@ -1279,7 +1279,7 @@ export default function TechTree() {
                                                             className="w-full flex items-center gap-3 p-2 bg-bg-secondary/40 rounded-lg border border-border hover:border-accent-primary transition-colors text-left"
                                                         >
                                                             <Info className="w-4 h-4 text-accent-primary shrink-0" />
-                                                            <span className="text-xs font-medium truncate">{getTechNodeName(reqNode.type)}</span>
+                                                            <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-clip">{getTechNodeName(reqNode.type)}</span>
                                                         </button>
                                                     );
                                                 })}

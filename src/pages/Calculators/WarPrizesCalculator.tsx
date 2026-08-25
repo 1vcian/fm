@@ -109,7 +109,7 @@ export default function WarPrizesCalculator() {
             <div className="flex items-center justify-between gap-3 py-1.5 border-b border-white/5 last:border-0">
                 <div className="flex items-center gap-2 min-w-0">
                     {icon ? <SpriteIcon name={icon} size={22} /> : <span className="w-[22px]" />}
-                    <span className="text-xs text-text-secondary truncate">{type.replace(/([A-Z])/g, ' $1').trim()}</span>
+                    <span className="text-xs text-text-secondary whitespace-nowrap overflow-hidden text-clip">{type.replace(/([A-Z])/g, ' $1').trim()}</span>
                     {isGuildPotions && ascensionStars > 0 && (
                         <div className="flex items-center gap-0.5 shrink-0 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                             <img

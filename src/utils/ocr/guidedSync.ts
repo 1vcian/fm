@@ -16,8 +16,8 @@
 // This file only IMPORTS from the rest of src/utils/ocr — it does not change any behaviour of
 // the one-shot pipeline.
 
-import { loadImage, imageToCanvas, detectPopupCard, detectPopupTile, type Rect } from './imagePrep';
-import { classifyScreen, type ScreenTemplate } from './templateClassifier';
+import { loadImage, imageToCanvas, type Rect } from './imagePrep';
+import { classifyScreen, subjectFromPopup, type ScreenSubject } from './templateClassifier';
 import { readItem, readUnit } from './templateReaders';
 import { readSkills } from './skillsReader';
 import { readClanTree } from './clanTreeReader';
@@ -34,10 +34,11 @@ import type { UserProfile } from '../../types/Profile';
  *  plus 'skin' — the per-slot skin popup, which the classifier itself never emits). */
 export type ForcedTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 'skin';
 
-/** Review-stage hint: the classifier's own templates plus 'skin', which templateClassifier
- *  never emits (the skin popup shares the coins+gems header with the item popup) — it is
- *  derived post-classification by refineItemToSkin below. */
-export type HintedTemplate = ScreenTemplate | 'skin';
+/** Review-stage hint = the classifier's popup-aware SUBJECT (templateClassifier.ScreenSubject):
+ *  the screen templates plus 'skin' (a skin popup, which shares the coins+gems header with the
+ *  item popup and is separated by its tile's chroma) and 'unit' (a pet/mount/item popup on a
+ *  header-less frame, which only the readers' name dictionaries can pin down). */
+export type HintedTemplate = ScreenSubject;
 
 export interface ClassifiedFile {
     file: File;
@@ -51,11 +52,11 @@ export interface ClassifiedFile {
 // cheap canvas check (no OCR) separates them: an ITEM popup's white card always contains a
 // SATURATED age-coloured subject tile (detectPopupTile finds it), while a SKIN popup's detail
 // card shows the skin art on a WHITE/desaturated tile — no saturated tile in the card.
-
-/** Min mean chroma (max-min channel spread) over the detected tile's bbox for it to count as a
- *  real age-coloured item tile. Solid age tiles measure ~120+; skin cards either yield no tile
- *  at all or only sparse art/button fragments well below this. */
-const ITEM_TILE_MIN_CHROMA = 60;
+//
+// The check itself now lives in templateClassifier.subjectFromPopup, which runs it as part of
+// classifyScreen so the ONE-SHOT pipeline gets the same answer this review stage does (it used to
+// read a skin popup as an item). This wrapper is kept for the validation harness, which reports
+// the card/tile/chroma it produced.
 
 export interface SkinRefinement {
     type: 'item' | 'skin';
@@ -64,39 +65,14 @@ export interface SkinRefinement {
     chroma: number | null; // mean chroma over the tile bbox
 }
 
-/** Mean chroma (max-min channel spread) over a rect of the canvas, subsampled. */
-function meanChroma(canvas: HTMLCanvasElement, r: Rect): number {
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    const d = ctx.getImageData(r.x, r.y, r.w, r.h).data;
-    const step = Math.max(1, Math.floor(r.w * r.h / 20000)); // ~20k samples max
-    let sum = 0, n = 0;
-    for (let p = 0; p < r.w * r.h; p += step) {
-        const i = p * 4;
-        sum += Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]);
-        n++;
-    }
-    return n ? sum / n : 0;
-}
-
 /**
  * Post-classification refinement for screens the classifier called 'item': keep 'item' when the
  * white card contains a genuinely saturated subject tile, hint 'skin' otherwise. Conservative:
  * with no white card found there is nothing to test, so the classifier's 'item' stands.
  */
 export function refineItemToSkin(canvas: HTMLCanvasElement): SkinRefinement {
-    const card = detectPopupCard(canvas);
-    if (!card) return { type: 'item', card: null, tile: null, chroma: null };
-    const tile = detectPopupTile(canvas);
-    if (!tile) return { type: 'skin', card, tile: null, chroma: null };
-    // ignore the round close (X) button that overlaps the card's bottom-centre edge — the same
-    // exclusion findColoredTiles/findStarTiles apply (a clipped X can pass detectPopupTile's
-    // aspect gate on some layouts); a real item tile never sits there.
-    const tcx = tile.x + tile.w / 2, tcy = tile.y + tile.h / 2;
-    if (tcy > card.y + card.h * 0.85 && Math.abs(tcx - (card.x + card.w / 2)) < card.w * 0.14) {
-        return { type: 'skin', card, tile: null, chroma: null };
-    }
-    const chroma = meanChroma(canvas, tile);
-    return { type: chroma >= ITEM_TILE_MIN_CHROMA ? 'item' : 'skin', card, tile, chroma };
+    const p = subjectFromPopup(canvas, true);
+    return { type: p.subject === 'skin' ? 'skin' : 'item', card: p.card, tile: p.tile, chroma: p.chroma };
 }
 
 const THUMB_W = 160;
@@ -129,10 +105,10 @@ export async function classifyBatch(
         try {
             const img = await loadImage(files[i]);
             const thumbUrl = makeThumb(img);
-            const { type, confidence } = await classifyScreen(img);
-            // skin popups classify as 'item' (same header) — refine with the card/tile check
-            const hinted: HintedTemplate = type === 'item' ? refineItemToSkin(imageToCanvas(img)).type : type;
-            entry = { file: files[i], thumbUrl, type: hinted, confidence };
+            // `subject` is the popup-aware verdict: the screen template for a plain screen, plus
+            // 'skin' for a skin popup and 'unit' for a pet/mount/item popup on a header-less frame.
+            const { subject, confidence } = await classifyScreen(img);
+            entry = { file: files[i], thumbUrl, type: subject, confidence };
         } catch {
             entry = { file: files[i], thumbUrl: '', type: 'unknown', confidence: 0 };
         }

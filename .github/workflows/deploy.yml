@@ -21,6 +21,47 @@ jobs:
         run: |
           npm install
           npm run build
+        env:
+          # Backend configuration for the published bundle. All three are PUBLIC by design — the
+          # anon key and the VAPID public key ship inside the JavaScript and anyone can read them
+          # with devtools — so repository *variables* are the natural home. Secrets work too and are
+          # accepted below; the only difference is that a secret gets masked in the log, which helps
+          # nobody here and makes a failure harder to read.
+          #
+          # Every one is read from both stores and under both spellings, the same fallback chain
+          # keepalive.yml already uses: this project accumulated `SUPABASE_URL` (added first, for the
+          # keep-alive cron, without the `VITE_` prefix the bundler needs) alongside the prefixed
+          # names, and a mismatch does not fail the build — Vite substitutes an empty string and the
+          # site quietly deploys with no backend at all.
+          #
+          # Which is also a supported state: with these empty the deployed app behaves exactly as it
+          # did before accounts existed — no sign-in panel, no clan tab, no push, and the
+          # `supabase-js` chunk is never fetched. So this block turns nothing on by itself. The
+          # feature goes live when the variables are set, which is a decision rather than the side
+          # effect of a merge.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL || vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY || secrets.VITE_VAPID_PUBLIC_KEY }}
+
+      # A missing variable is invisible: the build succeeds and the site simply has no backend. This
+      # says so in the log instead, so "why is sign-in gone in production" is a ten-second answer.
+      # It never fails the deploy — a backend-less build is legitimate.
+      - name: Report how the bundle was configured
+        run: |
+          if ls dist/assets/*.js >/dev/null 2>&1; then
+            if grep -qF 'supabase.co' dist/assets/*.js; then
+              echo "Supabase URL: present in the bundle"
+            else
+              echo "::warning::No Supabase URL in the bundle — this deploy has NO backend: no sign-in, no clans, no push."
+            fi
+            if [ -n "$VITE_VAPID_PUBLIC_KEY" ] && grep -qF "$VITE_VAPID_PUBLIC_KEY" dist/assets/*.js; then
+              echo "VAPID public key: present in the bundle"
+            else
+              echo "::warning::No VAPID public key in the bundle — nobody will be able to enable push notifications."
+            fi
+          fi
+        env:
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY || secrets.VITE_VAPID_PUBLIC_KEY }}
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4

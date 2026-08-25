@@ -456,7 +456,7 @@ const Verify: React.FC = () => {
     ]);
 
     if (!breakdown) {
-        return <div className="p-4 bg-gray-900 text-white min-h-screen">Loading game data...</div>;
+        return <div className="p-4 bg-gray-900 text-white min-h-screen">Loading game data</div>;
     }
 
     const formatNum = (n: number) => {

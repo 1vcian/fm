@@ -91,8 +91,8 @@ export function getWarPointsForTask(dayConfig: any, taskName: string): number {
 
 /**
  * Checks if a specific date lands on a Guild War point day for a category.
- * Pass the loaded GuildWarDayConfigLibrary.json to derive it dynamically
- * (recommended). Without config it falls back to the current known layout.
+ * Pass the loaded GuildWarDayConfigLibrary.json — it is the ONLY source of the answer. Without it
+ * this returns `false` rather than guessing; see the comment at the fallback for why.
  */
 export function isWarPointDay(date: Date, category: WarCategory, dayConfig?: any): boolean {
     const idx = getWarDayIndex(date);
@@ -102,18 +102,27 @@ export function isWarPointDay(date: Date, category: WarCategory, dayConfig?: any
         return days.includes(idx);
     }
 
-    // Fallback (current layout) if config isn't available at the call site.
-    switch (category) {
-        case 'tech': return idx === 1 || idx === 4;
-        case 'skills': return idx === 0 || idx === 2;
-        case 'mounts': return idx === 1 || idx === 3;
-        case 'eggs': return idx === 2 || idx === 4;
-        case 'pets': return idx === 2 || idx === 4;
-        case 'dungeons': return idx === 0 || idx === 3;
-        case 'forge': return idx === 0 || idx === 2 || idx === 4;
-        case 'forgeSpend': return idx === 1 || idx === 3;
-        default: return false;
-    }
+    /**
+     * NO CONFIG, NO ANSWER — deliberately, and this used to be a hard-coded day layout.
+     *
+     * Every caller (the three calculator hooks, Dungeons, ForgeCalculator, TreeCalculator,
+     * MountCalculator, SkillCalculator) passes a config that is `undefined` while `useGameData` is
+     * still fetching, so the fallback fired on real page loads rather than in some corner case. It
+     * listed `tech: 1|4, skills: 0|2, mounts: 1|3, ` — which matches today's
+     * `GuildWarDayConfigLibrary.json` **by coincidence**. Day assignments genuinely move between
+     * config versions (`day 5 DayPoints` went 2 -> 4 between 2026_01_25 and 2026_02_09, and three of
+     * the 23 shipped versions carry genuinely different layouts), so the day the game reshuffles them
+     * every calculator would have shown a confident "war day!" badge derived from a table nobody
+     * remembered was there.
+     *
+     * `false` is the honest answer to "is today a war point day for this category" when the file that
+     * decides it has not arrived: the badge simply does not appear for the few hundred milliseconds
+     * before the config lands, instead of appearing on the strength of a guess. No caller treats this
+     * as an error — they all render an optional highlight — so a brief `false` costs nothing, while a
+     * wrong `true` sends someone to spend resources on the wrong day.
+     */
+    void idx;
+    return false;
 }
 
 /**

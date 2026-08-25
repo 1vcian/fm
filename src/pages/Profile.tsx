@@ -14,6 +14,7 @@ import { SkillsPassivesPanel } from '../components/Profile/SkillsPassivesPanel';
 import { SkinSetPanel } from '../components/Profile/SkinSetPanel';
 import { AutoSyncModal } from '../components/Profile/AutoSyncModal';
 import { PvpModal } from '../components/Profile/PvpModal';
+import { AccountPanel } from '../components/Profile/AccountPanel';
 
 
 export default function Profile() {
@@ -55,7 +56,12 @@ export default function Profile() {
     };
 
     return (
-        <div className="max-w-[100rem] mx-auto space-y-8 animate-fade-in pb-12 px-4 xl:px-8">
+        <div
+            // No horizontal padding and no width cap: the shell already pads this view with
+            // p-4 / md:p-6, so adding px-4 / xl:px-8 here doubled the gutter, and the 100rem
+            // cap left the rest of a wide screen empty.
+            className="w-full space-y-6 animate-fade-in pb-12"
+        >
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-border pb-6">
                 <ProfileHeaderPanel />
@@ -90,7 +96,10 @@ export default function Profile() {
 
             {/* Content */}
             <div className="space-y-6">
-                {/* AutoSync — read your profile from screenshots */}
+                {/* Account + sync. Renders nothing when the build has no backend configured. */}
+                <AccountPanel />
+
+                {/* AutoSync. Read your profile from screenshots */}
                 <button
                     onClick={() => setShowAutoSync(true)}
                     className="w-full group relative overflow-hidden rounded-2xl border border-accent-primary/40 bg-gradient-to-r from-accent-primary/20 via-accent-primary/10 to-accent-secondary/15 p-5 flex items-center gap-4 hover:border-accent-primary/70 transition active:scale-[0.99]"
@@ -102,13 +111,13 @@ export default function Profile() {
                         <div className="text-xl font-black text-white flex items-center gap-2">
                             AutoSync <span className="text-[9px] uppercase tracking-widest bg-accent-primary/30 text-accent-primary px-1.5 py-0.5 rounded">beta</span>
                         </div>
-                        <div className="text-sm text-text-secondary">Upload your in-game screenshots — it reads gear, pets, mount &amp; resources and lets you review every change.</div>
+                        <div className="text-sm text-text-secondary">Upload your in-game screenshots. It reads gear, pets, mount &amp; resources and lets you review every change.</div>
                     </div>
                     <div className="ml-auto hidden sm:flex items-center text-accent-primary font-bold gap-1 pr-2 group-hover:translate-x-1 transition-transform">Scan →</div>
                 </button>
                 {showAutoSync && <AutoSyncModal onClose={() => setShowAutoSync(false)} />}
 
-                {/* Simplified PvP — duel your build vs an opponent screenshot (hidden for now) */}
+                {/* Simplified PvP. Duel your build vs an opponent screenshot (hidden for now) */}
                 {SHOW_PVP && (<>
                 <button
                     onClick={() => setShowPvp(true)}
@@ -135,7 +144,7 @@ export default function Profile() {
                 {isComparing ? (
                     <div className="space-y-6">
                         {/* Comparison Controls & Stats Strip - Sticky Header */}
-                        <div className="sticky top-0 z-40 py-2 -mx-4 px-4 bg-bg-primary/80 backdrop-blur-md border-b border-border shadow-lg space-y-2">
+                        <div className="sticky top-0 z-40 py-2 -mx-4 px-4 md:-mx-6 md:px-6 bg-bg-primary/80 backdrop-blur-md border-b border-border shadow-lg space-y-2">
 
                             <StatsSummaryPanel variant="horizontal-strip" />
                         </div>
@@ -201,7 +210,7 @@ export default function Profile() {
                         <p className="text-sm text-text-muted">Paste your profile JSON string below.</p>
                         <textarea
                             className="w-full h-64 bg-bg-input border border-border rounded-lg p-3 text-xs font-mono focus:border-accent-primary outline-none resize-none"
-                            placeholder='{"id":"...", "items":...}'
+                            placeholder='{"id":"", "items":}'
                             value={jsonToImport}
                             onChange={(e) => setJsonToImport(e.target.value)}
                         />

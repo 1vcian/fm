@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
+import { useFeatureUnlocks, type FeatureUnlock } from '../hooks/useFeatureUnlocks';
 import { Search, Sparkles, TrendingUp, Package, Info, Lock, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getItemImage, getItemName } from '../utils/itemAssets';
@@ -30,12 +31,6 @@ interface IAPProduct {
     Price: number;
     Rewards: Reward[];
     Type: string;
-}
-
-interface UnlockCondition {
-    AgeIdx: number;
-    BattleIdx: number;
-    FeatureId: string;
 }
 
 const AGES = ['Primitive', 'Medieval', 'Early-Modern', 'Modern', 'Space', 'Interstellar', 'Multiverse', 'Quantum', 'Underworld', 'Divine'];
@@ -114,7 +109,10 @@ export default function Shop() {
     const { selectedVersion } = useGameDataContext();
     const { data: dailyDeals } = useGameData<Record<string, DailyDeal>>('DailyDealLibrary.json');
     const { data: iapProducts } = useGameData<Record<string, IAPProduct>>('InAppProducts.json');
-    const { data: unlockData } = useGameData<Record<string, UnlockCondition>>('UnlockConditions.json');
+    // Feature gates come through this hook rather than straight from a config file: the game moved
+    // the table from UnlockConditions.json into PlayerSegments.json, and reading the retired name
+    // here is what silently emptied every unlock caption on this page. See useFeatureUnlocks.
+    const { byId: unlockData } = useFeatureUnlocks();
     const { data: shopResources } = useGameData<any>('ShopResourcesLibrary.json');
     const { data: guildWarConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
@@ -178,7 +176,10 @@ export default function Shop() {
         });
     }, [iapProducts, searchQuery]);
 
-    const shopUnlock = unlockData?.['Shop'];
+    // ageIdx is null for a feature gated on something other than story progress, and this
+    // block only knows how to say "age and stage", so it stands down rather than print a blank.
+    const shopFeature = unlockData['Shop'];
+    const shopUnlock = shopFeature && shopFeature.ageIdx !== null ? shopFeature : null;
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
@@ -205,7 +206,7 @@ export default function Shop() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-primary transition-colors" size={18} />
                     <input
                         type="text"
-                        placeholder="Search rewards or packs..."
+                        placeholder="Search rewards or packs"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-bg-secondary/50 border border-border rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary outline-none transition-all placeholder:text-text-muted/50 shadow-inner"
@@ -231,11 +232,11 @@ export default function Shop() {
                     <div className="flex flex-wrap gap-3 relative z-10">
                         <div className="bg-bg-primary/50 backdrop-blur-md px-5 py-3 rounded-xl border border-white/5 shadow-xl">
                             <div className="text-[10px] uppercase font-black text-accent-primary tracking-widest mb-1">Age Required</div>
-                            <div className="text-lg font-bold text-white">{AGES[shopUnlock.AgeIdx] || `Age ${shopUnlock.AgeIdx + 1}`}</div>
+                            <div className="text-lg font-bold text-white">{AGES[shopUnlock.ageIdx!] || `Age ${shopUnlock.ageIdx! + 1}`}</div>
                         </div>
                         <div className="bg-bg-primary/50 backdrop-blur-md px-5 py-3 rounded-xl border border-white/5 shadow-xl">
                             <div className="text-[10px] uppercase font-black text-accent-secondary tracking-widest mb-1">Stage Required</div>
-                            <div className="text-lg font-bold text-white">Stage {shopUnlock.AgeIdx + 1}-{shopUnlock.BattleIdx + 1}</div>
+                            <div className="text-lg font-bold text-white">Stage {shopUnlock.ageIdx! + 1}-{(shopUnlock.battleIdx ?? 0) + 1}</div>
                         </div>
                     </div>
                 </div>
@@ -339,7 +340,7 @@ export default function Shop() {
                                                                         <div className="w-5 h-5 flex-shrink-0">
                                                                             <GameIcon name={getShopIcon(reward, undefined, autoMapping, selectedVersion)} className="w-full h-full opacity-80" />
                                                                         </div>
-                                                                        <span className="text-text-secondary font-semibold truncate text-[10px] uppercase tracking-tighter">{reward.Type}</span>
+                                                                        <span className="text-text-secondary font-semibold whitespace-nowrap overflow-hidden text-clip text-[10px] uppercase tracking-tighter">{reward.Type}</span>
                                                                     </div>
                                                                     <span className="font-mono font-black text-white text-[10px]">
                                                                         +{reward.Amount.toLocaleString()}
@@ -470,7 +471,7 @@ export default function Shop() {
 function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, version }: {
     product: any;
     variant: 'primary' | 'secondary';
-    unlockData?: Record<string, UnlockCondition> | null;
+    unlockData?: Record<string, FeatureUnlock> | null;
     autoMapping?: any;
     isWarActive?: boolean;
     version?: string;
@@ -556,7 +557,9 @@ function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, v
                             <span className="text-[10px] font-bold text-text-muted uppercase">
                                 {starterReward && starterReward.ItemId
                                     ? `Required Age ${starterReward.ItemId.Age}`
-                                    : `Age ${unlockInfo?.AgeIdx} • Battle ${unlockInfo?.BattleIdx}`
+                                    : unlockInfo && unlockInfo.ageIdx !== null
+                                        ? `Stage ${unlockInfo.ageIdx + 1}-${(unlockInfo.battleIdx ?? 0) + 1}`
+                                        : unlockInfo?.extraRequirements[0] ?? ''
                                 }
                             </span>
                         </div>

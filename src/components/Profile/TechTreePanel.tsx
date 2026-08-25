@@ -3,7 +3,8 @@ import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { Card } from '../UI/Card';
 import { ConfirmModal } from '../UI/ConfirmModal';
-import { Search, Lock, Check, Download, Upload, Calendar } from 'lucide-react';
+import { Search, Lock, Check, Download, Upload, Calendar, ArrowDownToLine, Loader2 } from 'lucide-react';
+import { useClan } from '../../context/ClanContext';
 import { cn } from '../../lib/utils';
 import { useGameDataContext } from '../../context/GameDataContext';
 
@@ -50,6 +51,95 @@ function isNodeUnlocked(node: TechNode, treeLevels: Record<number, number>): boo
 function isNodeCompleted(nodeId: number, treeLevels: Record<number, number>, maxLevel: number): boolean {
     const level = treeLevels[nodeId] || 0;
     return level >= maxLevel;
+}
+
+/**
+ * PullFromClanButton — "update from the clan", on the Clan tab of the profile's tech tree.
+ *
+ * WHY IT IS HERE AND NOT ONLY ON THE CLAN PAGE. This tab and `pages/Clan.tsx` are the two places the
+ * 61 clan levels can be typed, so they are the two places somebody wants to stop typing and take the
+ * clan's version instead. The Clan page's `ClanTreeSyncBar` is the full instrument (both directions,
+ * the level totals before and after, the per-node "clan N" chips); this is the same PULL, compact,
+ * for the person who is already editing here.
+ *
+ * WHY IT CONFIRMS ONLY SOMETIMES. A pull replaces `techTree.Clan` wholesale and is not undoable, so
+ * the Clan page always asks twice. Here the answer depends on what the user has already chosen:
+ *
+ *   Clan sync ON   the auto-pull is already doing exactly this, by itself, whenever the leaders
+ *                  publish. Demanding a confirmation for the manual version of a thing that happens
+ *                  unattended would be theatre, so it just runs.
+ *   Clan sync OFF  the user deliberately said "leave my levels alone even when the leaders publish".
+ *                  Overwriting them without asking would reverse that decision, so it asks first and
+ *                  says how many nodes go DOWN — the number that makes the question worth answering.
+ *
+ * It renders nothing at all unless the ACTIVE PROFILE is in a clan: no backend in the build, signed
+ * out, a shared profile on screen, or simply clanless all mean there is nothing to pull from, and a
+ * disabled button next to somebody's own levels would only invite clicking.
+ */
+function PullFromClanButton() {
+    const clan = useClan();
+    const [busy, setBusy] = useState(false);
+    const [confirming, setConfirming] = useState(false);
+    const [result, setResult] = useState<string | null>(null);
+
+    if (!clan.clan) return null;
+
+    const run = async () => {
+        setBusy(true);
+        setConfirming(false);
+        setResult(null);
+        try {
+            const outcome = await clan.pullTree();
+            if (!outcome.ok) {
+                setResult(outcome.error.message);
+                return;
+            }
+            const { changed, up, down, clamped } = outcome.data;
+            if (changed === 0) {
+                // Not "copied 0 nodes" — the profile already held exactly the clan's levels, which is
+                // the normal answer whenever the automatic pull has already been here.
+                setResult('Already in step with the clan. Nothing to change.');
+                return;
+            }
+            setResult(
+                `Updated from the clan: ${changed} node${changed === 1 ? '' : 's'} changed` +
+                ` (${up} up, ${down} down)` +
+                (clamped > 0
+                    ? `. ${clamped} were published above this game version's cap and were reduced to it.`
+                    : '.'),
+            );
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div className="flex flex-col items-end gap-1">
+            <button
+                onClick={() => (clan.clanSyncEnabled ? void run() : setConfirming(true))}
+                disabled={busy}
+                title={`Replace this profile's clan levels with the ones ${clan.clan.name} has published`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/30 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-all disabled:opacity-50"
+            >
+                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowDownToLine className="w-3.5 h-3.5" />}
+                Update from clan
+            </button>
+            {result && <span className="text-[11px] text-text-secondary max-w-[22rem] text-right">{result}</span>}
+            <ConfirmModal
+                isOpen={confirming}
+                onCancel={() => setConfirming(false)}
+                onConfirm={() => void run()}
+                variant="danger"
+                title="Replace your clan levels?"
+                message={
+                    `Clan sync is off for this profile, so these levels are yours and the clan's published ` +
+                    `tree has been leaving them alone. Taking the clan's version now replaces all 61 of them, ` +
+                    `and any level of yours that is higher than the clan's will go down. This cannot be undone.`
+                }
+                confirmText="Take the clan's levels"
+            />
+        </div>
+    );
 }
 
 export function TechTreePanel() {
@@ -492,7 +582,7 @@ export function TechTreePanel() {
     }, [treeMapping, treeEffects, profile.techTree, selectedVersion, guildPositionLibrary, guildUpgradeLibrary]);
 
     if (!treeMapping || !treeEffects || (selectedVersion >= '2026_07_14_16_51' && (!guildPositionLibrary || !guildUpgradeLibrary))) {
-        return <Card className="p-6">Loading Tech Tree...</Card>;
+        return <Card className="p-6">Loading Tech Tree</Card>;
     }
 
     return (
@@ -519,6 +609,7 @@ export function TechTreePanel() {
                                 <Upload className="w-3.5 h-3.5" />
                                 Import Clan Tech
                             </button>
+                            <PullFromClanButton />
                         </>
                     )}
                 </div>
@@ -559,7 +650,7 @@ export function TechTreePanel() {
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                     <input
-                        placeholder="Search nodes..."
+                        placeholder="Search nodes"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-accent-primary"
@@ -668,7 +759,7 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                                     </div>
 
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="text-xs font-bold truncate">
+                                                        <div className="text-xs font-bold whitespace-nowrap overflow-hidden text-clip">
                                                             {name}
                                                         </div>
                                                         <div className="text-[9px] text-text-muted flex items-center gap-1">
@@ -733,7 +824,7 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                                 </div>
 
                                                 {currentLevel > 0 && clanEffect && (
-                                                    <div className="text-[10px] mt-1 text-accent-secondary truncate">
+                                                    <div className="text-[10px] mt-1 text-accent-secondary whitespace-nowrap overflow-hidden text-clip">
                                                         {formatStatDescription(clanEffect, currentLevel)}
                                                     </div>
                                                 )}
@@ -806,7 +897,7 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
 
                                                     <div className="flex-1 min-w-0">
                                                         <div className={cn(
-                                                            "text-xs font-bold truncate",
+                                                            "text-xs font-bold whitespace-nowrap overflow-hidden text-clip",
                                                             !unlocked && "text-text-muted"
                                                         )}>
                                                             {name}
@@ -851,7 +942,7 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                                 </div>
 
                                                 {unlocked && currentLevel > 0 && (
-                                                    <div className="text-[10px] mt-1 text-accent-secondary truncate animate-fade-in">
+                                                    <div className="text-[10px] mt-1 text-accent-secondary whitespace-nowrap overflow-hidden text-clip animate-fade-in">
                                                         {formatStatDescription(effect, currentLevel)}
                                                     </div>
                                                 )}

@@ -81,7 +81,7 @@ export function buildMountDictLocalized(spriteMapping: any, loc?: LocalizationDa
     return map;
 }
 
-/** rarity display word (any language) -> canonical lowercase rarity ("mythic", "divine", ...). */
+/** rarity display word (any language) -> canonical lowercase rarity ("mythic", "divine", ). */
 export function buildRarityDictLocalized(loc?: LocalizationData | null): Map<string, string> {
     const map = new Map<string, string>();
     for (const r of ['common', 'rare', 'epic', 'legendary', 'ultimate', 'mythic', 'divine']) map.set(r, r);

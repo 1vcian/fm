@@ -15,6 +15,9 @@ import { formatCompactNumber } from '../../utils/statsCalculator';
 import { getAscensionTexturePath, getNormalizedTarget } from '../../utils/ascensionUtils';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
+// The game's own cell order for the skills grid. It lives with the screenshot readers because
+// that is what reads the grid by position, and it is the only place this order is recorded.
+import { SKILLS_ORDER } from '../../utils/ocr/templateParams';
 
 interface SkillInfo {
     id: string;
@@ -64,6 +67,25 @@ export function SkillsPassivesPanel() {
         }
         return { ascensionDmgMulti: dMulti, ascensionHpMulti: hMulti };
     }, [profile.misc.skillAscensionLevel, ascensionConfigsLibrary]);
+
+    /**
+     * The 18 skills in the order the game's own Skills screen lays them out.
+     *
+     * SKILLS_ORDER is the reader's cell map: the grid is read by position, so that array IS the
+     * game's order (rarity rank, then CombatSkill enumId, three per rarity). The key order of
+     * SkillLibrary.json is NOT the same, so sorting has to go through SKILLS_ORDER: it has
+     * Shuriken before Berserk and Meteorite before Bomb, the game has them the other way round.
+     * Anything the library defines that the order does not name is appended rather than dropped.
+     */
+    const orderedSkills = useMemo<SkillInfo[]>(() => {
+        if (!skillLibrary) return [];
+        const rarityOf = (id: string) => (skillLibrary[id]?.Rarity as string) || 'Common';
+        const known = SKILLS_ORDER.filter(id => skillLibrary[id]).map(id => ({ id, rarity: rarityOf(id) }));
+        const extra = Object.keys(skillLibrary)
+            .filter(id => !(SKILLS_ORDER as readonly string[]).includes(id))
+            .map(id => ({ id, rarity: rarityOf(id) }));
+        return [...known, ...extra];
+    }, [skillLibrary]);
 
     const skillsByRarity = useMemo(() => {
         if (!skillLibrary) return {};
@@ -271,104 +293,99 @@ export function SkillsPassivesPanel() {
                 </div>
             </div>
 
-            <div className="space-y-3">
-                {RARITIES.map(rarity => {
-                    const skills = skillsByRarity[rarity] || [];
-                    if (skills.length === 0) return null;
-                    const isExpanded = activeRarity === rarity;
-                    const rarityOwned = skills.filter(s => (passives[s.id] || 0) > 0).length;
+            {/* All 18 at once, in the game's own order, in rounded icons like the Skills screen.
+                The order is SKILLS_ORDER, not the key order of SkillLibrary.json, which differs
+                (Shuriken/Berserk and Bomb/Meteorite are both swapped there).
+
+                Every column count here divides 18 exactly (3, 6, 9, 18), so the last row is always
+                as full as the first and nothing is left hanging at the left edge. The tracks are
+                1fr, so the tiles share the whole width instead of leaving a gap on the right. */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 2xl:grid-cols-[repeat(18,minmax(0,1fr))] gap-1.5">
+                {orderedSkills.map(({ id, rarity }) => {
+                    const level = passives[id] || 0;
+                    const stats = getSkillStats(id, level);
+                    const spriteInfo = getSpriteInfo(id);
+                    const maxLevel = skillPassiveLibrary?.[rarity]?.LevelStats?.length || 299;
+                    const owned = level > 0;
+                    // The full name and both stats live in the tooltip: the tile itself has room
+                    // for the artwork and the level, which is what the game shows too.
+                    const title = stats
+                        ? `${id} (${rarity}) Lv.${level} | DMG +${formatCompactNumber(stats.damage)} | HP +${formatCompactNumber(stats.health)}`
+                        : `${id} (${rarity}) not owned`;
 
                     return (
-                        <div key={rarity} className="bg-bg-secondary/40 rounded-xl border border-border overflow-hidden">
-                            <button
-                                onClick={() => toggleRarity(rarity)}
-                                className={cn(
-                                    "w-full flex items-center justify-between p-3 hover:bg-bg-input/30 transition-colors",
-                                    `border-l-4 border-rarity-${rarity.toLowerCase()}`
-                                )}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <span className={cn("font-bold", `text-rarity-${rarity.toLowerCase()}`)}>{rarity}</span>
-                                    <span className="text-xs text-text-muted">({rarityOwned}/{skills.length})</span>
-                                </div>
-                                {isExpanded ? <ChevronUp className="w-4 h-4 text-text-muted" /> : <ChevronDown className="w-4 h-4 text-text-muted" />}
-                            </button>
-
-                            {isExpanded && (
-                                <div className="p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 border-t border-border/50">
-                                    {skills.map(skill => {
-                                        const spriteInfo = getSpriteInfo(skill.id);
-                                        const level = passives[skill.id] || 0;
-                                        const stats = getSkillStats(skill.id, level);
-
-                                        return (
-                                            <ItemSelectionCard
-                                                key={skill.id}
-                                                item={{ id: skill.id, rarity: skill.rarity, level } as any}
-                                                slotKey="Skill"
-                                                slotLabel="Skill"
-                                                itemName={skill.id}
-                                                itemImage={null}
-                                                variant={isCompactStats ? 'compact' : 'default'}
-                                                rarity={rarity}
-                                                hideAgeStyles={true}
-                                                renderIcon={() => (
-                                                    <div
-                                                        className={cn(
-                                                            "w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner",
-                                                            `border-rarity-${rarity.toLowerCase()}`
-                                                        )}
-                                                        style={getRarityBgStyle(rarity)}
-                                                    >
-                                                        {spriteInfo ? (
-                                                            <SpriteSheetIcon
-                                                                textureSrc={getAscensionTexturePath('SkillIcons', profile.misc.skillAscensionLevel || 0, selectedVersion)}
-                                                                spriteWidth={spriteInfo.config.sprite_size.width}
-                                                                spriteHeight={spriteInfo.config.sprite_size.height}
-                                                                sheetWidth={spriteInfo.config.texture_size.width}
-                                                                sheetHeight={spriteInfo.config.texture_size.height}
-                                                                iconIndex={spriteInfo.spriteIndex}
-                                                                className="w-10 h-10"
-                                                            />
-                                                        ) : (
-                                                            <Sparkles className="w-5 h-5 text-text-muted" />
-                                                        )}
-                                                    </div>
-                                                )}
-                                                stats={stats && level > 0 ? {
-                                                    damage: stats.damage,
-                                                    health: stats.health,
-                                                    damageLabel: "P. DMG",
-                                                    healthLabel: "P. HP",
-                                                    damageMulti: (1 + stats.damageBonus) * (stats.ascensionDmgMulti || 1),
-                                                    healthMulti: (1 + stats.healthBonus) * (stats.ascensionHpMulti || 1),
-                                                    details: {
-                                                        damage: { 
-                                                            base: stats.baseDamage,
-                                                            techMulti: 1 + stats.damageBonus,
-                                                            ascMulti: stats.ascensionDmgMulti || 1
-                                                        },
-                                                        health: { 
-                                                            base: stats.baseHealth,
-                                                            techMulti: 1 + stats.healthBonus,
-                                                            ascMulti: stats.ascensionHpMulti || 1
-                                                        }
-                                                    }
-                                                } : {
-                                                    damage: 0,
-                                                    health: 0,
-                                                    damageLabel: "P. DMG",
-                                                    healthLabel: "P. HP"
-                                                }}
-                                                currentLevel={level}
-                                                maxLevel={skillPassiveLibrary?.[skill.rarity]?.LevelStats?.length || 299}
-                                                onLevelChange={(delta) => handleLevelChange(skill.id, level + delta)}
-                                                onLevelSet={(newLevel) => handleLevelChange(skill.id, newLevel)}
-                                            />
-                                        );
-                                    })}
-                                </div>
+                        <div
+                            key={id}
+                            title={title}
+                            className={cn(
+                                'min-w-0 rounded-lg border p-1 flex flex-col gap-1 transition-colors',
+                                owned ? 'border-border bg-bg-secondary/40' : 'border-border/40 bg-bg-input/20'
                             )}
+                        >
+                            <div
+                                className={cn(
+                                    'relative w-full aspect-square rounded-full border-2 overflow-hidden flex items-center justify-center',
+                                    `border-rarity-${rarity.toLowerCase()}`,
+                                    !owned && 'opacity-40 grayscale'
+                                )}
+                                style={getRarityBgStyle(rarity)}
+                            >
+                                {spriteInfo ? (
+                                    <SpriteSheetIcon
+                                        textureSrc={getAscensionTexturePath('SkillIcons', profile.misc.skillAscensionLevel || 0, selectedVersion)}
+                                        spriteWidth={spriteInfo.config.sprite_size.width}
+                                        spriteHeight={spriteInfo.config.sprite_size.height}
+                                        sheetWidth={spriteInfo.config.texture_size.width}
+                                        sheetHeight={spriteInfo.config.texture_size.height}
+                                        iconIndex={spriteInfo.spriteIndex}
+                                        className="w-full h-full"
+                                    />
+                                ) : (
+                                    <Sparkles className="w-1/2 h-1/2 text-text-muted" />
+                                )}
+                                <span className="absolute inset-x-1 bottom-[8%] rounded-full bg-black/75 text-center font-black tabular-nums text-white text-[10px] leading-tight">
+                                    {owned ? `Lv${level}` : '0'}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-0.5 min-w-0">
+                                <button
+                                    onClick={() => handleLevelChange(id, level - 1)}
+                                    className="flex-1 min-w-0 rounded bg-bg-input/60 hover:bg-bg-input text-text-muted hover:text-white text-[13px] font-black leading-none py-1 pointer-coarse:py-2 shrink-0 basis-5"
+                                    title="Level down"
+                                >
+                                    -
+                                </button>
+                                <Input
+                                    type="number"
+                                    value={level}
+                                    onChange={(e) => handleLevelChange(id, parseInt(e.target.value) || 0)}
+                                    className="w-full min-w-0 flex-[3] bg-black/40 border-white/10 text-center font-bold tabular-nums px-0 py-1 h-auto text-[13px]"
+                                    max={maxLevel}
+                                    min={0}
+                                />
+                                <button
+                                    onClick={() => handleLevelChange(id, level + 1)}
+                                    className="flex-1 min-w-0 rounded bg-bg-input/60 hover:bg-bg-input text-text-muted hover:text-white text-[13px] font-black leading-none py-1 pointer-coarse:py-2 shrink-0 basis-5"
+                                    title="Level up"
+                                >
+                                    +
+                                </button>
+                            </div>
+
+                            {/* What this one passive is actually contributing at its current level.
+                                The two panel totals above are a sum: without this line there is no
+                                way to see which skill is carrying them, which is the question a
+                                player asks before spending on a level. A skill at 0 shows a dash
+                                rather than a zero, because it is not contributing at all. */}
+                            <div className="flex items-center justify-between gap-1 tabular-nums leading-tight">
+                                <span className="min-w-0 text-[9px] font-bold text-red-400" title={stats ? `Passive damage: ${Math.round(stats.damage).toLocaleString()}` : 'No passive damage at level 0'}>
+                                    {stats ? formatCompactNumber(stats.damage) : '-'}
+                                </span>
+                                <span className="min-w-0 text-[9px] font-bold text-green-400" title={stats ? `Passive health: ${Math.round(stats.health).toLocaleString()}` : 'No passive health at level 0'}>
+                                    {stats ? formatCompactNumber(stats.health) : '-'}
+                                </span>
+                            </div>
                         </div>
                     );
                 })}

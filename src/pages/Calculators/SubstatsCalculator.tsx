@@ -157,7 +157,7 @@ export default function SubstatsCalculator() {
         if (!secondaryStatLibrary || !itemBalancingConfig || !itemBalancingLibrary) return;
         setIsOptimizing(true);
 
-        // Small timeout to allow UI to update with "Optimizing..." state
+        // Small timeout to allow UI to update with "Optimizing" state
         setTimeout(() => {
             const maxPossible = 12; // 8 items + 3 pets + 1 mount
             let currentAllocs: Record<string, number> = {};
@@ -424,7 +424,7 @@ export default function SubstatsCalculator() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <RefreshCw className="w-8 h-8 animate-spin text-accent-primary opacity-20" />
-                <p className="text-text-muted">Loading...</p>
+                <p className="text-text-muted">Loading</p>
             </div>
         );
     }
@@ -467,7 +467,7 @@ export default function SubstatsCalculator() {
                         {isOptimizing && (
                             <div className="absolute inset-0 bg-bg-primary/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
                                 <RefreshCw className="w-6 h-6 text-orange-400 animate-spin mb-2" />
-                                <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">Optimizing...</span>
+                                <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">Optimizing</span>
                             </div>
                         )}
                         <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-orange-400">

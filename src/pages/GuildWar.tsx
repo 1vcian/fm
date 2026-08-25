@@ -113,7 +113,7 @@ export default function GuildWar() {
             {loading ? (
                 <div className="h-64 flex flex-col items-center justify-center opacity-50">
                     <div className="w-10 h-10 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mb-4" />
-                    <span className="text-sm font-bold uppercase tracking-widest">Loading War Logs...</span>
+                    <span className="text-sm font-bold uppercase tracking-widest">Loading War Logs</span>
                 </div>
             ) : (
                 <div className="space-y-8">
@@ -132,7 +132,7 @@ export default function GuildWar() {
                                             <Shield className="w-5 h-5 text-accent-primary" />
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-[11px] font-bold text-white truncate">Forge Master</div>
+                                            <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Forge Master</div>
                                             <div className="text-[10px] text-text-muted">Daily Points</div>
                                         </div>
                                     </Link>
@@ -143,7 +143,7 @@ export default function GuildWar() {
                                                 <Zap className="w-5 h-5 text-accent-secondary" />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white truncate">Skill Summons</div>
+                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Skill Summons</div>
                                                 <div className="text-[10px] text-text-muted">Tue, Thu, Sat</div>
                                             </div>
                                         </Link>
@@ -155,7 +155,7 @@ export default function GuildWar() {
                                                 <Shield className="w-5 h-5 text-accent-primary" />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white truncate">Mount Trainer</div>
+                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Mount Trainer</div>
                                                 <div className="text-[10px] text-text-muted">Thu, Sat</div>
                                             </div>
                                         </Link>
@@ -167,7 +167,7 @@ export default function GuildWar() {
                                                 <Zap className="w-5 h-5 text-accent-secondary" />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white truncate">Tree Optimizer</div>
+                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Tree Optimizer</div>
                                                 <div className="text-[10px] text-text-muted">Tue, Fri</div>
                                             </div>
                                         </Link>
@@ -179,7 +179,7 @@ export default function GuildWar() {
                                                 <Shield className="w-5 h-5 text-accent-primary" />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white truncate">Dungeon Analyzer</div>
+                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Dungeon Analyzer</div>
                                                 <div className="text-[10px] text-text-muted">Wed, Fri, Sat</div>
                                             </div>
                                         </Link>
@@ -374,7 +374,7 @@ export default function GuildWar() {
                                                     <div key={rIdx} className="flex items-center justify-between bg-black/20 px-2 py-1 rounded border border-white/5 text-[10px]">
                                                         <div className="flex items-center gap-1.5 min-w-0">
                                                             <GameIcon name={mapRewardType(rew.Type)} size={14} className="shrink-0" />
-                                                            <span className="truncate opacity-70">{rew.Type}</span>
+                                                            <span className="whitespace-nowrap overflow-hidden text-clip opacity-70">{rew.Type}</span>
                                                         </div>
                                                         <span className="font-mono font-black ml-1 shrink-0">{rew.Amount.toLocaleString()}</span>
                                                     </div>
@@ -392,7 +392,7 @@ export default function GuildWar() {
                                                     <div key={rIdx} className="flex items-center justify-between bg-black/10 px-2 py-1 rounded border border-white/5 text-[10px] opacity-60">
                                                         <div className="flex items-center gap-1.5 min-w-0">
                                                             <GameIcon name={mapRewardType(rew.Type)} size={14} className="shrink-0" />
-                                                            <span className="truncate opacity-70">{rew.Type}</span>
+                                                            <span className="whitespace-nowrap overflow-hidden text-clip opacity-70">{rew.Type}</span>
                                                         </div>
                                                         <span className="font-mono font-black ml-1 shrink-0">{rew.Amount.toLocaleString()}</span>
                                                     </div>

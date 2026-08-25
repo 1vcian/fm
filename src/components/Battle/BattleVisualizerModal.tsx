@@ -579,7 +579,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                 {/* Compact Header */}
                 <div className="px-3 py-2 sm:px-4 sm:py-3 border-b border-gray-800 bg-[#12121a] flex justify-between items-center gap-2">
                     <div className="flex-1 min-w-0">
-                        <h2 className="text-base sm:text-lg font-bold text-white truncate">{getTitle()}</h2>
+                        <h2 className="text-base sm:text-lg font-bold text-white whitespace-nowrap overflow-hidden text-clip">{getTitle()}</h2>
                         <div className="text-[10px] sm:text-xs text-gray-400 flex gap-2 sm:gap-3 flex-wrap">
                             <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
@@ -1107,11 +1107,11 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     {/* Compact Log */}
                     <div className="max-h-32 sm:max-h-40 overflow-y-auto px-3 py-2 border-t border-gray-800/50 flex flex-col-reverse">
                         {battleLogs.length === 0 ? (
-                            <p className="text-[10px] text-gray-600 italic text-center">Press play to start battle...</p>
+                            <p className="text-[10px] text-gray-600 italic text-center">Press play to start battle</p>
                         ) : (
                             <div className="space-y-0.5">
                                 {battleLogs.map((log, i) => ( // Show ALL logs
-                                    <div key={i} className="text-[10px] text-gray-400 font-mono truncate">{log}</div>
+                                    <div key={i} className="text-[10px] text-gray-400 font-mono whitespace-nowrap overflow-hidden text-clip">{log}</div>
                                 ))}
                             </div>
                         )}

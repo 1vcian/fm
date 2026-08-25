@@ -87,7 +87,6 @@ export default function Dungeons() {
 
     // Reward Data
     const { data: rewardData } = useGameData<any>('DungeonRewardLibrary.json');
-    const { data: eggRewardData } = useGameData<any>('DungeonRewardEggLibrary.json');
     const { data: techTreeMapping } = useGameData<any>('TechTreeMapping.json');
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
 
@@ -309,7 +308,7 @@ export default function Dungeons() {
 
             return { type: 'Currency' as const, rewards };
         }
-    }, [selectedTab, level, rewardData, eggRewardData, techTreeMultipliers]);
+    }, [selectedTab, level, rewardData, techTreeMultipliers]);
 
     const navigate = (delta: number) => {
         setLevel(prev => Math.max(1, Math.min(maxDungeonLevel + 1, prev + delta)));
@@ -511,7 +510,7 @@ export default function Dungeons() {
 
                                             <div className="flex-1 space-y-1">
                                                 <div className="flex justify-between items-start">
-                                                    <span className="font-bold text-sm text-white truncate w-32">{enemy.config?.Name || `Enemy ${enemy.id}`}</span>
+                                                    <span className="font-bold text-sm text-white whitespace-nowrap overflow-hidden text-clip w-32">{enemy.config?.Name || `Enemy ${enemy.id}`}</span>
                                                     {enemy.config?.IsBoss && <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 rounded border border-red-500/30">BOSS</span>}
                                                 </div>
 
@@ -519,11 +518,11 @@ export default function Dungeons() {
                                                 <div className="flex flex-wrap gap-2 mt-2">
                                                     <div className="flex items-center gap-1.5 text-xs text-red-300 bg-red-500/5 px-2 py-1 rounded grow-0 shrink-1">
                                                         <Sword className="w-3 h-3 shrink-0" />
-                                                        <span className="font-mono truncate">{Math.round(dungeonLevelData?.Damage || 0).toLocaleString()}</span>
+                                                        <span className="font-mono whitespace-nowrap overflow-hidden text-clip">{Math.round(dungeonLevelData?.Damage || 0).toLocaleString()}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1.5 text-xs text-green-300 bg-green-500/5 px-2 py-1 rounded grow-0 shrink-1">
                                                         <Heart className="w-3 h-3 shrink-0" />
-                                                        <span className="font-mono truncate">{Math.round(dungeonLevelData?.Health || 0).toLocaleString()}</span>
+                                                        <span className="font-mono whitespace-nowrap overflow-hidden text-clip">{Math.round(dungeonLevelData?.Health || 0).toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                             </div>

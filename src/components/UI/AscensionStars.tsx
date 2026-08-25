@@ -29,8 +29,10 @@ export function AscensionStars({ value, onChange, maxLevel = 3, className, size 
                 <button
                     onClick={() => onChange(0)}
                     className={cn(
-                        "rounded-full flex items-center justify-center transition-all hover:scale-110 border tabular-nums",
-                        isXS ? "w-4 h-4 text-[8px]" : isSM ? "w-5 h-5 text-[9px]" : "w-6 h-6 text-[10px]",
+                        "rounded-full flex items-center justify-center transition-all hover:scale-110 border tabular-nums shrink-0",
+                        // 16px was not pressable with a finger. Sizes below are the mouse size;
+                        // a coarse pointer gets the finger size.
+                        isXS ? "w-6 h-6 text-[10px] pointer-coarse:w-9 pointer-coarse:h-9" : isSM ? "w-5 h-5 text-[9px] pointer-coarse:w-9 pointer-coarse:h-9" : "w-6 h-6 text-[10px] pointer-coarse:w-10 pointer-coarse:h-10",
                         value === 0
                             ? "bg-red-500/20 border-red-500/40 text-red-500 shadow-[0_0_8px_rgba(239,68,68,0.2)]"
                             : "bg-bg-input/30 border-transparent text-text-muted/40 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20"
@@ -47,8 +49,8 @@ export function AscensionStars({ value, onChange, maxLevel = 3, className, size 
                             key={idx}
                             onClick={() => onChange(idx + 1)}
                             className={cn(
-                                "rounded-full flex items-center justify-center transition-all hover:scale-110 border border-transparent",
-                                isXS ? "w-4 h-4" : isSM ? "w-5 h-5" : "w-6 h-6",
+                                "rounded-full flex items-center justify-center transition-all hover:scale-110 border border-transparent shrink-0",
+                                isXS ? "w-6 h-6 pointer-coarse:w-9 pointer-coarse:h-9" : isSM ? "w-5 h-5 pointer-coarse:w-9 pointer-coarse:h-9" : "w-6 h-6 pointer-coarse:w-10 pointer-coarse:h-10",
                                 isFilled
                                     ? "bg-amber-500/20 shadow-[0_0_8_rgba(251,191,36,0.3)] border-amber-500/30"
                                     : "bg-bg-input/50 hover:bg-bg-input opacity-50 grayscale hover:grayscale-0 hover:opacity-100"

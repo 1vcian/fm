@@ -209,7 +209,7 @@ export default function Pets() {
                     <div className="relative w-full md:w-40">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                         <Input
-                            placeholder="Search..."
+                            placeholder="Search"
                             className="pl-9"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -292,7 +292,7 @@ export default function Pets() {
             </Card>
 
             {loading ? (
-                <div className="text-center py-12 text-text-muted">Loading Pets...</div>
+                <div className="text-center py-12 text-text-muted">Loading Pets</div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {pets.map((pet) => {
@@ -343,7 +343,7 @@ export default function Pets() {
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-text-primary text-lg leading-tight truncate">{pet.name}</h3>
+                                        <h3 className="font-bold text-text-primary text-lg leading-tight whitespace-nowrap overflow-hidden text-clip">{pet.name}</h3>
                                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                                             <span className={cn(
                                                 "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-white/5",

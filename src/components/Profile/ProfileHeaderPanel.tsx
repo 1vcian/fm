@@ -221,7 +221,7 @@ export function ProfileHeaderPanel() {
                         </div>
                     ) : (
                         <div className="flex items-center gap-2 group/name">
-                            <h2 className="text-2xl font-bold truncate">{profile.name}</h2>
+                            <h2 className="text-2xl font-bold whitespace-nowrap overflow-hidden text-clip">{profile.name}</h2>
                             <button
                                 onClick={handleStartEdit}
                                 className="p-1 text-text-muted hover:text-accent-primary opacity-0 group-hover/name:opacity-100 transition-opacity"

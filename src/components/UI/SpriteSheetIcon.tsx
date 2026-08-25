@@ -16,6 +16,13 @@ interface SpriteSheetIconProps {
     sheetHeight: number;
     iconIndex: number;
     className?: string; // For overriding width/height of the container
+    /**
+     * Nearest-neighbour is right for a sprite drawn at (or above) its native cell size, and wrong
+     * for one drawn below it: every atlas cell in this game is 256px, so a 40px icon throws away
+     * 39 of every 40 source pixels and keeps the aliasing. Opt into a smooth downscale wherever the
+     * drawn size is under the native cell.
+     */
+    smooth?: boolean;
 }
 
 export const SpriteSheetIcon: React.FC<SpriteSheetIconProps> = ({
@@ -25,7 +32,8 @@ export const SpriteSheetIcon: React.FC<SpriteSheetIconProps> = ({
     sheetWidth,
     sheetHeight,
     iconIndex,
-    className
+    className,
+    smooth = false
 }) => {
     // Calculate row and column from index
     const columns = Math.floor(sheetWidth / spriteWidth);
@@ -91,7 +99,7 @@ export const SpriteSheetIcon: React.FC<SpriteSheetIconProps> = ({
                 backgroundPosition: `${bgPosX} ${bgPosY}`,
                 backgroundSize: `${bgSizeX} ${bgSizeY}`,
                 aspectRatio: `${spriteWidth} / ${spriteHeight}`,
-                imageRendering: 'pixelated' // Optional: for sharp pixel art
+                imageRendering: smooth ? 'auto' : 'pixelated'
             }}
             role="img"
             aria-label={`Icon ${iconIndex}`}

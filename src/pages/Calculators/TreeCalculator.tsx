@@ -17,6 +17,8 @@ import { InputModal } from '../../components/UI/InputModal';
 import { isWarPointDay, getDayBoostNodeType } from '../../utils/guildWarUtils';
 import { UserProfile } from '../../types/Profile';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { PlannerAlarms } from '../../components/Planner/PlannerAlarms';
+import { treeCompletions, type TreeScheduleLike } from '../../utils/plannerSchedule';
 
 
 function SortableItem({ id, children }: { id: string; children: (props: { listeners: any; isDragging: boolean }) => React.ReactNode }) {
@@ -117,14 +119,14 @@ const ScheduleItem = React.memo(({
                             {formatScheduleTime(entry.startDate)}
                         </div>
                     </div>
-                    <div className={cn("text-sm font-bold truncate", entry.isInvalid ? "text-red-400 line-through" : "text-white")}>
+                    <div className={cn("text-sm font-bold whitespace-nowrap overflow-hidden text-clip", entry.isInvalid ? "text-red-400 line-through" : "text-white")}>
                         {entry.step.type === 'delay' ? `Delay (+${formatTime(entry.step.delayMinutes! * 60)})` : entry.nodeName}
                     </div>
                     {entry.step.type === 'node' && (
                         <div className="text-[9px] text-text-muted flex items-center gap-1 mt-1">
                             <span className="bg-white/5 px-1 rounded">Lv.{entry.fromLevel} → {entry.toLevel}</span>
                             <span>•</span>
-                            <span className="truncate">{entry.step.tree === 'SkillsPetTech' ? 'SPT' : entry.step.tree}</span>
+                            <span className="whitespace-nowrap overflow-hidden text-clip">{entry.step.tree === 'SkillsPetTech' ? 'SPT' : entry.step.tree}</span>
                         </div>
                     )}
                 </div>
@@ -568,6 +570,23 @@ export default function TreeCalculator() {
         return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
     };
 
+    /**
+     * The PLANNER tab's plan, reduced to "what finishes, and how long after the anchor".
+     *
+     * `planner.schedule` is an ordered plan with real durations: each entry carries
+     * `cumulativeEndSeconds`, so `treeCompletions()` needs no clock — it measures every step from
+     * the END of the first playable one, which is the step the alarm anchor describes. The absolute
+     * `startDate`/`endDate` on the same entries are NOT used: they hang off `misc.techPlanStartDate`,
+     * a timezone-less `datetime-local` the user picks, and replacing that guess with a duration the
+     * player reads off the game is the entire point of the anchor.
+     */
+    const plannerCompletions = useMemo(
+        // `markDone()` slices finished steps off the queue, so `schedule[0]` is the upgrade on the
+        // clock right now and the anchor describes it. See `TreeCompletionOptions`.
+        () => treeCompletions(planner.schedule, { firstStepIsRunning: true }),
+        [planner.schedule],
+    );
+
     const handleShiftPlan = useCallback((offsetSeconds: number) => {
         const currentStart = new Date(planner.planStartDate);
         const newStart = new Date(currentStart.getTime() + offsetSeconds * 1000);
@@ -664,6 +683,76 @@ export default function TreeCalculator() {
             return result;
         });
     }, [orderedActions, timeLimitHours, profile.misc.useGemsInCalculators, startTime, gemSkipCostPerSecond, warDayConfig]);
+
+    /**
+     * The OPTIMIZER tab's plan, reduced the same way — and it is a real plan, not a set.
+     *
+     * `actionsWithGemCosts` is `orderedActions` run SERIALLY from `startTime`: the block above walks
+     * it accumulating `effectiveDuration`, which is exactly how the rows on screen get their start
+     * and end times. So the optimizer has the one property `treeCompletions` needs, an ordered chain
+     * of durations, and the adapter is a running sum plus a rename of the fields.
+     *
+     * `effectiveDuration` and not `duration`: it is `duration` minus whatever the displayed gem skip
+     * pays for, so it is the number the page's own completion times are built from. Using the raw
+     * duration would arm alarms that disagree with the list they sit next to.
+     *
+     * `isInvalid` is false for every row on purpose. The optimiser only ever emits upgrades that are
+     * reachable from the current tree with the potions it was given, so there is no invalid-step
+     * case here to model — unlike the planner, where the player can queue anything by hand.
+     *
+     * `firstStepIsRunning: false`, AND THAT IS NOT A DETAIL. This list is recomputed from the
+     * profile every render and NOTHING in it has been started — unlike the planner, whose
+     * `markDone()` deletes finished steps so that its row 0 really is the upgrade on the clock. Let
+     * the adapter absorb row 0 into the anchor here and two things break at once: the first push
+     * names an upgrade the player never began as "about 2 min left" (stamped `basis: 'observed'`,
+     * the strongest claim the schema can make), and row 0's duration vanishes from the chain, so
+     * every later alarm fires `d0 - anchor` early. `orderedActions` is sorted LONGEST FIRST, so
+     * `d0` is the largest duration in the plan — 98 h in the shipped config, which is four days of
+     * error on every remaining row.
+     */
+    const optimizerCompletions = useMemo(() => {
+        let cumulativeSeconds = 0;
+        const chain: TreeScheduleLike[] = actionsWithGemCosts.map((action, index) => {
+            cumulativeSeconds += action.effectiveDuration;
+            return {
+                step: { type: 'node' as const },
+                index,
+                nodeName: action.nodeName,
+                fromLevel: action.fromLevel,
+                toLevel: action.toLevel,
+                cumulativeEndSeconds: cumulativeSeconds,
+                isInvalid: false,
+            };
+        });
+        return treeCompletions(chain, { firstStepIsRunning: false });
+    }, [actionsWithGemCosts]);
+
+    /**
+     * ONE alarms panel for the tech tree, whichever tab is showing.
+     *
+     * 0009's CHECK allows `planner in ('tree','eggs')` and nothing else, so the optimizer and the
+     * planner cannot have separate queues without a migration — but they should not have separate
+     * queues anyway: the game runs ONE tech upgrade at a time, both tabs describe that same physical
+     * queue, and `arm_plan_alarms` replaces every pending row for a `(profile, planner)` pair. Two
+     * sets under one key would delete each other's rows on every re-derivation and, in between,
+     * would push two contradictory "start X next" instructions for one upgrade slot.
+     *
+     * So: one key, one anchor (the panel's `localStorage` record is keyed by planner too), and the
+     * plan comes from whichever tab is open. The badge says which, because the swap is otherwise
+     * invisible. Only one tab renders at a time, so only one instance is ever mounted.
+     */
+    const treeAlarms = (
+        <PlannerAlarms
+            planner="tree"
+            route="#/calculators/tree"
+            completions={activeTab === 'optimizer' ? optimizerCompletions : plannerCompletions}
+            planLabel={activeTab === 'optimizer' ? 'Optimizer plan' : 'Planner plan'}
+            anchorNoun="the upgrade you have running"
+            assumption={activeTab === 'optimizer'
+                ? 'Times are your reading plus this list’s own durations in the order shown, so they hold only while you start each upgrade as the one before it finishes. Reordering the list re-arms them. Your account keeps one tech queue, so arming here replaces anything the Planner tab armed.'
+                : 'Times are your reading plus this plan’s own durations, so they hold only while you start each upgrade as the one before it finishes. Your account keeps one tech queue, so arming here replaces anything the Optimizer tab armed.'}
+        />
+    );
 
     // Dependency Logic
     const isPrerequisite = (potentialReq: TechUpgrade, target: TechUpgrade) => {
@@ -924,6 +1013,8 @@ export default function TreeCalculator() {
 
             {activeTab === 'optimizer' && (
                 <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
+                    {/* LEFT: constraints, then the alarms for the list they produce. */}
+                    <div className="space-y-6">
                     {/* INPUTS */}
                     <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
                         <CardHeader>
@@ -1143,6 +1234,11 @@ export default function TreeCalculator() {
                         </CardContent>
                     </Card>
 
+                    {/* Alarms for the optimizer's list. Renders nothing at all when the build has no
+                        backend or nobody is signed in. Push is sign-in-only, by the owner's decision. */}
+                    {treeAlarms}
+                    </div>
+
                     {/* RESULTS */}
                     <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden flex flex-col">
                         <CardHeader>
@@ -1313,7 +1409,7 @@ export default function TreeCalculator() {
 
                                                                             <div className="flex-1 min-w-0" onClick={() => toggleSelection(idx)}>
                                                                                 <div className="flex justify-between items-start mb-1 cursor-pointer">
-                                                                                    <span className="text-sm font-bold text-white truncate pr-2">
+                                                                                    <span className="text-sm font-bold text-white whitespace-nowrap overflow-hidden text-clip pr-2">
                                                                                         {action.nodeName}
                                                                                     </span>
                                                                                     <div className="flex items-center gap-2 text-right">
@@ -1519,6 +1615,12 @@ export default function TreeCalculator() {
                             </CardContent>
                         </Card>
 
+                        {/* Alarms for the planner's schedule. Renders nothing at all when the build has
+                            no backend or nobody is signed in. Push is sign-in-only, by the owner's
+                            decision. Same element as the optimizer tab's, same `planner` key; only one
+                            tab renders at a time, so only one instance is ever mounted. */}
+                        {treeAlarms}
+
                         {/* Auto-Planner */}
                         <AutoPlannerControls
                             planner={planner}
@@ -1540,7 +1642,7 @@ export default function TreeCalculator() {
                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
                                     <input
                                         type="text"
-                                        placeholder="Search nodes..."
+                                        placeholder="Search nodes"
                                         value={plannerSearch}
                                         onChange={(e) => setPlannerSearch(e.target.value)}
                                         className="w-full bg-bg-input border border-border rounded-lg py-2 pl-9 pr-3 text-sm text-white placeholder:text-text-muted focus:border-accent-primary outline-none transition-colors"
@@ -1588,7 +1690,7 @@ export default function TreeCalculator() {
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-xs font-bold text-white truncate">{node.nodeType}</div>
+                                                    <div className="text-xs font-bold text-white whitespace-nowrap overflow-hidden text-clip">{node.nodeType}</div>
                                                     <div className="flex items-center gap-2 text-[9px] text-text-muted">
                                                         <span className="text-accent-primary/70">{node.tree === 'SkillsPetTech' ? 'SPT' : node.tree}</span>
                                                         <span>T{node.tier + 1}</span>

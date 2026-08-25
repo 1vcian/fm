@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { GameDataProvider } from './context/GameDataContext';
 import { ProfileProvider } from './context/ProfileContext';
+import { ClanProvider } from './context/ClanContext';
 import { TreeModeProvider } from './context/TreeModeContext';
 import { ComparisonProvider } from './context/ComparisonContext';
 import { ToastContainer } from 'react-toastify';
@@ -51,9 +52,15 @@ function App() {
     return (
         <GameDataProvider>
             <ProfileProvider>
-                <ComparisonProvider>
-                    <TreeModeProvider>
-                        <HashRouter>
+                {/* ClanProvider is keyed on the ACTIVE PROFILE and reads the war configs, so it
+                    belongs inside ProfileProvider and GameDataProvider. And outside the router, so
+                    every clan surface (the Clan page and the header's clan chip) sits under it.
+                    Auth needs no provider: AuthContext is an external store. With no
+                    VITE_SUPABASE_* it settles on 'unconfigured' without a single fetch. */}
+                <ClanProvider>
+                    <ComparisonProvider>
+                        <TreeModeProvider>
+                            <HashRouter>
                             <Routes>
                                 <Route path="/" element={<AppShell />}>
                                     <Route index element={<Profile />} />
@@ -99,9 +106,10 @@ function App() {
                                     <Route path="*" element={<Home />} />
                                 </Route>
                             </Routes>
-                        </HashRouter>
-                    </TreeModeProvider>
-                </ComparisonProvider>
+                            </HashRouter>
+                        </TreeModeProvider>
+                    </ComparisonProvider>
+                </ClanProvider>
             </ProfileProvider>
             <ToastContainer
                 position="top-center"

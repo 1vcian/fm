@@ -51,7 +51,11 @@ export const CURRENCY_XBAND: Record<string, [number, number]> = {
 export const STAR = {
     bandX0: -0.06, bandX1: 1.06,   // fraction of tile width, expanded
     bandY0: 0.40, bandY1: 1.30,    // fraction of tile height, generous
-    darkThreshold: 90,             // grayscale < this = outline/dark
+    // NOTE: there is deliberately no absolute `darkThreshold` here. The outline cut is derived
+    // inside starCounter.ts from the band's own 99th-percentile luminance (DARK_FRAC), because a
+    // star is only ever "much darker than the brightest thing beside it" — a tile dimmed behind a
+    // modal renders its gold star at grey ~65, which a fixed cut of 90 swallowed whole, zeroing
+    // every pocket. Do not reintroduce a constant grey level here.
     minSaturation: 100,            // HSV S (0..255) of the enclosed pocket (gold, not white digit-loops)
     minAreaFrac: 0.006,            // pocket area >= this * tileW * tileH
     aspectLo: 0.4, aspectHi: 1.6,

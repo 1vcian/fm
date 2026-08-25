@@ -4,7 +4,22 @@ dist
 .DS_Store
 pseudocodice_esportato.c
 .env
+# Local env overrides (Vite). `.env.example` is committed on purpose; real values never are.
+.env.local
+.env.*.local
 
 # Reverse-engineering toolkit (xapk -> il2cpp dump -> config parser -> assets).
 # Local-only: heavy tool binaries + game archives, never part of the published app.
 reverseForge/
+
+# Server-side infrastructure and its operator notes. Deployment config, not application code.
+#
+# WORTH KNOWING: `supabase/migrations/*.sql` is the definition of the live database, and once it is
+# ignored here this is its only copy — no history, no backup. Keep it somewhere backed up.
+#
+# The client half of the feature stays tracked (src/services/clanApi.ts, the contexts, the Auth and
+# Clan components, pushClient.ts, public/sw.js, the manifest): it ships in the bundle regardless, and
+# dropping it would only break the build for anyone who clones the project.
+supabase/
+docs/
+!docs/attack-timing.md

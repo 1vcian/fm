@@ -221,7 +221,7 @@ export default function Colors() {
 
     // Helpers for rendering
     const renderPreview = () => {
-        if (!text) return <span className="text-text-muted italic">Type something...</span>;
+        if (!text) return <span className="text-text-muted italic">Type something</span>;
 
         const allColors = [
             { hex: startColor, alpha: startAlpha },

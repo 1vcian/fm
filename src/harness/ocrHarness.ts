@@ -131,10 +131,10 @@ async function debugOne(url: string, dicts?: GameDictionaries) {
 }
 
 async function main() {
-    setStatus('building dictionaries…');
+    setStatus('building dictionaries');
     const { dicts, spriteMapping } = await buildDicts();
 
-    setStatus('loading image manifest…');
+    setStatus('loading image manifest');
     const manifest: ManifestEntry[] = await fetchJson(`${import.meta.env.BASE_URL}__harness_imgs/manifest.json`);
 
     const debugKey = new URLSearchParams(location.search).get('debug');

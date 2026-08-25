@@ -127,7 +127,7 @@ export const BreakpointTables = memo(({
                 </div>
             </div>
 
-            {/* The gains table — every attack speed that truly saves time */}
+            {/* The gains table. Every attack speed that truly saves time */}
             <div className="space-y-2">
                 <h3 className="text-sm font-bold text-white tracking-wide">Worthwhile attack-speed breakpoints</h3>
                 <div className="overflow-x-auto custom-scrollbar border border-white/5 rounded-lg bg-black/25">
@@ -180,13 +180,13 @@ export const BreakpointTables = memo(({
                 </div>
                 <p className="text-[10px] text-white/40">
                     <strong>Interval</strong> = time between normal attacks; <strong>Double</strong> = full time for a double sequence
-                    (both absolute — lower is better). The coloured column is the one that improves at that breakpoint
+                    (both absolute. Lower is better). The coloured column is the one that improves at that breakpoint
                     (orange = single, purple = double). Double breakpoints only matter while your double chance &gt; 0.
                 </p>
                 <p className="text-[10px] text-emerald-400/70 flex items-start gap-1.5">
                     <Heart className="w-3 h-3 mt-0.5 shrink-0" />
                     <span>
-                        These same breakpoints also raise your <strong>lifesteal HPS</strong> — it scales 1:1 with the real attack
+                        These same breakpoints also raise your <strong>lifesteal HPS</strong>. It scales 1:1 with the real attack
                         rate. Only the lifesteal share of your healing follows them though; flat health-regen and skill healing don&apos;t
                         change with attack speed, so your total HPS gain is smaller than the DPS % shown here unless you heal purely from lifesteal.
                     </span>
@@ -213,7 +213,7 @@ export const BreakpointExplanation = memo(() => (
                     <span className="font-mono text-[9px] bg-white/5 px-1 py-0.5 rounded text-orange-300 block w-fit mb-1 font-bold">
                         interval = (ceil(AttackDuration / inc) + 1) × 0.1s
                     </span>
-                    Time between normal attacks. <strong>Identical for every weapon and skin</strong> — it depends only on
+                    Time between normal attacks. <strong>Identical for every weapon and skin</strong>. It depends only on
                     attack speed, not on windup (windup and recovery share one timer). The <code>+1</code> is the idle
                     re-acquire tick.
                 </div>

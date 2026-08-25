@@ -18,7 +18,7 @@ const GLOBAL_CONFIG_FILES = [
 /**
  * Config versions from this timestamp on were parsed with the fixed Metaplay parser
  * (type-aware VarInt decode). In those versions the fixed-point magnitudes (FD6/F1D:
- * guild ValuePerLevel, player StatValuePerLevel, tech Duration, …) are stored at their
+ * guild ValuePerLevel, player StatValuePerLevel, tech Duration, ) are stored at their
  * REAL in-game value, so the legacy "* 2" compensation must NOT be applied. Older
  * versions were parsed with the buggy parser (values serialized at half) and still need
  * the * 2. Gate on the version string (folders are zero-padded timestamps).
@@ -70,19 +70,37 @@ function normalizeGuildUpgradeLibrary(json: any, fixed: boolean): any {
     return normalized;
 }
 
+/**
+ * Fetch one config file and parse it as JSON.
+ *
+ * Checking `response.ok` is not enough on its own. The dev server, and any
+ * static host that falls back to index.html for unknown paths, answers a request
+ * for a config that does not exist with the app shell and a 200. `res.json()`
+ * then trips on the leading "<" and the page reports
+ * `Unexpected token '<', "<!doctype "... is not valid JSON`, which names neither
+ * the file nor the version and sends you looking for a parser bug that is not
+ * there. Rejecting an HTML body turns a missing config into an error a page can
+ * actually render.
+ */
+async function fetchJsonConfig(url: string, fileName: string): Promise<any> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to load ${fileName}`);
+    }
+    if ((response.headers.get('content-type') || '').includes('html')) {
+        throw new Error(`${fileName} is not part of this game version`);
+    }
+    return response.json();
+}
+
 async function fetchAndReconstruct(selectedVersion: string, fileName: string): Promise<any> {
     const baseUrl = `${import.meta.env.BASE_URL}parsed_configs/${selectedVersion}/`;
     
     if (fileName === 'TechTreeLibrary.json') {
-        const [nodesRes, valuesRes] = await Promise.all([
-            fetch(`${baseUrl}TechNodesLibrary.json`),
-            fetch(`${baseUrl}PlayerTechTreeNodeValuesLibrary.json`)
+        const [nodesLib, valuesLib] = await Promise.all([
+            fetchJsonConfig(`${baseUrl}TechNodesLibrary.json`, 'TechNodesLibrary.json'),
+            fetchJsonConfig(`${baseUrl}PlayerTechTreeNodeValuesLibrary.json`, 'PlayerTechTreeNodeValuesLibrary.json')
         ]);
-        if (!nodesRes.ok || !valuesRes.ok) {
-            throw new Error(`Failed to load tech tree components for reconstruction`);
-        }
-        const nodesLib = await nodesRes.json();
-        const valuesLib = await valuesRes.json();
         
         // Tech tree values are serialized at half of their runtime value (the game
         // doubles them at runtime; the guild/clan tree already has this x2 applied
@@ -146,9 +164,7 @@ async function fetchAndReconstruct(selectedVersion: string, fileName: string): P
     }
     
     if (fileName === 'TechTreeUpgradeLibrary.json') {
-        const res = await fetch(`${baseUrl}PlayerTechTreeTierLibrary.json`);
-        if (!res.ok) throw new Error(`Failed to load PlayerTechTreeTierLibrary.json`);
-        const tierLib = await res.json();
+        const tierLib = await fetchJsonConfig(`${baseUrl}PlayerTechTreeTierLibrary.json`, 'PlayerTechTreeTierLibrary.json');
         
         const reconstructed: Record<string, any> = {};
         for (const tierKey of Object.keys(tierLib)) {
@@ -170,9 +186,7 @@ async function fetchAndReconstruct(selectedVersion: string, fileName: string): P
     }
     
     if (fileName === 'TechTreePositionLibrary.json') {
-        const res = await fetch(`${baseUrl}PlayerTechTreePositionLibrary.json`);
-        if (!res.ok) throw new Error(`Failed to load PlayerTechTreePositionLibrary.json`);
-        return res.json();
+        return fetchJsonConfig(`${baseUrl}PlayerTechTreePositionLibrary.json`, 'PlayerTechTreePositionLibrary.json');
     }
     
     throw new Error(`Unsupported reconstruction for file: ${fileName}`);
@@ -237,11 +251,7 @@ export function useGameData<T>(fileName: string) {
                 const url = isGlobalFile 
                     ? `${import.meta.env.BASE_URL}parsed_configs/${fileName}`
                     : `${import.meta.env.BASE_URL}parsed_configs/${selectedVersion}/${fileName}`;
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Failed to load ${fileName}`);
-                }
-                const json = await response.json();
+                const json = await fetchJsonConfig(url, fileName);
                 if (fileName === 'GuildTechTreeUpgradeLibrary.json') {
                     return normalizeGuildUpgradeLibrary(json, isVarintFixed(selectedVersion));
                 }

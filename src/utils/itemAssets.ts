@@ -30,7 +30,7 @@ export const ITEM_ASSETS = [
     "IconMedievalWeaponBow.png",
     "IconMedievalWeaponKatana.png",
     "IconMedievalWeaponScythe.png",
-    "IconMedievalWeaponSpearandshield.png", // Verify sort order for 'Spear...' vs 'Sword...'
+    "IconMedievalWeaponSpearandshield.png", // Verify sort order for 'Spear' vs 'Sword'
     "IconMedievalWeaponSwordandshield.png",
     "IconMedievalWeaponTomahawk.png",
     "IconMedievalWeaponWarhammer.png",

@@ -142,7 +142,7 @@ export function PvpModal({ onClose }: { onClose: () => void }) {
                     )}
 
                     {stage === 'processing' && (
-                        <div className="py-12 text-center space-y-3"><Loader2 className="w-10 h-10 mx-auto text-red-400 animate-spin" /><p className="text-text-muted text-sm">Reading opponent…</p></div>
+                        <div className="py-12 text-center space-y-3"><Loader2 className="w-10 h-10 mx-auto text-red-400 animate-spin" /><p className="text-text-muted text-sm">Reading opponent</p></div>
                     )}
 
                     {(stage === 'ready' || stage === 'result') && (
@@ -191,7 +191,7 @@ export function PvpModal({ onClose }: { onClose: () => void }) {
                                 </div>
                             </div>
 
-                            <p className="text-[10px] text-text-muted flex items-start gap-1.5"><Info className="w-3 h-3 mt-0.5 shrink-0" /> Both fighters use their full totals — which already include tree &amp; passives — so this is the real matchup. The opponent's tree is baked into their Total Damage/Health, so nothing needs to be stripped.</p>
+                            <p className="text-[10px] text-text-muted flex items-start gap-1.5"><Info className="w-3 h-3 mt-0.5 shrink-0" /> Both fighters use their full totals. Which already include tree &amp; passives. So this is the real matchup. The opponent's tree is baked into their Total Damage/Health, so nothing needs to be stripped.</p>
                         </div>
                     )}
                 </div>

@@ -1,19 +1,30 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Bike as MountIcon, Plus, X, Recycle, Bookmark } from 'lucide-react';
+import { Bike as MountIcon } from 'lucide-react';
 import { MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
-import { cn, getRarityBgStyle } from '../../lib/utils';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSelectorModal } from './MountSelectorModal';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
-import { getStatName, getStatColor } from '../../utils/statNames';
 import { InputModal } from '../UI/InputModal';
-import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
+import { getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 
+/**
+ * Standalone mount panel.
+ *
+ * It used to be a second, hand-rolled copy of the loadout card, and it had drifted away from the
+ * shared one in three ways that were visible on screen: every manual passive was multiplied by 100
+ * (12.6% rendered as 1260.0%), the rarity gradient was painted at full opacity instead of the
+ * reduced opacity the shared card uses, and combinedStats.slice(2, 5) silently dropped a fourth
+ * substat. All three are gone because the card is now the shared one.
+ *
+ * The mount ascension editor stays ON the card here: unlike forge/pet/skill ascension, this panel
+ * has no other control for that track, so removing it would remove the only way to set it.
+ */
 export function MountPanel() {
     const { profile, updateNestedProfile } = useProfile();
     const { selectedVersion } = useGameDataContext();
@@ -24,14 +35,16 @@ export function MountPanel() {
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+    const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
 
-    // Get tech tree modifiers
     const techModifiers = useTreeModifiers();
     const clanModifiers = useClanTreeModifiers();
     const mountDamageBonus = techModifiers['MountDamage'] || 0;
     const mountHealthBonus = techModifiers['MountHealth'] || 0;
     const clanMountDamageBonus = clanModifiers['MountDamage'] || 0;
     const clanMountHealthBonus = clanModifiers['MountHealth'] || 0;
+
+    const mountAscensionLevel = profile.misc.mountAscensionLevel || 0;
 
     const handleSelectMount = (rarity: string | null, id?: number, level?: number, secondaryStats?: { statId: string; value: number }[]) => {
         if (!rarity) {
@@ -47,12 +60,14 @@ export function MountPanel() {
             secondaryStats: secondaryStats || []
         };
         updateNestedProfile('mount', { active: newMount });
+        setIsModalOpen(false);
     };
 
     const handleLevelChange = (delta: number) => {
         if (!activeMount) return;
         const maxLevel = mountUpgradeLibrary?.[activeMount.rarity]?.LevelInfo?.length || 100;
         const newLevel = Math.max(1, Math.min(maxLevel, activeMount.level + delta));
+        if (newLevel === activeMount.level) return;
         updateNestedProfile('mount', { active: { ...activeMount, level: newLevel } });
     };
 
@@ -60,125 +75,67 @@ export function MountPanel() {
         updateNestedProfile('mount', { active: null });
     };
 
-    // Get combined mount stats (Inherent + Manual Passives) with tech tree bonuses
-    const getCombinedStats = () => {
-        if (!activeMount) return { stats: [], damageMulti: 0, healthMulti: 0 };
+    /** Damage and health with the tech tree and ascension layers, plus the breakdown the tooltip wants. */
+    const mountStats = useMemo(() => {
+        if (!activeMount || !mountUpgradeLibrary) return null;
+        const upgradeData = mountUpgradeLibrary[activeMount.rarity];
+        if (!upgradeData?.LevelInfo) return null;
 
-        const combined: any[] = [];
-        let baseDamageMulti = 0;
-        let baseHealthMulti = 0;
-        let ascensionDmgMulti = 0;
-        let ascensionHpMulti = 0;
+        // User level 1 = JSON level 0.
+        const targetLevel = Math.max(0, activeMount.level - 1);
+        const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === targetLevel) || upgradeData.LevelInfo[0];
 
-        // 1. Inherent Stats from Library
-        if (mountUpgradeLibrary) {
-            const upgradeData = mountUpgradeLibrary[activeMount.rarity];
-            if (upgradeData?.LevelInfo) {
-                // User Level 1 = JSON Level 0
-                const targetLevel = Math.max(0, activeMount.level - 1);
-                const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === targetLevel) || upgradeData.LevelInfo[0];
+        let baseDamage = 0;
+        let baseHealth = 0;
+        (levelInfo?.MountStats?.Stats || []).forEach((stat: any) => {
+            const type = stat.StatNode?.UniqueStat?.StatType;
+            if (type === 'Damage') baseDamage = stat.Value || 0;
+            if (type === 'Health') baseHealth = stat.Value || 0;
+        });
 
-                // Calculate Ascension Multiplier
-                const mountAscensionLevel = profile.misc.mountAscensionLevel || 0;
-                if (mountAscensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
-                    const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
-                    const config = ascConfigs[Math.min(mountAscensionLevel - 1, ascConfigs.length - 1)];
-                    if (config) {
-                        const stats = config.StatContributions || [];
-                        for (const s of stats) {
-                            const sType = s.StatNode?.UniqueStat?.StatType;
-                            const sVal = s.Value + 1;
-                            if (sType === 'Damage' || sType === 'AscensionDamage') ascensionDmgMulti = sVal;
-                            if (sType === 'Health' || sType === 'AscensionHealth') ascensionHpMulti = sVal;
-                        }
-                    }
-                }
-
-                if (levelInfo?.MountStats?.Stats) {
-                    levelInfo.MountStats.Stats.forEach((stat: any) => {
-                        const statType = stat.StatNode?.UniqueStat?.StatType || 'Unknown';
-                        let value = stat.Value || 0;
-                        let techBonus = 0;
-                        let ascensionBonus = 0;
-
-                        // Apply tech tree bonus for Damage/Health
-                        // Apply tech tree bonus for Damage/Health and Ascension multiplier
-                        if (statType === 'Damage') {
-                            baseDamageMulti = value;
-                            techBonus = mountDamageBonus;
-                            ascensionBonus = ascensionDmgMulti || 1;
-                            value = value * (1 + techBonus) * ascensionBonus;
-                        } else if (statType === 'Health') {
-                            baseHealthMulti = value;
-                            techBonus = mountHealthBonus;
-                            ascensionBonus = ascensionHpMulti || 1;
-                            value = value * (1 + techBonus) * ascensionBonus;
-                        }
-
-                        combined.push({
-                            label: statType,
-                            value: value,
-                            baseValue: stat.Value,
-                            techBonus: techBonus,
-                            ascensionBonus: ascensionBonus,
-                            // DMG and HP of mounts are now flat additives
-                            isMultiplier: statType !== 'Damage' && statType !== 'Health' && (
-                                stat.StatNode?.UniqueStat?.StatNature === 'Multiplier' ||
-                                stat.StatNode?.UniqueStat?.StatNature === 'OneMinusMultiplier'
-                            )
-                        });
-                    });
-                }
-            }
-        }
-
-        // 2. Manual Passives from Profile
-        if (activeMount.secondaryStats) {
-            activeMount.secondaryStats.forEach(stat => {
-                combined.push({
-                    label: stat.statId,
-                    value: stat.value,
-                    isManual: true,
-                    isMultiplier: true
-                });
+        let ascDmg = 0;
+        let ascHp = 0;
+        if (mountAscensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
+            const config = ascConfigs[Math.min(mountAscensionLevel - 1, ascConfigs.length - 1)];
+            (config?.StatContributions || []).forEach((s: any) => {
+                const type = s.StatNode?.UniqueStat?.StatType;
+                if (type === 'Damage' || type === 'AscensionDamage') ascDmg = s.Value + 1;
+                if (type === 'Health' || type === 'AscensionHealth') ascHp = s.Value + 1;
             });
         }
 
-        const techDmgFactor = 1 + mountDamageBonus;
-        const techHpFactor = 1 + mountHealthBonus;
-        const ascDmgFactor = ascensionDmgMulti || 1;
-        const ascHpFactor = ascensionHpMulti || 1;
+        const techDmgMulti = 1 + mountDamageBonus;
+        const techHpMulti = 1 + mountHealthBonus;
+        const ascDmgMulti = ascDmg || 1;
+        const ascHpMulti = ascHp || 1;
 
         return {
-            stats: combined,
-            damageMulti: techDmgFactor * ascDmgFactor,
-            healthMulti: techHpFactor * ascHpFactor,
+            damage: baseDamage * techDmgMulti * ascDmgMulti,
+            health: baseHealth * techHpMulti * ascHpMulti,
+            damageMulti: techDmgMulti * ascDmgMulti,
+            healthMulti: techHpMulti * ascHpMulti,
             details: {
-                damage: { base: baseDamageMulti, techMulti: techDmgFactor, clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgFactor },
-                health: { base: baseHealthMulti, techMulti: techHpFactor, clanTechMulti: clanMountHealthBonus, ascMulti: ascHpFactor }
+                damage: { base: baseDamage, techMulti: techDmgMulti, clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgMulti },
+                health: { base: baseHealth, techMulti: techHpMulti, clanTechMulti: clanMountHealthBonus, ascMulti: ascHpMulti }
             }
         };
-    };
-
-    const { stats: combinedStats } = getCombinedStats();
+    }, [activeMount, mountUpgradeLibrary, ascensionConfigsLibrary, mountAscensionLevel,
+        mountDamageBonus, mountHealthBonus, clanMountDamageBonus, clanMountHealthBonus]);
 
     const getSpriteInfo = (mountId: number, rarity: string) => {
         if (!spriteMapping?.mounts?.mapping) return null;
         const entry = Object.entries(spriteMapping.mounts.mapping).find(([_, val]: [string, any]) => val.id === mountId && val.rarity === rarity);
-        if (entry) {
-            return {
-                spriteIndex: parseInt(entry[0]),
-                config: spriteMapping.mounts,
-                name: (entry[1] as any).name
-            };
-        }
-        return null;
+        if (!entry) return null;
+        return {
+            spriteIndex: parseInt(entry[0]),
+            config: spriteMapping.mounts,
+            name: (entry[1] as any).name
+        };
     };
 
-    // Prepare sprite info for active mount
     const activeSprite = activeMount ? getSpriteInfo(activeMount.id, activeMount.rarity) : null;
 
-    // Check if current mount matches a saved build
     const isSaved = useMemo(() => {
         if (!activeMount || !profile.mount.savedBuilds) return false;
         return profile.mount.savedBuilds.some(s =>
@@ -186,6 +143,11 @@ export function MountPanel() {
             JSON.stringify(s.secondaryStats) === JSON.stringify(activeMount.secondaryStats)
         );
     }, [activeMount, profile.mount.savedBuilds]);
+
+    const perfection = useMemo(() => {
+        if (!activeMount || !secondaryStatLibrary) return null;
+        return getPerfection(activeMount as any, secondaryStatLibrary);
+    }, [activeMount, secondaryStatLibrary]);
 
     const handleSaveConfirm = (name: string) => {
         if (!activeMount) return;
@@ -197,7 +159,6 @@ export function MountPanel() {
         );
 
         if (existingIdx >= 0) {
-            // Update
             const newSaved = [...saved];
             newSaved[existingIdx] = { ...newSaved[existingIdx], customName: name };
             updateNestedProfile('mount', { savedBuilds: newSaved });
@@ -223,203 +184,77 @@ export function MountPanel() {
             return { title: 'Update Saved Preset', label: 'Preset Name (Already Saved)', initialValue: match.customName || baseName };
         }
         return { title: 'Save Mount Preset', label: 'Preset Name', initialValue: baseName };
-
     };
 
     const modalProps = getModalProps();
 
     return (
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <MountIcon className="w-6 h-6 text-accent-primary" />
                 Active Mount
             </h2>
 
-            {activeMount ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {/* Active Mount Slot */}
-                    <div 
+                            {/* flex-wrap, not a grid: a grid keeps its column count on the last row too, so
+                    eight items plus the mount left the mount alone in a 4-wide row with three
+                    empty tracks beside it. Wrapped flex lets whatever lands on the last row grow
+                    into the full width instead, and items-stretch levels the heights within a row
+                    so two cards side by side never end at different depths. */}
+                <div className="flex flex-wrap items-stretch gap-3">
+                {activeMount ? (
+                    <ItemSelectionCard
+                        className="basis-[330px] grow min-w-0 max-w-[min(100%,560px)]"
+                        item={activeMount as any}
+                        layout="row"
+                        slotKey="Mount"
+                        slotLabel="Mount"
+                        rarity={activeMount.rarity}
+                        hideAgeStyles={true}
+                        itemName={activeSprite?.name || `${activeMount.rarity} Mount`}
+                        itemImage={null}
+                        isSaved={isSaved}
+                        globalAscensionLevel={mountAscensionLevel}
+                        stats={{
+                            damage: mountStats?.damage || 0,
+                            health: mountStats?.health || 0,
+                            damageMulti: mountStats?.damageMulti ?? 1,
+                            healthMulti: mountStats?.healthMulti ?? 1,
+                            isMelee: false,
+                            details: mountStats?.details
+                        }}
+                        perfection={perfection}
+                        getStatPerfection={(statId, value) => getStatPerfection(statId, value, secondaryStatLibrary)}
+                        spriteMapping={spriteMapping}
                         onClick={() => setIsModalOpen(true)}
-                        className={cn(
-                            "h-full min-h-[180px] rounded-xl border-2 bg-bg-secondary/50 relative flex flex-col items-center p-2 gap-1 group transition-all cursor-pointer",
-                            `border-rarity-${activeMount.rarity.toLowerCase()}/50 hover:border-rarity-${activeMount.rarity.toLowerCase()} hover:bg-bg-secondary/50 hover:scale-[1.02]`
+                        onUnequip={(e) => { e.stopPropagation(); handleRemove(); }}
+                        onSave={(e) => { e.stopPropagation(); setIsSaveModalOpen(true); }}
+                        onLevelChange={(delta, e) => { e.stopPropagation(); handleLevelChange(delta); }}
+                        onAscensionChange={(val) => updateNestedProfile('misc', { mountAscensionLevel: val })}
+                        renderIcon={() => activeSprite ? (
+                            <SpriteSheetIcon
+                                textureSrc={getAscensionTexturePath('MountIcons', mountAscensionLevel, selectedVersion)}
+                                spriteWidth={activeSprite.config.sprite_size.width}
+                                spriteHeight={activeSprite.config.sprite_size.height}
+                                sheetWidth={activeSprite.config.texture_size.width}
+                                sheetHeight={activeSprite.config.texture_size.height}
+                                iconIndex={activeSprite.spriteIndex}
+                                className={CARD_ART_CLASS}
+                                smooth
+                            />
+                        ) : (
+                            <MountIcon className="w-10 h-10 opacity-50 text-text-muted" />
                         )}
-                        style={getRarityBgStyle(activeMount.rarity)}
-                    >
-                        {/* Top Badges */}
-                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                            <span className="bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 shadow-sm">
-                                Lv {activeMount.level}
-                            </span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="absolute top-2 right-2 flex items-center gap-1 z-20">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setIsSaveModalOpen(true); }}
-                                className={cn(
-                                    "p-1.5 rounded-lg transition-all shadow-sm border border-white/5",
-                                    isSaved ? "bg-accent-primary text-white" : "bg-black/40 text-text-muted hover:text-white"
-                                )}
-                            >
-                                <Bookmark className={cn("w-3 h-3", isSaved && "fill-white")} />
-                            </button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
-                                className="p-1.5 bg-black/40 hover:bg-black/60 text-text-muted hover:text-white rounded-lg transition-all border border-white/5"
-                            >
-                                <Recycle className="w-3 h-3" />
-                            </button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleRemove(); }}
-                                className="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-all shadow-sm"
-                            >
-                                <X className="w-3 h-3" />
-                            </button>
-                        </div>
-
-                        {/* Icon Container */}
-                        <div className="mt-6 mb-1 shrink-0">
-                            <div
-                                className={cn(
-                                    "w-16 h-16 rounded-xl flex items-center justify-center border-2 shrink-0 bg-bg-primary/40 shadow-inner group-hover:scale-110 transition-transform",
-                                    `border-rarity-${activeMount.rarity.toLowerCase()}`
-                                )}
-                                style={getRarityBgStyle(activeMount.rarity)}
-                            >
-                                {activeSprite ? (
-                                    <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
-                                        spriteWidth={activeSprite.config.sprite_size.width}
-                                        spriteHeight={activeSprite.config.sprite_size.height}
-                                        sheetWidth={activeSprite.config.texture_size.width}
-                                        sheetHeight={activeSprite.config.texture_size.height}
-                                        iconIndex={activeSprite.spriteIndex}
-                                        className="w-12 h-12"
-                                    />
-                                ) : (
-                                    <MountIcon className={cn("w-8 h-8 opacity-50", `text-rarity-${activeMount.rarity.toLowerCase()}`)} />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Name & Evolution */}
-                        <div className="w-full text-center mb-1">
-                            <div className="font-bold text-xs leading-tight px-2 text-text-primary">
-                                {activeSprite?.name || `${activeMount.rarity} Mount`}
-                            </div>
-                            <div className="text-[9px] font-black uppercase tracking-widest text-accent-primary opacity-80">
-                                {activeMount.rarity} Mount
-                            </div>
-                        </div>
-
-                        {/* Core Stats */}
-                        <div className="w-full bg-black/30 rounded-lg p-2 flex flex-col gap-1.5 border border-white/5">
-                            {combinedStats.slice(0, 2).map((stat, idx) => {
-                                const label = stat.label.toLowerCase();
-                                const isFlat = label === 'damage' || label === 'health' || label === 'dmg' || label === 'hp';
-                                const formatValue = (val: number) => {
-                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-                                    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
-                                    return val.toFixed(0);
-                                };
-
-                                return (
-                                    <div key={idx} className={cn("flex justify-between items-center text-[10px] font-mono relative group/mount-details", getStatColor(stat.label))}>
-                                        <span className="opacity-70">{getStatName(stat.label)}</span>
-                                        <div className="flex items-center gap-1">
-                                            <span className="font-bold">
-                                                {stat.isMultiplier || isFlat ? '+' : ''}
-                                                {isFlat ? formatValue(stat.value) : (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(1)}
-                                                {stat.isMultiplier ? '%' : ''}
-                                            </span>
-                                            
-                                            {isFlat && (stat.label === 'Damage' || stat.label === 'Health') && (
-                                                <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-48 bg-black border border-white/10 rounded-lg p-2 shadow-2xl z-50 hidden group-hover/mount-details:block pointer-events-none backdrop-blur-md">
-                                                    <div className="text-[10px] space-y-1">
-                                                        <div className="flex justify-between border-b border-white/5 pb-1 mb-1">
-                                                            <span className="text-text-muted uppercase font-bold">{stat.label} Breakdown</span>
-                                                            <span className={cn("font-bold", getStatColor(stat.label))}>{Math.round(stat.value).toLocaleString()}</span>
-                                                        </div>
-                                                        <div className="flex justify-between">
-                                                            <span className="text-text-muted">Base</span>
-                                                            <span>{Math.round(stat.baseValue).toLocaleString()}</span>
-                                                        </div>
-                                                        {stat.techBonus > 0 && (
-                                                            <div className="flex justify-between">
-                                                                <span className="text-text-muted">Tech Tree</span>
-                                                                <span className="text-green-400">x{(1 + stat.techBonus).toFixed(2)}</span>
-                                                            </div>
-                                                        )}
-                                                        {stat.ascensionBonus > 1 && (
-                                                            <div className="flex justify-between">
-                                                                <span className="text-text-muted">Ascension</span>
-                                                                <span className="text-amber-400">x{stat.ascensionBonus.toFixed(2)}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Secondary/Inherent Combo */}
-                        <div className="w-full mt-auto pt-2 border-t border-white/10 flex flex-col gap-1">
-                            {combinedStats.slice(2, 5).map((stat, idx) => (
-                                <div key={idx} className={cn("flex justify-between items-center text-[9px] leading-none", stat.isManual ? "text-accent-primary" : "text-text-muted/80")}>
-                                    <span className="truncate mr-1">{getStatName(stat.label)}</span>
-                                    <span className="font-bold shrink-0">
-                                        +{ (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(1) }%
-                                    </span>
-                                </div>
-                            ))}
-                            
-                            {/* Ascension & Level Controls */}
-                            <div className="mt-1 flex items-center justify-between gap-1">
-                                <div className="flex bg-black/40 rounded-md p-0.5 border border-white/5 scale-90 origin-left">
-                                    <button onClick={() => handleLevelChange(-1)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded">-</button>
-                                    <span className="px-1.5 text-[10px] font-bold self-center">{activeMount.level}</span>
-                                    <button onClick={() => handleLevelChange(1)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded">+</button>
-                                </div>
-                                <div className="">
-                                    <AscensionStars 
-                                        value={profile.misc.mountAscensionLevel || 0}
-                                        onChange={(val: number) => updateNestedProfile('misc', { mountAscensionLevel: val })}
-                                        size="xs"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Change Button Placeholder for empty space */}
-                    <div 
+                    />
+                ) : (
+                    <EmptyRowCard
+                        className="basis-[330px] grow min-w-0 max-w-[min(100%,560px)]"
+                        label="No Mount Equipped"
+                        hint="Click to select"
+                        icon={<MountIcon className="w-10 h-10 text-text-muted" />}
                         onClick={() => setIsModalOpen(true)}
-                        className="h-full min-h-[180px] rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-all flex flex-col items-center justify-center p-4 bg-bg-input/10 group opacity-50 hover:opacity-100"
-                    >
-                        <div className="p-3 bg-bg-secondary/50 rounded-full mb-2 group-hover:scale-110 transition-transform">
-                            <Recycle className="w-6 h-6 text-text-muted" />
-                        </div>
-                        <span className="text-xs font-bold text-text-muted">Change Mount</span>
-                    </div>
-                </div>
-            ) : (
-                <div
-                    className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-xl space-y-4 cursor-pointer hover:border-accent-primary/50 transition-all bg-bg-input/10 group"
-                    onClick={() => setIsModalOpen(true)}
-                >
-                    <div className="p-4 bg-bg-secondary/50 rounded-full mb-2 group-hover:scale-110 transition-transform border border-white/5">
-                        <Plus className="w-8 h-8 text-text-muted opacity-50" />
-                    </div>
-                    <div className="text-center">
-                        <p className="text-text-primary font-bold">No Mount Equipped</p>
-                        <p className="text-text-muted text-xs uppercase tracking-widest mt-1">Click to select</p>
-                    </div>
-                </div>
-            )}
+                    />
+                )}
+            </div>
 
             <MountSelectorModal
                 isOpen={isModalOpen}
@@ -438,6 +273,6 @@ export function MountPanel() {
                 onConfirm={handleSaveConfirm}
                 onCancel={() => setIsSaveModalOpen(false)}
             />
-        </Card >
+        </Card>
     );
 }

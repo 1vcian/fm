@@ -146,7 +146,7 @@ export default function ForgeWiki() {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-text-muted animate-pulse">
                 <Hammer className="w-12 h-12 mb-4 opacity-20" />
-                <p>Loading Forge configurations...</p>
+                <p>Loading Forge configurations</p>
             </div>
         );
     }

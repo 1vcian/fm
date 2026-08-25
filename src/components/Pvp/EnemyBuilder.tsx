@@ -457,7 +457,7 @@ export function EnemyBuilder() {
                         {!spriteMapping && <Zap className="w-5 h-5 text-accent-primary" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm truncate">{skill.id}</div>
+                        <div className="font-bold text-sm whitespace-nowrap overflow-hidden text-clip">{skill.id}</div>
                         <div className={cn("text-[10px] uppercase font-bold", `text-rarity-${skill.rarity.toLowerCase()}`)}>
                             {skill.rarity}
                         </div>
@@ -547,7 +547,7 @@ export function EnemyBuilder() {
                         onChange={(e) => handleSelectProfile(e.target.value)}
                         value=""
                     >
-                        <option value="" disabled>Select Profile...</option>
+                        <option value="" disabled>Select Profile</option>
                         {profiles.map(p => (
                             <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
@@ -582,7 +582,7 @@ export function EnemyBuilder() {
                         }}
                         value=""
                     >
-                        <option value="" disabled>Load Saved...</option>
+                        <option value="" disabled>Load Saved</option>
                         {savedEnemies.map((en, i) => (
                             <option key={i} value={en.name}>{en.name}</option>
                         ))}
@@ -773,7 +773,7 @@ export function EnemyBuilder() {
 
                     {(enemy.skinEntries || []).length === 0 && (
                         <div className="text-xs text-text-muted/50 text-center py-2 border border-dashed border-border/30 rounded-lg">
-                            No skins — tap "Add Skin" to add bonuses
+                            No skins. Tap "Add Skin" to add bonuses
                         </div>
                     )}
 
@@ -1037,7 +1037,7 @@ export function EnemyBuilder() {
                                 >
                                     {stat.enabled && <span className="text-xs font-bold">✓</span>}
                                 </button>
-                                <span className={cn("text-xs font-medium flex-1 min-w-0 truncate", stat.enabled ? colorClass : "text-text-muted")}>
+                                <span className={cn("text-xs font-medium flex-1 min-w-0 whitespace-nowrap overflow-hidden text-clip", stat.enabled ? colorClass : "text-text-muted")}>
                                     {getStatName(statId) || statId}
                                 </span>
                                 {stat.enabled && (
@@ -1082,7 +1082,7 @@ export function EnemyBuilder() {
                         {isSimulating ? (
                             <>
                                 <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                                SIMULATING...
+                                SIMULATING
                             </>
                         ) : (
                             <>

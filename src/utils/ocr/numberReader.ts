@@ -481,7 +481,21 @@ export const MAINSTAT_VALUE_OPTS: InkValueOpts = {
     shortFrac: 0.45, shortPenalty: '0123456789kmb',
 };
 
-/** Read a dark-ink value token crop into a raw glyph string over opts.chars. */
+/**
+ * Read a dark-ink value token crop into a raw glyph string over opts.chars.
+ *
+ * NOTE (task #43 audit): the `4` below is a fixed multiplier, so the glyph this pipeline masks and
+ * matches grows with the device — measured on the real item popups, the mask glyph is 59px tall at
+ * 576px wide, 96px at 923 and 133px at 1290. Because `opts.splitVeto` is an ABSOLUTE score against
+ * a bank harvested at the 576 scale, that shows up as a read that changes with resolution
+ * ('+13.7%' -> '+13.796' from 923 up: the '%' stops clearing the veto and is valley-split into
+ * '9' + '6'). Normalising the factor to `4 * 576 / src.width` was tried and measured: it fixes the
+ * 1290 read but breaks a JPEG-recompressed 923 one ('+72.9%' -> '+729%'), i.e. it trades one
+ * misread for another. It is left as-is deliberately until there is a NATIVE high-resolution item
+ * fixture to calibrate against — every item fixture in the repo is 576px native, so the larger
+ * variants are upscales of the same pixels and cannot separate "device scale" from "resampling".
+ * See reverseForge/scale_probe.mjs.
+ */
 export async function readInkValue(canvas: HTMLCanvasElement, opts: InkValueOpts): Promise<string> {
     const bank = await loadGlyphBank();
     const chars = opts.chars.split('');

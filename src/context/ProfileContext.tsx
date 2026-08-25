@@ -1,9 +1,43 @@
+/**
+ * ⚠️ THIS IMPORT MUST STAY FIRST.
+ *
+ * `authUrl` lifts Supabase's magic-link parameters out of the URL as a side effect of being
+ * loaded. It has to win the race against `SHARE_SOURCE` below, which snapshots
+ * `window.location.{search,hash}` at module-evaluation time: an implicit-flow callback puts
+ * `#access_token=` in the very fragment the share payload lives in, and the share decoder would
+ * see a garbled payload. Module evaluation is depth-first over the import list, so being the first
+ * import is what guarantees the ordering. See `src/services/authUrl.ts`.
+ */
+import '../services/authUrl';
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserProfile, INITIAL_PROFILE, generateProfileId } from '../types/Profile';
-import LZString from 'lz-string';
+import {
+    decodeSharedPayload,
+    hasSharedPayload,
+    sanitizeProfileForTransport,
+    SharePayloadSource
+} from '../utils/shareCodec';
+import { ensureProfileIdsMigrated } from '../services/profileIdMigration';
+import { useProfileSync, type ProfileSyncApi } from '../services/useProfileSync';
 
 const STORAGE_KEY = 'forgeMaster_profiles';
 const ACTIVE_PROFILE_KEY = 'forgeMaster_activeProfileId';
+
+/**
+ * The share payload is read from the URL at module load, BEFORE React (and the HashRouter
+ * mounted inside this provider) can touch the fragment. Decoding it is async (gzip via
+ * DecompressionStream), so the raw location is captured here and consumed by the effect below.
+ */
+const SHARE_SOURCE: SharePayloadSource = typeof window !== 'undefined'
+    ? { search: window.location.search, hash: window.location.hash }
+    : {};
+const HAS_SHARE_PAYLOAD = hasSharedPayload(SHARE_SOURCE);
+
+/** Drops the share payload (fragment or legacy query) but keeps the HashRouter route. */
+const clearShareUrl = () => {
+    window.history.replaceState({}, '', `${window.location.pathname}#/`);
+};
 
 const SLOT_TO_JSON_TYPE: Record<string, string> = {
     'Weapon': 'Weapon',
@@ -95,12 +129,25 @@ interface ProfileContextType {
 
     // Validation
     isNameTaken: (name: string, excludeId?: string) => boolean;
+
+    /**
+     * Account sync. Always present, and inert unless a backend is configured AND somebody is
+     * signed in — `sync.status === 'local-only'` is the normal, non-error resting state.
+     * See `src/services/useProfileSync.ts`.
+     */
+    sync: ProfileSyncApi;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 // Initialize profiles synchronously from localStorage
 const getInitialProfiles = (): { profiles: UserProfile[], activeId: string } => {
+    // Rewrite pre-UUID profile ids before anything reads them. Runs at most once per browser,
+    // never throws, and leaves storage untouched if it cannot complete. `profiles.id` is a `uuid`
+    // column, so without this the first sync of an existing user would fail with 22P02 —
+    // BACKEND_PLAN §7b, details in `src/services/profileIdMigration.ts`.
+    ensureProfileIdsMigrated();
+
     try {
         const savedProfiles = localStorage.getItem(STORAGE_KEY);
         const savedActiveId = localStorage.getItem(ACTIVE_PROFILE_KEY);
@@ -157,26 +204,22 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [state, setState] = useState(() => getInitialProfiles());
     const { profiles, activeId: activeProfileId } = state;
     const [importedProfile, setImportedProfile] = useState<UserProfile | null>(null);
+    // True only while a share link is being decoded, so the app never flashes the local
+    // profile before swapping to the shared one. Without a payload this is false from the
+    // first render and nothing about the offline/normal boot changes.
+    const [decodingShare, setDecodingShare] = useState(HAS_SHARE_PAYLOAD);
 
-    // Check for shared profile in URL on mount
+    // Check for shared profile in URL on mount (new '#p=' gzip format + legacy ?b62c / ?b62)
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const b62c = params.get('b62c'); // New compressed format
-        const b62 = params.get('b62');   // Old format
+        if (!HAS_SHARE_PAYLOAD) return;
+        let cancelled = false;
 
-        try {
-            let json = null;
-
-            if (b62c) {
-                json = LZString.decompressFromEncodedURIComponent(b62c);
-            } else if (b62) {
-                json = atob(b62);
-            }
-
-            if (json) {
-                const parsed = JSON.parse(json);
-                // Ensure it has basic structure
-                if (parsed && typeof parsed === 'object') {
+        decodeSharedPayload(SHARE_SOURCE)
+            .then(parsed => {
+                if (cancelled) return;
+                // A malformed payload is simply ignored: the app boots on the local profiles.
+                if (parsed) {
+                    // Import ALWAYS mints a fresh id — the invariant clan membership rests on.
                     const sharedProfile: UserProfile = sanitizeProfile({
                         ...INITIAL_PROFILE,
                         ...parsed,
@@ -186,10 +229,14 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     });
                     setImportedProfile(sharedProfile);
                 }
-            }
-        } catch (e) {
-            console.error("Failed to parse shared profile", e);
-        }
+                setDecodingShare(false);
+            })
+            .catch(e => {
+                console.error("Failed to parse shared profile", e);
+                if (!cancelled) setDecodingShare(false);
+            });
+
+        return () => { cancelled = true; };
     }, []);
 
     // Setter helpers to update state
@@ -204,6 +251,27 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setState(prev => ({ ...prev, activeId: id }));
     };
 
+    /**
+     * The write path the sync engine uses to bring server-side profiles in.
+     *
+     * A functional updater rather than a setter on purpose: a download can land while the user is
+     * editing, so the engine must merge into whatever is in state *at that moment*, not into an
+     * array captured when the request was sent. Returning `null` means "nothing changed", which
+     * keeps a no-op pull from re-rendering the whole app.
+     */
+    const applyLocalProfiles = useCallback<
+        (mutate: (profiles: UserProfile[], activeId: string) => { profiles: UserProfile[]; activeId: string } | null) => void
+    >(mutate => {
+        setState(prev => {
+            const next = mutate(prev.profiles, prev.activeId);
+            if (!next) return prev;
+            const activeId = next.profiles.some(p => p.id === next.activeId)
+                ? next.activeId
+                : (next.profiles[0]?.id ?? prev.activeId);
+            return { profiles: next.profiles, activeId };
+        });
+    }, []);
+
     // Get current profile (prioritize imported profile if viewing)
     const profile = importedProfile || profiles.find(p => p.id === activeProfileId) || profiles[0] || INITIAL_PROFILE;
 
@@ -213,15 +281,16 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         localStorage.setItem(ACTIVE_PROFILE_KEY, activeId);
     }, []);
 
-    // Auto-save on change (ONLY if NOT viewing a shared profile)
+    // Auto-save on change (ONLY if NOT viewing a shared profile, and never while a share
+    // link is still being decoded)
     useEffect(() => {
-        if (!importedProfile && profiles.length > 0 && activeProfileId) {
+        if (!importedProfile && !decodingShare && profiles.length > 0 && activeProfileId) {
             const timeout = setTimeout(() => {
                 saveAllProfiles(profiles, activeProfileId);
             }, 500);
             return () => clearTimeout(timeout);
         }
-    }, [profiles, activeProfileId, saveAllProfiles, importedProfile]);
+    }, [profiles, activeProfileId, saveAllProfiles, importedProfile, decodingShare]);
 
     const updateProfile = useCallback((updates: Partial<UserProfile>) => {
         // Any techTree write stamps techTreeUpdatedAt (used to flag stale tree data in the UI).
@@ -398,8 +467,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setActiveProfileId(newProfile.id);
         setImportedProfile(null);
 
-        // Clean URL
-        window.history.replaceState({}, '', window.location.pathname);
+        // Clean URL (keeps the router route, drops the shared payload)
+        clearShareUrl();
     }, [importedProfile, isNameTaken]);
 
     const resetProfile = useCallback(() => {
@@ -420,7 +489,9 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!currentProfile) return;
 
         const filename = `${currentProfile.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
-        const jsonStr = JSON.stringify(currentProfile, null, 2);
+        // Same sanitisation as the share link (no id / isShared / sync metadata), but plain
+        // readable JSON — the export file is meant to be human-inspectable.
+        const jsonStr = JSON.stringify(sanitizeProfileForTransport(currentProfile), null, 2);
         const blob = new Blob([jsonStr], { type: "application/json" });
         const file = new File([blob], filename, { type: "application/json" });
 
@@ -553,6 +624,19 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     }, [isNameTaken]);
 
+    /**
+     * Account sync. Additive by construction: `localStorage` above is still the working copy and
+     * still the only thing the UI waits on. `suspended` covers the two cases where what is on
+     * screen is not the user's own data (a share link being decoded, or one being viewed), which
+     * must never be pushed to their account.
+     */
+    const sync = useProfileSync({
+        profiles,
+        activeProfileId,
+        suspended: decodingShare || !!importedProfile,
+        applyLocalProfiles,
+    });
+
     const contextValue = React.useMemo(() => ({
         profile,
         updateProfile,
@@ -574,17 +658,22 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         getTechLevel,
         getDungeonLevel,
         isNameTaken,
+        sync,
     }), [
         profile, updateProfile, updateNestedProfile, profiles, importedProfile,
         activeProfileId, switchProfile, createProfile, cloneProfile, deleteProfile,
         renameProfile, setProfileIcon, saveProfile, resetProfile, exportProfile,
         importProfile, importProfileFromJsonString, saveSharedProfile, getTechLevel,
-        getDungeonLevel, isNameTaken
+        getDungeonLevel, isNameTaken, sync
     ]);
 
     return (
         <ProfileContext.Provider value={contextValue}>
-            {children}
+            {decodingShare ? (
+                <div className="min-h-screen flex items-center justify-center bg-bg-primary text-text-secondary text-sm">
+                    Loading shared profile
+                </div>
+            ) : children}
         </ProfileContext.Provider>
     );
 };
