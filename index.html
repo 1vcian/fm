@@ -8,9 +8,36 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
+
+    <!--
+      PWA shell. The only reason it exists is web push: `PushManager` is reachable only from a
+      registered service worker, and on iOS a subscription additionally requires the site to be
+      installed to the Home Screen with `display: "standalone"` in the manifest.
+
+      EVERY URL HERE IS RELATIVE, ON PURPOSE. `vite.config.ts` sets `base` to `/fm/` for a
+      production build and `/` for the dev server, and this file is copied through verbatim (Vite
+      rewrites `/absolute` asset URLs but leaves `./relative` ones alone — verified against
+      `dist/index.html`). A relative href therefore resolves against whatever path the document is
+      served from: `/fm/manifest.webmanifest` on GitHub Pages, `/manifest.webmanifest` in dev.
+
+      The same rule carries into the manifest itself, where `start_url` and `scope` are `"./"`.
+      Manifest members resolve against the MANIFEST's URL, so both become `https://1vcian.me/fm/`
+      in production — hard-coding `/fm/` instead would make the manifest invalid on the dev server
+      ("scope URL is not a prefix of the document URL") and silently un-installable.
+    -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#0d0d12" />
+    <!-- iOS before 16.4 reads these instead of the manifest; harmless on later versions. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ForgeMaster" />
+    <!-- iOS prefers this over the manifest icons for the Home Screen tile, and it must be opaque:
+         iOS flattens alpha to black, and the source hammer is black-on-transparent. -->
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+
     <title>ForgeMaster Helper</title>
-  <script type="module" crossorigin src="/fm/assets/index.C_iBmTfM.js"></script>
-  <link rel="stylesheet" crossorigin href="/fm/assets/index.Dx2hX1hV.css">
+  <script type="module" crossorigin src="/fm/assets/index.BysMQ-1i.js"></script>
+  <link rel="stylesheet" crossorigin href="/fm/assets/index.nkVxZOnf.css">
 </head>
 
 <body>
