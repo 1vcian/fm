@@ -1,0 +1,127 @@
+{
+  "0": {
+    "Tier": 0,
+    "LevelInfoByTier": [
+      {
+        "Cost": 30,
+        "Duration": 300.0
+      },
+      {
+        "Cost": 42,
+        "Duration": 600.0
+      },
+      {
+        "Cost": 59,
+        "Duration": 1200.0
+      },
+      {
+        "Cost": 82,
+        "Duration": 2400.0
+      },
+      {
+        "Cost": 115,
+        "Duration": 4800.0
+      }
+    ]
+  },
+  "1": {
+    "Tier": 1,
+    "LevelInfoByTier": [
+      {
+        "Cost": 161,
+        "Duration": 9600.0
+      },
+      {
+        "Cost": 226,
+        "Duration": 19200.0
+      },
+      {
+        "Cost": 316,
+        "Duration": 38400.0
+      },
+      {
+        "Cost": 443,
+        "Duration": 76800.0
+      },
+      {
+        "Cost": 620,
+        "Duration": 84480.0
+      }
+    ]
+  },
+  "2": {
+    "Tier": 2,
+    "LevelInfoByTier": [
+      {
+        "Cost": 868,
+        "Duration": 92928.0
+      },
+      {
+        "Cost": 1007,
+        "Duration": 102221.0
+      },
+      {
+        "Cost": 1168,
+        "Duration": 112443.0
+      },
+      {
+        "Cost": 1354,
+        "Duration": 123687.0
+      },
+      {
+        "Cost": 1571,
+        "Duration": 136056.0
+      }
+    ]
+  },
+  "3": {
+    "Tier": 3,
+    "LevelInfoByTier": [
+      {
+        "Cost": 1823,
+        "Duration": 149661.0
+      },
+      {
+        "Cost": 2114,
+        "Duration": 164628.0
+      },
+      {
+        "Cost": 2452,
+        "Duration": 181090.0
+      },
+      {
+        "Cost": 2845,
+        "Duration": 199199.0
+      },
+      {
+        "Cost": 3300,
+        "Duration": 219119.0
+      }
+    ]
+  },
+  "4": {
+    "Tier": 4,
+    "LevelInfoByTier": [
+      {
+        "Cost": 3828,
+        "Duration": 241031.0
+      },
+      {
+        "Cost": 4441,
+        "Duration": 265134.0
+      },
+      {
+        "Cost": 5151,
+        "Duration": 291648.0
+      },
+      {
+        "Cost": 5975,
+        "Duration": 320813.0
+      },
+      {
+        "Cost": 6931,
+        "Duration": 352894.0
+      }
+    ]
+  }
+}
