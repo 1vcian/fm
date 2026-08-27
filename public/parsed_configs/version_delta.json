@@ -1,0 +1,14 @@
+{
+  "version": "2026_08_26_08_49",
+  "previous": "2026_08_21_00_29",
+  "changes": [
+    {
+      "file": "ArenaLeagueLibrary",
+      "kind": "changed",
+      "lines": [
+        "6.DemotionStart: 60 -> 40",
+        "7.DemotionStart: 60 -> 20"
+      ]
+    }
+  ]
+}

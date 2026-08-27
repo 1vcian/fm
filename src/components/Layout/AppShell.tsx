@@ -72,6 +72,12 @@ const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
     return baseMessages;
 };
 
+interface VersionDelta {
+    version: string;
+    previous: string | null;
+    changes: { file: string; kind: 'added' | 'removed' | 'changed'; lines: string[] }[];
+}
+
 const formatVersionDate = (version: string): string => {
     const parts = version.split('_');
     if (parts.length >= 3) {
@@ -107,6 +113,13 @@ export default function AppShell() {
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
     const [showVersionPopup, setShowVersionPopup] = useState(false);
     const [popupVersion, setPopupVersion] = useState('');
+    /**
+     * What actually changed in the newest game data. Written at build time by
+     * scripts/update_config_manifest.ts, because diffing 73 config files is cheap there and
+     * absurd on page load. `null` means the file has not been read yet, so the popup says
+     * nothing rather than claiming there were no changes.
+     */
+    const [delta, setDelta] = useState<VersionDelta | null>(null);
 
     useEffect(() => {
         if (!isLoadingVersions && versions && versions.length > 0) {
@@ -118,6 +131,24 @@ export default function AppShell() {
             }
         }
     }, [isLoadingVersions, versions]);
+
+    useEffect(() => {
+        if (!showVersionPopup) return;
+        let alive = true;
+        (async () => {
+            try {
+                const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/version_delta.json`);
+                // A host that falls back to index.html answers a missing file with a 200 and HTML,
+                // which would land in JSON.parse as an unhelpful syntax error. See useGameData.
+                if (!res.ok || (res.headers.get('content-type') || '').includes('html')) return;
+                const json = (await res.json()) as VersionDelta;
+                if (alive) setDelta(json);
+            } catch {
+                // No delta to show. The popup still states the version and its date.
+            }
+        })();
+        return () => { alive = false; };
+    }, [showVersionPopup]);
 
     const handleClosePopup = () => {
         localStorage.setItem('fm_last_seen_config_version', popupVersion);
@@ -473,28 +504,63 @@ export default function AppShell() {
 
                                 <div className="w-full h-px bg-white/10 my-1" />
 
-                                <p className="text-sm text-text-primary leading-relaxed text-center">
-                                    Hear ye, Hear ye! The server hamsters have successfully forged and integrated the latest game configurations! 🐹
-                                </p>
-
+                                {/* The version and the moment it was built, from the folder name,
+                                    which from 2026_08_26 on IS the timestamp in the config header. */}
                                 <p className="text-xs text-text-muted leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 font-mono w-full text-center">
-                                    Updated as of:<br />
+                                    Game data loaded<br />
                                     <span className="text-accent-primary font-bold text-sm block mt-1">
                                         {formatVersionDate(popupVersion)}
                                     </span>
                                 </p>
 
-                                <div className="text-xs text-text-muted text-center space-y-2 mt-1">
-                                    <p>
-                                        As you might have noticed, updates have been a bit slower lately. I've been extremely busy in my daily life recently, so I don't have much free time to actively code and implement new features. However, I will always do my best to keep the data updated for you all!
-                                    </p>
-                                    <p>
-                                        Special thanks to all the amazing supporters who buy me coffee and keep the furnace hot! ☕
-                                    </p>
-                                    <p className="font-bold text-accent-primary mt-2">
-                                        Much love, Lucian ❤️
-                                    </p>
-                                </div>
+                                {/* What moved, not just when. A date alone is nothing a reader can act on. */}
+                                {delta && delta.version === popupVersion && (
+                                    <div className="w-full text-left">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1.5">
+                                            {delta.previous
+                                                ? `Changes since ${formatVersionDate(delta.previous)}`
+                                                : 'First version'}
+                                        </div>
+
+                                        {delta.changes.length === 0 ? (
+                                            <p className="text-xs text-text-secondary bg-black/20 p-2.5 rounded-lg border border-white/5">
+                                                No values changed. The game shipped a new build id with identical data.
+                                            </p>
+                                        ) : (
+                                            <ul className="space-y-1.5 max-h-52 overflow-y-auto custom-scrollbar pr-1">
+                                                {delta.changes.map(change => (
+                                                    <li
+                                                        key={change.file}
+                                                        className="bg-black/20 p-2 rounded-lg border border-white/5"
+                                                    >
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            <span className={cn(
+                                                                'text-[9px] font-black uppercase tracking-wider px-1 rounded shrink-0',
+                                                                change.kind === 'added' ? 'bg-green-500/20 text-green-400'
+                                                                    : change.kind === 'removed' ? 'bg-red-500/20 text-red-400'
+                                                                        : 'bg-accent-primary/20 text-accent-primary'
+                                                            )}>
+                                                                {change.kind}
+                                                            </span>
+                                                            <span className="text-xs font-bold text-text-primary min-w-0 break-words">
+                                                                {change.file}
+                                                            </span>
+                                                        </div>
+                                                        {change.lines.length > 0 && (
+                                                            <ul className="mt-1 space-y-0.5">
+                                                                {change.lines.map(line => (
+                                                                    <li key={line} className="font-mono text-[10px] text-text-secondary break-words">
+                                                                        {line}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
 
                                 <button
                                     onClick={handleClosePopup}

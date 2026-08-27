@@ -1,0 +1,57 @@
+{
+  "0": {
+    "AgeIdx": 0,
+    "Damage": 10.0,
+    "Health": 70.0
+  },
+  "1": {
+    "AgeIdx": 1,
+    "Damage": 20.0,
+    "Health": 160.0
+  },
+  "2": {
+    "AgeIdx": 2,
+    "Damage": 80.0,
+    "Health": 640.0
+  },
+  "3": {
+    "AgeIdx": 3,
+    "Damage": 320.0,
+    "Health": 2560.0
+  },
+  "4": {
+    "AgeIdx": 4,
+    "Damage": 1280.0,
+    "Health": 10240.0
+  },
+  "5": {
+    "AgeIdx": 5,
+    "Damage": 5120.0,
+    "Health": 40960.0
+  },
+  "6": {
+    "AgeIdx": 6,
+    "Damage": 20480.0,
+    "Health": 163840.0
+  },
+  "7": {
+    "AgeIdx": 7,
+    "Damage": 81920.0,
+    "Health": 655360.0
+  },
+  "8": {
+    "AgeIdx": 8,
+    "Damage": 327680.0,
+    "Health": 2621440.0
+  },
+  "9": {
+    "AgeIdx": 9,
+    "Damage": 1966080.0,
+    "Health": 15728640.0
+  },
+  "10": {
+    "AgeIdx": 10,
+    "Damage": 15728640.0,
+    "Health": 125829120.0
+  }
+}

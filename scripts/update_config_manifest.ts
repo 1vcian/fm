@@ -12,6 +12,106 @@ const PUBLIC_DIR = path.resolve(__dirname, '../public/parsed_configs');
 const VERSIONS_FILE = path.join(PUBLIC_DIR, 'versions.json');
 const MANIFEST_FILE = path.join(PUBLIC_DIR, 'config_manifest.json');
 
+
+/* ------------------------------------------------------------------------------------------ *
+ * What changed in the newest game data, worked out here rather than in the browser.
+ *
+ * The update popup used to say only WHEN the data was refreshed. A reader cannot act on a date:
+ * what they want to know is which numbers moved. Diffing 73 files twice is cheap at build time and
+ * absurd at page load, so the answer is baked into one small file the popup fetches.
+ *
+ * Version folder names are zero padded timestamps, so sorting them as strings sorts them by date.
+ * ------------------------------------------------------------------------------------------ */
+
+const DELTA_FILE = path.join(PUBLIC_DIR, 'version_delta.json');
+/** Beyond this many lines the popup would be a wall of text, so the rest is reported as a count. */
+const MAX_DELTA_LINES = 24;
+
+function readJson(file: string): unknown {
+    try {
+        return JSON.parse(fs.readFileSync(file, 'utf-8'));
+    } catch {
+        return undefined;
+    }
+}
+
+function short(value: unknown): string {
+    if (value === null) return 'null';
+    if (typeof value === 'number') return String(Math.round(value * 1e6) / 1e6);
+    if (typeof value === 'object') return Array.isArray(value) ? `[${(value as unknown[]).length} items]` : '{object}';
+    return String(value);
+}
+
+/** Every leaf that differs, as `path: old -> new`. Depth capped: these configs nest deeply. */
+function deepDiff(a: unknown, b: unknown, at = '', depth = 0, out: string[] = []): string[] {
+    if (out.length > MAX_DELTA_LINES * 4 || depth > 8) return out;
+    if (a === b) return out;
+
+    const bothObjects = a && b && typeof a === 'object' && typeof b === 'object';
+    if (!bothObjects) {
+        out.push(`${at || 'value'}: ${short(a)} -> ${short(b)}`);
+        return out;
+    }
+    if (Array.isArray(a) !== Array.isArray(b)) {
+        out.push(`${at || 'value'}: shape changed`);
+        return out;
+    }
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) out.push(`${at}: ${a.length} -> ${b.length} entries`);
+        for (let i = 0; i < Math.min(a.length, b.length); i++) deepDiff(a[i], b[i], `${at}[${i}]`, depth + 1, out);
+        return out;
+    }
+    const ao = a as Record<string, unknown>;
+    const bo = b as Record<string, unknown>;
+    for (const key of new Set([...Object.keys(ao), ...Object.keys(bo)])) {
+        const path_ = at ? `${at}.${key}` : key;
+        if (!(key in ao)) out.push(`${path_}: added`);
+        else if (!(key in bo)) out.push(`${path_}: removed`);
+        else deepDiff(ao[key], bo[key], path_, depth + 1, out);
+    }
+    return out;
+}
+
+function generateDelta(versions: string[]): void {
+    const sorted = [...versions].sort();
+    const version = sorted[sorted.length - 1];
+    const previous = sorted[sorted.length - 2];
+    if (!version) return;
+
+    const changes: { file: string; kind: 'added' | 'removed' | 'changed'; lines: string[] }[] = [];
+
+    if (previous) {
+        const dirNew = path.join(PUBLIC_DIR, version);
+        const dirOld = path.join(PUBLIC_DIR, previous);
+        const listing = (dir: string) => new Set(
+            fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.json')) : []
+        );
+        const filesNew = listing(dirNew);
+        const filesOld = listing(dirOld);
+
+        for (const file of [...filesNew].sort()) {
+            const name = file.replace(/\.json$/, '');
+            if (!filesOld.has(file)) { changes.push({ file: name, kind: 'added', lines: [] }); continue; }
+            const before = readJson(path.join(dirOld, file));
+            const after = readJson(path.join(dirNew, file));
+            if (JSON.stringify(before) === JSON.stringify(after)) continue;
+            const all = deepDiff(before, after);
+            // Say what was dropped. A silently truncated list reads as "that was everything".
+            const lines = all.length > MAX_DELTA_LINES
+                ? [...all.slice(0, MAX_DELTA_LINES), `and ${all.length - MAX_DELTA_LINES} more changes in this file`]
+                : all;
+            changes.push({ file: name, kind: 'changed', lines });
+        }
+        for (const file of [...filesOld].sort()) {
+            if (!filesNew.has(file)) changes.push({ file: file.replace(/\.json$/, ''), kind: 'removed', lines: [] });
+        }
+    }
+
+    const payload = { version, previous: previous ?? null, changes };
+    fs.writeFileSync(DELTA_FILE, JSON.stringify(payload, null, 2));
+    console.log(`Version delta generated: ${changes.length} file(s) changed between ${previous ?? 'nothing'} and ${version}`);
+}
+
 async function main() {
     try {
         // 1. Read versions.json
@@ -116,6 +216,8 @@ async function main() {
             fs.writeFileSync(TEXTURE_MD5_MANIFEST_FILE, JSON.stringify(md5Manifest, null, 2));
             console.log(`Texture MD5 manifest generated successfully at ${TEXTURE_MD5_MANIFEST_FILE}`);
         }
+
+        generateDelta(versions);
 
     } catch (error) {
         console.error('Error generating manifest:', error);
