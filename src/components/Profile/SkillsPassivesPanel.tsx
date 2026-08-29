@@ -297,10 +297,14 @@ export function SkillsPassivesPanel() {
                 The order is SKILLS_ORDER, not the key order of SkillLibrary.json, which differs
                 (Shuriken/Berserk and Bomb/Meteorite are both swapped there).
 
-                Every column count here divides 18 exactly (3, 6, 9, 18), so the last row is always
-                as full as the first and nothing is left hanging at the left edge. The tracks are
-                1fr, so the tiles share the whole width instead of leaving a gap on the right. */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 2xl:grid-cols-[repeat(18,minmax(0,1fr))] gap-1.5">
+                Every column count here divides 18 exactly (3, 6, 9), so the last row is always as
+                full as the first and nothing is left hanging at the left edge. The tracks are 1fr,
+                so the tiles share the whole width instead of leaving a gap on the right.
+
+                Capped at 9 on purpose: 18 across would put every passive on a single row, which
+                on a wide screen reads as a strip of tiny icons rather than a grid. Nine is the
+                largest divisor of 18 that still guarantees two rows. */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-1.5">
                 {orderedSkills.map(({ id, rarity }) => {
                     const level = passives[id] || 0;
                     const stats = getSkillStats(id, level);
