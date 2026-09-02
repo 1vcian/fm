@@ -42,6 +42,8 @@ import BaseDrops from './pages/BaseDrops';
 import Shop from './pages/Shop';
 import ProgressPassWiki from './pages/ProgressPassWiki';
 import Gallery from './pages/Gallery';
+import FairiesWiki from './pages/FairiesWiki';
+import Settings from './pages/Settings';
 import SecondaryStatsWiki from './pages/SecondaryStatsWiki';
 import MissionsWiki from './pages/MissionsWiki';
 import MissionSolo from './pages/MissionSolo';
@@ -100,9 +102,11 @@ function App() {
                                     <Route path="wiki/shop" element={<Shop />} />
                                     <Route path="wiki/progress-pass" element={<ProgressPassWiki />} />
                                     <Route path="wiki/secondary-stats" element={<SecondaryStatsWiki />} />
+                                    <Route path="wiki/fairies" element={<FairiesWiki />} />
                                     <Route path="wiki/missions" element={<MissionsWiki />} />
                                     <Route path="skins" element={<SkinsPage />} />
                                     <Route path="gallery" element={<Gallery />} />
+                                    <Route path="settings" element={<Settings />} />
                                     <Route path="*" element={<Home />} />
                                 </Route>
                             </Routes>
