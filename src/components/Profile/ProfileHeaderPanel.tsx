@@ -8,13 +8,47 @@ import { Input } from '../UI/Input';
 import { Pencil, Check, X, Trophy, Coffee } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useSkinSets } from '../../hooks/useSkinSets';
+import { useGameData } from '../../hooks/useGameData';
 
-// CardIcons.png is 8x8 spritesheet with offset
-const ICONS_PER_ROW = 8;
-const TOTAL_ICONS = 64;
-const SPRITE_OFFSET_X = 5; // Horizontal padding offset
-const SPRITE_OFFSET_Y = 7; // Vertical padding offset
-const ORIGINAL_SHEET_SIZE = 1024;
+/**
+ * CardIcons.png is a square atlas of profile avatars, 2048px on both axes in every version
+ * shipped so far.
+ *
+ * Neither the icon count nor the grid pitch can be hardcoded. The 2026_09_02_09_08 build
+ * halved each icon and so doubled the grid from 8 to 16 per row, which is what made every
+ * tile in the picker render a 2x2 block of four avatars and left the tail blank. The game
+ * ships the highest valid index as ProfileBaseConfig.IconsCount (63 before that build, 127
+ * after), and the icons are packed into a square power-of-two grid, so the pitch follows
+ * from the count: 64 icons fit an 8x8 grid, 128 need 16x16.
+ *
+ * The atlas URL stays pinned to `selectedVersion` rather than going through
+ * resolveTextureVersion(): the count comes from that version's config, so falling back to an
+ * older texture folder would pair a new count with an old pitch and reintroduce the same
+ * misalignment.
+ *
+ * The atlas has no vertical gutter: measured across both grids the art runs right to the top
+ * and bottom cell edges (padding median 0 on both), while horizontally it keeps about 8% of a
+ * cell clear. Sampling exactly on the grid therefore lets a thin strip of the icon above bleed
+ * into the top of the tile. CELL_INSET crops that away by drawing each cell slightly larger
+ * than the tile and showing its middle, which trims top and bottom equally. Nudging the window
+ * downwards instead would remove the strip from above only by pulling in the icon below, and
+ * the inset is a fraction of a cell rather than a pixel count so it holds for both grids.
+ */
+const CELL_INSET = 0.06;
+/** The square power-of-two grid that holds `count` icons. */
+function iconsPerRow(count: number): number {
+    let perRow = 1;
+    while (perRow * perRow < count) perRow *= 2;
+    return perRow;
+}
+
+/** Icon count and grid pitch for the selected version's atlas. */
+function useProfileIconAtlas() {
+    const { data } = useGameData<{ IconsCount: number }>('ProfileBaseConfig.json');
+    // IconsCount is the highest valid index, so the number of icons is one more.
+    const count = (data?.IconsCount ?? 63) + 1;
+    return { count, perRow: iconsPerRow(count) };
+}
 
 interface ProfileIconProps {
     iconIndex: number;
@@ -25,7 +59,8 @@ interface ProfileIconProps {
 
 export function ProfileIcon({ iconIndex, size = 48, className, onClick }: ProfileIconProps) {
     const { selectedVersion } = useGameDataContext();
-    
+    const { perRow } = useProfileIconAtlas();
+
     if (iconIndex === -1) {
         return (
             <div
@@ -42,17 +77,15 @@ export function ProfileIcon({ iconIndex, size = 48, className, onClick }: Profil
         );
     }
 
-    const col = iconIndex % ICONS_PER_ROW;
-    const row = Math.floor(iconIndex / ICONS_PER_ROW);
+    const col = iconIndex % perRow;
+    const row = Math.floor(iconIndex / perRow);
 
-    // Scale factor from original to display size
-    const scale = size / (ORIGINAL_SHEET_SIZE / ICONS_PER_ROW);
-
-    // Calculate position accounting for the offset in the spritesheet
-    const cellSize = ORIGINAL_SHEET_SIZE / ICONS_PER_ROW; // 128px per cell
-    const posX = (col * cellSize + SPRITE_OFFSET_X) * scale;
-    const posY = (row * cellSize + SPRITE_OFFSET_Y) * scale;
-    const bgSize = ORIGINAL_SHEET_SIZE * scale;
+    // Each cell is drawn at size * zoom and the tile shows the middle `size` of it, so
+    // CELL_INSET of a cell is trimmed from every edge.
+    const zoom = 1 + 2 * CELL_INSET;
+    const bgSize = size * perRow * zoom;
+    const posX = col * size * zoom + size * CELL_INSET;
+    const posY = row * size * zoom + size * CELL_INSET;
 
     return (
         <div
@@ -81,6 +114,9 @@ interface IconSelectorModalProps {
 }
 
 function IconSelectorModal({ isOpen, onClose, onSelect, currentIndex }: IconSelectorModalProps) {
+    // Read before the early return so the hook order stays stable across open/closed renders.
+    const { count } = useProfileIconAtlas();
+
     if (!isOpen) return null;
 
     return createPortal(
@@ -109,7 +145,7 @@ function IconSelectorModal({ isOpen, onClose, onSelect, currentIndex }: IconSele
                         )}
                     />
                     
-                    {Array.from({ length: TOTAL_ICONS }, (_, i) => (
+                    {Array.from({ length: count }, (_, i) => (
                         <ProfileIcon
                             key={i}
                             iconIndex={i}
