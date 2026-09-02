@@ -1,0 +1,72 @@
+{
+  "1": {
+    "Placement": 1,
+    "Rewards": [
+      {
+        "Amount": 400,
+        "Type": "GuildPotions",
+        "$type": "CurrencyReward"
+      }
+    ]
+  },
+  "2": {
+    "Placement": 2,
+    "Rewards": [
+      {
+        "Amount": 150,
+        "Type": "GuildPotions",
+        "$type": "CurrencyReward"
+      }
+    ]
+  },
+  "3": {
+    "Placement": 3,
+    "Rewards": [
+      {
+        "Amount": 50,
+        "Type": "GuildPotions",
+        "$type": "CurrencyReward"
+      }
+    ]
+  },
+  "4": {
+    "Placement": 4,
+    "Rewards": [
+      {
+        "Amount": 30,
+        "Type": "GuildPotions",
+        "$type": "CurrencyReward"
+      }
+    ]
+  },
+  "5": {
+    "Placement": 5,
+    "Rewards": [
+      {
+        "Amount": 20,
+        "Type": "GuildPotions",
+        "$type": "CurrencyReward"
+      }
+    ]
+  },
+  "6": {
+    "Placement": 6,
+    "Rewards": [
+      {
+        "Amount": 10,
+        "Type": "GuildPotions",
+        "$type": "CurrencyReward"
+      }
+    ]
+  },
+  "7": {
+    "Placement": 7,
+    "Rewards": [
+      {
+        "Amount": 5,
+        "Type": "GuildPotions",
+        "$type": "CurrencyReward"
+      }
+    ]
+  }
+}

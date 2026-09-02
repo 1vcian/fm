@@ -417,7 +417,29 @@
       "Helmet_114": 68,
       "Helmet_115": 69,
       "Helmet_116": 76,
-      "Helmet_117": 77
+      "Helmet_117": 77,
+      "Helmet_23": 82,
+      "Armour_23": 83,
+      "Weapon_23": 92,
+      "Helmet_21": 78,
+      "Armour_21": 79,
+      "Weapon_21": 90,
+      "Helmet_22": 80,
+      "Armour_22": 81,
+      "Weapon_22": 91,
+      "Helmet_25": 86,
+      "Armour_25": 87,
+      "Weapon_25": 94,
+      "Helmet_26": 88,
+      "Armour_26": 89,
+      "Weapon_26": 95,
+      "Helmet_24": 84,
+      "Armour_24": 85,
+      "Weapon_24": 93,
+      "Helmet_118": 96,
+      "Helmet_119": 97,
+      "Helmet_120": 98,
+      "Helmet_121": 99
     }
   },
   "skinSets": {
@@ -441,6 +463,12 @@
     "DarkPlanetWarriorSet": "SteppingStoneCharIcon17.png",
     "CubeguySet": "SteppingStoneCharIcon18.png",
     "LavamanSet": "SteppingStoneCharIcon19.png",
-    "ChefSet": "SteppingStoneCharIcon20.png"
+    "ChefSet": "SteppingStoneCharIcon20.png",
+    "MummySet": "SteppingStoneCharIcon25.png",
+    "SkeletonSet": "SteppingStoneCharIcon24.png",
+    "ReaperSet": "SteppingStoneCharIcon26.png",
+    "DemonSet": "SteppingStoneCharIcon23.png",
+    "KnightSet": "SteppingStoneCharIcon22.png",
+    "KingSet": "SteppingStoneCharIcon21.png"
   }
 }

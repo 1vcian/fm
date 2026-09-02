@@ -1,0 +1,26 @@
+{
+  "Tuesday": {
+    "Day": "Tuesday",
+    "MaxRemainingParticipantsEOD": 7
+  },
+  "Wednesday": {
+    "Day": "Wednesday",
+    "MaxRemainingParticipantsEOD": 7
+  },
+  "Thursday": {
+    "Day": "Thursday",
+    "MaxRemainingParticipantsEOD": 7
+  },
+  "Friday": {
+    "Day": "Friday",
+    "MaxRemainingParticipantsEOD": 7
+  },
+  "Saturday": {
+    "Day": "Saturday",
+    "MaxRemainingParticipantsEOD": 7
+  },
+  "Sunday": {
+    "Day": "Sunday",
+    "MaxRemainingParticipantsEOD": 7
+  }
+}
