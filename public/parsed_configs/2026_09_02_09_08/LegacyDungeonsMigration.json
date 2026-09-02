@@ -1,0 +1,982 @@
+{
+  "{'AscensionLevel': 0, 'ForgeLevel': 0}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 0
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 1}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 1
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 2}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 2
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 3}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 3
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 4}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 4
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 5}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 5
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 6}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 6
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 7}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 7
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 8}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 8
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 9}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 9
+    },
+    "DungeonLevel": 0
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 10}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 10
+    },
+    "DungeonLevel": 47
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 11}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 11
+    },
+    "DungeonLevel": 53
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 12}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 12
+    },
+    "DungeonLevel": 59
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 13}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 13
+    },
+    "DungeonLevel": 65
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 14}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 14
+    },
+    "DungeonLevel": 71
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 15}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 15
+    },
+    "DungeonLevel": 77
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 16}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 16
+    },
+    "DungeonLevel": 83
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 17}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 17
+    },
+    "DungeonLevel": 89
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 18}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 18
+    },
+    "DungeonLevel": 95
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 19}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 19
+    },
+    "DungeonLevel": 101
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 20}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 20
+    },
+    "DungeonLevel": 107
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 21}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 21
+    },
+    "DungeonLevel": 113
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 22}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 22
+    },
+    "DungeonLevel": 119
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 23}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 23
+    },
+    "DungeonLevel": 125
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 24}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 24
+    },
+    "DungeonLevel": 131
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 25}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 25
+    },
+    "DungeonLevel": 137
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 26}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 26
+    },
+    "DungeonLevel": 143
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 27}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 27
+    },
+    "DungeonLevel": 149
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 28}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 28
+    },
+    "DungeonLevel": 155
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 29}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 29
+    },
+    "DungeonLevel": 161
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 30}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 30
+    },
+    "DungeonLevel": 167
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 31}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 31
+    },
+    "DungeonLevel": 173
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 32}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 32
+    },
+    "DungeonLevel": 179
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 33}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 33
+    },
+    "DungeonLevel": 185
+  },
+  "{'AscensionLevel': 0, 'ForgeLevel': 34}": {
+    "LevelKey": {
+      "AscensionLevel": 0,
+      "ForgeLevel": 34
+    },
+    "DungeonLevel": 191
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 0}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 0
+    },
+    "DungeonLevel": 192
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 1}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 1
+    },
+    "DungeonLevel": 194
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 2}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 2
+    },
+    "DungeonLevel": 195
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 3}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 3
+    },
+    "DungeonLevel": 197
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 4}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 4
+    },
+    "DungeonLevel": 198
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 5}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 5
+    },
+    "DungeonLevel": 200
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 6}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 6
+    },
+    "DungeonLevel": 201
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 7}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 7
+    },
+    "DungeonLevel": 203
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 8}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 8
+    },
+    "DungeonLevel": 204
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 9}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 9
+    },
+    "DungeonLevel": 206
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 10}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 10
+    },
+    "DungeonLevel": 207
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 11}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 11
+    },
+    "DungeonLevel": 208
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 12}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 12
+    },
+    "DungeonLevel": 210
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 13}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 13
+    },
+    "DungeonLevel": 211
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 14}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 14
+    },
+    "DungeonLevel": 213
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 15}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 15
+    },
+    "DungeonLevel": 214
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 16}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 16
+    },
+    "DungeonLevel": 216
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 17}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 17
+    },
+    "DungeonLevel": 217
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 18}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 18
+    },
+    "DungeonLevel": 219
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 19}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 19
+    },
+    "DungeonLevel": 220
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 20}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 20
+    },
+    "DungeonLevel": 221
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 21}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 21
+    },
+    "DungeonLevel": 223
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 22}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 22
+    },
+    "DungeonLevel": 224
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 23}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 23
+    },
+    "DungeonLevel": 226
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 24}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 24
+    },
+    "DungeonLevel": 227
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 25}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 25
+    },
+    "DungeonLevel": 229
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 26}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 26
+    },
+    "DungeonLevel": 230
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 27}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 27
+    },
+    "DungeonLevel": 232
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 28}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 28
+    },
+    "DungeonLevel": 233
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 29}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 29
+    },
+    "DungeonLevel": 235
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 30}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 30
+    },
+    "DungeonLevel": 236
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 31}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 31
+    },
+    "DungeonLevel": 237
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 32}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 32
+    },
+    "DungeonLevel": 239
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 33}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 33
+    },
+    "DungeonLevel": 240
+  },
+  "{'AscensionLevel': 1, 'ForgeLevel': 34}": {
+    "LevelKey": {
+      "AscensionLevel": 1,
+      "ForgeLevel": 34
+    },
+    "DungeonLevel": 242
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 0}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 0
+    },
+    "DungeonLevel": 243
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 1}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 1
+    },
+    "DungeonLevel": 245
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 2}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 2
+    },
+    "DungeonLevel": 246
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 3}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 3
+    },
+    "DungeonLevel": 248
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 4}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 4
+    },
+    "DungeonLevel": 249
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 5}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 5
+    },
+    "DungeonLevel": 250
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 6}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 6
+    },
+    "DungeonLevel": 252
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 7}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 7
+    },
+    "DungeonLevel": 253
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 8}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 8
+    },
+    "DungeonLevel": 255
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 9}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 9
+    },
+    "DungeonLevel": 256
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 10}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 10
+    },
+    "DungeonLevel": 258
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 11}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 11
+    },
+    "DungeonLevel": 259
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 12}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 12
+    },
+    "DungeonLevel": 261
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 13}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 13
+    },
+    "DungeonLevel": 262
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 14}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 14
+    },
+    "DungeonLevel": 263
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 15}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 15
+    },
+    "DungeonLevel": 265
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 16}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 16
+    },
+    "DungeonLevel": 266
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 17}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 17
+    },
+    "DungeonLevel": 268
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 18}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 18
+    },
+    "DungeonLevel": 269
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 19}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 19
+    },
+    "DungeonLevel": 271
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 20}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 20
+    },
+    "DungeonLevel": 272
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 21}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 21
+    },
+    "DungeonLevel": 274
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 22}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 22
+    },
+    "DungeonLevel": 275
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 23}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 23
+    },
+    "DungeonLevel": 277
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 24}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 24
+    },
+    "DungeonLevel": 278
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 25}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 25
+    },
+    "DungeonLevel": 279
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 26}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 26
+    },
+    "DungeonLevel": 281
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 27}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 27
+    },
+    "DungeonLevel": 282
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 28}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 28
+    },
+    "DungeonLevel": 284
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 29}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 29
+    },
+    "DungeonLevel": 285
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 30}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 30
+    },
+    "DungeonLevel": 287
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 31}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 31
+    },
+    "DungeonLevel": 288
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 32}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 32
+    },
+    "DungeonLevel": 290
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 33}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 33
+    },
+    "DungeonLevel": 291
+  },
+  "{'AscensionLevel': 2, 'ForgeLevel': 34}": {
+    "LevelKey": {
+      "AscensionLevel": 2,
+      "ForgeLevel": 34
+    },
+    "DungeonLevel": 292
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 0}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 0
+    },
+    "DungeonLevel": 294
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 1}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 1
+    },
+    "DungeonLevel": 295
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 2}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 2
+    },
+    "DungeonLevel": 297
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 3}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 3
+    },
+    "DungeonLevel": 298
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 4}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 4
+    },
+    "DungeonLevel": 300
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 5}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 5
+    },
+    "DungeonLevel": 301
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 6}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 6
+    },
+    "DungeonLevel": 303
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 7}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 7
+    },
+    "DungeonLevel": 304
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 8}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 8
+    },
+    "DungeonLevel": 306
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 9}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 9
+    },
+    "DungeonLevel": 307
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 10}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 10
+    },
+    "DungeonLevel": 308
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 11}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 11
+    },
+    "DungeonLevel": 310
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 12}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 12
+    },
+    "DungeonLevel": 311
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 13}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 13
+    },
+    "DungeonLevel": 313
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 14}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 14
+    },
+    "DungeonLevel": 314
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 15}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 15
+    },
+    "DungeonLevel": 316
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 16}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 16
+    },
+    "DungeonLevel": 317
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 17}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 17
+    },
+    "DungeonLevel": 319
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 18}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 18
+    },
+    "DungeonLevel": 320
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 19}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 19
+    },
+    "DungeonLevel": 321
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 20}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 20
+    },
+    "DungeonLevel": 323
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 21}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 21
+    },
+    "DungeonLevel": 324
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 22}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 22
+    },
+    "DungeonLevel": 326
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 23}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 23
+    },
+    "DungeonLevel": 327
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 24}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 24
+    },
+    "DungeonLevel": 329
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 25}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 25
+    },
+    "DungeonLevel": 330
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 26}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 26
+    },
+    "DungeonLevel": 332
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 27}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 27
+    },
+    "DungeonLevel": 333
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 28}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 28
+    },
+    "DungeonLevel": 335
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 29}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 29
+    },
+    "DungeonLevel": 336
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 30}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 30
+    },
+    "DungeonLevel": 337
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 31}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 31
+    },
+    "DungeonLevel": 339
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 32}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 32
+    },
+    "DungeonLevel": 340
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 33}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 33
+    },
+    "DungeonLevel": 342
+  },
+  "{'AscensionLevel': 3, 'ForgeLevel': 34}": {
+    "LevelKey": {
+      "AscensionLevel": 3,
+      "ForgeLevel": 34
+    },
+    "DungeonLevel": 343
+  }
+}
