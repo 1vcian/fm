@@ -674,7 +674,7 @@ export function enemyConfigToPvpStats(
     let critMulti = passives.CriticalMulti?.enabled ? 1 + (passives.CriticalMulti.value / 100) : 1.5;
     let blockChance = passives.BlockChance?.enabled ? passives.BlockChance.value / 100 : 0;
     let lifesteal = passives.LifeSteal?.enabled ? passives.LifeSteal.value / 100 : 0;
-    let doubleDamage = passives.DoubleDamageChance?.enabled ? passives.DoubleDamageChance.value / 100 : 1.0;
+    let doubleDamage = passives.DoubleDamageChance?.enabled ? passives.DoubleDamageChance.value / 100 : 0;
     let healthRegen = passives.HealthRegen?.enabled ? passives.HealthRegen.value / 100 : 0;
     let damageMulti = passives.DamageMulti?.enabled ? passives.DamageMulti.value / 100 : 0;
     let healthMulti = passives.HealthMulti?.enabled ? passives.HealthMulti.value / 100 : 0;
