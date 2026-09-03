@@ -119,9 +119,28 @@ function hammerStageForMissionLevel(
     return formatStage(band.MinHammerThiefLevel);
 }
 
+/**
+ * The band you are in at a given Hammer Thief level: the highest row whose threshold you have
+ * passed. Its MinLevel..MaxLevel is the range of mission levels that can appear for you.
+ */
+const HAMMER_MAX_LEVEL = 399;
+
+function bandForHammerLevel(
+    hammerLevel: number,
+    levelLibrary: Record<string, MissionLevel> | null
+): MissionLevel | null {
+    if (!levelLibrary) return null;
+    const passed = Object.values(levelLibrary).filter((b) => b.MinHammerThiefLevel <= hammerLevel);
+    if (!passed.length) return null;
+    return passed.reduce((a, b) => (b.MinHammerThiefLevel > a.MinHammerThiefLevel ? b : a));
+}
+
 export default function MissionsWiki() {
     const { selectedVersion } = useGameDataContext();
     const [missionLevel, setMissionLevel] = useState(1);
+    // Drive the slider by Hammer Thief level instead, and let the mission levels follow.
+    const [byHammer, setByHammer] = useState(false);
+    const [hammerLevel, setHammerLevel] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
 
     const { data: battleLibrary } = useGameData<Record<string, MissionBattle>>('MissionBattleLibrary.json');
@@ -134,21 +153,40 @@ export default function MissionsWiki() {
 
     const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;
 
-    // The band that unlocks the selected mission level, not the row whose Index equals it.
-    const unlockBand = useMemo(
-        () => earliestBandFor(missionLevel, levelLibrary),
-        [levelLibrary, missionLevel]
+    const hammerBand = useMemo(
+        () => bandForHammerLevel(hammerLevel, levelLibrary),
+        [levelLibrary, hammerLevel]
     );
+
+    // In mission mode: the band that unlocks the chosen level, not the row whose Index equals
+    // it. In hammer mode: the band the chosen hammer level puts you in.
+    const unlockBand = useMemo(
+        () => (byHammer ? hammerBand : earliestBandFor(missionLevel, levelLibrary)),
+        [byHammer, hammerBand, levelLibrary, missionLevel]
+    );
+
+    /**
+     * The mission level every reward and stat below is computed at.
+     *
+     * Both modes share `missionLevel`, so in hammer mode the in-band slider just clamps it to
+     * the band: move the hammer slider and the pick follows into the new range instead of
+     * going out of bounds.
+     */
+    const effectiveLevel = useMemo(() => {
+        if (!byHammer) return missionLevel;
+        if (!hammerBand) return 1;
+        return Math.min(Math.max(missionLevel, hammerBand.MinLevel), hammerBand.MaxLevel);
+    }, [byHammer, hammerBand, missionLevel]);
 
     const currentAllMemberReward = useMemo(() => {
         if (!allMemberRewardLibrary) return null;
-        return allMemberRewardLibrary[missionLevel.toString()];
-    }, [allMemberRewardLibrary, missionLevel]);
+        return allMemberRewardLibrary[effectiveLevel.toString()];
+    }, [allMemberRewardLibrary, effectiveLevel]);
 
     const currentRewards = useMemo(() => {
         if (!rewardLibrary) return null;
-        return rewardLibrary[missionLevel.toString()];
-    }, [rewardLibrary, missionLevel]);
+        return rewardLibrary[effectiveLevel.toString()];
+    }, [rewardLibrary, effectiveLevel]);
 
     const filteredMissions = useMemo(() => {
         if (!battleLibrary) return [];
@@ -167,7 +205,7 @@ export default function MissionsWiki() {
         if (!baseConfig) return base;
         // Formula: base * (1 + (level - 1) * (multiplier - 1))
         const multiplier = baseConfig.HealthAndDamageLevelMultiplier;
-        return Math.floor(base * Math.pow(multiplier, missionLevel - 1));
+        return Math.floor(base * Math.pow(multiplier, effectiveLevel - 1));
     };
 
     if (loading) {
@@ -210,32 +248,106 @@ export default function MissionsWiki() {
                     </div>
 
                     <div className="space-y-1 relative z-10">
-                        <div className="flex items-center gap-2 text-accent-primary">
-                            <Activity size={16} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Target Mission Level</span>
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 text-accent-primary">
+                                <Activity size={16} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                    {byHammer ? 'Hammer Thief Level' : 'Target Mission Level'}
+                                </span>
+                            </div>
+                            {/* Two states, both visible: a lone button here read as a badge. */}
+                            <div
+                                role="group"
+                                aria-label="Drive the slider by"
+                                className="flex items-center gap-0.5 p-0.5 bg-bg-input rounded-lg border border-border shrink-0"
+                            >
+                                {([
+                                    { label: 'Mission', on: false },
+                                    { label: 'Hammer', on: true },
+                                ] as const).map((opt) => (
+                                    <button
+                                        key={opt.label}
+                                        type="button"
+                                        aria-pressed={byHammer === opt.on}
+                                        onClick={() => setByHammer(opt.on)}
+                                        className={cn(
+                                            'text-[9px] font-black uppercase tracking-wide px-2.5 py-1 rounded-md transition-colors',
+                                            byHammer === opt.on
+                                                ? 'bg-accent-primary text-white shadow-sm'
+                                                : 'text-text-muted hover:text-text-primary'
+                                        )}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <h2 className="text-4xl font-black text-white">Lvl {missionLevel}</h2>
+                        {byHammer ? (
+                            <>
+                                <h2 className="text-4xl font-black text-white">{formatStage(hammerLevel)}</h2>
+                                <p className="text-xs font-black uppercase text-accent-secondary">
+                                    {hammerBand
+                                        ? `Mission Lv ${hammerBand.MinLevel} to ${hammerBand.MaxLevel}`
+                                        : 'No missions yet'}
+                                </p>
+                            </>
+                        ) : (
+                            <h2 className="text-4xl font-black text-white">Lvl {missionLevel}</h2>
+                        )}
                     </div>
 
                     <div className="space-y-4 relative z-10">
                         <input
                             type="range"
-                            min={1}
-                            max={60}
-                            value={missionLevel}
-                            onChange={(e) => setMissionLevel(parseInt(e.target.value))}
+                            min={byHammer ? 0 : 1}
+                            max={byHammer ? HAMMER_MAX_LEVEL : 60}
+                            value={byHammer ? hammerLevel : missionLevel}
+                            onChange={(e) =>
+                                byHammer
+                                    ? setHammerLevel(parseInt(e.target.value))
+                                    : setMissionLevel(parseInt(e.target.value))
+                            }
                             className="w-full h-2 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
                         />
                         <div className="flex justify-between text-[10px] font-black text-text-muted uppercase tracking-tighter">
-                            <span>Level 1</span>
-                            <span>Level 60</span>
+                            <span>{byHammer ? formatStage(0) : 'Level 1'}</span>
+                            <span>{byHammer ? formatStage(HAMMER_MAX_LEVEL) : 'Level 60'}</span>
                         </div>
+
+                        {byHammer && hammerBand && (
+                            <div className="space-y-1 pt-3 border-t border-border/50">
+                                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-tighter">
+                                    <span className="text-text-muted">Mission Level</span>
+                                    <span className="text-accent-secondary">Lv {effectiveLevel}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min={hammerBand.MinLevel}
+                                    max={hammerBand.MaxLevel}
+                                    value={effectiveLevel}
+                                    onChange={(e) => setMissionLevel(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-secondary"
+                                />
+                                <div className="flex justify-between text-[10px] font-black text-text-muted uppercase tracking-tighter">
+                                    <span>Lv {hammerBand.MinLevel}</span>
+                                    <span>Lv {hammerBand.MaxLevel}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-4 border-t border-border/50 space-y-3 relative z-10">
                         <div className="flex flex-col gap-1">
-                            <span className="text-[9px] font-black text-text-muted uppercase leading-none">Hammer Thief Level to find it</span>
-                            <span className="text-sm font-bold text-accent-secondary">{formatStage(unlockBand?.MinHammerThiefLevel || 0)}</span>
+                            <span className="text-[9px] font-black text-text-muted uppercase leading-none">
+                                {byHammer ? 'Mission Levels You Can Find' : 'Hammer Thief Level to find it'}
+                            </span>
+                            <span className="text-sm font-bold text-accent-secondary">
+                                {byHammer
+                                    ? unlockBand
+                                        ? `${unlockBand.MinLevel} to ${unlockBand.MaxLevel}`
+                                        : 'None'
+                                    : formatStage(unlockBand?.MinHammerThiefLevel || 0)}
+                            </span>
                         </div>
                         <div className="flex flex-col gap-1">
                             <span className="text-[9px] font-black text-text-muted uppercase leading-none">Available Rally Wait Times</span>
@@ -288,7 +400,7 @@ export default function MissionsWiki() {
                         <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
                             Available Missions
                         </h2>
-                        <p className="text-xs text-text-muted uppercase font-black">Stats scaled to Level {missionLevel}</p>
+                        <p className="text-xs text-text-muted uppercase font-black">Stats scaled to Level {effectiveLevel}</p>
                     </div>
                     <div className="relative w-full md:w-80">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
