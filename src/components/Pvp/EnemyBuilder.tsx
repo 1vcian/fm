@@ -309,7 +309,10 @@ export function EnemyBuilder() {
     };
 
     const runSimulation = async () => {
-        if (!globalStats || !skillLibrary || !weaponLibrary || !pvpBaseConfig || !mountUpgradeLibrary) return;
+        if (
+            !globalStats || !skillLibrary || !weaponLibrary || !pvpBaseConfig
+            || !mountUpgradeLibrary || !petUpgradeLibrary || !petLibrary || !petBalancingLibrary
+        ) return;
 
         setIsSimulating(true);
         setSimResults(null);
@@ -324,13 +327,7 @@ export function EnemyBuilder() {
                     skillLibrary,
                     weaponLibrary,
                     profile.items.Weapon,
-                    pvpBaseConfig,
-                    {
-                        pets: profile.misc?.petAscensionLevel || 0,
-                        skills: profile.misc?.skillAscensionLevel || 0,
-                        mounts: profile.misc?.mountAscensionLevel || 0
-                    },
-                    ascensionConfigsLibrary
+                    pvpBaseConfig
                 );
 
                 // 2. Convert Player 2 (Enemy) Stats
@@ -339,6 +336,7 @@ export function EnemyBuilder() {
                     weaponLibrary,
                     pvpBaseConfig,
                     mountUpgradeLibrary,
+                    petUpgradeLibrary,
                     petLibrary,
                     petBalancingLibrary,
                     ascensionConfigsLibrary
@@ -369,7 +367,10 @@ export function EnemyBuilder() {
 
     // Helper to get current stats for visualizer
     const getBattleStats = (): { p1: PvpPlayerStats, p2: PvpPlayerStats } | null => {
-        if (!globalStats || !skillLibrary || !weaponLibrary || !pvpBaseConfig || !mountUpgradeLibrary) return null;
+        if (
+            !globalStats || !skillLibrary || !weaponLibrary || !pvpBaseConfig
+            || !mountUpgradeLibrary || !petUpgradeLibrary || !petLibrary || !petBalancingLibrary
+        ) return null;
         try {
             const p1 = aggregatedStatsToPvpStats(
                 globalStats,
@@ -377,21 +378,17 @@ export function EnemyBuilder() {
                 skillLibrary,
                 weaponLibrary,
                 profile.items.Weapon,
-                pvpBaseConfig,
-                {
-                    pets: profile.misc?.petAscensionLevel || 0,
-                    skills: profile.misc?.skillAscensionLevel || 0,
-                    mounts: profile.misc?.mountAscensionLevel || 0
-                },
-                ascensionConfigsLibrary
+                pvpBaseConfig
             );
             const p2 = enemyConfigToPvpStats(
                 enemy,
                 weaponLibrary,
                 pvpBaseConfig,
                 mountUpgradeLibrary,
+                petUpgradeLibrary,
                 petLibrary,
-                petBalancingLibrary
+                petBalancingLibrary,
+                ascensionConfigsLibrary
             );
             return { p1, p2 };
         } catch (e) {
