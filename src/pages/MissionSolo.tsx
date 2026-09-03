@@ -90,9 +90,43 @@ function formatStage(lvl: number): string {
     return `${world}-${stage}`;
 }
 
+/**
+ * The band of MissionLevelLibrary that first makes a given mission level reachable.
+ *
+ * Mission levels (1..60) and Hammer Thief levels (0..399) are two different scales, and
+ * MissionLevelLibrary is the bridge: each row allows a band of mission levels
+ * (MinLevel..MaxLevel) once you pass a minimum hammer level. A band spans several mission
+ * levels, so a level becomes available well before the row whose Index equals it: mission
+ * level 41 sits in band 37, at hammer 25-10, not band 41 at 28-9.
+ *
+ * Indexing the library by the mission level, as this page used to, therefore overstated every
+ * requirement by roughly three worlds.
+ */
+function earliestBandFor(
+    missionLevel: number,
+    levelLibrary: Record<string, MissionLevel> | null
+): MissionLevel | null {
+    if (!levelLibrary) return null;
+    const holding = Object.values(levelLibrary).filter(
+        (b) => b.MinLevel <= missionLevel && missionLevel <= b.MaxLevel
+    );
+    if (!holding.length) return null;
+    return holding.reduce((a, b) => (b.MinHammerThiefLevel < a.MinHammerThiefLevel ? b : a));
+}
+
+/** The hammer stage a mission level first becomes reachable at, or null when it always is. */
+function hammerStageForMissionLevel(
+    missionLevel: number,
+    levelLibrary: Record<string, MissionLevel> | null
+): string | null {
+    const band = earliestBandFor(missionLevel, levelLibrary);
+    if (!band || band.MinHammerThiefLevel <= 0) return null;
+    return formatStage(band.MinHammerThiefLevel);
+}
+
 export default function MissionSolo() {
     const { selectedVersion } = useGameDataContext();
-    const [clanPoints, setClanPoints] = useState(1);
+    const [missionLevel, setMissionLevel] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
 
     const { simulateMission, playerStats, profile, libs } = useBattleSimulation();
@@ -119,7 +153,7 @@ export default function MissionSolo() {
         // Use a timeout to avoid freezing the UI
         return new Promise<void>((resolve) => {
             setTimeout(() => {
-                const result = simulateMission(battle, clanPoints, simCount);
+                const result = simulateMission(battle, missionLevel, simCount);
                 if (result) {
                     setMissionResults(prev => ({ ...prev, [battle.MissionId]: result }));
                 }
@@ -141,20 +175,21 @@ export default function MissionSolo() {
         setIsSimulatingAll(false);
     };
 
-    const currentClanLevelInfo = useMemo(() => {
-        if (!levelLibrary) return null;
-        return levelLibrary[clanPoints.toString()] || levelLibrary["1"];
-    }, [levelLibrary, clanPoints]);
+    // The band that unlocks the selected mission level, not the row whose Index equals it.
+    const unlockBand = useMemo(
+        () => earliestBandFor(missionLevel, levelLibrary),
+        [levelLibrary, missionLevel]
+    );
 
     const currentAllMemberReward = useMemo(() => {
         if (!allMemberRewardLibrary) return null;
-        return allMemberRewardLibrary[clanPoints.toString()];
-    }, [allMemberRewardLibrary, clanPoints]);
+        return allMemberRewardLibrary[missionLevel.toString()];
+    }, [allMemberRewardLibrary, missionLevel]);
 
     const currentRewards = useMemo(() => {
         if (!rewardLibrary) return null;
-        return rewardLibrary[clanPoints.toString()];
-    }, [rewardLibrary, clanPoints]);
+        return rewardLibrary[missionLevel.toString()];
+    }, [rewardLibrary, missionLevel]);
 
     const filteredMissions = useMemo(() => {
         if (!battleLibrary) return [];
@@ -217,7 +252,7 @@ export default function MissionSolo() {
     const getScaledValue = (base: number) => {
         if (!baseConfig) return base;
         const multiplier = baseConfig.HealthAndDamageLevelMultiplier;
-        return Math.floor(base * Math.pow(multiplier, clanPoints - 1));
+        return Math.floor(base * Math.pow(multiplier, missionLevel - 1));
     };
 
     if (loading) {
@@ -312,7 +347,7 @@ export default function MissionSolo() {
                             <Activity size={16} />
                             <span className="text-[10px] font-black uppercase tracking-widest">Target Mission Level</span>
                         </div>
-                        <h2 className="text-4xl font-black text-white">Lvl {clanPoints}</h2>
+                        <h2 className="text-4xl font-black text-white">Lvl {missionLevel}</h2>
                     </div>
 
                     <div className="space-y-4 relative z-10">
@@ -320,8 +355,8 @@ export default function MissionSolo() {
                             type="range"
                             min={1}
                             max={60}
-                            value={clanPoints}
-                            onChange={(e) => setClanPoints(parseInt(e.target.value))}
+                            value={missionLevel}
+                            onChange={(e) => setMissionLevel(parseInt(e.target.value))}
                             className="w-full h-2 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
                         />
                         <div className="flex justify-between text-[10px] font-black text-text-muted uppercase tracking-tighter">
@@ -333,7 +368,7 @@ export default function MissionSolo() {
                     <div className="pt-4 border-t border-border/50 space-y-3 relative z-10">
                         <div className="flex flex-col gap-1">
                             <span className="text-[9px] font-black text-text-muted uppercase leading-none">Hammer Thief Level to find it</span>
-                            <span className="text-sm font-bold text-accent-secondary">{formatStage(currentClanLevelInfo?.MinHammerThiefLevel || 0)}</span>
+                            <span className="text-sm font-bold text-accent-secondary">{formatStage(unlockBand?.MinHammerThiefLevel || 0)}</span>
                         </div>
                         <div className="flex flex-col gap-1">
                             <span className="text-[9px] font-black text-text-muted uppercase leading-none">Available Rally Wait Times</span>
@@ -415,7 +450,7 @@ export default function MissionSolo() {
                         <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
                             Available Missions
                         </h2>
-                        <p className="text-xs text-text-muted uppercase font-black">Stats scaled to Level {clanPoints}</p>
+                        <p className="text-xs text-text-muted uppercase font-black">Stats scaled to Level {missionLevel}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
                         <div className="flex items-center gap-2 bg-bg-secondary/40 border border-border/50 rounded-xl px-3 py-1.5 shadow-sm">
@@ -490,7 +525,12 @@ export default function MissionSolo() {
                                             <span className="text-[9px] font-black text-accent-primary bg-accent-primary/10 px-2 py-0.5 rounded-md uppercase border border-accent-primary/20">ID {battle.MissionId}</span>
                                             <div className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
                                                 <Target size={10} />
-                                                Min Stage {formatStage(battle.MinLevel)}
+                                                Min Lv {battle.MinLevel}
+                                                {hammerStageForMissionLevel(battle.MinLevel, levelLibrary) && (
+                                                    <span className="text-text-muted/70 normal-case">
+                                                        (hammer {hammerStageForMissionLevel(battle.MinLevel, levelLibrary)})
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <h3 className="text-xl font-black text-white uppercase tracking-tight group-hover:text-accent-primary transition-colors leading-tight">
