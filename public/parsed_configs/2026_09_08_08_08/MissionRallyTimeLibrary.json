@@ -1,0 +1,14 @@
+{
+  "0": {
+    "Id": 0,
+    "TimeInSeconds": 60
+  },
+  "1": {
+    "Id": 1,
+    "TimeInSeconds": 180
+  },
+  "2": {
+    "Id": 2,
+    "TimeInSeconds": 600
+  }
+}
