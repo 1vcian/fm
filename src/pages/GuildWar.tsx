@@ -4,7 +4,7 @@ import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
 import { getWarDayIndex, getWarDayName } from '../utils/guildWarUtils';
-import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X } from 'lucide-react';
+import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X, Egg } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -137,50 +137,62 @@ export default function GuildWar() {
                                         </div>
                                     </Link>
 
-                                    {(activeDay === 0 || activeDay === 2 || activeDay === 4 || activeDay === 5) && (
+                                    {(activeDay === 0 || activeDay === 2) && (
                                         <Link to="/calculators/skills" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-secondary/40 hover:bg-accent-secondary/5 transition-all group shadow-sm hover:shadow-accent-secondary/5">
                                             <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
                                                 <Zap className="w-5 h-5 text-accent-secondary" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Skill Summons</div>
-                                                <div className="text-[10px] text-text-muted">Tue, Thu, Sat</div>
+                                                <div className="text-[10px] text-text-muted">Tue, Thu</div>
                                             </div>
                                         </Link>
                                     )}
 
-                                    {(activeDay === 2 || activeDay === 4 || activeDay === 5) && (
+                                    {(activeDay === 1 || activeDay === 3) && (
                                         <Link to="/calculators/mounts" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
                                             <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
                                                 <Shield className="w-5 h-5 text-accent-primary" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Mount Trainer</div>
+                                                <div className="text-[10px] text-text-muted">Wed, Fri</div>
+                                            </div>
+                                        </Link>
+                                    )}
+
+                                    {(activeDay === 2 || activeDay === 4) && (
+                                        <Link to="/calculators/eggs" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
+                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
+                                                <Egg className="w-5 h-5 text-accent-primary" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Pet Trainer</div>
                                                 <div className="text-[10px] text-text-muted">Thu, Sat</div>
                                             </div>
                                         </Link>
                                     )}
 
-                                    {(activeDay === 0 || activeDay === 3 || activeDay === 5) && (
+                                    {(activeDay === 1 || activeDay === 4) && (
                                         <Link to="/calculators/tree" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-secondary/40 hover:bg-accent-secondary/5 transition-all group shadow-sm hover:shadow-accent-secondary/5">
                                             <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
                                                 <Zap className="w-5 h-5 text-accent-secondary" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Tree Optimizer</div>
-                                                <div className="text-[10px] text-text-muted">Tue, Fri</div>
+                                                <div className="text-[10px] text-text-muted">Wed, Sat</div>
                                             </div>
                                         </Link>
                                     )}
 
-                                    {(activeDay === 1 || activeDay === 3 || activeDay === 4 || activeDay === 5) && (
+                                    {(activeDay === 0 || activeDay === 3) && (
                                         <Link to="/dungeons" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
                                             <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
                                                 <Shield className="w-5 h-5 text-accent-primary" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Dungeon Analyzer</div>
-                                                <div className="text-[10px] text-text-muted">Wed, Fri, Sat</div>
+                                                <div className="text-[10px] text-text-muted">Tue, Fri</div>
                                             </div>
                                         </Link>
                                     )}
