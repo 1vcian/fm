@@ -1,157 +1,64 @@
 {
-  "version": "2026_09_02_09_08",
-  "previous": "2026_08_26_08_49",
+  "version": "2026_09_08_08_08",
+  "previous": "2026_09_02_09_08",
   "changes": [
     {
-      "file": "FairyUpgradesLibrary",
-      "kind": "added",
-      "lines": []
+      "file": "AscensionStarsBonusLibrary",
+      "kind": "changed",
+      "lines": [
+        "1.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "2.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "3.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "4.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "5.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "6.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "7.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "8.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "9.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "10.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "11.BonusStats.Stats[0].Value: 0.1 -> 0.05",
+        "12.BonusStats.Stats[0].Value: 0.1 -> 0.05"
+      ]
     },
     {
       "file": "GuildBaseConfig",
       "kind": "changed",
       "lines": [
-        "ResetGuildPotionsOnTechTreeReset: added"
+        "ResetGuildPotionsOnTechTreeReset: false -> true"
       ]
     },
     {
       "file": "GuildTechRaceEliminationLibrary",
-      "kind": "added",
-      "lines": []
+      "kind": "changed",
+      "lines": [
+        "Tuesday.MaxRemainingParticipantsEOD: 7 -> 6",
+        "Wednesday.MaxRemainingParticipantsEOD: 7 -> 5",
+        "Thursday.MaxRemainingParticipantsEOD: 7 -> 4",
+        "Friday.MaxRemainingParticipantsEOD: 7 -> 3",
+        "Saturday.MaxRemainingParticipantsEOD: 7 -> 2",
+        "Sunday.MaxRemainingParticipantsEOD: 7 -> 1"
+      ]
     },
     {
       "file": "GuildTechRaceRewardLibrary",
       "kind": "changed",
       "lines": [
-        "1.Rewards[0].Amount: 200 -> 400",
-        "2.Rewards[0].Amount: 100 -> 150",
-        "4.Rewards[0].Amount: 20 -> 30",
-        "5: added",
-        "6: added",
-        "7: added"
+        "1.Rewards[0].Amount: 400 -> 800",
+        "2.Rewards[0].Amount: 150 -> 300",
+        "3.Rewards[0].Amount: 50 -> 150",
+        "4.Rewards[0].Amount: 30 -> 80",
+        "5.Rewards[0].Amount: 20 -> 40",
+        "6.Rewards[0].Amount: 10 -> 20",
+        "7.Rewards[0].Amount: 5 -> 10"
       ]
     },
     {
-      "file": "GuildWarConfig",
+      "file": "WorldIndexConfigLibrary",
       "kind": "changed",
       "lines": [
-        "BanPointsThreshold: removed"
-      ]
-    },
-    {
-      "file": "PlayerSegments",
-      "kind": "changed",
-      "lines": [
-        "IdleCash.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "Shop.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "StarterPackage.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "AutoForge.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "Dungeons.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "HammerDungeon.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "SkillCollection.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "SkillSlot0.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "SkillDungeon.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "Pets.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "PetSlot0.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "PetDungeon.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "Chat.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "Arena.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "SkillSlot1.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "TechTree.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "PotionDungeon.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "PetSlot1.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "Guilds.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "SkillSlot2.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "AutoHammer1.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "PetSlot2.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "AutoHammer2.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "SwitchWorlds.PlayerCondition.PropertyRequirements[0].Id.Dynamic: added",
-        "and 4 more changes in this file"
-      ]
-    },
-    {
-      "file": "ProfileBaseConfig",
-      "kind": "changed",
-      "lines": [
-        "IconsCount: 63 -> 127"
-      ]
-    },
-    {
-      "file": "SecondaryStatLibrary",
-      "kind": "changed",
-      "lines": [
-        "ReflectChance: added"
-      ]
-    },
-    {
-      "file": "SetsLibrary",
-      "kind": "changed",
-      "lines": [
-        "KingSet: added",
-        "KnightSet: added",
-        "DemonSet: added",
-        "SkeletonSet: added",
-        "MummySet: added",
-        "ReaperSet: added"
-      ]
-    },
-    {
-      "file": "SkinsLibrary",
-      "kind": "changed",
-      "lines": [
-        "{'Type': 'Weapon', 'Idx': 21}: added",
-        "{'Type': 'Helmet', 'Idx': 21}: added",
-        "{'Type': 'Armour', 'Idx': 21}: added",
-        "{'Type': 'Weapon', 'Idx': 22}: added",
-        "{'Type': 'Helmet', 'Idx': 22}: added",
-        "{'Type': 'Armour', 'Idx': 22}: added",
-        "{'Type': 'Weapon', 'Idx': 23}: added",
-        "{'Type': 'Helmet', 'Idx': 23}: added",
-        "{'Type': 'Armour', 'Idx': 23}: added",
-        "{'Type': 'Weapon', 'Idx': 24}: added",
-        "{'Type': 'Helmet', 'Idx': 24}: added",
-        "{'Type': 'Armour', 'Idx': 24}: added",
-        "{'Type': 'Weapon', 'Idx': 25}: added",
-        "{'Type': 'Helmet', 'Idx': 25}: added",
-        "{'Type': 'Armour', 'Idx': 25}: added",
-        "{'Type': 'Weapon', 'Idx': 26}: added",
-        "{'Type': 'Helmet', 'Idx': 26}: added",
-        "{'Type': 'Armour', 'Idx': 26}: added",
-        "{'Type': 'Helmet', 'Idx': 118}: added",
-        "{'Type': 'Helmet', 'Idx': 119}: added",
-        "{'Type': 'Helmet', 'Idx': 120}: added",
-        "{'Type': 'Helmet', 'Idx': 121}: added"
-      ]
-    },
-    {
-      "file": "StatConfigLibrary",
-      "kind": "changed",
-      "lines": [
-        "{'StatType': 'ReflectChance', 'StatNature': 'Multiplier'}: added"
-      ]
-    },
-    {
-      "file": "TrackingEventLibrary",
-      "kind": "added",
-      "lines": []
-    },
-    {
-      "file": "WeaponLibrary",
-      "kind": "changed",
-      "lines": [
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 12}.IsRanged: true -> false",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 21}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 21}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 22}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 22}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 23}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 23}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 24}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 24}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 25}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 25}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 26}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 26}: added"
+        "0.WorldIndex: 55 -> 58",
+        "1.WorldIndex: 56 -> 59",
+        "2.WorldIndex: 57 -> 60"
       ]
     }
   ]

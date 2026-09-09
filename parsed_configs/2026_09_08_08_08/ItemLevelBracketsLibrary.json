@@ -1,0 +1,147 @@
+{
+  "0": {
+    "Level": 0,
+    "LowerRange": 0,
+    "UpperRange": 9
+  },
+  "1": {
+    "Level": 1,
+    "LowerRange": 5,
+    "UpperRange": 14
+  },
+  "2": {
+    "Level": 2,
+    "LowerRange": 10,
+    "UpperRange": 19
+  },
+  "3": {
+    "Level": 3,
+    "LowerRange": 15,
+    "UpperRange": 24
+  },
+  "4": {
+    "Level": 4,
+    "LowerRange": 20,
+    "UpperRange": 29
+  },
+  "5": {
+    "Level": 5,
+    "LowerRange": 25,
+    "UpperRange": 34
+  },
+  "6": {
+    "Level": 6,
+    "LowerRange": 30,
+    "UpperRange": 39
+  },
+  "7": {
+    "Level": 7,
+    "LowerRange": 35,
+    "UpperRange": 44
+  },
+  "8": {
+    "Level": 8,
+    "LowerRange": 40,
+    "UpperRange": 49
+  },
+  "9": {
+    "Level": 9,
+    "LowerRange": 45,
+    "UpperRange": 54
+  },
+  "10": {
+    "Level": 10,
+    "LowerRange": 50,
+    "UpperRange": 59
+  },
+  "11": {
+    "Level": 11,
+    "LowerRange": 55,
+    "UpperRange": 64
+  },
+  "12": {
+    "Level": 12,
+    "LowerRange": 60,
+    "UpperRange": 69
+  },
+  "13": {
+    "Level": 13,
+    "LowerRange": 65,
+    "UpperRange": 74
+  },
+  "14": {
+    "Level": 14,
+    "LowerRange": 70,
+    "UpperRange": 79
+  },
+  "15": {
+    "Level": 15,
+    "LowerRange": 75,
+    "UpperRange": 84
+  },
+  "16": {
+    "Level": 16,
+    "LowerRange": 80,
+    "UpperRange": 89
+  },
+  "17": {
+    "Level": 17,
+    "LowerRange": 85,
+    "UpperRange": 94
+  },
+  "18": {
+    "Level": 18,
+    "LowerRange": 90,
+    "UpperRange": 98
+  },
+  "19": {
+    "Level": 19,
+    "LowerRange": 95,
+    "UpperRange": 104
+  },
+  "20": {
+    "Level": 20,
+    "LowerRange": 100,
+    "UpperRange": 109
+  },
+  "21": {
+    "Level": 21,
+    "LowerRange": 105,
+    "UpperRange": 114
+  },
+  "22": {
+    "Level": 22,
+    "LowerRange": 110,
+    "UpperRange": 119
+  },
+  "23": {
+    "Level": 23,
+    "LowerRange": 115,
+    "UpperRange": 124
+  },
+  "24": {
+    "Level": 24,
+    "LowerRange": 120,
+    "UpperRange": 129
+  },
+  "25": {
+    "Level": 25,
+    "LowerRange": 125,
+    "UpperRange": 134
+  },
+  "26": {
+    "Level": 26,
+    "LowerRange": 130,
+    "UpperRange": 139
+  },
+  "27": {
+    "Level": 27,
+    "LowerRange": 135,
+    "UpperRange": 144
+  },
+  "28": {
+    "Level": 28,
+    "LowerRange": 140,
+    "UpperRange": 148
+  }
+}

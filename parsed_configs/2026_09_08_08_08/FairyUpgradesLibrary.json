@@ -1,0 +1,477 @@
+{
+  "2": {
+    "Level": 2,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "3": {
+    "Level": 3,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "4": {
+    "Level": 4,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "5": {
+    "Level": 5,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "6": {
+    "Level": 6,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "7": {
+    "Level": 7,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "8": {
+    "Level": 8,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "9": {
+    "Level": 9,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "10": {
+    "Level": 10,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "11": {
+    "Level": 11,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "12": {
+    "Level": 12,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "13": {
+    "Level": 13,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "14": {
+    "Level": 14,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "15": {
+    "Level": 15,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "16": {
+    "Level": 16,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "17": {
+    "Level": 17,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "18": {
+    "Level": 18,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "19": {
+    "Level": 19,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  },
+  "20": {
+    "Level": 20,
+    "Costs": [
+      {
+        "Amount": 465000,
+        "Currency": "Coins"
+      },
+      {
+        "Amount": 4000,
+        "Currency": "SkillSummonTickets"
+      },
+      {
+        "Amount": 2000,
+        "Currency": "Eggshells"
+      },
+      {
+        "Amount": 2300,
+        "Currency": "TechPotions"
+      },
+      {
+        "Amount": 1000,
+        "Currency": "ClockWinders"
+      }
+    ]
+  }
+}
