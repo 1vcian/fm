@@ -138,8 +138,8 @@ export default function Profile() {
                 </>)}
 
                 <MiscPanel />
-                
-                <SkinSetPanel />
+
+                {!isComparing && <SkinSetPanel />}
 
                 {isComparing ? (
                     <div className="space-y-6">
@@ -147,6 +147,12 @@ export default function Profile() {
                         <div className="sticky top-0 z-40 py-2 -mx-4 px-4 md:-mx-6 md:px-6 bg-bg-primary/80 backdrop-blur-md border-b border-border shadow-lg space-y-2">
 
                             <StatsSummaryPanel variant="horizontal-strip" />
+                        </div>
+
+                        {/* Comparison Active Bonuses, doubled like every other panel pair */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <SkinSetPanel variant="original" title="Active Bonuses" />
+                            <SkinSetPanel variant="test" title="Test Build Bonuses" />
                         </div>
 
                         {/* Comparison Equipment Panels */}

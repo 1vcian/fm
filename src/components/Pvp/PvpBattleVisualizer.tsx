@@ -170,7 +170,7 @@ export function PvpBattleVisualizer({
     const { player1, player2, player1Skills, player2Skills, time, projectiles } = snapshot;
 
     // --- Visualization Helpers ---
-    const VIEWPORT_WIDTH = 20; // PvP field width (player1 at 2, player2 at 18)
+    const VIEWPORT_WIDTH = 20; // PvP field width (real spawns: player1 at 0, player2 at 18)
     const viewportStart = Math.max(0, Math.min(player1.position, player2.position) - 2);
 
     const worldToScreen = (worldPos: number): number => {

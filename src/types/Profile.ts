@@ -111,6 +111,15 @@ export interface UserProfile {
         petAscensionLevel?: number;
         skillAscensionLevel?: number;
         mountAscensionLevel?: number;
+        /** Seasonal fairy event: selected fairy (null = none) and its upgrade level. */
+        fairy?: {
+            name: import('../utils/fairies').FairyName | null;
+            level: number;
+        };
+        /** Mount merges still performable from mounts already obtained (war points input). */
+        mountMergesReady?: number;
+        /** Pet merges still performable from pets already hatched (war points input). */
+        petMergesReady?: number;
         dungeonLevels: {
             [dungeonId: string]: number; // e.g. "Dungeon_Hammer" -> 50
         };

@@ -5,23 +5,34 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { cn } from '../../lib/utils';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
+import { FairyCard } from './FairyCard';
 import { Sparkles, Trophy } from 'lucide-react';
 
-export function SkinSetPanel() {
+/**
+ * In compare mode the Profile page renders this twice (variant "original"/"test") side by
+ * side, so each build shows its own fairy. Skin sets come from the live profile either way:
+ * skins are not part of the comparison state.
+ */
+export function SkinSetPanel({ variant, title = 'Active Bonuses' }: { variant?: 'original' | 'test'; title?: string }) {
     const { sets, loading } = useSkinSets();
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { selectedVersion } = useGameDataContext();
 
-    if (loading || sets.length === 0) return null;
+    // The fairy card always renders, so the section stays even with no active skin set.
+    if (loading) return null;
 
     return (
         <div className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
                 <Trophy className="w-4 h-4" />
-                Active Skin Sets
+                {title}
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className={cn(
+                'grid grid-cols-1 sm:grid-cols-2 gap-4',
+                variant ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'
+            )}>
+                <FairyCard variant={variant} />
                 {sets.map((set) => (
                     <SkinSetCard key={set.setId} set={set} spriteMapping={spriteMapping} version={selectedVersion} />
                 ))}

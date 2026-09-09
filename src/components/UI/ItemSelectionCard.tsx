@@ -1,4 +1,5 @@
 import React from 'react';
+import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { X, Bookmark, Shield, Minus, Plus, Check } from 'lucide-react';
 import { ItemSlot, MountSlot, PetSlot } from '../../types/Profile';
 import { AscensionStars } from './AscensionStars';
@@ -148,7 +149,7 @@ export function ItemSelectionCard({
     const { selectedVersion } = useGameDataContext();
     const isCompact = variant === 'compact';
     const displayLevel = currentLevel ?? item?.level ?? 0;
-    const starSrc = `${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}AscensionStar.png`;
+    const starSrc = `${import.meta.env.BASE_URL}Texture2D/${(resolveTextureVersion(selectedVersion) ?? selectedVersion) ? `${resolveTextureVersion(selectedVersion) ?? selectedVersion}/` : ''}AscensionStar.png`;
 
     if (layout === 'row') {
         return (
@@ -281,7 +282,7 @@ export function ItemSelectionCard({
                             {Array.from({ length: globalAscensionLevel }).map((_, i) => (
                                 <img
                                     key={i}
-                                    src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}AscensionStar.png`}
+                                    src={`${import.meta.env.BASE_URL}Texture2D/${(resolveTextureVersion(selectedVersion) ?? selectedVersion) ? `${resolveTextureVersion(selectedVersion) ?? selectedVersion}/` : ''}AscensionStar.png`}
                                     alt="Star"
                                     className="w-2 md:w-2.5 h-2 md:h-2.5 object-contain drop-shadow-sm"
                                 />

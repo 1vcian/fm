@@ -48,6 +48,7 @@
 // (the annulus decision is a ~670px mean — single-pixel noise is irrelevant), canvas-cubic in
 // place of LANCZOS4 for the 3x title upscale (tesseract-input only), and LCS-based similarity
 // in place of difflib.SequenceMatcher (same >=0.7 gate over the same 7 titles).
+import { resolveTextureVersion } from '../ascensionUtils';
 import { cropCanvas, evidenceCropUrl, type Rect } from './imagePrep';
 import {
     loadGlyphBank, fitGlyph, scoreGlyphChar, connectedComponents, morphClose3, upscaleCanvas,
@@ -227,7 +228,7 @@ async function loadLibs(): Promise<ClanLibs> {
     for (const e of Object.values<any>(iconsMap?.mapping ?? {})) sheetUrls.add(e.texture);
     const sheets: Record<string, { data: Uint8ClampedArray; w: number; h: number }> = {};
     await Promise.all([...sheetUrls].map(async tex => {
-        sheets[tex] = await loadTexture(`${base}Texture2D/${version}/${tex}`);
+        sheets[tex] = await loadTexture(`${base}Texture2D/${resolveTextureVersion(version) ?? version}/${tex}`);
     }));
     const pyr: Record<string, SpriteScale[]> = {};
     for (const [, e] of Object.entries<any>(iconsMap?.mapping ?? {})) {

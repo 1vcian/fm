@@ -16,6 +16,7 @@ export default function Eggs() {
     const { profile, updateNestedProfile } = useProfile();
     const {
         ownedEggs, updateOwnedEggs,
+        readyMerges, setReadyMerges,
         timeLimitHours, setTimeLimitHours,
         availableSlots, setAvailableSlots, maxSlots,
         optimization,
@@ -672,6 +673,37 @@ export default function Eggs() {
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* Always visible: pet merges the merge screen already offers,
+                                    from pets already hatched. Synced with Resources. */}
+                                <div className="mt-3 flex items-center justify-between gap-3 p-3 bg-bg-tertiary rounded-lg border border-border/50">
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-bold text-text-primary">Ready Pet Merges</div>
+                                        <div className="text-[10px] text-text-muted">From pets already hatched. Counted in the war points below and synced with Resources.</div>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <button
+                                            onClick={() => setReadyMerges(Math.max(0, readyMerges - 1))}
+                                            className="p-1 bg-black/40 rounded hover:bg-red-500/20 text-text-secondary hover:text-red-400 transition-colors"
+                                        >
+                                            -
+                                        </button>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={readyMerges}
+                                            onChange={(e) => setReadyMerges(parseInt(e.target.value) || 0)}
+                                            onFocus={(e) => e.target.select()}
+                                            className="w-20 text-center bg-bg-input border border-border rounded font-mono text-sm py-1"
+                                        />
+                                        <button
+                                            onClick={() => setReadyMerges(readyMerges + 1)}
+                                            className="p-1 bg-black/40 rounded hover:bg-green-500/20 text-text-secondary hover:text-green-400 transition-colors"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
@@ -703,6 +735,12 @@ export default function Eggs() {
                                                 <span>Hatch Pts: <span className="text-text-primary font-bold">{Math.floor(optimization.hatchPoints).toLocaleString()}</span></span>
                                                 <span>Merge Pts: <span className="text-text-primary font-bold">{Math.floor(optimization.mergePoints).toLocaleString()}</span></span>
                                             </div>
+                                            {(optimization.readyMergePoints || 0) > 0 && (
+                                                <div className="col-span-2 flex justify-between text-sm">
+                                                    <span className="text-text-secondary">Ready Pet Merges ({readyMerges.toLocaleString()})</span>
+                                                    <span className="text-emerald-400 font-bold">+{Math.floor(optimization.readyMergePoints).toLocaleString()} pts</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Parallel Slot Timelines */}

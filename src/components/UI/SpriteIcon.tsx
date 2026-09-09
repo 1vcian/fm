@@ -1,9 +1,13 @@
 
 import { cn } from '../../lib/utils';
+import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { useGameDataContext } from '../../context/GameDataContext';
 
 // Sprite Sheet Configuration - Now uses version from context
-const getSpriteSheetUrl = (version?: string) => `${import.meta.env.BASE_URL}Texture2D/${version ? `${version}/` : ''}Icons.png`;
+const getSpriteSheetUrl = (version?: string) => {
+    const v = resolveTextureVersion(version) ?? version;
+    return `${import.meta.env.BASE_URL}Texture2D/${v ? `${v}/` : ''}Icons.png`;
+};
 const TEXTURE_WIDTH = 2048;
 const TEXTURE_HEIGHT = 2048;
 const SPRITE_SIZE = 256; // Standard size of one sprite in the sheet

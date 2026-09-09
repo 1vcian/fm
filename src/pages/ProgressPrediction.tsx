@@ -4,7 +4,7 @@ import { useBattleSimulation } from '../hooks/useBattleSimulation';
 import { BattleResult } from '../utils/BattleSimulator';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
-import { DebugConfig } from '../utils/BattleEngine';
+import type { DebugConfig } from '../utils/VisualBattleEngine';
 
 // Format large numbers
 function formatNumber(num: number): string {
@@ -966,16 +966,19 @@ export default function ProgressPrediction() {
     const [activeTab, setActiveTab] = useState('main');
     const [isDebugMode, setIsDebugMode] = useState(false);
     const [visualizerOpen, setVisualizerOpen] = useState(false);
+    // The game's real values (docs/combat-model.md): 4.0 s skill charge, move speed 2.0,
+    // enemies spawn at player.X + 15. The old defaults (3.2 / 4.0 / 21) predate the binary
+    // verification and survive here only as knobs.
     const [debugConfig, setDebugConfig] = useState<DebugConfig>({
-        skillStartupTimer: 3.2,
-        playerStartPos: 2.0,
+        skillStartupTimer: 4.0,
+        playerStartPos: 0.0,
         fieldWidth: 28,
-        enemySpawnDistance: 21,
-        enemySpawnDistanceNext: 28,
-        playerSpeed: 4.0,
-        enemySpeed: 4.0,
+        enemySpawnDistance: 15,
+        enemySpawnDistanceNext: 15,
+        playerSpeed: 2.0,
+        enemySpeed: 2.0,
         playerRangeMultiplier: 1.0,
-        walkingSpeed: 4.0 // Legacy fallback
+        walkingSpeed: 2.0 // Legacy fallback
     });
 
     // Check localStorage for debug mode

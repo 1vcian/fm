@@ -19,6 +19,8 @@ export function useMountsCalculator() {
     const [level, setLevel] = useState(profile.misc.mountCalculatorLevel || 1);
     const [progress, setProgress] = useState(profile.misc.mountCalculatorProgress || 0);
     const [windersCount, setWindersCount] = useState(profile.misc.mountCalculatorWinders || 0);
+    // Mount merges still performable from mounts already obtained (war input, Resources).
+    const [readyMerges, setReadyMerges] = useState(profile.misc.mountMergesReady || 0);
 
     // Sync state to profile
     useEffect(() => {
@@ -27,10 +29,11 @@ export function useMountsCalculator() {
                 ...profile.misc,
                 mountCalculatorLevel: level,
                 mountCalculatorProgress: progress,
-                mountCalculatorWinders: windersCount
+                mountCalculatorWinders: windersCount,
+                mountMergesReady: readyMerges
             }
         });
-    }, [level, progress, windersCount]);
+    }, [level, progress, windersCount, readyMerges, readyMerges]);
 
     // 3. Tech Bonuses
     const techBonuses = useMemo(() => {
@@ -254,11 +257,19 @@ export function useMountsCalculator() {
         currentPhase.endAscension = ascensionLevel;
         phases.push(currentPhase);
 
+        // Declared ready merges from mounts already obtained (synced with Resources).
+        let readyMergeFlat = 0;
+        Object.values(pointsBreakdown).forEach((pts) => {
+            if (pts.merge > 0) readyMergeFlat = readyMergeFlat === 0 ? pts.merge : Math.min(readyMergeFlat, pts.merge);
+        });
+        const readyMergePoints = readyMerges * readyMergeFlat;
+
         return {
             simulateAscension,
-            totalPoints: totalSummonPoints + totalMergePoints,
+            totalPoints: totalSummonPoints + totalMergePoints + readyMergePoints,
             totalSummonPoints,
             totalMergePoints,
+            readyMergePoints,
             phases,
             breakdown: Object.entries(breakdown)
                 .map(([rarity, data]) => ({
@@ -336,6 +347,7 @@ export function useMountsCalculator() {
         level, setLevel,
         progress, setProgress,
         windersCount, setWindersCount,
+        readyMerges, setReadyMerges,
         techBonuses,
         results,
         maxPossibleLevel,

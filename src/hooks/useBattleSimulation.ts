@@ -16,7 +16,7 @@ import {
     simulateDungeonBattleMulti,
     simulateMissionBattleMulti
 } from '../utils/BattleSimulator';
-import { DebugConfig } from '../utils/BattleEngine';
+import type { DebugConfig } from '../utils/VisualBattleEngine';
 
 
 // Hook for battle simulation logic

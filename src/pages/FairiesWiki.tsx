@@ -4,6 +4,8 @@ import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
 import { useGameDataContext } from '../context/GameDataContext';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { FAIRIES, SEASON_STATS, fairyPerStep } from '../utils/fairies';
+import { resolveTextureVersion } from '../utils/ascensionUtils';
 import { Sparkles } from 'lucide-react';
 
 /**
@@ -28,12 +30,6 @@ interface FairyUpgrade {
     Costs: Price[];
 }
 
-const FAIRIES = [
-    { name: 'Lora', texture: 'FairyIconLora.png' },
-    { name: 'Mira', texture: 'FairyIconMira.png' },
-    { name: 'Tira', texture: 'FairyIconTira.png' },
-] as const;
-
 /**
  * Currency art. IconsMap uses the game's own summon-key names, which do not match the config's
  * currency ids, so each one is pinned by what actually spends it: MountSummonConfig spends
@@ -51,16 +47,13 @@ const CURRENCY: Record<string, { label: string; icon: string }> = {
 const nf = new Intl.NumberFormat('en-US');
 
 /* ---------------------------------------------------------------------------------------------
- * Kept deliberately, not rendered.
- *
  * A fairy's actual conversion lives in FairyStatLibrary, which is MetaMember-serialized but is
- * NOT a config entry: it reaches the client with the seasonal event, so the values are absent
- * from the archive we parse. The shape below is already known from the class definition, so
- * when a season's numbers do become readable this page only needs the data wired in, not
- * another round of reverse engineering.
+ * NOT a config entry: it reaches the client with the seasonal event
+ * (FairiesEventConfig.Stats), so the values are absent from the archive we parse and can
+ * change between seasons. The class shape, for reading the season table below:
  *
  *   granted = (RequiredStatType / RequiredStatValueDivider)
- *             x (TargetStatBonus + TargetStatBonusPerLevel x level)
+ *             x (TargetStatBonus + TargetStatBonusPerLevel x (level - 1))
  *   clamped to TargetStatTotalCap when HasCap is set
  *
  *   RequiredStatType          the substat you already have that feeds the conversion
@@ -75,6 +68,9 @@ const nf = new Intl.NumberFormat('en-US');
  * runs 8 weeks with 3 fairies, upgrades carry over when switching fairy inside a season and
  * reset between seasons.
  * ------------------------------------------------------------------------------------------ */
+
+/** The season table itself lives in src/utils/fairies.ts, shared with the stat engine. */
+const pct = (v: number) => `${Math.round(v * 1000) / 10}%`;
 
 export default function FairiesWiki() {
     const { selectedVersion } = useGameDataContext();
@@ -113,7 +109,7 @@ export default function FairiesWiki() {
         }));
     }, [table, shownLevel]);
 
-    const textureBase = `${import.meta.env.BASE_URL}Texture2D/${selectedVersion ?? ''}/`;
+    const textureBase = `${import.meta.env.BASE_URL}Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion ?? ''}/`;
 
     return (
         <div className="p-4 md:p-6 space-y-4 max-w-6xl mx-auto">
@@ -129,7 +125,7 @@ export default function FairiesWiki() {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-text-primary">Fairy Level</h3>
-                            <p className="text-xs text-text-muted">Cost per level and running total</p>
+                            <p className="text-xs text-text-muted">Drives the effect values and the upgrade costs</p>
                         </div>
                     </div>
 
@@ -163,6 +159,31 @@ export default function FairiesWiki() {
                                     {f.name}
                                 </span>
                             </div>
+
+                            {(() => {
+                                const s = SEASON_STATS[f.name];
+                                const sign = s.requiredStatIsReduction ? '-' : '+';
+                                const perStep = fairyPerStep(s, shownLevel);
+                                return (
+                                    <div className="mb-3 bg-bg-input/50 border border-border/40 rounded-lg p-3 text-xs text-text-secondary text-left space-y-1">
+                                        <p>
+                                            Gain{' '}
+                                            <span className="text-text-primary font-semibold">
+                                                +{pct(perStep)} {s.targetLabel}
+                                            </span>{' '}
+                                            for every{' '}
+                                            <span className="text-text-primary font-semibold">
+                                                {sign}
+                                                {pct(s.requiredStatValueDivider)} {s.requiredLabel}
+                                            </span>{' '}
+                                            you have equipped.
+                                        </p>
+                                        <p>
+                                            Total {s.targetLabel} is capped at +{pct(s.targetStatTotalCap)}.
+                                        </p>
+                                    </div>
+                                );
+                            })()}
 
                             {loading && <p className="text-xs text-text-secondary">Loading</p>}
                             {error && (
@@ -217,8 +238,9 @@ export default function FairiesWiki() {
             </div>
 
             <p className="text-xs text-text-secondary">
-                One currency of your choice per upgrade, so the columns are alternatives. Fairy
-                bonuses are not published yet.
+                One currency of your choice per upgrade, so the columns are alternatives. Bonus
+                values are the current season's: they arrive with the live event rather than the
+                config files, so they can change when a new season starts.
             </p>
         </div>
     );

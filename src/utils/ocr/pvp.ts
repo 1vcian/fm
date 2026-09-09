@@ -4,6 +4,7 @@
 // opponent's tree separately, since it's already baked into their total damage/health.
 
 import type { DetAggregate } from './extract';
+import { CombatScene } from '../../engine';
 
 export const BASE_ATTACK_DURATION = 1.5; // seconds (weapon-independent base cadence)
 
@@ -37,38 +38,90 @@ export function effectiveDps(s: DuelStats): number {
     return s.damage * s.aps * critAvg * doubleAvg;
 }
 
-/** Tick-based duel (10 Hz), both sides trading blows and healing from lifesteal. */
+/**
+ * Engine-backed duel: the shared CombatScene at real geometry (spawn 0 vs 18, melee assumed
+ * since a screenshot carries no weapon), 51 seeded runs, majority winner. effectiveDps stays
+ * as the expected-value label shown in the UI.
+ */
 export function simulateDuel(a: DuelStats, b: DuelStats, maxSeconds = 120): DuelResult {
-    const dt = 0.1;
-    const aDps = effectiveDps(a), bDps = effectiveDps(b);
-    const aIn = bDps * (1 - Math.min(1, a.block)); // dps A takes
-    const bIn = aDps * (1 - Math.min(1, b.block));
-    const aHeal = aDps * Math.min(1, a.lifesteal);
-    const bHeal = bDps * Math.min(1, b.lifesteal);
-    let ah = a.health, bh = b.health;
-    let aTTK: number | null = null, bTTK: number | null = null;
-    let t = 0;
-    for (; t < maxSeconds; t += dt) {
-        bh -= bIn * dt; ah -= aIn * dt;
-        ah = Math.min(a.health, ah + aHeal * dt);
-        bh = Math.min(b.health, bh + bHeal * dt);
-        if (bTTK === null && bh <= 0) bTTK = t + dt;
-        if (aTTK === null && ah <= 0) aTTK = t + dt;
-        if (ah <= 0 || bh <= 0) break;
+    const aDps = effectiveDps(a);
+    const bDps = effectiveDps(b);
+    const RUNS = 51;
+    let aWins = 0;
+    let bWins = 0;
+    let draws = 0;
+    let aKillTimes = 0;
+    let aKills = 0;
+    let bKillTimes = 0;
+    let bKills = 0;
+    let repr: { ah: number; bh: number; t: number } | null = null;
+
+    for (let seed = 1; seed <= RUNS; seed++) {
+        const scene = new CombatScene({ seed });
+        const mk = (s: DuelStats, isAlly: boolean, x: number) =>
+            scene.addUnit({
+                isAlly,
+                isPlayer: true,
+                pos: { x, y: 0 },
+                stats: {
+                    hpMax: s.health,
+                    hpMaxNoMulti: s.health,
+                    dmg: s.damage,
+                    moveSpeed: 2.0,
+                    criticalChance: s.critChance,
+                    criticalMulti: s.critMultiplier,
+                    blockChance: s.block,
+                    lifeSteal: s.lifesteal,
+                    doubleDamageChance: s.doubleChance,
+                    // aps was derived as attackSpeedMultiplier / 1.5; invert it.
+                    attackSpeedMulti: Math.max(0.01, s.aps * BASE_ATTACK_DURATION),
+                },
+                hp: s.health,
+                attackRange: 0.3,
+                windupTime: 0.5,
+                attackDuration: BASE_ATTACK_DURATION,
+            });
+        const ua = mk(a, true, 0);
+        const ub = mk(b, false, 18);
+        const maxTicks = Math.round(maxSeconds * 10);
+        let t = 0;
+        for (; t < maxTicks && !ua.killed && !ub.killed; t++) scene.tick();
+        const time = scene.tickCount / 10;
+        if (ub.killed && !ua.killed) {
+            aWins++;
+            aKills++;
+            aKillTimes += time;
+        } else if (ua.killed && !ub.killed) {
+            bWins++;
+            bKills++;
+            bKillTimes += time;
+        } else if (ua.killed && ub.killed) draws++;
+        else {
+            // timeout: higher remaining fraction wins, like the game's PvP rule
+            const fa = ua.hp / a.health;
+            const fb = ub.hp / b.health;
+            if (fa > fb) aWins++;
+            else if (fb > fa) bWins++;
+            else draws++;
+        }
+        if (seed === 1) repr = { ah: Math.max(0, ua.hp), bh: Math.max(0, ub.hp), t: time };
     }
-    const aRemainingPct = Math.max(0, ah) / a.health * 100;
-    const bRemainingPct = Math.max(0, bh) / b.health * 100;
-    let winner: 'a' | 'b' | 'draw';
-    let note: string | undefined;
-    if (ah <= 0 && bh <= 0) winner = aTTK != null && bTTK != null ? (aTTK <= bTTK ? 'a' : 'b') : 'draw';
-    else if (bh <= 0) winner = 'a';
-    else if (ah <= 0) winner = 'b';
-    else {
-        // neither died: sustain stalemate — decide by who is closer to killing (lower net EHP time)
-        note = 'Neither could break the other within 2 minutes (lifesteal/health sustain). Higher remaining HP wins on time.';
-        winner = aRemainingPct === bRemainingPct ? 'draw' : (aRemainingPct > bRemainingPct ? 'a' : 'b');
-    }
-    return { winner, aRemainingPct, bRemainingPct, aTTK, bTTK, aDps, bDps, duration: Math.min(t + dt, maxSeconds), note };
+
+    const winner: DuelResult['winner'] = aWins === bWins ? 'draw' : aWins > bWins ? 'a' : 'b';
+    const closeCall = Math.abs(aWins - bWins) <= Math.ceil(RUNS * 0.1);
+    return {
+        winner,
+        aRemainingPct: ((repr?.ah ?? 0) / a.health) * 100,
+        bRemainingPct: ((repr?.bh ?? 0) / b.health) * 100,
+        aTTK: aKills ? aKillTimes / aKills : null,
+        bTTK: bKills ? bKillTimes / bKills : null,
+        aDps,
+        bDps,
+        duration: repr?.t ?? maxSeconds,
+        note: closeCall
+            ? `Close call: ${Math.round((aWins / RUNS) * 100)}% vs ${Math.round((bWins / RUNS) * 100)}% over ${RUNS} simulated fights.`
+            : `${Math.round((Math.max(aWins, bWins) / RUNS) * 100)}% of ${RUNS} simulated fights.`,
+    };
 }
 
 const sub = (agg: DetAggregate, id: string): number => agg.substats.find(x => x.statId === id)?.value ?? 0;

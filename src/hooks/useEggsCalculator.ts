@@ -11,6 +11,8 @@ export interface EggOptimizationResult {
     totalPoints: number;
     hatchPoints: number;
     mergePoints: number;
+    /** Points from declared ready merges (pets already hatched), included in totalPoints. */
+    readyMergePoints: number;
     timeUsed: number;
     baseTimeUsed: number;
     gemTimeUsed: number;
@@ -66,6 +68,21 @@ export function useEggsCalculator() {
             setOwnedEggs(saved);
         }
     }, [profile]);
+
+    // Pet merges still performable from pets already hatched (war input), synced with the
+    // profile the same way ownedEggs is, and written back like setAvailableSlots writes slots.
+    const [readyMerges, _setReadyMerges] = useState<number>((profile?.misc as any)?.petMergesReady || 0);
+    useEffect(() => {
+        const saved = (profile?.misc as any)?.petMergesReady;
+        if (saved !== undefined) _setReadyMerges(saved);
+    }, [profile]);
+    const setReadyMerges = (val: number) => {
+        const safe = Math.max(0, Math.floor(val) || 0);
+        _setReadyMerges(safe);
+        if (profile) {
+            updateNestedProfile('misc', { petMergesReady: safe });
+        }
+    };
 
 
     const setAvailableSlots = (val: number) => {
@@ -364,11 +381,20 @@ export function useEggsCalculator() {
 
         const makeSpan = Math.max(...slots);
 
+        // Declared ready merges from pets already hatched (cheapest rarity where the
+        // config differs; the reward is flat across rarities in every config shipped).
+        let readyMergeFlat = 0;
+        Object.values(warPoints || {}).forEach((pts) => {
+            if (pts.merge > 0) readyMergeFlat = readyMergeFlat === 0 ? pts.merge : Math.min(readyMergeFlat, pts.merge);
+        });
+        const readyMergePoints = readyMerges * readyMergeFlat;
+
         return {
             toOpen,
-            totalPoints: hPoints + mPoints,
+            totalPoints: hPoints + mPoints + readyMergePoints,
             hatchPoints: hPoints,
             mergePoints: mPoints,
+            readyMergePoints,
             timeUsed: makeSpan,
             baseTimeUsed: Math.min(makeSpan, (timeLimitHours * 60)),
             gemTimeUsed: Math.max(0, makeSpan - (timeLimitHours * 60)),
@@ -377,7 +403,7 @@ export function useEggsCalculator() {
             totalGemsUsed: totalGemCost
         };
 
-    }, [ownedEggs, timeLimitHours, availableSlots, hatchValuesProfile, warPoints, forgeConfig, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
+    }, [ownedEggs, readyMerges, timeLimitHours, availableSlots, hatchValuesProfile, warPoints, forgeConfig, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
 
     // --- Tech Tree Bonus (Additive Chance) ---
     const eggDungeonBonus = useMemo(() => {
@@ -412,6 +438,7 @@ export function useEggsCalculator() {
     return {
         // Optimization
         ownedEggs, setOwnedEggs, updateOwnedEggs,
+        readyMerges, setReadyMerges,
         timeLimitHours, setTimeLimitHours,
         availableSlots, setAvailableSlots, maxSlots,
         hatchValues: hatchValuesProfile, // Default to profile values

@@ -984,6 +984,29 @@ export function computeWarPoints(
         }
     }
 
+    /* ---- mounts already obtained: declared ready merges (supporter request) ---------------- */
+    //
+    // The one thing the winders projection cannot know is the collection, so the member
+    // declares it: how many mount merges the merge screen still offers. Each merge action
+    // pays the flat Merge<Rarity>Mount reward, so declared merges price exactly.
+    {
+        if (dayConfig && recorded(misc.mountMergesReady)) {
+            const merges = count(misc.mountMergesReady);
+            let mergeFlat = 0;
+            for (const rarity of RARITIES) {
+                const m = getWarPointsForTask(dayConfig, `Merge${rarity}Mount`);
+                if (m > 0) mergeFlat = mergeFlat === 0 ? m : Math.min(mergeFlat, m);
+            }
+            emit('mounts', merges * mergeFlat, 'WarPointsFromMountMerge', 'exact',
+                merges > 0
+                    ? `${merges.toLocaleString()} ready merges declared from mounts already obtained, at ${mergeFlat} points each`
+                      + ' (cheapest rarity where the config differs).'
+                    : 'Ready mount merges recorded as zero under Resources.',
+                { merges: merges * mergeFlat },
+                { merges, pointsPerMerge: mergeFlat });
+        }
+    }
+
     /* ---- eggs: held eggs exactly, eggshells through the real rarity distribution ---------- */
     //
     // The one category where rarity genuinely matters — a Mythic hatch pays 25 600 against a
@@ -1151,6 +1174,23 @@ export function computeWarPoints(
     {
         if (!dayConfig) {
             emit('pets', 0, 'WarPointsFromPetMerge', 'unavailable', 'No war day config loaded.');
+        } else if (recorded(misc.petMergesReady)) {
+            // Supporter-requested input: the member declares how many pet merges the merge
+            // screen still offers from pets already hatched, which is the collection datum
+            // the note below explains cannot be derived. Declared merges price exactly.
+            const merges = count(misc.petMergesReady);
+            let mergeFlat = 0;
+            for (const rarity of RARITIES) {
+                const m = getWarPointsForTask(dayConfig, `Merge${rarity}Pet`);
+                if (m > 0) mergeFlat = mergeFlat === 0 ? m : Math.min(mergeFlat, m);
+            }
+            emit('pets', merges * mergeFlat, 'WarPointsFromPetMerge', 'exact',
+                merges > 0
+                    ? `${merges.toLocaleString()} ready merges declared from pets already hatched, at ${mergeFlat} points each`
+                      + ' (cheapest rarity where the config differs).'
+                    : 'Ready pet merges recorded as zero under Resources.',
+                { merges: merges * mergeFlat },
+                { merges, pointsPerMerge: mergeFlat });
         } else {
             let mergeFlat = 0;
             for (const rarity of RARITIES) {
@@ -1160,7 +1200,7 @@ export function computeWarPoints(
             const ceiling = hatchableEggs * mergeFlat * (1 + (clanBonuses['WarPointsFromPetMerge'] || 0));
             emit('pets', 0, 'WarPointsFromPetMerge', 'unavailable',
                 `Every pet-merge task needs a duplicate pet, and this app stores no pet collection, so the number of `
-                + `merges still available cannot be derived. Ceiling if all ${Math.round(hatchableEggs).toLocaleString()} `
+                + `merges still available cannot be derived; declare it under Resources as Pet Merges to count it. Ceiling if all ${Math.round(hatchableEggs).toLocaleString()} `
                 + `hatchable eggs each yielded one merge: ${Math.round(ceiling).toLocaleString()}. That is the figure the `
                 + `Eggs page shows as "Merge Pts".`,
                 { 'excluded:mergeCeiling': ceiling },

@@ -17,6 +17,7 @@ export default function MountCalculator() {
         level: currentLevel, setLevel,
         progress: currentProgress, setProgress,
         windersCount, setWindersCount,
+        readyMerges, setReadyMerges,
         techBonuses,
         results,
         maxPossibleLevel,
@@ -186,6 +187,22 @@ export default function MountCalculator() {
                                 <div className="text-[10px] text-text-muted px-1">
                                     Estimated cost per summon: <span className="text-accent-primary font-bold">{finalCostPerSummon}</span> ⚙️
                                 </div>
+
+                                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-muted mt-3">
+                                    <SpriteIcon name="MountKey" size={16} />
+                                    Ready Merges
+                                </label>
+                                <input
+                                    type="number"
+                                    value={readyMerges}
+                                    onChange={(e) => setReadyMerges(Math.max(0, Number(e.target.value) || 0))}
+                                    className="w-full bg-bg-input border border-border rounded-xl py-3 px-4 text-white font-mono text-lg font-bold focus:border-accent-primary outline-none transition-colors"
+                                    placeholder="0"
+                                    min="0"
+                                />
+                                <div className="text-[10px] text-text-muted px-1">
+                                    Merges the merge screen already offers from mounts you obtained. Synced with Resources.
+                                </div>
                             </div>
 
                             {/* Target Calculator */}
@@ -314,7 +331,7 @@ export default function MountCalculator() {
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-3 gap-3">
                                         <div className="bg-bg-tertiary/30 p-2 rounded-lg border border-white/5 text-center">
                                             <div className="text-[9px] text-text-muted uppercase font-bold">Summon Points</div>
                                             <div className="text-sm font-mono font-bold text-white">+{Math.floor(results.totalSummonPoints).toLocaleString()}</div>
@@ -323,10 +340,14 @@ export default function MountCalculator() {
                                             <div className="text-[9px] text-text-muted uppercase font-bold">Merge Points</div>
                                             <div className="text-sm font-mono font-bold text-accent-secondary">+{Math.floor(results.totalMergePoints).toLocaleString()}</div>
                                         </div>
+                                        <div className="bg-bg-tertiary/30 p-2 rounded-lg border border-white/5 text-center">
+                                            <div className="text-[9px] text-text-muted uppercase font-bold">Ready Merges</div>
+                                            <div className="text-sm font-mono font-bold text-emerald-400">+{Math.floor(results.readyMergePoints || 0).toLocaleString()}</div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-[10px] text-text-muted/60 px-2 -mt-2 mb-4 text-right italic">
-                                    * Simulation assumes all obtained mounts are merged
+                                    * Simulation assumes all obtained mounts are merged; Ready Merges add the ones you declared
                                 </div>
 
                                 {results.summonsToMax && (

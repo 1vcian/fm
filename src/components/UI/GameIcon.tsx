@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { cn } from '../../lib/utils';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -14,7 +15,7 @@ export function GameIcon({ name, size, className, alt, ...props }: GameIconProps
     const { selectedVersion, versions, isLoadingVersions } = useGameDataContext();
 
     // Use current selected version or default to the latest available one
-    const activeVersion = selectedVersion || versions[0];
+    const activeVersion = resolveTextureVersion(selectedVersion || versions[0]) ?? (selectedVersion || versions[0]);
 
     // Case insensitive lookup
     const spriteInfo = useMemo(() => {

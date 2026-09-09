@@ -9,6 +9,7 @@ import { Pencil, Check, X, Trophy, Coffee } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useSkinSets } from '../../hooks/useSkinSets';
 import { useGameData } from '../../hooks/useGameData';
+import { resolveTextureVersion } from '../../utils/ascensionUtils';
 
 /**
  * CardIcons.png is a square atlas of profile avatars, 2048px on both axes in every version
@@ -21,10 +22,11 @@ import { useGameData } from '../../hooks/useGameData';
  * after), and the icons are packed into a square power-of-two grid, so the pitch follows
  * from the count: 64 icons fit an 8x8 grid, 128 need 16x16.
  *
- * The atlas URL stays pinned to `selectedVersion` rather than going through
- * resolveTextureVersion(): the count comes from that version's config, so falling back to an
- * older texture folder would pair a new count with an old pitch and reintroduce the same
- * misalignment.
+ * The atlas URL goes through resolveTextureVersion(): a texture folder ships exactly when
+ * the art changes, so the resolved folder is the atlas the selected config was built
+ * against, and a config-only version (no new APK, e.g. 2026_09_08_08_08) keeps the previous
+ * build's atlas together with its IconsCount. Pinning the raw selectedVersion instead would
+ * 404 on config-only versions.
  *
  * The atlas has no vertical gutter: measured across both grids the art runs right to the top
  * and bottom cell edges (padding median 0 on both), while horizontally it keeps about 8% of a
@@ -98,7 +100,7 @@ export function ProfileIcon({ iconIndex, size = 48, className, onClick }: Profil
             style={{
                 width: size,
                 height: size,
-                backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}CardIcons.png)`,
+                backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${(() => { const v = resolveTextureVersion(selectedVersion) ?? selectedVersion; return v ? `${v}/` : ''; })()}CardIcons.png)`,
                 backgroundPosition: `-${posX}px -${posY}px`,
                 backgroundSize: `${bgSize}px ${bgSize}px`,
             }}

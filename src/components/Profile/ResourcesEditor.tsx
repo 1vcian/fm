@@ -103,6 +103,16 @@ export function ResourcesEditor() {
                 </div>
             </div>
 
+            {/* War-point inputs the calculators cannot derive: how many merges the merge
+                screens still offer, from mounts already obtained and pets already hatched. */}
+            <div>
+                <SectionTitle>Ready Merges</SectionTitle>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <ResourceCard icon={<SpriteIcon name="MountKey" size={22} />} label="Mount Merges" hint="From mounts already obtained" value={m.mountMergesReady || 0} onChange={v => setMisc({ mountMergesReady: v })} />
+                    <ResourceCard icon={<SpriteIcon name="PetKey" size={22} />} label="Pet Merges" hint="From pets already hatched" value={m.petMergesReady || 0} onChange={v => setMisc({ petMergesReady: v })} />
+                </div>
+            </div>
+
             <div>
                 <SectionTitle>Eggs</SectionTitle>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

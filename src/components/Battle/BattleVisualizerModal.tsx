@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BattleEngine, EntityState, Projectile, DebugConfig } from '../../utils/BattleEngine';
+import { resolveTextureVersion } from '../../utils/ascensionUtils';
+import type { EntityState, VisualProjectile as Projectile, DebugConfig } from '../../utils/VisualBattleEngine';
+import { VisualBattleEngine } from '../../utils/VisualBattleEngine';
+import { dungeonWaveSpecs, mainBattleWaveSpecs, missionWaveSpecs, skillSpecs, skillDamageCount } from '../../engine';
 import type { AggregatedStats } from '../../utils/statEngine';
 import type { LibraryData } from '../../utils/BattleHelper';
 import { calculateEnemyHp, calculateEnemyDmg, calculateProgressDifficultyIdx } from '../../utils/BattleHelper';
@@ -48,7 +51,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     onDebugConfigChange
 }) => {
     const { selectedVersion } = useGameDataContext();
-    const [engine, setEngine] = useState<BattleEngine | null>(null);
+    const [engine, setEngine] = useState<VisualBattleEngine | null>(null);
     const [snapshot, setSnapshot] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [speed, setSpeed] = useState(1);
@@ -101,255 +104,61 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
         // Create Engine
         // Use debugConfig prop if available, otherwise fallback
-        const newEngine = new BattleEngine(playerStats, debugConfig);
+        const battleContext: import('../../engine').BattleContext = dungeonType
+            ? (`dungeon:${dungeonType}` as import('../../engine').BattleContext)
+            : ageIdx === -2
+                ? 'mission'
+                : 'main';
+        const newEngine = new VisualBattleEngine(playerStats, debugConfig, undefined, battleContext);
 
-        // SKILL_MECHANICS imported from constants
+        // Skills through the shared resolver (verified layers; the engine owns per-skill
+        // mechanics, hit counts and buff behaviour). Missions included: the game gives you
+        // your skills there too.
+        const specs = profile && libs.skillLibrary
+            ? skillSpecs(playerStats as any, profile.skills.equipped || [], libs.skillLibrary as any)
+            : [];
+        for (const spec of specs) newEngine.addSkillSpec(spec);
 
-        const mechanicsMap: Record<string, any> = {};
-
-        // Add Skills (Disabled for Missions per user request)
-        if (profile && libs.skillLibrary && ageIdx !== -2) {
-            const equipped = profile.skills.equipped || [];
-            equipped.forEach(skillSlot => {
-                const skillConfig = libs.skillLibrary?.[skillSlot.id];
-                if (!skillConfig) return;
-
-                const levelIdx = Math.max(0, skillSlot.level - 1);
-                let damage = 0;
-                if (skillConfig.DamagePerLevel && skillConfig.DamagePerLevel.length > levelIdx) {
-                    damage = skillConfig.DamagePerLevel[levelIdx];
-                }
-
-                // Apply full damage formula (matching SkillPanel.tsx and BattleSimulator.ts)
-                const skillFactor = (playerStats as any).skillDamageMultiplier || 1;
-                const globalFactor = (playerStats as any).damageMultiplier || 1;
-                const totalDamageMulti = skillFactor + globalFactor - 1;
-                damage = damage * totalDamageMulti;
-
-                let cooldown = skillConfig.Cooldown;
-                const cdReduction = (playerStats as any).skillCooldownReduction || 0;
-                cooldown = Math.max(0.5, cooldown * (1 - cdReduction));
-
-                const duration = skillConfig.ActiveDuration || 0;
-
-                let heal = 0;
-                if (skillConfig.HealthPerLevel && skillConfig.HealthPerLevel.length > levelIdx) {
-                    heal = skillConfig.HealthPerLevel[levelIdx];
-                }
-                heal = heal * totalDamageMulti; // Apply same multiplier to heal
-
-                // --- UPDATED LOGIC MATCHING BATTLE SIMULATOR (START) ---
-                // Buff skills: Meat, Morale, Berserk, Buff, HigherMorale
-                const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale"];
-                const isBuffSkill = BUFF_SKILLS.includes(skillConfig.Type || skillSlot.id) && duration > 0;
-
-                let bonusDamage = 0;
-                let bonusMaxHealth = 0;
-                let activeDamage = damage;
-                let activeHeal = heal;
-
-                if (isBuffSkill) {
-                    if (damage > 0) bonusDamage = damage;
-                    if (heal > 0) bonusMaxHealth = heal;
-
-                    // Buff skills don't do instant damage/heal usually, unless configured otherwise.
-                    // Assuming they are purely buffs for now based on simulator logic.
-                    // activeDamage = 0; // Or keep it if they do both? Simulator separates them.
-                    // activeHeal = 0;
-
-                    // Actually, Simulator separates:
-                    // if (isBuffSkill) { if (buffedDamage > 0) bonusDamage... } else { activeDamage... }
-                    // So yes, if it's a buff, it's NOT an instant hit.
-                    activeDamage = 0;
-                    activeHeal = 0;
-                }
-                // --- UPDATED LOGIC MATCHING BATTLE SIMULATOR (END) ---
-
-                const mechanics = SKILL_MECHANICS[skillSlot.id] || { count: 1 };
-                const hitCount = mechanics.count || 1;
-
-                // Divide by hitCount to get per-hit damage (matching BattleSimulator.ts)
-                // UNLESS damageIsPerHit is true
-                const damagePerHit = (mechanics.damageIsPerHit)
-                    ? activeDamage
-                    : (hitCount > 0 ? activeDamage / hitCount : activeDamage);
-
-                mechanicsMap[skillSlot.id] = { hitCount, ...mechanics, baseDamage: damage, id: skillSlot.id, damageIsPerHit: mechanics.damageIsPerHit };
-
-                newEngine.addSkill({
-                    id: skillSlot.id,
-                    damage: damagePerHit,  // Per-hit damage, not total
-                    cooldown: cooldown,
-                    activeDuration: duration,
-                    healAmount: activeHeal,
-                    bonusDamage: bonusDamage,
-                    bonusMaxHealth: bonusMaxHealth,
-                    count: hitCount,
-                    interval: mechanics.interval || 0.1,
-                    delay: mechanics.delay || 0,
-                    isSingleTarget: mechanics.isSingleTarget,
-                    isAOE: mechanics.isAOE,
-                    damageIsPerHit: mechanics.damageIsPerHit // Propagate flag
-                } as any);
-            });
-        }
-
-        // Calculate Dungeon Waves Locally
-        let localDungeonWaves: number[] = [];
-        if (dungeonType && dungeonLevel !== undefined) {
-            let library: Record<string, any> | undefined;
-            switch (dungeonType) {
-                case 'hammer': library = libs.hammerThiefDungeonBattleLibrary; break;
-                case 'skill': library = libs.skillDungeonBattleLibrary; break;
-                case 'egg': library = libs.eggDungeonBattleLibrary; break;
-                case 'potion': library = libs.potionDungeonBattleLibrary; break;
+        // Waves from the shared builders: the modal no longer owns copies of the scaling
+        // formulas (docs/combat-model.md). customWaves keeps the legacy shape and is
+        // normalised inside VisualBattleEngine.
+        const enemyLibs = {
+            enemyLibrary: libs.enemyLibrary,
+            weaponLibrary: libs.weaponLibrary,
+            projectilesLibrary: libs.projectilesLibrary,
+            itemBalancingConfig: libs.itemBalancingConfig,
+        } as any;
+        let wavesList: any[] = [];
+        if (customWaves && customWaves.length) {
+            wavesList = customWaves;
+        } else if (dungeonType && dungeonLevel !== undefined) {
+            const library = ({
+                hammer: libs.hammerThiefDungeonBattleLibrary,
+                skill: libs.skillDungeonBattleLibrary,
+                egg: libs.eggDungeonBattleLibrary,
+                potion: libs.potionDungeonBattleLibrary,
+            } as any)[dungeonType];
+            const row = library?.[String(dungeonLevel)];
+            if (row) wavesList = dungeonWaveSpecs(row, enemyLibs);
+        } else if (ageIdx === -2) {
+            const mission = (libs as any).missionBattleLibrary?.[String(battleIdx)];
+            if (mission) {
+                const levelMulti = (libs as any).missionBaseConfig?.HealthAndDamageLevelMultiplier ?? 1.524;
+                wavesList = [missionWaveSpecs(mission, difficultyMode, levelMulti, enemyLibs, newEngine.rng)];
             }
-            const config = library?.[String(dungeonLevel)];
-            if (config) {
-                if (config.Wave1 !== undefined) {
-                    if (config.Wave1 > 0) localDungeonWaves.push(config.Wave1);
-                    if (config.Wave2 && config.Wave2 > 0) localDungeonWaves.push(config.Wave2);
-                    if (config.Wave3 && config.Wave3 > 0) localDungeonWaves.push(config.Wave3);
-                } else {
-                    localDungeonWaves.push(1);
-                }
+        } else {
+            const battleConfig =
+                (libs as any).mainBattleLookup?.[`${ageIdx}-${battleIdx}`] ??
+                libs.mainBattleLibrary?.[`{'AgeIdx': ${ageIdx}, 'BattleIdx': ${battleIdx}}`];
+            const ageScaling = libs.enemyAgeScalingLibrary?.[String(ageIdx)];
+            if (battleConfig && ageScaling) {
+                const hpM = libs.mainBattleConfig?.EnemyHpDifficultyMulti ?? 6_000_000;
+                const dmgM = libs.mainBattleConfig?.EnemyDmgDifficultyMulti ?? 6_000_000;
+                const raw = (battleConfig as any).Waves?.length ? (battleConfig as any).Waves : [battleConfig];
+                wavesList = raw.map((w: any) =>
+                    mainBattleWaveSpecs(w, ageScaling as any, difficultyMode, hpM, dmgM, enemyLibs)
+                );
             }
-        }
-
-        // Initialize Engine
-        const wavesList: any[] = [];
-        const totalWavesCount = customWaves ? customWaves.length :
-            (localDungeonWaves.length > 0 ? localDungeonWaves.length :
-                (ageIdx === -2 ? 1 : // Missions always have 1 wave
-                    (libs.mainBattleLibrary?.[`{'AgeIdx': ${ageIdx}, 'BattleIdx': ${battleIdx}}`]?.Waves.length || 1)));
-
-        // Helper to get enemies for a wave index
-        const getWaveEnemies = (wIdx: number) => {
-            if (customWaves && customWaves.length > wIdx) return customWaves[wIdx];
-
-            if (localDungeonWaves.length > 0 && localDungeonWaves.length > wIdx) {
-                let library: Record<string, any> | undefined;
-                switch (dungeonType) {
-                    case 'hammer': library = libs.hammerThiefDungeonBattleLibrary; break;
-                    case 'skill': library = libs.skillDungeonBattleLibrary; break;
-                    case 'egg': library = libs.eggDungeonBattleLibrary; break;
-                    case 'potion': library = libs.potionDungeonBattleLibrary; break;
-                }
-                const config = library?.[String(dungeonLevel)];
-                if (config) {
-                    const enemyCount = localDungeonWaves[wIdx];
-                    const enemy1Id = config.EnemyId1 ?? 0;
-                    const enemy2Id = config.EnemyId2 ?? 0;
-                    const engineEnemies: any[] = [];
-
-                    for (let k = 0; k < enemyCount; k++) {
-                        const currentId = (k % 2 === 0 || enemy2Id === 0) ? enemy1Id : enemy2Id;
-                        const enemyConfig = libs.enemyLibrary?.[String(currentId)];
-                        const weaponKey = enemyConfig?.WeaponId ? `{'Age': ${enemyConfig.WeaponId.Age}, 'Type': 'Weapon', 'Idx': ${enemyConfig.WeaponId.Idx}}` : null;
-                        const weaponInfo = (weaponKey && libs.weaponLibrary) ? libs.weaponLibrary[weaponKey] : null;
-                        const weaponSpriteKey = enemyConfig?.WeaponId ? `${enemyConfig.WeaponId.Age}_5_${enemyConfig.WeaponId.Idx}` : undefined;
-
-                        engineEnemies.push({
-                            id: currentId,
-                            hp: config.Health,
-                            dmg: config.Damage,
-                            weaponInfo: weaponInfo,
-                            projectileSpeed: 10,
-                            weaponSpriteKey: weaponSpriteKey
-                        });
-                    }
-                    return engineEnemies;
-                }
-            }
-
-            // Mission Logic
-            if (ageIdx === -2) {
-                // battleIdx is MissionId, difficultyMode is level
-                const mission = libs.missionBattleLibrary?.[String(battleIdx)];
-                if (mission) {
-                    const baseConfig = libs.missionBaseConfig;
-                    const multiplier = baseConfig?.HealthAndDamageLevelMultiplier || 1.524;
-                    const getScaledValue = (base: number) => {
-                        if (!baseConfig) return base;
-                        return Math.floor(base * Math.pow(multiplier, difficultyMode - 1));
-                    };
-                    const scaledDmg = getScaledValue(mission.BaseDamage);
-                    const scaledHp = getScaledValue(mission.BaseHealth);
-                    const unitCount = mission.UnitCount || 6;
-                    const engineEnemies: any[] = [];
-                    for (let k = 0; k < unitCount; k++) {
-                        let weaponInfo = null;
-                        let weaponSpriteKey = undefined;
-                        if (mission.PossibleWeapons && mission.PossibleWeapons.length > 0) {
-                            const randomWeapon = mission.PossibleWeapons[Math.floor(Math.random() * mission.PossibleWeapons.length)];
-                            const weaponKey = `{'Age': ${randomWeapon.Item1}, 'Type': 'Weapon', 'Idx': ${randomWeapon.Item2}}`;
-                            weaponInfo = libs.weaponLibrary?.[weaponKey];
-                            weaponSpriteKey = `${randomWeapon.Item1}_5_${randomWeapon.Item2}`;
-                        }
-                        engineEnemies.push({
-                            id: mission.MissionId,
-                            hp: scaledHp,
-                            dmg: scaledDmg,
-                            weaponInfo: weaponInfo,
-                            projectileSpeed: 10,
-                            weaponSpriteKey: weaponSpriteKey
-                        });
-                    }
-                    return engineEnemies;
-                }
-            }
-
-            // Main Battle Logic
-            const battleKey = `{'AgeIdx': ${ageIdx}, 'BattleIdx': ${battleIdx}}`;
-            const battleConfig = libs.mainBattleLibrary?.[battleKey];
-            if (battleConfig && battleConfig.Waves[wIdx]) {
-                // Reconstruct main battle wave
-                const wave = battleConfig.Waves[wIdx];
-                const ageScaling = libs.enemyAgeScalingLibrary?.[String(ageIdx)];
-                const progressDifficultyIdx = calculateProgressDifficultyIdx(ageIdx, battleIdx, difficultyMode, libs.mainBattleLibrary || {});
-                const enemyRangedMulti = libs.itemBalancingConfig?.EnemyRangedDamageMultiplier || 1.0;
-                const difficultyMultiplier = difficultyMode > 0 ? 6000000.0 : 1.0;
-                const engineEnemies: any[] = [];
-
-                for (const enemy of wave.Enemies) {
-                    const enemyConfig = libs.enemyLibrary?.[String(enemy.Id)];
-                    if (!enemyConfig) continue;
-                    const weaponKey = enemyConfig.WeaponId ? `{'Age': ${enemyConfig.WeaponId.Age}, 'Type': 'Weapon', 'Idx': ${enemyConfig.WeaponId.Idx}}` : null;
-                    const weaponInfo = (weaponKey && libs.weaponLibrary) ? libs.weaponLibrary[weaponKey] : null;
-
-                    const ageHp = calculateEnemyHp(progressDifficultyIdx, ageScaling, libs.mainBattleConfig || {}, weaponInfo, libs);
-                    const ageDmg = calculateEnemyDmg(progressDifficultyIdx, ageScaling, libs.mainBattleConfig || {}, weaponInfo, enemyRangedMulti, libs);
-
-                    const CALIBRATION_FACTOR = 0.02;
-                    const enemyHp = ageHp * difficultyMultiplier * CALIBRATION_FACTOR;
-                    const enemyDmg = ageDmg * difficultyMultiplier * CALIBRATION_FACTOR;
-
-                    let projectileSpeed = 10;
-                    if (weaponInfo && weaponInfo.IsRanged && weaponInfo.ProjectileId !== undefined) {
-                        const proj = libs.projectilesLibrary?.[String(weaponInfo.ProjectileId)];
-                        if (proj) projectileSpeed = proj.Speed;
-                    }
-
-                    for (let k = 0; k < enemy.Count; k++) {
-                        const weaponSpriteKey = enemyConfig?.WeaponId ? `${enemyConfig.WeaponId.Age}_5_${enemyConfig.WeaponId.Idx}` : undefined;
-                        engineEnemies.push({
-                            id: enemy.Id,
-                            hp: enemyHp,
-                            dmg: enemyDmg,
-                            weaponInfo: weaponInfo,
-                            projectileSpeed: projectileSpeed,
-                            weaponSpriteKey: weaponSpriteKey
-                        });
-                    }
-                }
-                return engineEnemies;
-            }
-            return [];
-        };
-
-        // Build All Waves
-        for (let i = 0; i < totalWavesCount; i++) {
-            wavesList.push(getWaveEnemies(i));
         }
 
         // Setup Engine
@@ -371,58 +180,25 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
         setWaveIndex(0);
 
-        // Collect combat stats for display
+        // Combat stats for display, from the shared specs. The skill multiplier split is the
+        // REAL breakdown from statEngine (skillDamageBreakdown), not an estimate.
         const firstWaveEnemies = wavesList[0] || [];
-        const enemyDmg = firstWaveEnemies[0]?.dmg || 0;
-
-        // Get skill damages from mechanicsMap
-        const skillDamages: { id: string; damage: number; hits: number; damageIsPerHit: boolean }[] = [];
-        Object.values(mechanicsMap).forEach((skill: any) => {
-            if (skill.baseDamage > 0) {
-                skillDamages.push({
-                    id: skill.id,
-                    damage: skill.baseDamage,
-                    hits: skill.hitCount || 1,
-                    damageIsPerHit: !!skill.damageIsPerHit
-                });
-            }
-        });
-
-        // Find buff skill damage from the skills we registered
+        const first = firstWaveEnemies[0] as any;
+        const enemyDmg = first?.stats?.dmg ?? first?.dmg ?? 0;
+        const BUFF_IDS = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+        const skillDamages = specs
+            .filter((sk) => sk.damage > 0 && !BUFF_IDS.has(sk.id))
+            .map((sk) => ({ id: sk.id, damage: sk.damage, hits: skillDamageCount(sk.id), damageIsPerHit: false }));
         let buffDmg = 0;
         let buffHp = 0;
-
-        // Buff skills set bonusDamage/bonusMaxHealth, not baseDamage
-        // Get these from profile skills
-        if (profile?.skills?.equipped) {
-            // Use full damage formula (same as SkillPanel/BattleSimulator)
-            const skillFactor = (playerStats as any).skillDamageMultiplier || 1;
-            const globalFactor = (playerStats as any).damageMultiplier || 1;
-            const totalDamageMulti = skillFactor + globalFactor - 1;
-
-            for (const skillSlot of profile.skills.equipped) {
-                if (['Morale', 'Meat', 'Berserk', 'Buff', 'HigherMorale'].includes(skillSlot.id)) {
-                    const skillConfig = libs.skillLibrary?.[skillSlot.id];
-                    if (skillConfig) {
-                        const levelIdx = Math.max(0, skillSlot.level - 1);
-                        if (skillConfig.DamagePerLevel && skillConfig.DamagePerLevel.length > levelIdx) {
-                            buffDmg = skillConfig.DamagePerLevel[levelIdx] * totalDamageMulti;
-                        }
-                        if (skillConfig.HealthPerLevel && skillConfig.HealthPerLevel.length > levelIdx) {
-                            buffHp = skillConfig.HealthPerLevel[levelIdx] * totalDamageMulti;
-                        }
-                    }
-                }
+        for (const sk of specs) {
+            if (BUFF_IDS.has(sk.id)) {
+                buffDmg += sk.damage;
+                buffHp += sk.health;
             }
         }
-        // Get skill damage multiplier breakdown
-        // Total multiplier is in playerStats.skillDamageMultiplier (e.g., 1.283 = +28.3%)
-        // We need to estimate the breakdown - secondary stats come from secondaryStats.skillDamageMulti
-        const skillDmgMultiTotal = ((playerStats as any).skillDamageMultiplier || 1) - 1; // Convert to bonus (0.283)
-        // Secondary stats are stored in the engine's stats - we can approximate
-        // For now, we'll show total percentage
-        const skillDmgMultiFromStats = 0.123; // Ring 12.3% - would need to track this separately
-        const skillDmgMultiFromTree = skillDmgMultiTotal - skillDmgMultiFromStats;
+        const skillDmgMultiTotal = ((playerStats as any).skillDamageMultiplier || 1) - 1;
+        const skillDmgMultiFromStats = (playerStats as any).skillDamageBreakdown?.substats ?? 0;
 
         setCombatStats({
             playerDamageBase: playerStats.totalDamage,
@@ -431,8 +207,8 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             buffHealth: buffHp,
             enemyDamage: enemyDmg,
             skillDamages,
-            skillDmgMultiTotal: skillDmgMultiTotal * 100, // Convert to percentage
-            skillDmgMultiFromTree: skillDmgMultiFromTree * 100,
+            skillDmgMultiTotal: skillDmgMultiTotal * 100,
+            skillDmgMultiFromTree: (skillDmgMultiTotal - skillDmgMultiFromStats) * 100,
             skillDmgMultiFromStats: skillDmgMultiFromStats * 100
         });
 
@@ -640,7 +416,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <input
                                 type="number"
                                 step="0.1"
-                                value={debugConfig.skillStartupTimer ?? 3.2} // Default 3.2
+                                value={debugConfig.skillStartupTimer ?? 4.0} // game: hardcoded 4.0s charge
                                 onChange={(e) => onDebugConfigChange({ ...debugConfig, skillStartupTimer: parseFloat(e.target.value) })}
                                 className="w-16 bg-black/50 border border-red-500/30 rounded px-1 py-0.5 text-white text-center"
                             />
@@ -650,7 +426,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <input
                                 type="number"
                                 step="1"
-                                value={debugConfig.playerStartPos ?? 2.0}
+                                value={debugConfig.playerStartPos ?? 0.0}
                                 onChange={(e) => onDebugConfigChange({ ...debugConfig, playerStartPos: parseFloat(e.target.value) })}
                                 className="w-16 bg-black/50 border border-red-500/30 rounded px-1 py-0.5 text-white text-center"
                             />
@@ -661,7 +437,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <input
                                 type="number"
                                 step="1"
-                                value={debugConfig.fieldWidth ?? 14}
+                                value={debugConfig.fieldWidth ?? 28}
                                 onChange={(e) => {
                                     const val = parseFloat(e.target.value);
                                     onDebugConfigChange({
@@ -680,7 +456,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <input
                                 type="number"
                                 step="1"
-                                value={debugConfig.enemySpawnDistance ?? 7}
+                                value={debugConfig.enemySpawnDistance ?? 15}
                                 onChange={(e) => onDebugConfigChange({ ...debugConfig, enemySpawnDistance: parseFloat(e.target.value) })}
                                 className="w-16 bg-black/50 border border-red-500/30 rounded px-1 py-0.5 text-white text-center"
                             />
@@ -690,7 +466,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <input
                                 type="number"
                                 step="1"
-                                value={debugConfig.enemySpawnDistanceNext ?? 10.5}
+                                value={debugConfig.enemySpawnDistanceNext ?? 15}
                                 onChange={(e) => onDebugConfigChange({ ...debugConfig, enemySpawnDistanceNext: parseFloat(e.target.value) })}
                                 className="w-16 bg-black/50 border border-red-500/30 rounded px-1 py-0.5 text-white text-center"
                             />
@@ -827,7 +603,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     {/* Player */}
                     <div
                         className="absolute top-1/2 z-50 flex flex-col items-center"
-                        style={{ left: `${getPlayerPosition()}%`, transform: 'translate(-50%, -50%)' }}
+                        style={{ left: `${getPlayerPosition()}%`, transform: `translate(-50%, calc(-50% + ${((snapshot.player as any)?.positionY ?? 0) * 11}px))` }}
                     >
                         {/* Active Buffs Display */}
                         <div className="flex gap-1 mb-1 absolute bottom-full pb-2">
@@ -891,7 +667,6 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     {enemies.map((enemy: EntityState, idx: number) => {
                         if (enemy.isDead) return null;
                         const pos = getEnemyPosition(enemy.position);
-                        const stagger = (idx % 4) * 2;
                         const ehp = Math.max(0, Math.min(100, (enemy.health / (enemy.maxHealth || 1)) * 100));
 
                         // Get weapon sprite from AutoItemMapping
@@ -920,7 +695,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <div
                                 key={idx}
                                 className="absolute top-1/2 -translate-y-1/2 z-40"
-                                style={{ left: `${pos + stagger}%`, transform: `translateX(-50%) translateY(${(idx % 2) * 30 - 15}px)` }}
+                                style={{ left: `${pos}%`, transform: `translateX(-50%) translateY(${((enemy as any).positionY ?? 0) * 11}px)` }}
                             >
                                 <div className="relative flex flex-col items-center">
                                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${enemy.isRanged ? 'bg-purple-600/80' : 'bg-red-600/80'} flex items-center justify-center border-2 ${enemy.isWindingUp ? 'border-yellow-400 animate-pulse' : 'border-gray-700'} overflow-hidden relative shadow-md z-10`}>
@@ -976,16 +751,16 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     {/* Projectiles */}
                     {(snapshot.projectiles || []).map((proj: Projectile) => {
                         const posPercent = worldToScreen(proj.currentX);
-                        // Horizontal stagger (3.0% behind)
-                        const staggerX = (proj.id % 2) * (proj.isPlayerSource ? -3.0 : 3.0);
+                        // Real vertical position from the engine (ballistic arcs included).
+                        const yPx = -((proj as any).currentY ?? 0) * 11;
 
                         return (
                             <div
                                 key={proj.id}
                                 className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-20 ${!proj.isPlayerSource ? 'flex-row-reverse' : ''}`}
                                 style={{
-                                    left: `calc(${posPercent}% + ${staggerX}%)`,
-                                    transform: `translateX(-50%) translateY(-50%)`
+                                    left: `${posPercent}%`,
+                                    transform: `translateX(-50%) translateY(calc(-50% + ${yPx}px))`
                                 }}
                             >
                                 {/* Trail */}
@@ -1080,7 +855,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                     >
                                         {(spriteIndex >= 0 && spriteMapping) ? (
                                             <SpriteSheetIcon
-                                                textureSrc={`./Texture2D/${selectedVersion}/SkillIcons.png`}
+                                                textureSrc={`./Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/SkillIcons.png`}
                                                 spriteWidth={spriteMapping.skills.sprite_size.width}
                                                 spriteHeight={spriteMapping.skills.sprite_size.height}
                                                 sheetWidth={spriteMapping.skills.texture_size.width}

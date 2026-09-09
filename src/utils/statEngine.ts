@@ -4,6 +4,7 @@
  */
 
 import { UserProfile } from '../types/Profile';
+import { SEASON_STATS as FAIRY_SEASON_STATS, applyFairyBonus } from './fairies';
 import { SKILL_MECHANICS, attackIntervalSeconds, doubleDelaySeconds } from './constants';
 import { getNormalizedTarget } from './ascensionUtils';
 import {
@@ -83,12 +84,43 @@ export interface AggregatedStats {
     meleeDamageMultiplier: number;  // MeleeDamageMulti secondary stat
     rangedDamageMultiplier: number; // RangedDamageMulti secondary stat
     attackSpeedMultiplier: number;
-    moveSpeed: number; // Multiplier (e.g. 0.1 for +10%)
+    moveSpeed: number;
+    /** PlayerAttackRange tech/clan node total (Multiplier fraction on the weapon's range). */
+    attackRangeMultiplier: number;
+    /**
+     * Battle-context Damage/Health multipliers from conditional tech and clan nodes
+     * (StatCondition-gated: InMission, InClanWarOrBrawl, InLeagueBattle, the four dungeons).
+     * The game applies these only inside the matching battle, so they are kept out of
+     * totalDamage/totalHealth and applied by the combat engine per mode.
+     */
+    contextBonuses: {
+        mission: { dmg: number; hp: number };
+        clanWar: { dmg: number; hp: number };
+        league: { dmg: number; hp: number };
+        dungeon: {
+            hammer: { dmg: number; hp: number };
+            skill: { dmg: number; hp: number };
+            egg: { dmg: number; hp: number };
+            potion: { dmg: number; hp: number };
+        };
+    }; // Multiplier (e.g. 0.1 for +10%)
 
     criticalChance: number;
 
     criticalDamage: number;
     blockChance: number;
+    /** Only the seasonal fairy grants this today (no reflect substat exists on gear). */
+    reflectChance: number;
+    /** The applied seasonal-fairy conversion, recorded for display (absent when no fairy). */
+    fairyBonus?: {
+        target: 'criticalChance' | 'blockChance' | 'reflectChance';
+        /** The required substat pool that fed the conversion. */
+        required: number;
+        /** The target pool's total before the grant (the cap clamps required + this). */
+        targetPoolBefore: number;
+        /** What the fairy actually added after the cap. */
+        granted: number;
+    };
     doubleDamageChance: number;
 
     healthRegen: number;
@@ -119,6 +151,13 @@ export interface AggregatedStats {
 
     skillDps: number;
     skillBuffDps: number;
+    /**
+     * Thorns damage per second against an assumed mirror enemy: same per-hit attack and
+     * cadence as the player (10b per hit when the profile has no damage at all). Reflect
+     * procs on every non-dodged incoming hit, blocked ones included, so the full rate counts.
+     */
+    reflectDps: number;
+    realReflectDps: number;
     skillHps: number;
     theoreticalTotalHps: number;
     realTotalHps: number;
@@ -190,6 +229,18 @@ export const DEFAULT_STATS: AggregatedStats = {
     skillPassiveHealth: 0,
     mountDamage: 0,
     mountHealth: 0,
+    attackRangeMultiplier: 0,
+    contextBonuses: {
+        mission: { dmg: 0, hp: 0 },
+        clanWar: { dmg: 0, hp: 0 },
+        league: { dmg: 0, hp: 0 },
+        dungeon: {
+            hammer: { dmg: 0, hp: 0 },
+            skill: { dmg: 0, hp: 0 },
+            egg: { dmg: 0, hp: 0 },
+            potion: { dmg: 0, hp: 0 },
+        },
+    },
     totalDamage: 10,
     totalHealth: 80,
     meleeDamage: 16,
@@ -211,6 +262,7 @@ export const DEFAULT_STATS: AggregatedStats = {
     criticalChance: 0,
     criticalDamage: 1.2,
     blockChance: 0,
+    reflectChance: 0,
     doubleDamageChance: 0,
     healthRegen: 0,
     lifeSteal: 0,
@@ -233,6 +285,8 @@ export const DEFAULT_STATS: AggregatedStats = {
     projectileAffectedByGravity: false,
     skillDps: 0,
     skillBuffDps: 0,
+    reflectDps: 0,
+    realReflectDps: 0,
     skillHps: 0,
     theoreticalTotalHps: 0,
     realTotalHps: 0,
@@ -684,7 +738,7 @@ export class StatEngine {
                 this.techModifiers[key] = (this.techModifiers[key] || 0) + totalVal;
 
                 if (key === 'SkillDamage') {
-                    console.log(`[DEBUG TechTree] Tree: ${tree}, NodeID: ${nodeId}, Level: ${level}, Contribution: ${totalVal.toFixed(6)}`);
+
                 }
             }
         }
@@ -1620,6 +1674,33 @@ export class StatEngine {
         const commonDamageMultiPow = this.stats.damageMultiplier + (this.excludeSubstats ? 0 : itemDmgMulti);
         const commonHealthMultiPow = this.stats.healthMultiplier + (this.excludeSubstats ? 0 : itemHpMulti);
 
+        // Seasonal fairy: converts one equipped substat pool into another. Semantics from
+        // FairyHelpers in the binary (see src/utils/fairies.ts): whole steps of the required
+        // pool, and the cap clamps the target pool's total rather than the grant. Applied on
+        // the secondary pools so the grant merges through the same additive path as substats;
+        // reflect has no substat pool, so it lands on the final stat directly.
+        const fairy = this.profile.misc.fairy;
+        this.stats.fairyBonus = undefined;
+        if (fairy?.name) {
+            const fairyCfg = FAIRY_SEASON_STATS[fairy.name];
+            const fairyRequired = this.secondaryStats[fairyCfg.requiredStat];
+            const poolBefore = fairyCfg.targetStat === 'reflectChance'
+                ? this.stats.reflectChance || 0
+                : this.secondaryStats[fairyCfg.targetStat];
+            const poolAfter = applyFairyBonus(fairyCfg, fairy.level, fairyRequired, poolBefore);
+            if (fairyCfg.targetStat === 'reflectChance') {
+                this.stats.reflectChance = poolAfter;
+            } else {
+                this.secondaryStats[fairyCfg.targetStat] = poolAfter;
+            }
+            this.stats.fairyBonus = {
+                target: fairyCfg.targetStat,
+                required: fairyRequired,
+                targetPoolBefore: poolBefore,
+                granted: poolAfter - poolBefore,
+            };
+        }
+
         // Merge other secondary stats into final results (summing Tech Tree + Items/Pets)
         this.stats.criticalChance = this.combine(this.stats.criticalChance, this.secondaryStats.criticalChance, 'Additive');
         this.stats.criticalDamage = this.combine(this.stats.criticalDamage, this.secondaryStats.criticalDamage, 'Additive');
@@ -1937,8 +2018,31 @@ export class StatEngine {
 
 
 
-        // Move Speed
-        this.stats.moveSpeed = this.secondaryStats.moveSpeed;
+        // Move Speed: the PlayerMoveSpeed tech/clan node plus the substat pool. Both are
+        // Multiplier-nature contributions on the game's base 2.0 (the engine applies the base).
+        this.stats.moveSpeed = (this.techModifiers['PlayerMoveSpeed'] || 0) + this.secondaryStats.moveSpeed;
+        this.stats.attackRangeMultiplier = this.techModifiers['PlayerAttackRange'] || 0;
+
+        // Conditional battle-context nodes: collected like every other node, but the game only
+        // applies them inside the matching battle (StatCondition), so they live in their own
+        // bucket for the engine's mode adapters. Dungeon type -> condition mapping is the
+        // binary's DungeonSource: hammer -> HammerThief, skill -> GhostTown, egg -> Invasion,
+        // potion -> ZombieRush.
+        const ctx = (dmgKey: string, hpKey: string) => ({
+            dmg: this.techModifiers[dmgKey] || 0,
+            hp: this.techModifiers[hpKey] || 0,
+        });
+        this.stats.contextBonuses = {
+            mission: ctx('MissionDamage', 'MissionHealth'),
+            clanWar: ctx('ClanWarDamage', 'ClanWarHealth'),
+            league: ctx('LeagueBattleDamage', 'LeagueBattleHealth'),
+            dungeon: {
+                hammer: ctx('HammerThiefDungeonDamage', 'HammerThiefDungeonHealth'),
+                skill: ctx('GhostTownDungeonDamage', 'GhostTownDungeonHealth'),
+                egg: ctx('InvasionDungeonDamage', 'InvasionDungeonHealth'),
+                potion: ctx('ZombieRushDungeonDamage', 'ZombieRushDungeonHealth'),
+            },
+        };
 
         this.stats.experienceMultiplier = this.combine(this.stats.experienceMultiplier, 0, 'Multiplier');
 
@@ -1977,20 +2081,19 @@ export class StatEngine {
 
                     // Technical Debug Log
                     const ascensionMulti = this.stats.skillDamageBreakdown.ascension || 1;
-                    console.group(`[CALC] Active Skill Multiplier - ${skill.id} (L${skill.level})`);
-                    console.log(`Base Skill Value: ${baseSkillDmg}`);
-                    console.log(`--- Skill Layer (mirrors Forge Ascension) ---`);
-                    console.log(`  Base:                1.0`);
-                    console.log(`  + Tech (SkillDmg):   +${(this.stats.skillDamageBreakdown.tree || 0).toFixed(4)}`);
-                    console.log(`  + Items (SkillDmg):  +${(this.stats.skillDamageBreakdown.substats || 0).toFixed(4)}`);
-                    console.log(`  × Skill Ascension:   ×${ascensionMulti.toFixed(0)}`);
-                    console.log(`  = Skill Multi:       ${skillMulti.toFixed(4)}`);
-                    console.log(`--- Common Layer ---`);
-                    console.log(`  Common Multi:        ${commonMulti.toFixed(4)}`);
-                    console.log(`--- Result ---`);
-                    console.log(`  Effective: ${skillMulti.toFixed(4)} × ${commonMulti.toFixed(4)} = ${effectiveMultiplier.toFixed(4)}`);
-                    console.log(`  DPS Contrib: ${baseSkillDmg} × ${effectiveMultiplier.toFixed(4)} = ${(baseSkillDmg * effectiveMultiplier).toFixed(0)}`);
-                    console.groupEnd();
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                     const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale", "0", "1", "6", "12", "13"];
                     const isBuffSkill = BUFF_SKILLS.includes(String(skill.id));
@@ -2034,9 +2137,7 @@ export class StatEngine {
                         const hCommonMulti = this.stats.damageMultiplier;
                         const hEffectiveMultiplier = hSkillMulti * hCommonMulti;
 
-                        console.group(`[CALC] Skill Healing - ${skill.id} (L${skill.level})`);
-                        console.log(`Base: ${baseSkillHeal}, SkillMulti: ${hSkillMulti.toFixed(4)}, CommonMulti: ${hCommonMulti.toFixed(4)}, Effective: ${hEffectiveMultiplier.toFixed(4)}`);
-                        console.groupEnd();
+
 
                         const healPerHit = baseSkillHeal * hEffectiveMultiplier;
                         this.stats.skillHps += healPerHit / finalCd;
@@ -2052,7 +2153,10 @@ export class StatEngine {
         // AVERAGE WEAPON DPS (Theoretical - used for simple summary)
         const simpleAps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
         this.stats.weaponDps = this.stats.totalDamage * simpleAps * critMult * doubleMult;
-        this.stats.averageTotalDps = this.stats.weaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0);
+        // Mirror-enemy assumption for reflect: their hit is your hit, their pace is yours.
+        const reflectEnemyDph = this.stats.totalDamage > 0 ? this.stats.totalDamage : 1e10;
+        this.stats.reflectDps = (this.stats.reflectChance || 0) * reflectEnemyDph * simpleAps;
+        this.stats.averageTotalDps = this.stats.weaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0) + this.stats.reflectDps;
 
         // REAL-TIME STEPPED CALCULATION (Breakpoints)
         // Formula: cycle = floor(base / speed * 10) / 10 + 0.2
@@ -2081,7 +2185,8 @@ export class StatEngine {
         this.stats.realDoubleHitAps = 2 / doubleHitCycle; // Stats only for pure double hit phase 
 
         this.stats.realWeaponDps = this.stats.totalDamage * weightedAps * critMult;
-        this.stats.realTotalDps = this.stats.realWeaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0);
+        this.stats.realReflectDps = (this.stats.reflectChance || 0) * reflectEnemyDph * weightedAps;
+        this.stats.realTotalDps = this.stats.realWeaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0) + this.stats.realReflectDps;
 
         // --- HPS CALCULATION (Theoretical vs Real-Time) ---
         const regen = this.stats.totalHealth * this.stats.healthRegen;

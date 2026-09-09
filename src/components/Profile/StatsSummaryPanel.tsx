@@ -437,6 +437,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         testSkills,
         originalUseSkinWindup,
         testUseSkinWindup,
+        originalFairy,
+        testFairy,
         updateTestPet,
         updateTestMount,
         exitCompareMode,
@@ -600,7 +602,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 mountAscensionLevel: originalMountAscension ?? profile.misc.mountAscensionLevel,
                 petAscensionLevel: originalPetAscension ?? profile.misc.petAscensionLevel,
                 skillAscensionLevel: originalSkillAscension ?? profile.misc.skillAscensionLevel,
-                useSkinWindup: originalUseSkinWindup ?? profile.misc.useSkinWindup
+                useSkinWindup: originalUseSkinWindup ?? profile.misc.useSkinWindup,
+                fairy: originalFairy ?? profile.misc.fairy
             }
         };
         const testProfile = {
@@ -616,7 +619,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel,
                 petAscensionLevel: testPetAscension ?? profile.misc.petAscensionLevel,
                 skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel,
-                useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup
+                useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup,
+                fairy: testFairy ?? profile.misc.fairy
             }
         };
 
@@ -639,7 +643,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         testForgeAscension, testMountAscension,
         originalPets, testPets, originalSkills, testSkills,
         originalPetAscension, testPetAscension, originalSkillAscension, testSkillAscension,
-        originalUseSkinWindup, testUseSkinWindup,
+        originalUseSkinWindup, testUseSkinWindup, originalFairy, testFairy,
         treeMode, techTreePositionLibrary, techTreeLibrary, libs, excludeSubstats
     ]);
 
@@ -821,6 +825,9 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <ComparisonStatRow isCompact={isCompactStats} icon={<Star className="w-4 h-4 text-yellow-400" />} label="Crit %" originalValue={originalStats.criticalChance || 0} testValue={testStats.criticalChance || 0} formatFn={formatPercent} color="text-yellow-400" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<TrendingUp className="w-4 h-4 text-yellow-500" />} label="Crit Damage" originalValue={originalStats.criticalDamage || 0} testValue={testStats.criticalDamage || 0} formatFn={formatMultiplier} color="text-yellow-500" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<Shield className="w-4 h-4 text-blue-400" />} label="Block %" originalValue={originalStats.blockChance || 0} testValue={testStats.blockChance || 0} formatFn={formatPercent} color="text-blue-400" />
+                    {((originalStats.reflectChance || 0) > 0 || (testStats.reflectChance || 0) > 0) && (
+                        <ComparisonStatRow isCompact={isCompactStats} icon={<Shield className="w-4 h-4 text-teal-400" />} label="Reflect %" originalValue={originalStats.reflectChance || 0} testValue={testStats.reflectChance || 0} formatFn={formatPercent} color="text-teal-400" />
+                    )}
                     <ComparisonStatRow isCompact={isCompactStats} icon={<Zap className="w-4 h-4 text-purple-400" />} label="Double %" originalValue={originalStats.doubleDamageChance || 0} testValue={testStats.doubleDamageChance || 0} formatFn={formatPercent} color="text-purple-400" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-purple-400" />} label="Life Steal %" originalValue={originalStats.lifeSteal || 0} testValue={testStats.lifeSteal || 0} formatFn={formatPercent} color="text-purple-400" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-purple-400" />} label="Health Regen %" originalValue={originalStats.healthRegen || 0} testValue={testStats.healthRegen || 0} formatFn={formatPercent} color="text-purple-400" />

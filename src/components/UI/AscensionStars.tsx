@@ -1,4 +1,5 @@
 import { cn } from '../../lib/utils';
+import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { useGameDataContext } from '../../context/GameDataContext';
 
 interface AscensionStarsProps {
@@ -58,7 +59,7 @@ export function AscensionStars({ value, onChange, maxLevel = 3, className, size 
                             title={`Ascension ${idx + 1}`}
                         >
                             <img
-                                src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/AscensionStar.png`}
+                                src={`${import.meta.env.BASE_URL}Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/AscensionStar.png`}
                                 alt="Star"
                                 className={cn(
                                     "object-contain pointer-events-none drop-shadow-md",

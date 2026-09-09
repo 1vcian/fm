@@ -18,6 +18,8 @@
 export const SKIN_SPRITE_COLS = 8;
 export const SKIN_SPRITE_ROWS = 8;
 
+import { resolveTextureVersion } from './ascensionUtils';
+
 interface SkinId {
     Type: string;
     Idx: number;
@@ -101,9 +103,12 @@ export const getSkinSpriteStyle = (
     version?: string
 ): React.CSSProperties => {
     const position = getSkinSpritePosition(skin, mapping, version);
-    const isDoubleWidth = version && version >= '2026_07_03_12_39';
+    // Grid width is a property of the atlas actually loaded, so both the URL and the
+    // width check use the resolved texture folder (config-only versions ship no art).
+    const texVersion = resolveTextureVersion(version) ?? version;
+    const isDoubleWidth = texVersion && texVersion >= '2026_07_03_12_39';
     return {
-        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${version || ''}/SkinsUiIcons.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${texVersion || ''}/SkinsUiIcons.png)`,
         backgroundSize: isDoubleWidth ? '1600% 1600%' : '800% 800%',
         backgroundPosition: position || 'center',
         imageRendering: 'pixelated' as const

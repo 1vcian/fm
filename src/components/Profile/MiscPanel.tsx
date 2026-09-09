@@ -7,7 +7,7 @@ import { Button } from '../UI/Button';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { Plus, Minus, Sparkles, Coins, ChevronDown, GitBranch } from 'lucide-react';
 import { AscensionStars } from '../UI/AscensionStars';
-import { getAnvilTexturePath } from '../../utils/ascensionUtils';
+import { getAnvilTexturePath, resolveTextureVersion } from '../../utils/ascensionUtils';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { getAveragePerfection } from '../../utils/itemCalculations';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
@@ -101,7 +101,7 @@ export function MiscPanel() {
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
-                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/SettingsIcon.png`} alt="Settings" className="w-8 h-8 object-contain" />
+                <img src={`${import.meta.env.BASE_URL}Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/SettingsIcon.png`} alt="Settings" className="w-8 h-8 object-contain" />
                 Global Settings
             </h2>
 
@@ -257,7 +257,7 @@ export function MiscPanel() {
                     <Card className="p-4 bg-bg-secondary/40 border-border/50">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1 shrink-0">
-                                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/HatchBed.png`} alt="Egg Slots" className="w-full h-full object-contain" />
+                                <img src={`${import.meta.env.BASE_URL}Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/HatchBed.png`} alt="Egg Slots" className="w-full h-full object-contain" />
                             </div>
                             <div className="min-w-0">
                                 <div className="font-bold">Egg Slots</div>

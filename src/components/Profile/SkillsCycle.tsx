@@ -16,7 +16,7 @@ import { cn } from '../../lib/utils';
  * - cooldown_eff = max(0.5, Cooldown * (1 - reduction))
  *   (BattleVisualizerModal.tsx / BattleSimulator.ts).
  */
-const START_TIME = 3.2;
+const START_TIME = 4.0; // hardcoded initial skill charge in the binary (AddOrUpdateSkill)
 const MIN_COOLDOWN = 0.5;
 const EPS = 1e-9;
 

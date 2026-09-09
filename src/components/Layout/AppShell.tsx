@@ -10,7 +10,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
 import { cn } from '../../lib/utils';
 import { formatVersion } from '../../lib/formatVersion';
-import { getAnvilTexturePath } from '../../utils/ascensionUtils';
+import { getAnvilTexturePath, resolveTextureVersion } from '../../utils/ascensionUtils';
 
 const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
     const baseMessages = [
@@ -431,7 +431,7 @@ export default function AppShell() {
                 >
                     <div
                         className={cn(maxAgeVisuals.anim, "rounded-full")}
-                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})` } as React.CSSProperties}
+                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${(resolveTextureVersion(selectedVersion) ?? selectedVersion) ? `${resolveTextureVersion(selectedVersion) ?? selectedVersion}/` : ''}${maxAgeVisuals.texture})` } as React.CSSProperties}
                     >
                         {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
                             <span key={i} />
@@ -573,7 +573,7 @@ export default function AppShell() {
                                     <div
                                         className={cn(maxAgeVisuals.anim, "absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none")}
                                         style={{
-                                            '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})`
+                                            '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${(resolveTextureVersion(selectedVersion) ?? selectedVersion) ? `${resolveTextureVersion(selectedVersion) ?? selectedVersion}/` : ''}${maxAgeVisuals.texture})`
                                         } as React.CSSProperties}
                                     >
                                         {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (

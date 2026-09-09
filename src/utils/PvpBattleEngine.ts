@@ -9,6 +9,14 @@ import type { WeaponInfo } from './BattleHelper';
 import { SKILL_MECHANICS } from './constants';
 import { StatEngine } from './statEngine';
 import { PetSlot, MountSlot, UserProfile } from '../types/Profile';
+import {
+    CombatScene,
+    PvpLoadout,
+    PvpSetup,
+    SkillManager,
+    Unit,
+    setupPvp,
+} from '../engine';
 
 // --- Shared Helpers ---
 
@@ -112,6 +120,7 @@ export interface PvpPlayerStats {
     critChance: number;
     critMulti: number;
     blockChance: number;
+    reflectChance?: number;
     lifesteal: number;
     doubleDamage: number;
     healthRegen: number;
@@ -120,6 +129,17 @@ export interface PvpPlayerStats {
     skillDamageMulti: number;
     skillCooldownMulti: number;
     skills: PvpSkillConfig[];
+    /**
+     * The game-shaped inputs for the REAL PvP HP rule (see docs/combat-model.md): one shared
+     * multiplier = max(m(p1), m(p2)) with m = base + 0.5*pets + 0.5*skills + 2*mount, applied
+     * to baseHealth. `hp` above is the legacy per-component chain, kept for display compat.
+     */
+    baseHealth?: number;
+    petCount?: number;
+    skillCount?: number;
+    hasMount?: boolean;
+    matchTimerSeconds?: number;
+    pvpHp?: { base: number; pet: number; skill: number; mount: number };
 }
 
 export interface PvpSkillConfig {
@@ -240,406 +260,230 @@ const PLAYER_SPEED = 2;
 
 const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale"];
 
+/**
+ * PvpBattleEngine — now a shim over the shared engine (src/engine). Same constructor, same
+ * tick/getSnapshot/simulate surface for PvpBattleVisualizer, but the battle itself is the one
+ * tick-accurate CombatScene used everywhere else, with the REAL PvP HP rule.
+ */
 export class PvpBattleEngine {
-    private time: number = 0;
-    private player1: EntityState;
-    private player2: EntityState;
-    private player1Skills: SkillState[] = [];
-    private player2Skills: SkillState[] = [];
-    private player1ActiveEffects: ActiveSkillEffect[] = [];
-    private player2ActiveEffects: ActiveSkillEffect[] = [];
-    private player1ActiveBuffs: ActiveBuff[] = [];
-    private player2ActiveBuffs: ActiveBuff[] = [];
-    private projectiles: Projectile[] = [];
-    private projectileIdCounter: number = 0;
-    private totalPlayer1DamageDealt: number = 0;
-    private totalPlayer2DamageDealt: number = 0;
-    private logs: BattleLogEntry[] = [];
+    public time: number = 0;
+    private readonly scene: CombatScene;
+    private readonly mgr: SkillManager;
+    private readonly setup: PvpSetup;
+    private readonly maxTicks: number;
+    private acc = 0;
+    private finished = false;
 
-    constructor(player1Stats: PvpPlayerStats, player2Stats: PvpPlayerStats) {
-        this.player1 = this.createEntity(1, true, player1Stats, 2);
-        this.player2 = this.createEntity(2, false, player2Stats, 23);
-        this.player1Skills = this.createSkillStates(player1Stats.skills, true);
-        this.player2Skills = this.createSkillStates(player2Stats.skills, false);
-        this.initializeRegen(this.player1, player1Stats);
-        this.initializeRegen(this.player2, player2Stats);
-        this.addLog('BATTLE_START', `Battle started between ${player1Stats.skills.length} skills and ${player2Stats.skills.length} skills`);
-    }
-
-    private addLog(event: string, details: string) {
-        this.logs.push({ time: this.time, event, details });
-    }
-
-    private createEntity(id: number, isPlayer1: boolean, stats: PvpPlayerStats, position: number): EntityState {
-        const weapon = stats.weaponInfo;
-        const windupTime = weapon?.WindupTime ?? 0.5;
-        const attackDuration = weapon?.AttackDuration ?? 1.5;
-        const attackRange = weapon?.AttackRange ?? 0.3;
-        const isRanged = (attackRange ?? 0) > 1.0;
-        const baseHp = stats.hp * (1 + stats.healthMulti);
-        const baseDmg = stats.damage * (1 + stats.damageMulti);
-
-        return {
-            id, isPlayer1, health: baseHp, maxHealth: baseHp, damage: baseDmg, shield: 0,
-            attackSpeed: stats.attackSpeed, baseWindupTime: windupTime, attackDuration: attackDuration,
-            windupTimer: 0, recoveryTimer: 0, isWindingUp: false, combatPhase: 'IDLE',
-            pendingDoubleHit: false, isRanged, projectileSpeed: stats.projectileSpeed ?? 10,
-            attackRange, position, combatState: 'MOVING', isDead: false,
-            critChance: stats.critChance, critMulti: stats.critMulti, blockChance: stats.blockChance,
-            lifesteal: stats.lifesteal, doubleDamage: stats.doubleDamage, healthRegen: stats.healthRegen,
-            initialHealth: baseHp, currentRegenRate: 0, regenSnapshotTimer: 0
-        };
-    }
-
-    private initializeRegen(entity: EntityState, stats: PvpPlayerStats) {
-        entity.initialHealth = entity.maxHealth;
-        const regenMult = stats.healthRegen || 0;
-        entity.currentRegenRate = regenMult * entity.initialHealth;
-        entity.regenSnapshotTimer = 0;
-    }
-
-    private createSkillStates(skills: PvpSkillConfig[], _isPlayer1: boolean): SkillState[] {
-        return skills.map(skill => {
-            const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
-            const count = Math.max(1, skill.count || mechanics.count || 1);
-            let damagePerHit = 0;
-            if (skill.damage && skill.damage > 0) {
-                if (mechanics.descriptionIsPerHit) {
-                    damagePerHit = skill.damage;
-                } else if (mechanics.damageIsPerHit) {
-                    damagePerHit = skill.damage;
-                } else {
-                    damagePerHit = skill.damage / count;
-                }
-            }
-            let healthPerHit = 0;
-            if (skill.health && skill.health > 0) {
-                healthPerHit = skill.health / count;
-            }
-            const isBuffSkill = BUFF_SKILLS.includes(skill.id) && skill.duration > 0;
-            let bonusDamage = 0;
-            let bonusMaxHealth = 0;
-            let activeDamage = 0;
-            let activeHeal = 0;
-            if (isBuffSkill) {
-                if (damagePerHit > 0) bonusDamage = damagePerHit * count;
-                if (healthPerHit > 0) bonusMaxHealth = healthPerHit * count;
-            } else {
-                activeDamage = damagePerHit;
-                activeHeal = healthPerHit;
-            }
-            return {
-                id: skill.id, activeDuration: skill.duration, cooldown: skill.cooldown,
-                state: 'Startup', timer: SKILL_STARTUP_TIME, damage: activeDamage, healAmount: activeHeal,
-                isBuff: isBuffSkill, bonusDamage: bonusDamage, bonusMaxHealth: bonusMaxHealth,
-                count: count, interval: mechanics.interval || 0.1, delay: mechanics.delay || 0,
-                isSingleTarget: mechanics.isSingleTarget, isAOE: mechanics.isAOE
-            };
+    constructor(p1: PvpPlayerStats, p2: PvpPlayerStats, seed?: number) {
+        this.mgr = new SkillManager();
+        this.scene = new CombatScene({
+            seed: seed ?? Math.floor(Math.random() * 2 ** 31),
+            keepEvents: true,
+            skillSystem: (sc) => this.mgr.execute(sc),
         });
+        const hpCfg = {
+            PvpHpBaseMultiplier: p1.pvpHp?.base ?? 1.0,
+            PvpHpPetMultiplier: p1.pvpHp?.pet ?? 0.5,
+            PvpHpSkillMultiplier: p1.pvpHp?.skill ?? 0.5,
+            PvpHpMountMultiplier: p1.pvpHp?.mount ?? 2.0,
+            PvpMatchTimerSeconds: p1.matchTimerSeconds ?? PVP_TIME_LIMIT,
+        };
+        this.setup = setupPvp(toLoadout(p1), toLoadout(p2), hpCfg, this.scene);
+        this.maxTicks = this.setup.maxTicks;
+        addPvpSkills(this.mgr, p1, true);
+        addPvpSkills(this.mgr, p2, false);
+    }
+
+    /** One engine step = 0.1 s; fractional dt from the render loop is accumulated. */
+    public tick(dt: number): void {
+        this.acc += dt;
+        while (this.acc >= 0.1 - 1e-9) {
+            this.acc -= 0.1;
+            this.step();
+        }
+    }
+
+    private step(): void {
+        if (this.finished || this.scene.tickCount >= this.maxTicks) {
+            this.finished = true;
+            return;
+        }
+        this.scene.tick();
+        this.mgr.tryAutoActivate(this.scene, true);
+        this.mgr.tryAutoActivate(this.scene, false);
+        this.time = this.scene.tickCount / 10;
+        if (this.setup.ally.killed || this.setup.enemy.killed || this.time >= (this.setup.maxTicks - 100) / 10) {
+            this.finished = true;
+        }
     }
 
     public simulate(): PvpBattleResult {
-        while (this.time < PVP_TIME_LIMIT) {
-            this.tick(TIME_STEP);
-            if (this.player1.isDead || this.player2.isDead) break;
-        }
-        return this.getResult();
-    }
-
-    private tick(dt: number): void {
-        this.time += dt;
-        this.processRegen(this.player1, dt);
-        this.processRegen(this.player2, dt);
-        const p1Status = { isDead: this.player1.isDead };
-        const p2Status = { isDead: this.player2.isDead };
-        if (Math.random() < 0.5) {
-            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true, p1Status);
-            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false, p2Status);
-        } else {
-            this.processSkills(this.player2Skills, this.player2, this.player1, dt, false, p2Status);
-            this.processSkills(this.player1Skills, this.player1, this.player2, dt, true, p1Status);
-        }
-        if (Math.random() < 0.5) {
-            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true, p1Status, p2Status);
-            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false, p2Status, p1Status);
-        } else {
-            this.processActiveEffects(this.player2ActiveEffects, this.player2, this.player1, dt, false, p2Status, p1Status);
-            this.processActiveEffects(this.player1ActiveEffects, this.player1, this.player2, dt, true, p1Status, p2Status);
-        }
-        this.processProjectiles(dt);
-        const startOfTickDistance = Math.abs(this.player1.position - this.player2.position);
-        if (Math.random() < 0.5) {
-            this.processMovementAndCombat(this.player1, this.player2, dt, startOfTickDistance, !p1Status.isDead);
-            this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
-        } else {
-            this.processMovementAndCombat(this.player2, this.player1, dt, startOfTickDistance, !p2Status.isDead);
-            this.processMovementAndCombat(this.player1, this.player1, dt, startOfTickDistance, !p1Status.isDead);
-        }
-    }
-
-    private processRegen(entity: EntityState, dt: number) {
-        if (entity.isDead || entity.healthRegen <= 0) return;
-        entity.regenSnapshotTimer += dt;
-        const healingStep = entity.currentRegenRate * dt;
-        if (healingStep > 0 && entity.health < entity.maxHealth) {
-            entity.health = Math.min(entity.maxHealth, entity.health + healingStep);
-        }
-        if (entity.regenSnapshotTimer >= 1.0) {
-            entity.regenSnapshotTimer -= 1.0;
-            const baseRegen = entity.healthRegen || 0;
-            entity.currentRegenRate = (baseRegen * entity.maxHealth) / SECONDS_TO_FULLY_REGENERATE;
-        }
-    }
-
-    private processSkills(skills: SkillState[], caster: EntityState, _target: EntityState, dt: number, isPlayer1: boolean, casterStatus: { isDead: boolean }) {
-        if (casterStatus.isDead) return;
-        const activeEffects = isPlayer1 ? this.player1ActiveEffects : this.player2ActiveEffects;
-        const activeBuffs = isPlayer1 ? this.player1ActiveBuffs : this.player2ActiveBuffs;
-        skills.forEach(skill => {
-            if (skill.state === 'Startup') {
-                skill.timer -= dt;
-                if (skill.timer <= 0) {
-                    skill.state = 'Ready';
-                    skill.timer = 0;
-                }
-            } else if (skill.state === 'Ready') {
-                const count = skill.count || 1;
-                const interval = skill.interval || 0.1;
-                if (count > 0 && (skill.damage || skill.healAmount)) {
-                    activeEffects.push({
-                        id: skill.id, damage: skill.damage, healAmount: skill.healAmount,
-                        count: count, hitsRemaining: count, interval: interval,
-                        timer: skill.delay || 0, isSingleTarget: skill.isSingleTarget, isAOE: skill.isAOE
-                    });
-                }
-                if (skill.activeDuration && skill.activeDuration > 0) {
-                    skill.state = 'Active';
-                    skill.timer = skill.activeDuration;
-                    this.applySkillBuff(skill, caster, activeBuffs);
-                } else {
-                    skill.state = 'Cooldown';
-                    skill.timer = skill.cooldown;
-                }
-            } else if (skill.state === 'Active') {
-                skill.timer -= dt;
-                if (skill.timer <= 0) {
-                    skill.state = 'Cooldown';
-                    skill.timer = skill.cooldown;
-                    this.removeSkillBuff(skill.id, caster, activeBuffs);
-                }
-            } else if (skill.state === 'Cooldown') {
-                skill.timer -= dt;
-                if (skill.timer <= 0) {
-                    skill.state = 'Ready';
-                    skill.timer = 0;
-                }
-            }
-        });
-    }
-
-    private processActiveEffects(effects: ActiveSkillEffect[], caster: EntityState, target: EntityState, dt: number, isPlayer1: boolean, casterStatus: { isDead: boolean }, targetStatus: { isDead: boolean }) {
-        if (casterStatus.isDead) return;
-        for (let i = effects.length - 1; i >= 0; i--) {
-            const effect = effects[i];
-            if (effect.timer > 0) {
-                effect.timer -= dt;
-            } else {
-                if (effect.hitsRemaining > 0) {
-                    if (effect.damage && !targetStatus.isDead) {
-                        this.dealDamage(caster, target, effect.damage, isPlayer1, false, true);
-                    }
-                    if (effect.healAmount) caster.health = Math.min(caster.maxHealth, caster.health + effect.healAmount);
-                    effect.hitsRemaining--;
-                    if (effect.hitsRemaining > 0) effect.timer = effect.interval;
-                    else effects.splice(i, 1);
-                } else effects.splice(i, 1);
-            }
-        }
-    }
-
-    private processProjectiles(dt: number) {
-        for (let i = this.projectiles.length - 1; i >= 0; i--) {
-            const proj = this.projectiles[i];
-            const direction = proj.isPlayer1Source ? 1 : -1;
-            proj.currentX += proj.speed * dt * direction;
-            const reached = proj.isPlayer1Source ? proj.currentX >= proj.toX : proj.currentX <= proj.toX;
-            if (reached) {
-                const target = proj.isPlayer1Source ? this.player2 : this.player1;
-                this.dealDamage(proj.isPlayer1Source ? this.player1 : this.player2, target, proj.damage, proj.isPlayer1Source, proj.isCrit, false);
-                this.projectiles.splice(i, 1);
-            }
-        }
-    }
-
-    private applySkillBuff(skill: SkillState, entity: EntityState, activeBuffs: ActiveBuff[]) {
-        const bonusDmg = skill.bonusDamage || 0;
-        const bonusHP = skill.bonusMaxHealth || 0;
-        if (bonusDmg === 0 && bonusHP === 0) return;
-        activeBuffs.push({ skillId: skill.id, bonusDamage: bonusDmg, bonusMaxHealth: bonusHP });
-        entity.damage += bonusDmg;
-        if (bonusHP > 0) {
-            entity.maxHealth += bonusHP;
-            entity.health += bonusHP;
-        }
-    }
-
-    private removeSkillBuff(skillId: string, entity: EntityState, activeBuffs: ActiveBuff[]) {
-        const buffIndex = activeBuffs.findIndex(b => b.skillId === skillId);
-        if (buffIndex === -1) return;
-        const buff = activeBuffs[buffIndex];
-        activeBuffs.splice(buffIndex, 1);
-        entity.damage -= buff.bonusDamage;
-        if (buff.bonusMaxHealth > 0) {
-            entity.maxHealth -= buff.bonusMaxHealth;
-            if (entity.health > entity.maxHealth) entity.health = entity.maxHealth;
-        }
-    }
-
-    private processMovementAndCombat(attacker: EntityState, target: EntityState, dt: number, distance: number, wasAliveAtStart: boolean): void {
-        if (!wasAliveAtStart) return;
-        const inRange = distance <= attacker.attackRange;
-        if (!inRange) {
-            attacker.combatState = 'MOVING';
-            if (attacker.isPlayer1) attacker.position += PLAYER_SPEED * dt;
-            else attacker.position -= PLAYER_SPEED * dt;
-            attacker.combatPhase = 'IDLE';
-        } else {
-            attacker.combatState = 'FIGHTING';
-            this.processEntityCombat(attacker, target, dt);
-        }
-    }
-
-    private processEntityCombat(entity: EntityState, target: EntityState, dt: number) {
-        const speedMult = Math.max(0.1, entity.attackSpeed);
-        const windup = entity.baseWindupTime || 0.5;
-        const duration = entity.attackDuration || 1.5;
-        const effectiveWindup = windup / speedMult;
-        const effectiveRecovery = Math.max(0.01, (duration - windup) / speedMult);
-        switch (entity.combatPhase) {
-            case 'IDLE':
-                entity.combatPhase = 'CHARGING';
-                entity.isWindingUp = true;
-                entity.windupTimer = effectiveWindup;
-                break;
-            case 'CHARGING':
-                entity.windupTimer -= dt;
-                if (entity.windupTimer <= 0) {
-                    const distance = Math.abs(entity.position - target.position);
-                    if (distance <= entity.attackRange + 0.1) {
-                        this.performAttack(entity, target);
-                        if (!entity.pendingDoubleHit && Math.random() < entity.doubleDamage) {
-                            if (!target.isDead) this.performAttack(entity, target, true);
-                        }
-                        entity.combatPhase = 'RECOVERING';
-                        entity.isWindingUp = false;
-                        entity.windupTimer = 0;
-                        entity.recoveryTimer = effectiveRecovery;
-                    } else {
-                        entity.windupTimer = 0;
-                        entity.isWindingUp = true;
-                    }
-                }
-                break;
-            case 'RECOVERING':
-                entity.recoveryTimer -= dt;
-                if (entity.recoveryTimer <= 0) {
-                    entity.combatPhase = 'IDLE';
-                    entity.recoveryTimer = 0;
-                }
-                break;
-        }
-    }
-
-    private performAttack(attacker: EntityState, target: EntityState, suppressLog: boolean = false) {
-        let dmg = attacker.damage;
-        let isCrit = false;
-        if (Math.random() < attacker.critChance) {
-            dmg *= attacker.critMulti;
-            isCrit = true;
-        }
-        if (!suppressLog) {
-            this.addLog(isCrit ? 'CRIT' : 'ATTACK', `${attacker.isPlayer1 ? 'Player 1' : 'Player 2'} attacks ${isCrit ? '(CRITICAL!)' : ''}`);
-        }
-        if (attacker.isRanged && attacker.projectileSpeed && attacker.projectileSpeed > 0) {
-            this.projectiles.push({
-                id: this.projectileIdCounter++, fromX: attacker.position, toX: target.position,
-                currentX: attacker.position, speed: attacker.projectileSpeed, isPlayer1Source: attacker.isPlayer1,
-                damage: dmg, targetId: target.id, isCrit: isCrit
-            });
-        } else {
-            this.dealDamage(attacker, target, dmg, attacker.isPlayer1, isCrit);
-        }
-    }
-
-    private dealDamage(attacker: EntityState, target: EntityState, amount: number, isPlayer1Source: boolean, _isCrit: boolean, isSkillDamage: boolean = false) {
-        let finalDamage = amount;
-        if (target.shield > 0) finalDamage = Math.max(0, amount - target.shield);
-        if (finalDamage <= 0) return;
-        if (Math.random() < target.blockChance) {
-            this.addLog('BLOCK', `${isPlayer1Source ? 'Player 2' : 'Player 1'} blocked the attack!`);
-            return;
-        }
-        const damageDealt = Math.min(finalDamage, target.health);
-        if (isPlayer1Source) this.totalPlayer1DamageDealt += damageDealt;
-        else this.totalPlayer2DamageDealt += damageDealt;
-        target.health -= finalDamage;
-        if (!isSkillDamage) {
-            const lifesteal = attacker.lifesteal * finalDamage;
-            if (lifesteal > 0) {
-                attacker.health = Math.min(attacker.maxHealth, attacker.health + lifesteal);
-            }
-        }
-        if (target.health <= 0) {
-            target.isDead = true;
-            target.health = 0;
-            this.addLog('DEATH', `${isPlayer1Source ? 'Player 2' : 'Player 1'} died!`);
-        }
-    }
-
-    private getResult(): PvpBattleResult {
-        const isTimeout = this.time >= PVP_TIME_LIMIT;
-        const p1HpPercent = this.player1.health / this.player1.maxHealth;
-        const p2HpPercent = this.player2.health / this.player2.maxHealth;
-        let winner: 'player1' | 'player2' | 'tie';
-        if (this.player1.isDead && this.player2.isDead) winner = 'tie';
-        else if (this.player1.isDead) winner = 'player2';
-        else if (this.player2.isDead) winner = 'player1';
+        while (!this.finished) this.step();
+        const a = this.setup.ally;
+        const b = this.setup.enemy;
+        const aliveA = !a.killed;
+        const aliveB = !b.killed;
+        const timeout = aliveA && aliveB;
+        let winner: PvpBattleResult['winner'];
+        if (!aliveA && !aliveB) winner = 'tie';
+        else if (!aliveB) winner = 'player1';
+        else if (!aliveA) winner = 'player2';
         else {
-            const p1HpLost = 1 - p1HpPercent;
-            const p2HpLost = 1 - p2HpPercent;
-            const EPSILON = 0.00001;
-            if (Math.abs(p1HpLost - p2HpLost) < EPSILON) winner = 'tie';
-            else if (p1HpLost < p2HpLost) winner = 'player1';
-            else winner = 'player2';
+            // Timeout: the higher Hp/HpMax FRACTION wins (0x7798128).
+            const fa = a.hp / a.stats.hpMax;
+            const fb = b.hp / b.stats.hpMax;
+            winner = fa > fb ? 'player1' : fb > fa ? 'player2' : 'tie';
         }
         return {
-            winner, player1Hp: this.player1.health, player1MaxHp: this.player1.maxHealth,
-            player1HpPercent: p1HpPercent * 100, player2Hp: this.player2.health,
-            player2MaxHp: this.player2.maxHealth, player2HpPercent: p2HpPercent * 100,
-            time: this.time, timeout: isTimeout
+            winner,
+            player1Hp: Math.max(0, a.hp),
+            player1MaxHp: a.stats.hpMax,
+            player1HpPercent: Math.max(0, a.hp) / a.stats.hpMax,
+            player2Hp: Math.max(0, b.hp),
+            player2MaxHp: b.stats.hpMax,
+            player2HpPercent: Math.max(0, b.hp) / b.stats.hpMax,
+            time: this.time,
+            timeout,
         };
     }
 
     public getSnapshot() {
+        const ent = (u: Unit, isPlayer1: boolean): EntityState => ({
+            id: u.id,
+            isPlayer1,
+            health: Math.max(0, u.hp),
+            maxHealth: u.stats.hpMax,
+            damage: u.stats.dmg,
+            shield: 0,
+            attackSpeed: u.stats.attackSpeedMulti,
+            baseWindupTime: u.windupMicro / 1e6,
+            attackDuration: u.durationMicro / 1e6,
+            windupTimer: u.timerMicro / 1e6,
+            recoveryTimer: 0,
+            isWindingUp: u.state === 'windingUp',
+            combatPhase: u.state === 'windingUp' ? 'CHARGING' : u.state === 'onCooldown' ? 'RECOVERING' : 'IDLE',
+            pendingDoubleHit: u.doubleAttack,
+            isRanged: !!u.projectile,
+            projectileSpeed: u.projectile?.speed,
+            attackRange: u.attackRange,
+            position: u.pos.x,
+            combatState: u.targetInRange ? 'FIGHTING' : 'MOVING',
+            isDead: u.killed,
+            critChance: u.stats.criticalChance,
+            critMulti: u.stats.criticalMulti,
+            blockChance: u.stats.blockChance,
+            lifesteal: u.stats.lifeSteal,
+            doubleDamage: u.stats.doubleDamageChance,
+            healthRegen: u.stats.healthRegen,
+            initialHealth: u.baseHpMax,
+            currentRegenRate: u.stats.healthRegen * u.stats.hpMaxNoMulti,
+            regenSnapshotTimer: 0,
+        });
+        const skillStates = (isAlly: boolean): SkillState[] =>
+            this.mgr
+                .snapshot()
+                .filter((sk) => sk.isAlly === isAlly)
+                .map((sk) => ({
+                    id: sk.id,
+                    activeDuration: 0,
+                    cooldown: 0,
+                    state: sk.state === 'ready' ? 'Ready' : sk.state === 'active' ? 'Active' : 'Cooldown',
+                    timer: sk.secondsLeft,
+                }));
+        const buffs = (isAlly: boolean): ActiveBuff[] =>
+            this.mgr
+                .snapshot()
+                .filter((sk) => sk.isAlly === isAlly && sk.state === 'active' && BUFF_IDS.has(sk.id))
+                .map((sk) => ({ skillId: sk.id, bonusDamage: 0, bonusMaxHealth: 0 }));
         return {
-            time: this.time, player1: { ...this.player1 }, player2: { ...this.player2 },
-            player1Skills: this.player1Skills.map(s => ({ ...s })),
-            player2Skills: this.player2Skills.map(s => ({ ...s })),
-            player1ActiveEffects: this.player1ActiveEffects.map(e => ({ ...e })),
-            player2ActiveEffects: this.player2ActiveEffects.map(e => ({ ...e })),
-            player1ActiveBuffs: this.player1ActiveBuffs.map(b => ({ ...b })),
-            player2ActiveBuffs: this.player2ActiveBuffs.map(b => ({ ...b })),
-            projectiles: this.projectiles.map(p => ({ ...p })),
-            logs: [...this.logs]
+            time: this.time,
+            player1: ent(this.setup.ally, true),
+            player2: ent(this.setup.enemy, false),
+            player1Skills: skillStates(true),
+            player2Skills: skillStates(false),
+            player1ActiveEffects: [] as ActiveSkillEffect[],
+            player2ActiveEffects: [] as ActiveSkillEffect[],
+            player1ActiveBuffs: buffs(true),
+            player2ActiveBuffs: buffs(false),
+            projectiles: this.scene.projectiles
+                .filter((pr) => !pr.destroyed)
+                .map((pr) => ({
+                    id: pr.id,
+                    fromX: pr.pos.x,
+                    toX: pr.pos.x + Math.sign(pr.vel.x),
+                    currentX: pr.pos.x,
+                    speed: pr.speed,
+                    isPlayer1Source: pr.isAllied,
+                    damage: pr.srcStats.dmg,
+                    targetId: -1,
+                    isCrit: false,
+                })),
+            logs: this.scene.events.slice(-80).map((e) => ({
+                time: e.tick / 10,
+                event: e.heal ? 'heal' : e.dodged ? 'dodge' : e.blocked ? 'block' : e.critical ? 'crit' : 'hit',
+                details: `${Math.round(e.dmg).toLocaleString()} on #${e.targetId}`,
+            })) as BattleLogEntry[],
         };
     }
 }
 
+const BUFF_IDS = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+
+function toLoadout(p: PvpPlayerStats): PvpLoadout {
+    const isRanged = p.weaponInfo ? (p.weaponInfo.AttackRange ?? 0) > 1.0 : !!p.isRanged;
+    return {
+        health: p.baseHealth ?? p.hp,
+        stats: {
+            dmg: p.damage,
+            moveSpeed: 2.0,
+            criticalChance: p.critChance,
+            criticalMulti: p.critMulti,
+            blockChance: p.blockChance,
+            dodgeChance: 0,
+            healthRegen: p.healthRegen,
+            lifeSteal: p.lifesteal,
+            doubleDamageChance: p.doubleDamage,
+            attackSpeedMulti: p.attackSpeed,
+            reflectChance: p.reflectChance ?? 0,
+        },
+        attackRange: p.weaponInfo?.AttackRange ?? 0.3,
+        windupTime: p.weaponInfo?.WindupTime ?? 0.5,
+        attackDuration: p.weaponInfo?.AttackDuration ?? 1.5,
+        projectile: isRanged
+            ? { speed: p.projectileSpeed || 15, collisionRadius: 0.2, affectedByGravity: false }
+            : undefined,
+        petCount: p.petCount ?? 0,
+        skillCount: p.skillCount ?? p.skills.length,
+        hasMount: p.hasMount ?? false,
+    };
+}
+
+function addPvpSkills(mgr: SkillManager, p: PvpPlayerStats, isAlly: boolean): void {
+    p.skills.forEach((sk, slot) => {
+        if (!sk) return;
+        mgr.addSkill({
+            id: sk.id,
+            slot,
+            isAlly,
+            damage: sk.damage ?? 0,
+            health: sk.health ?? 0,
+            // The CDR stat scales only the cooldown length; the old engine dropped it.
+            cooldown: Math.max(0.5, sk.cooldown * (1 - (p.skillCooldownMulti || 0))),
+            activeDuration: sk.duration ?? 0,
+        });
+    });
+}
+
 export function simulatePvpBattleMulti(player1Stats: PvpPlayerStats, player2Stats: PvpPlayerStats, runs: number = 1000) {
     const results: PvpBattleResult[] = [];
-    let p1Wins = 0, p2Wins = 0, ties = 0, totalTime = 0, timeouts = 0;
-    for (let i = 0; i < runs; i++) {
-        const engine = new PvpBattleEngine(player1Stats, player2Stats);
+    let p1Wins = 0,
+        p2Wins = 0,
+        ties = 0,
+        totalTime = 0,
+        timeouts = 0;
+    // Seeded runs: the same matchup always gives the same rates.
+    for (let i = 1; i <= runs; i++) {
+        const engine = new PvpBattleEngine(player1Stats, player2Stats, i);
         const result = engine.simulate();
         results.push(result);
         if (result.winner === 'player1') p1Wins++;
@@ -649,9 +493,12 @@ export function simulatePvpBattleMulti(player1Stats: PvpPlayerStats, player2Stat
         if (result.timeout) timeouts++;
     }
     return {
-        player1WinRate: (p1Wins / runs) * 100, player2WinRate: (p2Wins / runs) * 100,
-        tieRate: (ties / runs) * 100, avgTime: totalTime / runs,
-        timeoutRate: (timeouts / runs) * 100, results
+        player1WinRate: (p1Wins / runs) * 100,
+        player2WinRate: (p2Wins / runs) * 100,
+        tieRate: (ties / runs) * 100,
+        avgTime: totalTime / runs,
+        timeoutRate: (timeouts / runs) * 100,
+        results,
     };
 }
 
@@ -674,7 +521,7 @@ export function enemyConfigToPvpStats(
     let critMulti = passives.CriticalMulti?.enabled ? 1 + (passives.CriticalMulti.value / 100) : 1.5;
     let blockChance = passives.BlockChance?.enabled ? passives.BlockChance.value / 100 : 0;
     let lifesteal = passives.LifeSteal?.enabled ? passives.LifeSteal.value / 100 : 0;
-    let doubleDamage = passives.DoubleDamageChance?.enabled ? passives.DoubleDamageChance.value / 100 : 1.0;
+    let doubleDamage = passives.DoubleDamageChance?.enabled ? passives.DoubleDamageChance.value / 100 : 0;
     let healthRegen = passives.HealthRegen?.enabled ? passives.HealthRegen.value / 100 : 0;
     let damageMulti = passives.DamageMulti?.enabled ? passives.DamageMulti.value / 100 : 0;
     let healthMulti = passives.HealthMulti?.enabled ? passives.HealthMulti.value / 100 : 0;
@@ -766,6 +613,18 @@ export function enemyConfigToPvpStats(
 
     return {
         hp: Math.round(Math.max(1, pvpTotalHp)), damage: enemyConfig.stats.damage,
+        // The builder's HP field IS the in-game health; the engine applies the shared rule.
+        baseHealth: enemyConfig.stats.hp || 10000,
+        petCount: (enemyConfig.pets || []).filter(Boolean).length,
+        skillCount: (enemyConfig.skills || []).filter(Boolean).length,
+        hasMount: !!enemyConfig.mount,
+        matchTimerSeconds: pvpBaseConfig?.PvpMatchTimerSeconds ?? 60,
+        pvpHp: {
+            base: pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0,
+            pet: pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5,
+            skill: pvpBaseConfig?.PvpHpSkillMultiplier ?? 0.5,
+            mount: pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0,
+        },
         attackSpeed: 1.0 + attackSpeedBonus,
         weaponInfo: weaponInfo ? {
             ...weaponInfo,
@@ -789,9 +648,12 @@ export function aggregatedStatsToPvpStats(
         const skillData = skillLibrary?.[skill.id];
         const levelIdx = Math.max(0, skill.level - 1);
         const baseDamage = skillData?.DamagePerLevel?.[levelIdx] || 0;
-        const totalDamageMulti = (stats.skillDamageMultiplier || 1) + (stats.damageMultiplier || 1) - 1;
-        let damage = baseDamage * totalDamageMulti;
-        const health = (skillData?.HealthPerLevel?.[levelIdx] || 0) * totalDamageMulti;
+        // Verified layers: the skill common layer is the DamageMulti/HealthMulti substat
+        // pools only; tech-tree generic Damage never reaches ActiveSkill.
+        const dmgMulti = (1 + (stats.secondaryDamageMulti || 0)) * (stats.skillDamageMultiplier || 1);
+        const hpMulti = (1 + (stats.secondaryHealthMulti || 0)) * (stats.skillHealthMultiplier || 1);
+        let damage = baseDamage * dmgMulti;
+        const health = (skillData?.HealthPerLevel?.[levelIdx] || 0) * hpMulti;
         const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
         if (mechanics.descriptionIsPerHit && !mechanics.damageIsPerHit) damage /= mechanics.count;
         return {
@@ -849,12 +711,27 @@ export function aggregatedStatsToPvpStats(
         }
     }
 
+    // Arena battles carry the InLeagueBattle condition: the LeagueBattle tech nodes apply
+    // here and nowhere else.
+    const league = stats.contextBonuses?.league ?? { dmg: 0, hp: 0 };
     return {
-        hp: Math.round(Math.max(1, pvpTotalHp)), damage: stats.totalDamage,
+        hp: Math.round(Math.max(1, pvpTotalHp)), damage: stats.totalDamage * (1 + league.dmg),
+        baseHealth: stats.totalHealth * (1 + league.hp),
+        skillCount: skills.length,
+        petCount: 0,
+        hasMount: false,
+        matchTimerSeconds: pvpBaseConfig?.PvpMatchTimerSeconds ?? 60,
+        pvpHp: {
+            base: pvpBaseConfig?.PvpHpBaseMultiplier ?? 1.0,
+            pet: pvpBaseConfig?.PvpHpPetMultiplier ?? 0.5,
+            skill: pvpBaseConfig?.PvpHpSkillMultiplier ?? 0.5,
+            mount: pvpBaseConfig?.PvpHpMountMultiplier ?? 2.0,
+        },
         attackSpeed: stats.attackSpeedMultiplier || 1, weaponInfo,
         isRanged: weaponInfo ? (weaponInfo.AttackRange ?? 0) > 1.0 : stats.isRangedWeapon,
         projectileSpeed: stats.projectileSpeed, critChance: stats.criticalChance || 0,
         critMulti: stats.criticalDamage || 1.5, blockChance: stats.blockChance || 0,
+        reflectChance: stats.reflectChance || 0,
         lifesteal: stats.lifeSteal || 0, doubleDamage: stats.doubleDamageChance || 0,
         healthRegen: stats.healthRegen || 0, damageMulti: 0, healthMulti: 0,
         skillDamageMulti: stats.skillDamageMultiplier || 1, skillCooldownMulti: stats.skillCooldownReduction || 0,

@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { UserProfile, MountSlot } from '../types/Profile';
+
+/** The seasonal fairy selection carried by each side of a comparison. */
+export type FairySelection = NonNullable<UserProfile['misc']['fairy']>;
 import { useProfile } from './ProfileContext';
 
 
@@ -32,6 +35,9 @@ interface ComparisonContextType {
     originalUseSkinWindup: boolean | null;
     testUseSkinWindup: boolean | null;
     snapshotUseSkinWindup: boolean | null;
+    originalFairy: FairySelection | null;
+    testFairy: FairySelection | null;
+    snapshotFairy: FairySelection | null;
 
     enterCompareMode: () => void;
     exitCompareMode: () => void;
@@ -53,6 +59,8 @@ interface ComparisonContextType {
     updateTestSkillAscension: (level: number) => void;
     updateOriginalUseSkinWindup: (val: boolean) => void;
     updateTestUseSkinWindup: (val: boolean) => void;
+    updateOriginalFairy: (fairy: FairySelection) => void;
+    updateTestFairy: (fairy: FairySelection) => void;
     keepOriginal: () => void;
     applyTestBuild: () => void;
     loadProfileIntoTest: (sourceProfile: UserProfile) => void;
@@ -97,6 +105,9 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [originalUseSkinWindup, setOriginalUseSkinWindup] = useState<boolean | null>(null);
     const [testUseSkinWindup, setTestUseSkinWindup] = useState<boolean | null>(null);
     const [snapshotUseSkinWindup, setSnapshotUseSkinWindup] = useState<boolean | null>(null);
+    const [originalFairy, setOriginalFairy] = useState<FairySelection | null>(null);
+    const [testFairy, setTestFairy] = useState<FairySelection | null>(null);
+    const [snapshotFairy, setSnapshotFairy] = useState<FairySelection | null>(null);
     const [isCompactStats, setIsCompactStats] = useState(true);
     const [excludeSubstats, setExcludeSubstatsState] = useState(() => localStorage.getItem('fm_exclude_substats') === 'true');
 
@@ -149,6 +160,11 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTestUseSkinWindup(currentUseSkinWindup);
         setSnapshotUseSkinWindup(currentUseSkinWindup);
 
+        const currentFairy: FairySelection = profile.misc.fairy ?? { name: null, level: 1 };
+        setOriginalFairy({ ...currentFairy });
+        setTestFairy({ ...currentFairy });
+        setSnapshotFairy({ ...currentFairy });
+
         setIsComparing(true);
     }, [profile]);
 
@@ -181,6 +197,9 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setOriginalUseSkinWindup(null);
         setTestUseSkinWindup(null);
         setSnapshotUseSkinWindup(null);
+        setOriginalFairy(null);
+        setTestFairy(null);
+        setSnapshotFairy(null);
     }, []);
 
     const updateOriginalItem = useCallback((slot: keyof UserProfile['items'], item: UserProfile['items'][keyof UserProfile['items']]) => {
@@ -255,6 +274,14 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTestUseSkinWindup(val);
     }, []);
 
+    const updateOriginalFairy = useCallback((fairy: FairySelection) => {
+        setOriginalFairy(fairy);
+    }, []);
+
+    const updateTestFairy = useCallback((fairy: FairySelection) => {
+        setTestFairy(fairy);
+    }, []);
+
     const keepOriginal = useCallback(() => {
         if (originalItems) {
             updateNestedProfile('items', originalItems);
@@ -275,12 +302,13 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (originalPetAscension !== null) miscUpdates.petAscensionLevel = originalPetAscension;
         if (originalSkillAscension !== null) miscUpdates.skillAscensionLevel = originalSkillAscension;
         if (originalUseSkinWindup !== null) miscUpdates.useSkinWindup = originalUseSkinWindup;
+        if (originalFairy !== null) miscUpdates.fairy = originalFairy;
         
         if (Object.keys(miscUpdates).length > 0) {
             updateNestedProfile('misc', miscUpdates);
         }
         exitCompareMode();
-    }, [originalItems, originalMount, originalPets, originalSkills, originalForgeAscension, originalMountAscension, originalPetAscension, originalSkillAscension, originalUseSkinWindup, updateNestedProfile, exitCompareMode]);
+    }, [originalItems, originalMount, originalPets, originalSkills, originalForgeAscension, originalMountAscension, originalPetAscension, originalSkillAscension, originalUseSkinWindup, originalFairy, updateNestedProfile, exitCompareMode]);
 
     const applyTestBuild = useCallback(() => {
         if (testItems) {
@@ -302,12 +330,13 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (testPetAscension !== null) miscUpdates.petAscensionLevel = testPetAscension;
         if (testSkillAscension !== null) miscUpdates.skillAscensionLevel = testSkillAscension;
         if (testUseSkinWindup !== null) miscUpdates.useSkinWindup = testUseSkinWindup;
+        if (testFairy !== null) miscUpdates.fairy = testFairy;
 
         if (Object.keys(miscUpdates).length > 0) {
             updateNestedProfile('misc', miscUpdates);
         }
         exitCompareMode();
-    }, [testItems, testMount, testPets, testSkills, testForgeAscension, testMountAscension, testPetAscension, testSkillAscension, testUseSkinWindup, updateNestedProfile, exitCompareMode]);
+    }, [testItems, testMount, testPets, testSkills, testForgeAscension, testMountAscension, testPetAscension, testSkillAscension, testUseSkinWindup, testFairy, updateNestedProfile, exitCompareMode]);
 
     const loadProfileIntoTest = useCallback((sourceProfile: UserProfile) => {
         // Import build-relevant data from another profile into the test side
@@ -321,6 +350,7 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTestPetAscension(sourceProfile.misc.petAscensionLevel || 0);
         setTestSkillAscension(sourceProfile.misc.skillAscensionLevel || 0);
         setTestUseSkinWindup(sourceProfile.misc.useSkinWindup !== false);
+        setTestFairy(sourceProfile.misc.fairy ? { ...sourceProfile.misc.fairy } : { name: null, level: 1 });
     }, []);
 
     return (
@@ -353,6 +383,9 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             originalUseSkinWindup,
             testUseSkinWindup,
             snapshotUseSkinWindup,
+            originalFairy,
+            testFairy,
+            snapshotFairy,
             enterCompareMode,
             exitCompareMode,
             updateOriginalItem,
@@ -373,6 +406,8 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             updateTestSkillAscension,
             updateOriginalUseSkinWindup,
             updateTestUseSkinWindup,
+            updateOriginalFairy,
+            updateTestFairy,
             keepOriginal,
             applyTestBuild,
             loadProfileIntoTest,
