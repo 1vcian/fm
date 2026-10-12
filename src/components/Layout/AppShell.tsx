@@ -183,17 +183,16 @@ export default function AppShell() {
             }
         }
 
-        // Only four ages have an extracted background texture; the rest render their age color.
-        // (Pointing --theme-url at a missing file made the infinite animation re-request it.)
+        // Each age names its background file; themeUrl below uses it only if TextureManifest lists it.
         const visuals: { id: string; name: string; anim: string; bg: string; texture: string | null }[] = [
-            { id: 'primitive', name: "Primitive", anim: "primitive-animation", bg: "bg-age-primitive", texture: null },
-            { id: 'medieval', name: "Medieval", anim: "medieval-animation", bg: "bg-age-medieval", texture: null },
-            { id: 'earlymodern', name: "Early-Modern", anim: "earlymodern-animation", bg: "bg-age-earlymodern", texture: null },
-            { id: 'modern', name: "Modern", anim: "modern-animation", bg: "bg-age-modern", texture: null },
-            { id: 'space', name: "Space", anim: "space-animation", bg: "bg-age-space", texture: null },
+            { id: 'primitive', name: "Primitive", anim: "primitive-animation", bg: "bg-age-primitive", texture: "PrimitiveBackground.png" },
+            { id: 'medieval', name: "Medieval", anim: "medieval-animation", bg: "bg-age-medieval", texture: "MedievalBackground.png" },
+            { id: 'earlymodern', name: "Early-Modern", anim: "earlymodern-animation", bg: "bg-age-earlymodern", texture: "EarlyModernBackground.png" },
+            { id: 'modern', name: "Modern", anim: "modern-animation", bg: "bg-age-modern", texture: "ModernBackground.png" },
+            { id: 'space', name: "Space", anim: "space-animation", bg: "bg-age-space", texture: "SpaceBackground.png" },
             { id: 'interstellar', name: "Interstellar", anim: "interstellar-animation", bg: "bg-age-interstellar", texture: "InterstellarBackground.png" },
             { id: 'multiverse', name: "Multiverse", anim: "multiverse-animation", bg: "bg-age-multiverse", texture: "MultiverseBackground.png" },
-            { id: 'quantum', name: "Quantum", anim: "quantum-animation", bg: "bg-age-quantum", texture: null },
+            { id: 'quantum', name: "Quantum", anim: "quantum-animation", bg: "bg-age-quantum", texture: "QuantumBackground.png" },
             { id: 'underworld', name: "Underworld", anim: "underworld-animation", bg: "bg-age-underworld", texture: "UnderworldBackground.png" },
             { id: 'divine', name: "Divine", anim: "divine-animation", bg: "bg-age-divine", texture: "DivineBackground.png" },
         ];
@@ -214,11 +213,6 @@ export default function AppShell() {
     }, []);
     const textureVersion = resolveTextureVersion(selectedVersion) ?? selectedVersion;
     const themeUrl = maxAgeVisuals.texture && textureNames?.has(maxAgeVisuals.texture)
-        ? `url(${import.meta.env.BASE_URL}Texture2D/${textureVersion ? `${textureVersion}/` : ''}${maxAgeVisuals.texture})`
-        : 'none';
-
-    const textureVersion = resolveTextureVersion(selectedVersion) ?? selectedVersion;
-    const themeUrl = maxAgeVisuals.texture
         ? `url(${import.meta.env.BASE_URL}Texture2D/${textureVersion ? `${textureVersion}/` : ''}${maxAgeVisuals.texture})`
         : 'none';
 
