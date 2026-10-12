@@ -1,0 +1,22 @@
+{
+  "EnemyHpDifficultyMulti": 6000000.0,
+  "EnemyDmgDifficultyMulti": 6000000.0,
+  "CoinsPerEnemy": 1,
+  "DifficultyScaling": [
+    {
+      "DifficultyIdx": 0,
+      "HpMulti": 1.0,
+      "DmgMulti": 1.0
+    },
+    {
+      "DifficultyIdx": 1,
+      "HpMulti": 6000000.0,
+      "DmgMulti": 6000000.0
+    },
+    {
+      "DifficultyIdx": 2,
+      "HpMulti": 36000000000000.0,
+      "DmgMulti": 36000000000000.0
+    }
+  ]
+}
