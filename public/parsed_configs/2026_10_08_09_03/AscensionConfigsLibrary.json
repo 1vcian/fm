@@ -1,0 +1,571 @@
+{
+  "Forge": {
+    "Type": "Forge",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": {
+          "Amount": 3000000,
+          "Currency": "Coins"
+        },
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Equipment",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Equipment",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": {
+          "Amount": 3000000,
+          "Currency": "Coins"
+        },
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Equipment",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Equipment",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": {
+          "Amount": 3000000,
+          "Currency": "Coins"
+        },
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Equipment",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Equipment",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  },
+  "Mounts": {
+    "Type": "Mounts",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Mount",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Mount",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Mount",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Mount",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Mount",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Mount",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  },
+  "Pets": {
+    "Type": "Pets",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Pet",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Pet",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Pet",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Pet",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Pet",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "Pet",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  },
+  "Skills": {
+    "Type": "Skills",
+    "AscensionConfigPerLevel": [
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "ActiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "ActiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "PassiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "PassiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 49.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "ActiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "ActiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "PassiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "PassiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 2499.0
+          }
+        ]
+      },
+      {
+        "Cost": null,
+        "StatContributions": [
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "ActiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "ActiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Damage",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "PassiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          },
+          {
+            "StatNode": {
+              "UniqueStat": {
+                "StatType": "Health",
+                "StatNature": "Multiplier"
+              },
+              "LegacyTarget": null,
+              "Layer": "Ascensions",
+              "Condition": "None",
+              "Target": {
+                "Kind": "PassiveSkill",
+                "Qualifiers": []
+              }
+            },
+            "Value": 124999.0
+          }
+        ]
+      }
+    ]
+  }
+}

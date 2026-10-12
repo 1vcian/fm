@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
-import { useTreeModifiers, useClanNodeMax } from '../hooks/useCalculatedStats';
+import { useTreeModifiers } from '../hooks/useCalculatedStats';
+import { useTreeLimits } from '../hooks/useTreeLimits';
 import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
@@ -13,6 +14,7 @@ import { formatNumber } from '../utils/format';
 import { useBattleSimulation } from '../hooks/useBattleSimulation';
 import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
 import { BattleResult } from '../utils/BattleSimulator';
+import { calculateMissionPower, missionEnemyStats } from '../engine/enemies';
 
 interface Reward {
     Amount: number;
@@ -42,6 +44,20 @@ interface MissionLevel {
     MinLevel: number;
     MaxLevel: number;
 }
+
+/** AscensionStarsBonusLibrary row: a bonus unlocked once the total ascension stars reach RequiredStars. */
+interface AscensionStarsBonusRow {
+    RequiredStars: number;
+    BonusStats?: {
+        Stats?: {
+            StatNode?: { UniqueStat?: { StatType?: string }; Target?: { Kind?: string; Qualifiers?: { Type: string; Value: number }[] } };
+            Value: number;
+        }[];
+    };
+}
+
+/** CurrencyType.GuildPotions in the game's enum. */
+const GUILD_POTIONS_CURRENCY = 11;
 
 interface MissionReward {
     Level: number;
@@ -160,8 +176,10 @@ export default function MissionSolo() {
     const { data: rewardLibrary } = useGameData<Record<string, MissionReward>>('MissionRewardLibrary.json');
     const { data: allMemberRewardLibrary } = useGameData<Record<string, MissionAllMemberReward>>('MissionAllMemberRewardLibrary.json');
     const { data: baseConfig } = useGameData<MissionBaseConfig>('MissionBaseConfig.json');
+    const { data: itemBalancingConfig } = useGameData<{ PlayerPowerDamageMultiplier: number }>('ItemBalancingConfig.json');
     const { data: rallyTimeLibrary } = useGameData<Record<string, MissionRallyTime>>('MissionRallyTimeLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
+    const { data: ascensionStarsBonusLibrary } = useGameData<Record<string, AscensionStarsBonusRow>>('AscensionStarsBonusLibrary.json');
 
     const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;
 
@@ -238,7 +256,7 @@ export default function MissionSolo() {
 
     // Clan tech tree boost to mission rewards + sandbox override.
     const treeModifiers = useTreeModifiers();
-    const clanMax = useClanNodeMax();
+    const treeLimits = useTreeLimits();
     const profileMissionRewardBonus = treeModifiers['MissionRewards'] || 0;
     const defaultAscension =
         (profile?.misc?.mountAscensionLevel || 0) +
@@ -248,50 +266,111 @@ export default function MissionSolo() {
 
     const [sandbox, setSandbox] = useState<Record<string, number>>({});
     const missionRewardBonus = sandbox.missionRewards ?? profileMissionRewardBonus;
+    const profileGuildPotionsFromMissions = treeModifiers['GuildPotionsFromMissions'] || 0;
+    const guildPotionsFromMissions = sandbox.guildPotionsFromMissions ?? profileGuildPotionsFromMissions;
     const ascensionStars = sandbox.ascensionStars ?? defaultAscension;
+    // The dropdown reaches the last AscensionStarsBonusLibrary threshold (12 in 2026_10_08_09_03).
+    const maxAscensionStars = useMemo(() => {
+        const rows = Object.values(ascensionStarsBonusLibrary ?? {});
+        return Math.max(ascensionStars, ...rows.map(r => r.RequiredStars), 0);
+    }, [ascensionStarsBonusLibrary, ascensionStars]);
 
     const isSandboxModified = useMemo(() => {
         return (
             Math.abs(missionRewardBonus - profileMissionRewardBonus) > 1e-9 ||
+            Math.abs(guildPotionsFromMissions - profileGuildPotionsFromMissions) > 1e-9 ||
             ascensionStars !== defaultAscension
         );
-    }, [missionRewardBonus, profileMissionRewardBonus, ascensionStars, defaultAscension]);
+    }, [missionRewardBonus, profileMissionRewardBonus, guildPotionsFromMissions, profileGuildPotionsFromMissions, ascensionStars, defaultAscension]);
 
     const missionSandbox = {
         reset: () => setSandbox({}),
         fields: [
-            { key: 'missionRewards', label: 'Mission rewards', value: missionRewardBonus, profileValue: profileMissionRewardBonus, min: 0, max: clanMax['MissionRewards'] || 0.1, step: 0.005, onChange: (v: number) => setSandbox(p => ({ ...p, missionRewards: v })) },
+            { key: 'missionRewards', label: 'Mission rewards', value: missionRewardBonus, profileValue: profileMissionRewardBonus, min: 0, ...treeLimits.clan('MissionRewards'), onChange: (v: number) => setSandbox(p => ({ ...p, missionRewards: v })) },
+            { key: 'guildPotionsFromMissions', label: 'Guild potions from missions', value: guildPotionsFromMissions, profileValue: profileGuildPotionsFromMissions, min: 0, ...treeLimits.clan('GuildPotionsFromMissions'), onChange: (v: number) => setSandbox(p => ({ ...p, guildPotionsFromMissions: v })) },
         ],
+    };
+
+    // Ascension stars: every AscensionStarsBonusLibrary row with RequiredStars <= stars adds its
+    // Bonus on the GuildPotions currency (+5% per star since 2026_09_08; it was +10% before).
+    // StatContribution.Value is an F64 (32.32 fixed point; the JSON holds raw / 2^32 exactly).
+    // Stats.AddStatContribution(StatContribution) (0x7863B84) converts each one with
+    // FD6.op_Implicit(F64) -> FD6.FromF64 (0x71961B4): Int128(raw) x 1e6 >> 32, i.e. floored to
+    // the millionth, and Stats.AddStatContribution(node, FD6) (0x7863054) then sums the FD6
+    // values per node. Returned as a number holding that exact FD6 sum.
+    const starBonusAt = (stars: number): number => {
+        if (!ascensionStarsBonusLibrary) return 0;
+        let sumFd6 = 0n;
+        for (const row of Object.values(ascensionStarsBonusLibrary)) {
+            if (row.RequiredStars > stars) continue;
+            for (const st of row.BonusStats?.Stats ?? []) {
+                const target = st.StatNode?.Target;
+                const isPotions = target?.Kind === 'Currency'
+                    && (target.Qualifiers ?? []).some(q => q.Type === 'CurrencyType' && q.Value === GUILD_POTIONS_CURRENCY);
+                if (st.StatNode?.UniqueStat?.StatType === 'Bonus' && isPotions) {
+                    sumFd6 += (BigInt(Math.round(st.Value * 4294967296)) * 1000000n) >> 32n;
+                }
+            }
+        }
+        return Number(sumFd6) / 1e6;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const starPotionBonus = useMemo(() => starBonusAt(ascensionStars), [ascensionStarsBonusLibrary, ascensionStars]);
+
+    /**
+     * CurrencyReward.ScaledAmount (0x786D2F0), verified in the 2026_10_08_09_03 binary:
+     * - CurrencyReward.Consume (0x786D424) passes GetTotalStats (0x77B3AAC), whose
+     *   CalculateTotalStats (0x77B3AF0) includes GetAscensionStarsStats (0x77E75B0) and
+     *   GetGuildTechTreeBonus (0x77AE4FC).
+     * - ClanTechTreeRewardScaling.GetStatSource (0x7821704): MissionRewardSource -> Source 33.
+     * - Target = Currency + {CurrencyType, Source 33} (StatTarget.AddQualifier 0x7864C94 keeps the
+     *   qualifiers sorted); StatHelper.CalculateValueFromStats (0x78605C4) gathers the target and
+     *   every qualifier subset (GetDependencies 0x7860B8C), sums per StatLayer (LayerBucket.Add
+     *   0x7860320), applies layer None first as x(default 1 + sum) (StatConfigLibrary Bonus/
+     *   Multiplier DefaultValue 1), then every other layer as x(1 + sum).
+     * - Matching nodes: ascension stars {CurrencyType 11} Layer None (AscensionStarsBonusLibrary),
+     *   MissionRewards {Source 33} and GuildPotionsFromMissions {CurrencyType 11, Source 33} both
+     *   Layer TechTree (TechNodesLibrary; GuildTechTreeHelpers.ToClanLayer 0x78227C8 only moves
+     *   Damage/Health multipliers, so they stay in one layer and add).
+     * - FD6 math (6 decimals, op_Multiply 0x7197468 truncates), FD6.RoundToInt (0x719864C) rounds
+     *   half up.
+     * - Inputs to FD6: clan tech values are FD6 already (GuildTechTreeUpgradeLibrary.ValuePerLevel
+     *   is FD6; GuildTechTreeHelpers.ComputeBonus 0x7821144 adds ValueAtLevel 0x7821CCC = FD6(level)
+     *   x ValuePerLevel with AddStatContribution(node, FD6), no float step), so rounding the JS
+     *   value to the millionth recovers the exact FD6. Ascension star values are F64 and are
+     *   floored per contribution (see starBonusAt).
+     *   GuildPotions: RoundHalfUp(Amount x (1 + stars bonus) x (1 + MissionRewards + GuildPotionsFromMissions))
+     *   other:        RoundHalfUp(Amount x (1 + MissionRewards))
+     */
+    const scaleReward = (r: Reward): Reward => {
+        const isPotions = r.Type === 'GuildPotions';
+        const ONE = 1000000n;
+        const fd6 = (x: number) => BigInt(Math.round(x * 1e6));
+        const layerNone = ONE + (isPotions ? fd6(starPotionBonus) : 0n);
+        const techTree = ONE + fd6(missionRewardBonus) + (isPotions ? fd6(guildPotionsFromMissions) : 0n);
+        const raw = (((BigInt(Math.round(r.Amount)) * ONE) * layerNone / ONE) * techTree) / ONE;
+        const rounded = raw / ONE + ((raw % ONE) * 2n >= ONE ? 1n : 0n);
+        return { ...r, Amount: Number(rounded) };
     };
 
     const displayRewards = useMemo(() => {
         if (!currentRewards?.Rewards) return [];
-        return currentRewards.Rewards.map((r: Reward) => {
-            let mult = 1 + missionRewardBonus;
-            if (r.Type === 'GuildPotions') {
-                mult *= (1 + ascensionStars * 0.1);
-            }
-            return { ...r, Amount: r.Amount * mult };
-        });
-    }, [currentRewards, missionRewardBonus, ascensionStars]);
+        return currentRewards.Rewards.map(scaleReward);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentRewards, missionRewardBonus, starPotionBonus, guildPotionsFromMissions]);
 
+    // The shared all-member reward goes through the same CurrencyReward path, verified in the
+    // 2026_10_08_09_03 binary: GuildMissionsModel.HandleAllMemberReward (0x780F6AC) stores the
+    // mission Level, CollectMissionAllMembersRewardTransaction.FinalizingPlayerAction.Execute
+    // (0x7816BE8) looks up MissionAllMemberRewardLibrary[Level].Reward and calls
+    // CurrencyReward.Consume (0x786D424) with a new MissionRewardSource, so ScaledAmount applies
+    // the Source 33 bonuses exactly as for the owner rewards above.
     const displayAllMemberReward = useMemo(() => {
         if (!currentAllMemberReward) return null;
-        let hammers = currentAllMemberReward.Hammers;
-        let reward = currentAllMemberReward.Reward;
-        
-        if (reward && reward.Type === 'GuildPotions') {
-            reward = { ...reward, Amount: reward.Amount * (1 + ascensionStars * 0.1) };
-        }
-        
-        return { hammers, reward };
-    }, [currentAllMemberReward, ascensionStars]);
-
-    const getScaledValue = (base: number) => {
-        if (!baseConfig) return base;
-        const multiplier = baseConfig.HealthAndDamageLevelMultiplier;
-        return Math.floor(base * Math.pow(multiplier, effectiveLevel - 1));
-    };
+        const reward = currentAllMemberReward.Reward ? scaleReward(currentAllMemberReward.Reward) : undefined;
+        return { hammers: reward ? undefined : currentAllMemberReward.Hammers, reward };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentAllMemberReward, missionRewardBonus, starPotionBonus, guildPotionsFromMissions]);
 
     if (loading) {
         return (
@@ -339,9 +418,9 @@ export default function MissionSolo() {
                                 onChange={(e) => setSandbox(p => ({ ...p, ascensionStars: parseInt(e.target.value) }))}
                                 className="bg-bg-input border border-purple-500/30 hover:border-purple-500/50 focus:border-purple-500/80 rounded-lg px-3 py-1.5 text-xs text-white outline-none transition-all font-mono cursor-pointer appearance-none pr-8"
                             >
-                                {Array.from({ length: 13 }).map((_, idx) => (
+                                {Array.from({ length: maxAscensionStars + 1 }).map((_, idx) => (
                                     <option key={idx} value={idx}>
-                                        {idx} {idx === 1 ? 'Star' : 'Stars'} (+{idx * 10}%)
+                                        {idx} {idx === 1 ? 'Star' : 'Stars'} (+{Math.round(starBonusAt(idx) * 100)}%)
                                     </option>
                                 ))}
                             </select>
@@ -505,7 +584,7 @@ export default function MissionSolo() {
                         </div>
                         <div>
                             <h2 className="text-2xl font-black text-white uppercase tracking-tight">Mission Reward Pool</h2>
-                            <p className="text-xs text-text-secondary">Exactly <span className="text-accent-primary font-bold">4 items are picked</span> per battle. If fewer than 4 items exist, some are repeated.</p>
+                            <p className="text-xs text-text-secondary">Exactly <span className="text-accent-primary font-bold">{baseConfig.MissionOwnerRewardsCount} items are picked</span> per battle. If fewer than {baseConfig.MissionOwnerRewardsCount} items exist, some are repeated.</p>
                         </div>
                     </div>
 
@@ -608,13 +687,13 @@ export default function MissionSolo() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredMissions.map((battle) => {
-                        const scaledDmg = getScaledValue(battle.BaseDamage);
-                        const scaledHp = getScaledValue(battle.BaseHealth);
-                        // Suggested power is mission-SPECIFIC: 0.8 × UnitCount × (8·Damage + Health),
-                        // on the per-level-scaled enemy stats (scaling already applied by getScaledValue).
-                        // Calibrated to in-game values: Law L33 82.5B, Alien L33 49.5B, Black Sails L34 89.5B,
-                        // Star Blades L34 125B. (The old fixed 144000 was just Star Blades' 9×16000, hardcoded.)
-                        const suggestedPower = 0.8 * (battle.UnitCount || 1) * (8 * scaledDmg + scaledHp);
+                        const scaledStats = missionEnemyStats(battle, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier);
+                        const scaledDmg = scaledStats.dmg;
+                        const scaledHp = scaledStats.hp;
+                        // Suggested power: the game's CalculateMissionPower (0x780FEEC), see calculateMissionPower.
+                        const suggestedPower = baseConfig && itemBalancingConfig
+                            ? calculateMissionPower(battle, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier, itemBalancingConfig.PlayerPowerDamageMultiplier)
+                            : null;
 
                         const result = missionResults[battle.MissionId];
                         const winRate = result?.winProbability || 0;
@@ -677,10 +756,10 @@ export default function MissionSolo() {
                                             <Activity size={12} /> Suggested Power
                                         </div>
                                         <div className="text-xl font-black text-white tracking-tighter relative z-10">
-                                            {formatNumber(suggestedPower)}
+                                            {suggestedPower === null ? '-' : formatNumber(suggestedPower)}
                                         </div>
                                         <div className="text-[8px] font-bold text-text-muted mt-0.5 opacity-0 group-hover/power:opacity-100 transition-all translate-y-2 group-hover/power:translate-y-0 relative z-10 text-center px-2">
-                                            Formula: 0.8 × {battle.UnitCount} units × (8×Dmg + HP)
+                                            0.8 x {battle.UnitCount} units x (Dmg x {itemBalancingConfig?.PlayerPowerDamageMultiplier ?? '?'} + HP)
                                         </div>
                                     </div>
 

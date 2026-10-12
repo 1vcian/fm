@@ -1,0 +1,960 @@
+{
+  "lm_skills_unlocked": {
+    "EventId": "lm_skills_unlocked",
+    "SegmentId": "SkillCollection",
+    "Condition": null,
+    "ProductIds": null
+  },
+  "lm_pets_unlocked": {
+    "EventId": "lm_pets_unlocked",
+    "SegmentId": "Pets",
+    "Condition": null,
+    "ProductIds": null
+  },
+  "lm_techtree_unlocked": {
+    "EventId": "lm_techtree_unlocked",
+    "SegmentId": "TechTree",
+    "Condition": null,
+    "ProductIds": null
+  },
+  "lm_guilds_unlocked": {
+    "EventId": "lm_guilds_unlocked",
+    "SegmentId": "Guilds",
+    "Condition": null,
+    "ProductIds": null
+  },
+  "lm_chat_unlocked": {
+    "EventId": "lm_chat_unlocked",
+    "SegmentId": "Chat",
+    "Condition": null,
+    "ProductIds": null
+  },
+  "lm_arena_unlocked": {
+    "EventId": "lm_arena_unlocked",
+    "SegmentId": "Arena",
+    "Condition": null,
+    "ProductIds": null
+  },
+  "lm_stepping_stones_unlocked": {
+    "EventId": "lm_stepping_stones_unlocked",
+    "SegmentId": "SteppingStones",
+    "Condition": null,
+    "ProductIds": null
+  },
+  "lm_battle_2_5": {
+    "EventId": "lm_battle_2_5",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 4,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_2_15": {
+    "EventId": "lm_battle_2_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 1,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_3_1": {
+    "EventId": "lm_battle_3_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_3_8": {
+    "EventId": "lm_battle_3_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_3_15": {
+    "EventId": "lm_battle_3_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 2,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_4_1": {
+    "EventId": "lm_battle_4_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_4_8": {
+    "EventId": "lm_battle_4_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_4_15": {
+    "EventId": "lm_battle_4_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 3,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_5_1": {
+    "EventId": "lm_battle_5_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 4,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_5_8": {
+    "EventId": "lm_battle_5_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 4,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_5_15": {
+    "EventId": "lm_battle_5_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 4,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_6_1": {
+    "EventId": "lm_battle_6_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 5,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_6_8": {
+    "EventId": "lm_battle_6_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 5,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_6_15": {
+    "EventId": "lm_battle_6_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 5,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_7_1": {
+    "EventId": "lm_battle_7_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 6,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_7_8": {
+    "EventId": "lm_battle_7_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 6,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_7_15": {
+    "EventId": "lm_battle_7_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 6,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_8_1": {
+    "EventId": "lm_battle_8_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 7,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_8_8": {
+    "EventId": "lm_battle_8_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 7,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_8_15": {
+    "EventId": "lm_battle_8_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 7,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_9_1": {
+    "EventId": "lm_battle_9_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 8,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_9_8": {
+    "EventId": "lm_battle_9_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 8,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_9_15": {
+    "EventId": "lm_battle_9_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 8,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_10_1": {
+    "EventId": "lm_battle_10_1",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 9,
+              "BattleIdx": 0,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_10_8": {
+    "EventId": "lm_battle_10_8",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 9,
+              "BattleIdx": 7,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_battle_10_15": {
+    "EventId": "lm_battle_10_15",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "Dynamic": false,
+            "$type": "PlayerPropertyIdMainBattleProgress"
+          },
+          "Min": {
+            "_value": {
+              "DifficultyIdx": 0,
+              "AgeIdx": 9,
+              "BattleIdx": 14,
+              "$type": "MainBattleId"
+            },
+            "$type": "CustomComparableConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_forge_level_5": {
+    "EventId": "lm_forge_level_5",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "AscensionsDoNotMatter": false,
+            "$type": "PlayerPropertyIdForgeLevel"
+          },
+          "Min": {
+            "_value": 4,
+            "$type": "LongConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_forge_level_10": {
+    "EventId": "lm_forge_level_10",
+    "SegmentId": "",
+    "Condition": {
+      "PropertyRequirements": [
+        {
+          "Id": {
+            "AscensionsDoNotMatter": false,
+            "$type": "PlayerPropertyIdForgeLevel"
+          },
+          "Min": {
+            "_value": 9,
+            "$type": "LongConstant"
+          },
+          "Max": null
+        }
+      ],
+      "RequireAnySegment": null,
+      "RequireAllSegments": null
+    },
+    "ProductIds": null
+  },
+  "lm_starter_offer_0": {
+    "EventId": "lm_starter_offer_0",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "StarterOffer0"
+    ]
+  },
+  "lm_starter_offer_1": {
+    "EventId": "lm_starter_offer_1",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "StarterOffer1"
+    ]
+  },
+  "lm_starter_offer_2": {
+    "EventId": "lm_starter_offer_2",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "StarterOffer2"
+    ]
+  },
+  "lm_starter_offer_any": {
+    "EventId": "lm_starter_offer_any",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "StarterOffer0",
+      "StarterOffer1",
+      "StarterOffer2"
+    ]
+  },
+  "lm_egg_starter_offer_0": {
+    "EventId": "lm_egg_starter_offer_0",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "EggStarterOffer0"
+    ]
+  },
+  "lm_progress_pass_0": {
+    "EventId": "lm_progress_pass_0",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "ProgressPass0"
+    ]
+  },
+  "lm_gem_pack_0": {
+    "EventId": "lm_gem_pack_0",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "GemPack0"
+    ]
+  },
+  "lm_gem_pack_1": {
+    "EventId": "lm_gem_pack_1",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "GemPack1"
+    ]
+  },
+  "lm_gem_pack_2": {
+    "EventId": "lm_gem_pack_2",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "GemPack2"
+    ]
+  },
+  "lm_gem_pack_3": {
+    "EventId": "lm_gem_pack_3",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "GemPack3"
+    ]
+  },
+  "lm_gem_pack_any": {
+    "EventId": "lm_gem_pack_any",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "GemPack0",
+      "GemPack1",
+      "GemPack2",
+      "GemPack3"
+    ]
+  },
+  "lm_token_pack_1": {
+    "EventId": "lm_token_pack_1",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "TokenPack1"
+    ]
+  },
+  "lm_token_pack_2": {
+    "EventId": "lm_token_pack_2",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "TokenPack2"
+    ]
+  },
+  "lm_token_pack_3": {
+    "EventId": "lm_token_pack_3",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "TokenPack3"
+    ]
+  },
+  "lm_token_pack_any": {
+    "EventId": "lm_token_pack_any",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "TokenPack1",
+      "TokenPack2",
+      "TokenPack3"
+    ]
+  },
+  "lm_daily_deal_0": {
+    "EventId": "lm_daily_deal_0",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "DailyDeal0"
+    ]
+  },
+  "lm_daily_deal_1": {
+    "EventId": "lm_daily_deal_1",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "DailyDeal1"
+    ]
+  },
+  "lm_daily_deal_2": {
+    "EventId": "lm_daily_deal_2",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "DailyDeal2"
+    ]
+  },
+  "lm_daily_deal_3": {
+    "EventId": "lm_daily_deal_3",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "DailyDeal3"
+    ]
+  },
+  "lm_daily_deal_any": {
+    "EventId": "lm_daily_deal_any",
+    "SegmentId": "",
+    "Condition": null,
+    "ProductIds": [
+      "DailyDeal0",
+      "DailyDeal1",
+      "DailyDeal2",
+      "DailyDeal3"
+    ]
+  }
+}

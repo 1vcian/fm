@@ -1,8 +1,10 @@
 
+import { FEATURE_NAMES } from '../hooks/useFeatureUnlocks';
 import { useState, useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { useGameData } from '../hooks/useGameData';
-import { useTreeModifiers, useClanNodeMax } from '../hooks/useCalculatedStats';
+import { useTreeModifiers } from '../hooks/useCalculatedStats';
+import { useTreeLimits } from '../hooks/useTreeLimits';
 import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
 import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { cn } from '../lib/utils';
@@ -28,10 +30,11 @@ interface TabConfig {
 }
 
 const DUNGEON_TABS: TabConfig[] = [
-    { id: 'Hammer', label: 'Hammer', name: 'Hammer Thief', icon: 'HammerKey', type: 'sprite' },
-    { id: 'Skill', label: 'Skill', name: 'Skill Dungeon', icon: 'SkillKey', type: 'sprite' },
-    { id: 'Egg', label: 'Egg', name: 'Egg Dungeon', icon: 'PetKey', type: 'sprite' },
-    { id: 'Potion', label: 'Potion', name: 'Potion Dungeon', icon: 'PotionKey', type: 'sprite' },
+    // The game's dungeon names (FEATURE_NAMES in useFeatureUnlocks, shared with Unlocks).
+    { id: 'Hammer', label: FEATURE_NAMES.HammerDungeon, name: FEATURE_NAMES.HammerDungeon, icon: 'HammerKey', type: 'sprite' },
+    { id: 'Skill', label: FEATURE_NAMES.SkillDungeon, name: FEATURE_NAMES.SkillDungeon, icon: 'SkillKey', type: 'sprite' },
+    { id: 'Egg', label: FEATURE_NAMES.PetDungeon, name: FEATURE_NAMES.PetDungeon, icon: 'PetKey', type: 'sprite' },
+    { id: 'Potion', label: FEATURE_NAMES.PotionDungeon, name: FEATURE_NAMES.PotionDungeon, icon: 'PotionKey', type: 'sprite' },
 ];
 
 
@@ -117,7 +120,7 @@ export default function Dungeons() {
             : [dungeonLevelData.Wave1, dungeonLevelData.Wave2, dungeonLevelData.Wave3];
 
         const enemy1Id = dungeonLevelData.EnemyId1 ?? 0;
-        const enemy2Id = dungeonLevelData.EnemyId2 ?? 0;
+        const enemy2Id = dungeonLevelData.EnemyId2 ?? -1;
 
         for (let i = 0; i < levels.length; i++) {
             const count = levels[i];
@@ -149,9 +152,13 @@ export default function Dungeons() {
                     weaponSpriteSrc
                 });
             } else {
+                // DungeonBattleLibrary.EnemyIds (0x7801F2C): [EnemyId1, EnemyId2] without the
+                // negative ("unused") ones; enemy k takes ids[k % ids.length].
+                const ids = [enemy1Id, enemy2Id].filter(id => id >= 0);
+                if (ids.length === 0) ids.push(0);
                 const enemyCounts: Record<number, number> = {};
                 for (let k = 0; k < count; k++) {
-                    const id = (k % 2 === 0 || enemy2Id === 0) ? enemy1Id : enemy2Id;
+                    const id = ids[k % ids.length];
                     enemyCounts[id] = (enemyCounts[id] || 0) + 1;
                 }
 
@@ -277,7 +284,8 @@ export default function Dungeons() {
             const rewards = (rew.CurrencyType || []).map((curr: string, idx: number) => {
                 const base = rew.RewardBase?.[idx] || 0;
                 const inc = rew.RewardIncrease?.[idx] || 0;
-                let amount = base + (inc * levelIndex);
+                // PlayerDungeonModel.GetCurrencyRewards (0x78006BC): F64.RoundToInt(base + increase * level).
+                let amount = Math.floor(base + inc * levelIndex + 0.5);
 
                 // Apply Multipliers (none yet for Eggshells in tech tree mapping, but placeholder for scale)
                 // if (curr === 'Eggshells') amount *= techTreeMultipliers.Eggshell; 
@@ -295,7 +303,8 @@ export default function Dungeons() {
             const rewards = (rew.CurrencyType || []).map((curr: string, idx: number) => {
                 const base = rew.RewardBase?.[idx] || 0;
                 const inc = rew.RewardIncrease?.[idx] || 0;
-                let amount = base + (inc * levelIndex);
+                // PlayerDungeonModel.GetCurrencyRewards (0x78006BC): F64.RoundToInt(base + increase * level).
+                let amount = Math.floor(base + inc * levelIndex + 0.5);
 
                 // Apply Multipliers
                 if (curr === 'Hammers') amount *= techTreeMultipliers.Hammer;
@@ -336,7 +345,7 @@ export default function Dungeons() {
 
     // Clan tech tree boost to war points earned from spending dungeon keys.
     const treeModifiers = useTreeModifiers();
-    const clanMax = useClanNodeMax();
+    const treeLimits = useTreeLimits();
     const profileDungeonKeyWarBonus = treeModifiers['WarPointsFromDungeonKey'] || 0;
 
     // Sandbox: local override of the result-altering tree bonus (see SandboxPanel).
@@ -349,8 +358,8 @@ export default function Dungeons() {
     const sandboxControls = {
         reset: () => setSandbox({}),
         fields: [
-            { key: 'warDungeonKey', label: 'War points: dungeon key', value: dungeonKeyWarBonus, profileValue: profileDungeonKeyWarBonus, min: 0, max: clanMax['WarPointsFromDungeonKey'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warDungeonKey: v })) },
-            { key: 'dayBoost', label: 'Day war-points boost (today)', value: dungeonDayBoost, profileValue: profileDungeonDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
+            { key: 'warDungeonKey', label: 'War points: dungeon key', value: dungeonKeyWarBonus, profileValue: profileDungeonKeyWarBonus, min: 0, ...treeLimits.clan('WarPointsFromDungeonKey'), onChange: (v: number) => setSandbox(p => ({ ...p, warDungeonKey: v })) },
+            { key: 'dayBoost', label: 'Day war-points boost (today)', value: dungeonDayBoost, profileValue: profileDungeonDayBoost, min: 0, ...treeLimits.clan('WarPointsOnDay1'), onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
         ],
     };
 

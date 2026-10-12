@@ -86,14 +86,14 @@ export default function Gallery() {
         // Only when we have the manifests for the active version
         if (md5Manifest[activeVersion]) {
             if (showOnlyChanges && compareVersion && md5Manifest[compareVersion]) {
-                // Filtra solo le differenze (aggiunte, rimosse o modificate)
+                // Only the differences (added, removed or changed)
                 list = list.filter(t => {
                     const hashA = md5Manifest[activeVersion][t];
                     const hashB = md5Manifest[compareVersion][t];
                     return hashA !== hashB;
                 });
             } else {
-                // Comportamento normale: mostra solo le texture presenti nella versione attiva
+                // Default: only the textures present in the active version
                 list = list.filter(t => !!md5Manifest[activeVersion][t]);
             }
         }
@@ -223,7 +223,7 @@ export default function Gallery() {
                             className="bg-transparent text-xs font-bold text-text-secondary px-2 py-1 outline-none cursor-pointer hover:text-white transition-colors"
                         >
                             <option value="">Compare Version</option>
-                            {/* Filtriamo mostrando solo le versioni diverse da activeVersion E che hanno il manifest md5 */}
+                            {/* Only versions other than activeVersion that have an md5 manifest */}
                             {versions
                                 .filter(v => v !== activeVersion && md5Manifest[v] && Object.keys(md5Manifest[v]).length > 0)
                                 .map(v => (

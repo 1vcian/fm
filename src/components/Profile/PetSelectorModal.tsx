@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Plus, Trash2, Save, Info, X, Search, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
 
 import { useGameData } from '../../hooks/useGameData';
+import { usePetNames } from '../../hooks/usePetNames';
 import { PetSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
 
@@ -54,6 +55,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
     const { data: secondaryUnlockLib } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const petName = usePetNames();
     const { profile, updateNestedProfile } = useProfile();
 
     // Ref to break circular dependency in auto-sync effect
@@ -166,12 +168,13 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
         return Object.entries(petsConfig.mapping)
             .map(([idx, info]: [string, any]) => ({
                 spriteIndex: parseInt(idx),
-                ...info
+                ...info,
+                name: petName(info.rarity, info.id)
             }))
             .filter((p: any) => p.rarity === selectedRarity)
             .filter((p: any) => !searchTerm || p.name?.toLowerCase().includes(searchTerm.toLowerCase()))
             .sort((a: any, b: any) => a.id - b.id);
-    }, [petsConfig, selectedRarity, searchTerm]);
+    }, [petsConfig, selectedRarity, searchTerm, petName]);
 
     // Calculate max secondary stats
     const maxSecondaryStats = useMemo(() => {
@@ -235,10 +238,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
         if (searchTerm.trim()) {
             const q = searchTerm.toLowerCase();
             filtered = filtered.filter(p => {
-                const petInfo = petsConfig?.mapping ? 
-                    Object.values(petsConfig.mapping).find((v: any) => v.id === p.id && v.rarity === p.rarity) as any 
-                    : null;
-                const name = p.customName || petInfo?.name || `Pet #${p.id}`;
+                const name = p.customName || petName(p.rarity, p.id);
                 return name.toLowerCase().includes(q);
             });
         }
@@ -270,10 +270,8 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     valB = b.level;
                     break;
                 case 'name':
-                    const petInfoA = petsConfig?.mapping ? Object.values(petsConfig.mapping).find((v: any) => v.id === a.id && v.rarity === a.rarity) as any : null;
-                    const petInfoB = petsConfig?.mapping ? Object.values(petsConfig.mapping).find((v: any) => v.id === b.id && v.rarity === b.rarity) as any : null;
-                    valA = a.customName || petInfoA?.name || `Pet #${a.id}`;
-                    valB = b.customName || petInfoB?.name || `Pet #${b.id}`;
+                    valA = a.customName || petName(a.rarity, a.id);
+                    valB = b.customName || petName(b.rarity, b.id);
                     break;
                 case 'rarity':
                     valA = RARITIES.indexOf(a.rarity);
@@ -293,7 +291,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
             }
             return savedSortOrder === 'asc' ? valA - valB : valB - valA;
         });
-    }, [profile.pets.savedBuilds, searchTerm, savedSortField, savedSortOrder, filterRarities, minPerfection, filterStats, petsConfig, secondaryStatLibrary]);
+    }, [profile.pets.savedBuilds, searchTerm, savedSortField, savedSortOrder, filterRarities, minPerfection, filterStats, petsConfig, secondaryStatLibrary, petName]);
 
     const handleAddStat = () => {
         if (manualStats.length < maxSecondaryStats) {
@@ -719,7 +717,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                     item={savedPet}
                                                     slotKey="pet-saved"
                                                     slotLabel="Saved Pet"
-                                                    itemName={savedPet.customName || `Pet #${savedPet.id}`}
+                                                    itemName={savedPet.customName || petName(savedPet.rarity, savedPet.id)}
                                                     itemImage={null}
                                                     rarity={savedPet.rarity}
                                                     isSaved={true}
@@ -823,7 +821,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                         )}
                                     </div>
                                     <h2 className="text-xl font-bold text-text-primary leading-tight">
-                                        {(Object.values(petsConfig?.mapping || {}) as any[]).find((p: any) => p.id === selectedPetId && p.rarity === selectedRarity)?.name || `Pet #${selectedPetId}`}
+                                        {selectedPetId !== null ? petName(selectedRarity, selectedPetId) : ''}
                                     </h2>
                                     <div className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
                                         {selectedRarity} Pet

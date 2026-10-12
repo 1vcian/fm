@@ -45,7 +45,7 @@ export interface PlayerAggregates {
     secondaryDamageMulti?: number;
     secondaryHealthMulti?: number;
     skillCooldownReduction?: number;
-    attackRangeMultiplier?: number;
+    attackRangeBonus?: number;
     contextBonuses?: {
         mission: { dmg: number; hp: number };
         clanWar: { dmg: number; hp: number };
@@ -77,12 +77,29 @@ export function contextBonus(agg: PlayerAggregates, context?: BattleContext): { 
     return cb.dungeon[context.split(':')[1] as 'hammer' | 'skill' | 'egg' | 'potion'];
 }
 
+/**
+ * The context node's factor on the final Damage / Health.
+ *
+ * The mission, clan war and dungeon nodes are CLAN tech nodes (Damage/Health Multiplier), which
+ * GuildTechTreeHelpers.ToClanLayer (0x78227C8) moves to StatLayer.ClanTechTree: their own layer,
+ * so they compound, `x (1 + ctx)`. LeagueBattleDamage/Health only exists as a PERSONAL node
+ * definition (TechNodesLibrary: Layer None, Condition InLeagueBattle), and Layer None is where the
+ * DamageMulti/HealthMulti substat pool lives, so it adds to that pool:
+ * `(1 + substats + league) / (1 + substats)`. No shipped tree carries a league node today.
+ */
+function contextFactor(agg: PlayerAggregates, context: BattleContext | undefined, ctx: number, pool: number): number {
+    if (context === 'league') return (1 + pool + ctx) / (1 + pool);
+    return 1 + ctx;
+}
+
 export function playerCombatStats(agg: PlayerAggregates, context?: BattleContext): Partial<CombatStatsVec> {
     const ctx = contextBonus(agg, context);
+    const hpFactor = contextFactor(agg, context, ctx.hp, agg.secondaryHealthMulti ?? 0);
+    const dmgFactor = contextFactor(agg, context, ctx.dmg, agg.secondaryDamageMulti ?? 0);
     return {
-        hpMax: agg.totalHealth * (1 + ctx.hp),
-        hpMaxNoMulti: agg.totalHealth * (1 + ctx.hp),
-        dmg: agg.totalDamage * (1 + ctx.dmg),
+        hpMax: agg.totalHealth * hpFactor,
+        hpMaxNoMulti: agg.totalHealth * hpFactor,
+        dmg: agg.totalDamage * dmgFactor,
         moveSpeed: 2.0 * (1 + (agg.moveSpeed ?? 0)),
         criticalChance: agg.criticalChance,
         criticalMulti: agg.criticalDamage,
@@ -103,8 +120,10 @@ export function playerUnitSpec(agg: PlayerAggregates, pos = { x: 0, y: 0 }, cont
         isPlayer: true,
         pos,
         stats: playerCombatStats(agg, context),
-        // The PlayerAttackRange node runs the weapon's range through the stat pipeline.
-        attackRange: (agg.weaponAttackRange || 0.3) * (1 + (agg.attackRangeMultiplier ?? 0)),
+        // The weapon's range runs through the stat pipeline (StatType AttackRange). The
+        // PlayerAttackRange node is Additive in Layer None, so it adds world units:
+        // (weaponRange + bonus), e.g. melee 0.3 + 3 at clan max, not 0.3 * 4.
+        attackRange: (agg.weaponAttackRange || 0.3) + (agg.attackRangeBonus ?? 0),
         windupTime: agg.weaponWindupTime || 0.5,
         attackDuration: agg.weaponAttackDuration || 1.5,
         projectile:
@@ -151,14 +170,18 @@ export function skillSpecs(
     equipped.forEach((sk, slot) => {
         const cfg = skillLibrary[sk.id];
         if (!cfg || sk.level <= 0) return;
-        const idx = Math.min(Math.max(sk.level - 1, 0), (cfg.DamagePerLevel?.length ?? 1) - 1);
+        // Level is 0-based in the game (Lv.N reads index N-1); each array is indexed on its own and
+        // out of range reads 0 (GetDamage 0x7853230 / GetHealth 0x78532E4). Meat has no damage
+        // array but a health one, so a shared clamped index would zero its heal.
+        const idx = sk.level - 1;
+        const at = (a?: number[]) => (a && idx >= 0 && idx < a.length ? a[idx] : 0);
         out.push({
             id: cfg.Type ?? sk.id,
             slot,
             isAlly,
-            damage: (cfg.DamagePerLevel?.[idx] ?? 0) * dmgCommon * agg.skillDamageMultiplier,
-            health: (cfg.HealthPerLevel?.[idx] ?? 0) * hpCommon * agg.skillHealthMultiplier,
-            cooldown: Math.max(0.5, cfg.Cooldown * cdr),
+            damage: at(cfg.DamagePerLevel) * dmgCommon * agg.skillDamageMultiplier,
+            health: at(cfg.HealthPerLevel) * hpCommon * agg.skillHealthMultiplier,
+            cooldown: cfg.Cooldown * cdr, // no floor in the game
             activeDuration: cfg.ActiveDuration ?? 0,
         });
     });

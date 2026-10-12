@@ -205,7 +205,7 @@ export const EMBLEM_ICON_COUNT = EMBLEM_ICON_SHEET.columns * EMBLEM_ICON_SHEET.r
  * The Texture2D/ folders that actually ship the three emblem sheets, newest
  * first.
  *
- * This is NOT versions.json: that lists 23 config versions and only these 13
+ * This is NOT versions.json: that lists 27 config versions and only these 17
  * have a Texture2D/ folder at all. An <img> or a CSS background that 404s
  * cannot report the failure, so on the other 10 versions every emblem in the
  * app would silently stay blank with nothing to retry — which is exactly what
@@ -216,7 +216,7 @@ export const EMBLEM_ICON_COUNT = EMBLEM_ICON_SHEET.columns * EMBLEM_ICON_SHEET.r
  * of letting the list rot.
  */
 export const EMBLEM_ART_VERSIONS: readonly string[] = [
-    '2026_09_08_08_08', '2026_09_02_09_08', '2026_08_26_08_49',
+    '2026_10_08_09_03', '2026_09_08_08_08', '2026_09_02_09_08', '2026_08_26_08_49',
     '2026_08_21_00_29', '2026_07_15_12_09', '2026_07_14_17_28', '2026_07_03_12_39',
     '2026_05_23_14_08', '2026_05_21_16_30', '2026_05_21_13_52', '2026_05_15_20_01',
     '2026_05_12_12_51', '2026_05_08_11_30', '2026_05_08_11_17', '2026_05_06_11_12',
@@ -227,7 +227,7 @@ export const EMBLEM_ART_VERSIONS: readonly string[] = [
  * Fallback art version: the newest one that carries the sheets.
  *
  * Falling back is free — EmblemShapes.png (md5 3f8ec895), EmblemIcons.png
- * (8f4fbf3f) and EmblemHolder.png (4517f9c2) are byte-identical in all 13
+ * (8f4fbf3f) and EmblemHolder.png (4517f9c2) are byte-identical in all 17
  * folders that have them, so which version an emblem is drawn from cannot
  * change how it looks.
  */

@@ -908,7 +908,7 @@ export function parseDurationMs(text: string): number | null {
 
 /** `2h 14m`, `3d 4h`, `45m`, `30s`. Compact on purpose: it sits inside a control. */
 export function formatDurationShort(ms: number): string {
-    if (!Number.isFinite(ms)) return '—';
+    if (!Number.isFinite(ms)) return '-';
     const negative = ms < 0;
     let s = Math.round(Math.abs(ms) / 1000);
     const d = Math.floor(s / 86400); s -= d * 86400;

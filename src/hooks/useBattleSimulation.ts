@@ -17,6 +17,7 @@ import {
     simulateMissionBattleMulti
 } from '../utils/BattleSimulator';
 import type { DebugConfig } from '../utils/VisualBattleEngine';
+import { mainBattleDifficultyCount } from '../engine/enemies';
 
 
 // Hook for battle simulation logic
@@ -47,11 +48,13 @@ export function useBattleSimulation() {
     const { data: dungeonBaseConfig, loading: loading14 } = useGameData<any>('DungeonBaseConfig.json');
     const { data: missionBaseConfig, loading: loading15 } = useGameData<any>('MissionBaseConfig.json');
     const { data: missionBattleLibrary, loading: loading16 } = useGameData<any>('MissionBattleLibrary.json');
+    const { data: mountLibrary, loading: loading17 } = useGameData<any>('MountLibrary.json');
 
-    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14 || loading15 || loading16;
+    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14 || loading15 || loading16 || loading17;
 
     // Derived Constants
     const maxDungeonLevel = useMemo(() => dungeonBaseConfig?.MaxDungeonLevel ?? 399, [dungeonBaseConfig]);
+    const difficultyCount = useMemo(() => mainBattleDifficultyCount(mainBattleConfig), [mainBattleConfig]);
 
     const maxAgeIdx = useMemo(() => {
         if (!mainBattleLibrary) return 10; // Fallback
@@ -82,6 +85,7 @@ export function useBattleSimulation() {
         dungeonBaseConfig,
         missionBaseConfig,
         missionBattleLibrary,
+        mountLibrary,
         // Build generic lookup map
         mainBattleLookup: (() => {
             if (!mainBattleLibrary) return undefined;
@@ -113,7 +117,8 @@ export function useBattleSimulation() {
         skillPassiveLibrary,
         dungeonBaseConfig,
         missionBaseConfig,
-        missionBattleLibrary
+        missionBattleLibrary,
+        mountLibrary
     ]);
 
     // Simulate a specific main battle (Averaged over configurable runs for prediction)
@@ -232,6 +237,7 @@ export function useBattleSimulation() {
         libs,
         isLoading,
         maxDungeonLevel,
-        maxAgeIdx
+        maxAgeIdx,
+        difficultyCount
     };
 }

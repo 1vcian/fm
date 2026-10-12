@@ -9,7 +9,11 @@ import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 
-export default function MountCalculator() {
+/**
+ * @param embedded When rendered as a tab of the Summons calculator the page title is left to the
+ * host page; badges, sandbox and the calculator itself are unchanged.
+ */
+export default function MountCalculator({ embedded = false }: { embedded?: boolean } = {}) {
     const { selectedVersion } = useGameDataContext();
     const { profile, updateNestedProfile } = useProfile();
     const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
@@ -24,6 +28,7 @@ export default function MountCalculator() {
         levels,
         applyResultsToProfile,
         calculateNeededCurrency,
+        maxAscension,
         finalCostPerSummon,
         warPointBonuses,
         sandbox
@@ -32,7 +37,9 @@ export default function MountCalculator() {
 
     // Target Calculator State
     const [targetLevel, setTargetLevel] = useState(maxPossibleLevel || 100);
-    const [targetAscension, setTargetAscension] = useState(3);
+    // Defaults to the last ascension in AscensionConfigsLibrary until the player picks one.
+    const [pickedTargetAscension, setTargetAscension] = useState<number | null>(null);
+    const targetAscension = pickedTargetAscension ?? maxAscension;
 
     // Colors helper (Consistent with Skill Calculator)
     const RARITY_COLORS: Record<string, string> = {
@@ -48,11 +55,15 @@ export default function MountCalculator() {
         <div className="space-y-6 animate-fade-in pb-20 max-w-5xl mx-auto">
             {/* Header */}
             <div className="text-center space-y-2 mb-6">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                    <SpriteIcon name="MountKey" size={32} className="text-accent-primary" />
-                    Mount Calculator
-                </h1>
-                <p className="text-text-secondary">Simulate level-ups and rarity drops from your winders.</p>
+                {!embedded && (
+                    <>
+                        <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
+                            <SpriteIcon name="MountKey" size={32} className="text-accent-primary" />
+                            Mount Calculator
+                        </h1>
+                        <p className="text-text-secondary">Simulate level-ups and rarity drops from your winders.</p>
+                    </>
+                )}
                 <div className="flex justify-center items-center gap-2 pt-2">
                     {isWarPointDay(new Date(), 'mounts', warDayConfig) && (
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-primary/20 text-accent-primary border border-accent-primary/30 text-[10px] font-black uppercase tracking-wider animate-pulse">
@@ -159,7 +170,7 @@ export default function MountCalculator() {
                                     </button>
                                 </div>
                                 <div className="text-[10px] text-text-muted text-center font-mono opacity-50">
-                                    Next: {currentLevel >= maxPossibleLevel ? 'MAX' : (levels[Math.min(currentLevel - 1, levels.length - 1)]?.SummonsRequired?.toLocaleString() || '?')}
+                                    Next: {currentLevel >= maxPossibleLevel ? 'MAX' : (levels[currentLevel]?.SummonsRequired?.toLocaleString() || '?')}
                                 </div>
                             </div>
                         </div>
@@ -219,7 +230,7 @@ export default function MountCalculator() {
                                             onChange={(e) => setTargetAscension(Number(e.target.value))}
                                             className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
                                         >
-                                            {[0, 1, 2, 3].map(a => (
+                                            {Array.from({ length: maxAscension + 1 }, (_, a) => a).map(a => (
                                                 <option key={a} value={a}>Ascension {a}</option>
                                             ))}
                                         </select>

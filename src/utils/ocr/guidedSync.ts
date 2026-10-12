@@ -16,7 +16,7 @@
 // This file only IMPORTS from the rest of src/utils/ocr — it does not change any behaviour of
 // the one-shot pipeline.
 
-import { loadImage, imageToCanvas, type Rect } from './imagePrep';
+import { loadImage, imageToCanvas, screenshotCanvas, type Rect } from './imagePrep';
 import { classifyScreen, subjectFromPopup, type ScreenSubject } from './templateClassifier';
 import { readItem, readUnit } from './templateReaders';
 import { readSkills } from './skillsReader';
@@ -131,7 +131,7 @@ export async function readScreenshotAs(
 ): Promise<ScreenReadResult> {
     const warnings: string[] = [];
 
-    const canvas = imageToCanvas(await loadImage(input));
+    const canvas = screenshotCanvas(await loadImage(input));
 
     const result: ScreenReadResult = { screen: forced, warnings, confidence: 0 };
 
@@ -215,7 +215,7 @@ export async function runGuidedSync(
             done = i + 1;
             onProgress?.({ fileIndex: done, total: entries.length });
         }
-        const rows = buildChangesFromReads(results, profile);
+        const rows = buildChangesFromReads(results, profile, dicts.limits);
         return { rows, results };
     } finally {
         setOcrProgress(null);

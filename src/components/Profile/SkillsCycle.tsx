@@ -334,7 +334,7 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
                                         <span>. You are in the window.</span>
                                     ) : (
                                         <span>
-                                            {' '}— you are at <span className="font-mono">{pct(currentR)}</span>, adjust by{' '}
+                                            . You are at <span className="font-mono">{pct(currentR)}</span>, adjust by{' '}
                                             <span className="font-mono font-bold">
                                                 {recommendedR >= currentR ? '+' : '−'}{pct(Math.abs(recommendedR - currentR))}
                                             </span>.

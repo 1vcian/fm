@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { getItemImage } from '../utils/itemAssets';
+import { getItemImage, getItemName } from '../utils/itemAssets';
 import { useGameData } from '../hooks/useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { useGameDataContext } from '../context/GameDataContext';
@@ -28,6 +28,7 @@ export default function Items() {
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
+    const { data: localization } = useGameData<any>('Localization.json');
     const techModifiers = useTreeModifiers();
 
     // Persist selections
@@ -39,7 +40,11 @@ export default function Items() {
 
     // Dynamic Max Level calculation
     const currentMaxLevel = useMemo(() => {
-        const base = balancingConfig?.ItemBaseMaxLevel || 98;
+        // ItemBaseMaxLevel is zero based: the displayed cap is one more (same as statEngine).
+        // Binary: ForgeAction.RollItemLevel 0x7839768 caps the stored level at
+        // FloorToInt(CalculateValue(..., ItemBaseMaxLevel)); BaseItemVisual.UpdateVisual 0x4037BF8
+        // shows it through FormatLevelPlusOne 0x3F79340 (level + 1).
+        const base = (balancingConfig?.ItemBaseMaxLevel ?? 98) + 1;
         const slotBonusKey = {
             'Weapon': 'WeaponLevelUp',
             'Helmet': 'HelmetLevelUp',
@@ -125,7 +130,7 @@ export default function Items() {
                 isOpen={breakpointModal.isOpen}
                 onClose={() => setBreakpointModal({ isOpen: false })}
                 weaponName={breakpointModal.weapon?.Name || 'Weapon'}
-                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.1}
+                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.5}
                 weaponWindupTime={breakpointModal.weapon?.WindupTime || 0.4}
             />
 
@@ -221,9 +226,10 @@ export default function Items() {
 
                         <div className="flex items-center gap-4">
                             <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
-                            {forgeAscensionMulti > 0 && (
+                            {/* Ascensions-layer Multiplier: x(1 + Value) of AscensionConfigPerLevel[Level - 1] only (AscensionModel.GetLevelStats 0x77E7364; layer math in docs/skill-verification-2026_10.md section 2). */}
+                            {ascensionLevel > 0 && (
                                 <div className="bg-amber-400/10 text-amber-400 px-2 py-1 rounded text-xs font-mono font-bold border border-amber-400/20">
-                                    +{(forgeAscensionMulti * 100).toLocaleString()}%
+                                    x{forgeAscensionMulti.toLocaleString()}
                                 </div>
                             )}
                         </div>
@@ -243,6 +249,8 @@ export default function Items() {
                         // We can also extract secondary stat info from SecondaryStatItemUnlockLibrary based on age
                         const secondaryData = secondaryParams?.[String(selectedAgeIdx)];
                         const numSecondary = (ascensionLevel > 0) ? 2 : (secondaryData?.NumberOfSecondStats || 0);
+                        const itemName = getItemName(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping, localization)
+                            ?? `${selectedSlot} ${item.ItemId?.Idx + 1}`;
 
                         return (
                             <Card key={i} className="flex flex-col h-full hover:border-accent-primary/50 transition-all duration-300 group overflow-hidden">
@@ -255,7 +263,7 @@ export default function Items() {
                                             {getItemImage(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping, selectedVersion) ? (
                                                 <img
                                                     src={getItemImage(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping, selectedVersion)!}
-                                                    alt={item.Name}
+                                                    alt={itemName}
                                                     className="w-12 h-12 object-contain"
                                                 />
                                             ) : (
@@ -264,7 +272,7 @@ export default function Items() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-xl text-text-primary group-hover:text-accent-primary transition-colors">
-                                                {selectedSlot} {item.ItemId?.Idx + 1}
+                                                {itemName}
                                             </h3>
                                             <div className="text-xs text-text-muted flex gap-2 mt-1">
                                                 <span className="bg-bg-input px-2 py-0.5 rounded border border-border/50">Idx: {item.ItemId?.Idx}</span>
@@ -365,8 +373,8 @@ export default function Items() {
                                                             setBreakpointModal({
                                                                 isOpen: true,
                                                                 weapon: {
-                                                                    Name: `${selectedSlot} ${item.ItemId?.Idx + 1}`,
-                                                                    AttackDuration: item.EquipmentStats?.[0]?.Value ? 1.1 : 1.1, // Fallback, but we should try to find real duration
+                                                                    Name: itemName,
+                                                                    AttackDuration: weaponData.AttackDuration ?? 1.5,
                                                                     WindupTime: weaponData.WindupTime
                                                                 }
                                                             });

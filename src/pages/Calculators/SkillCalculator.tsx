@@ -9,7 +9,11 @@ import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 
-export default function SkillCalculator() {
+/**
+ * @param embedded When rendered as a tab of the Summons calculator the page title is left to the
+ * host page; badges, sandbox and the calculator itself are unchanged.
+ */
+export default function SkillCalculator({ embedded = false }: { embedded?: boolean } = {}) {
     const { selectedVersion } = useGameDataContext();
     const { profile, updateNestedProfile } = useProfile();
     const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
@@ -23,6 +27,7 @@ export default function SkillCalculator() {
         levels,
         applyResultsToProfile,
         calculateNeededCurrency,
+        maxAscension,
         finalCostPerSummon,
         warPointBonuses,
         sandbox
@@ -31,7 +36,9 @@ export default function SkillCalculator() {
 
     // Target Calculator State
     const [targetLevel, setTargetLevel] = useState(maxPossibleLevel || 100);
-    const [targetAscension, setTargetAscension] = useState(3);
+    // Defaults to the last ascension in AscensionConfigsLibrary until the player picks one.
+    const [pickedTargetAscension, setTargetAscension] = useState<number | null>(null);
+    const targetAscension = pickedTargetAscension ?? maxAscension;
 
     // Correct Colors from Tailwind Config
     const RARITY_COLORS: Record<string, string> = {
@@ -48,11 +55,15 @@ export default function SkillCalculator() {
         <div className="space-y-6 animate-fade-in pb-20 max-w-5xl mx-auto">
             {/* Header */}
             <div className="text-center space-y-2 mb-6">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                    <SpriteIcon name="SkillTicket" size={40} />
-                    Skill Calculator
-                </h1>
-                <p className="text-text-secondary">Calculate expected skills and War Points from your tickets.</p>
+                {!embedded && (
+                    <>
+                        <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
+                            <SpriteIcon name="SkillTicket" size={40} />
+                            Skill Calculator
+                        </h1>
+                        <p className="text-text-secondary">Calculate expected skills and War Points from your tickets.</p>
+                    </>
+                )}
 
 
                 <div className="flex justify-center items-center gap-2 pt-2">
@@ -156,7 +167,7 @@ export default function SkillCalculator() {
                                     </button>
                                 </div>
                                 <div className="text-[10px] text-text-muted text-center font-mono opacity-50">
-                                    Next: {level >= maxPossibleLevel ? 'MAX' : (levels[Math.min(level - 1, levels.length - 1)]?.SummonsRequired?.toLocaleString() || '?')}
+                                    Next: {level >= maxPossibleLevel ? 'MAX' : (levels[level]?.SummonsRequired?.toLocaleString() || '?')}
                                 </div>
                             </div>
                         </div>
@@ -199,7 +210,7 @@ export default function SkillCalculator() {
                                             onChange={(e) => setTargetAscension(Number(e.target.value))}
                                             className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
                                         >
-                                            {[0, 1, 2, 3].map(a => (
+                                            {Array.from({ length: maxAscension + 1 }, (_, a) => a).map(a => (
                                                 <option key={a} value={a}>Ascension {a}</option>
                                             ))}
                                         </select>

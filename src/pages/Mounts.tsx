@@ -139,7 +139,7 @@ export default function Mounts() {
         Object.keys(mountUpgrades).forEach(rarity => {
             const levelInfo = mountUpgrades[rarity]?.LevelInfo || [];
             let sum = 0;
-            const sums = [0]; // Level 1 (index 0) has 0 total exp
+            const sums = [0]; // sums[D] = game total XP of a display level D mount with 0 progress (includes LevelInfo[0], the mount's own base XP)
             for (let i = 0; i < levelInfo.length; i++) {
                 sum += levelInfo[i].Experience || 0;
                 sums.push(sum);
@@ -313,7 +313,8 @@ export default function Mounts() {
                                                         <TrendingUp className="w-2.5 h-2.5 text-accent-primary" /> Next Lvl
                                                     </div>
                                                     <div className="font-mono font-bold text-accent-primary text-xs">
-                                                        {globalLevel >= upgradeData.length - 1 ? 'MAX' : (upgradeData[globalLevel]?.Experience || 0).toLocaleString()}
+                                                        {/* Stored level is 0-based (display D = stored D - 1); leveling up needs LevelInfo[stored + 1], i.e. LevelInfo[D]. */}
+                                                        {globalLevel >= upgradeData.length ? 'MAX' : (upgradeData[globalLevel]?.Experience || 0).toLocaleString()}
                                                     </div>
                                                 </div>
                                                 <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">

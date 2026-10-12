@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { applyTreeMode, useStatLibraries } from './useGlobalStats';
 import { useProfile } from '../context/ProfileContext';
-import { useGameData } from './useGameData';
+import { useTreeMode } from '../context/TreeModeContext';
+import { useComparison } from '../context/ComparisonContext';
 import { StatEngine, LibraryData, AggregatedStats, calculateStats } from '../utils/statEngine';
 import { PetSlot, MountSlot, UserProfile } from '../types/Profile';
 import { MAX_ACTIVE_PETS } from '../utils/constants';
@@ -8,18 +10,36 @@ import { MAX_ACTIVE_PETS } from '../utils/constants';
 /** How many combinations to evaluate per animation frame. */
 const BATCH_SIZE = 200;
 
-export type SweepMetric = 'lifesteal' | 'dps' | 'heal' | 'balanced';
+export type SweepMetric = 'lifesteal' | 'dps' | 'power' | 'heal' | 'balanced';
 
 export interface LoadoutCombo {
     petSet: PetSlot[];
     mount: MountSlot | null;
 }
 
-/** One scored combination. Only the three ranking metrics — cheap enough for the whole sweep. */
+/** One scored combination. Only the ranking metrics, cheap enough for the whole sweep. */
 export interface SweepResult extends LoadoutCombo {
     dps: number;
+    power: number;
+    /** Upper bound: in-game healing is capped at max HP (BattleSystem.ApplyDmg, RVA 0x77F4BD0). */
     lifestealPerSec: number;
+    /** Upper bound, same cap as lifestealPerSec. */
     healPerSec: number;
+}
+
+export interface SweepOptions {
+    /**
+     * Profile to sweep. Omitted: the active profile. null: no sweep (idle, no CPU spent).
+     * The header's tree mode is applied on top, exactly as useGlobalStats does.
+     * Pass a stable snapshot: a new object identity restarts the sweep.
+     */
+    base?: UserProfile | null;
+    /**
+     * True (default): each saved build is scored at its own stored level. False: every
+     * candidate is scored at level 1 so only secondary stats decide; equipping still
+     * uses the saved level.
+     */
+    respectSavedLevels?: boolean;
 }
 
 /**
@@ -27,9 +47,9 @@ export interface SweepResult extends LoadoutCombo {
  * (substats excluded) so this is computed on demand, never for the whole sweep.
  */
 export interface ExpandedLoadout extends SweepResult {
-    /** Substats ON — "Old Stats" in the header toggle. */
+    /** Substats included ("Substats On", not the in-game Power) in the header toggle. */
     calcStats: AggregatedStats;
-    /** Substats OFF — "New Stats" in the header toggle. */
+    /** Substats excluded (the in-game Power) in the header toggle. */
     shownStats: AggregatedStats;
     shownDmg: number;
     calcDmg: number;
@@ -46,67 +66,25 @@ const mountKey = (m: MountSlot) => `${m.id}|${m.rarity}|${m.level}|${JSON.string
  *
  * The sweep is time-sliced across animation frames so the page stays interactive:
  * a full roster is tens of thousands of StatEngine runs. Results are cached, so
- * switching the ranking metric only re-sorts — it never re-sweeps.
+ * switching the ranking metric only re-sorts, it never re-sweeps.
  */
-/**
- * @param respectSavedLevels When true (default) each saved build is scored at its own
- * stored level. When false, every candidate is scored at level 1 so only secondary
- * stats decide — equipping still uses the saved level.
- */
-export function useLoadoutSweep(respectSavedLevels: boolean = true) {
-    const { profile } = useProfile();
+export function useLoadoutSweep(options: SweepOptions = {}) {
+    const { base, respectSavedLevels = true } = options;
+    const { profile: activeProfile } = useProfile();
+    const { treeMode } = useTreeMode();
+    // Power follows the In-game/Substats toggle like the profile card; it is the only output
+    // the flag changes, so DPS/HPS/lifesteal are identical either way.
+    const { excludeSubstats } = useComparison();
+    const { libs } = useStatLibraries();
+    const enabled = base !== null;
+    const source = base ?? activeProfile;
+    // Same tree-mode transform and libraries as the profile stats (useGlobalStats), so a
+    // sweep row equals the profile panel under every My/Max/Empty tree setting.
+    const profile = useMemo(() => applyTreeMode(source, treeMode, libs), [source, treeMode, libs]);
 
     const profileRef = useRef(profile);
     profileRef.current = profile;
-
-    const { data: petLibrary } = useGameData<any>('PetLibrary.json');
-    const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
-    const { data: petBalancingLibrary } = useGameData<any>('PetBalancingLibrary.json');
-    const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
-    const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
-    const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
-    const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
-    const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');
-    const { data: guildPositionLibrary } = useGameData<any>('GuildTechTreePositionLibrary.json');
-    const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
-    const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
-    const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
-    const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
-    const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
-    const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
-    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
-    const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
-    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
-
-    // Memoized so the sweep effect isn't restarted on every render.
-    const libs: LibraryData = useMemo(() => ({
-        petLibrary,
-        petUpgradeLibrary,
-        petBalancingLibrary,
-        skillLibrary,
-        skillPassiveLibrary,
-        mountUpgradeLibrary,
-        techTreeLibrary,
-        techTreePositionLibrary,
-        guildTechTreePositionLibrary: guildPositionLibrary || undefined,
-        guildTechTreeUpgradeLibrary: guildUpgradeLibrary || undefined,
-        itemBalancingLibrary,
-        itemBalancingConfig,
-        weaponLibrary,
-        projectilesLibrary,
-        secondaryStatLibrary,
-        skinsLibrary,
-        setsLibrary,
-        ascensionConfigsLibrary
-    }), [
-        petLibrary, petUpgradeLibrary, petBalancingLibrary,
-        skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
-        techTreeLibrary, techTreePositionLibrary,
-        guildPositionLibrary, guildUpgradeLibrary,
-        itemBalancingLibrary, itemBalancingConfig,
-        weaponLibrary, projectilesLibrary, secondaryStatLibrary,
-        skinsLibrary, setsLibrary, ascensionConfigsLibrary
-    ]);
+    const { petLibrary, mountUpgradeLibrary, itemBalancingConfig, itemBalancingLibrary } = libs;
 
     const isReady = !!petLibrary && !!mountUpgradeLibrary && !!itemBalancingConfig && !!itemBalancingLibrary;
 
@@ -202,6 +180,12 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
     const [results, setResults] = useState<SweepResult[]>([]);
 
     useEffect(() => {
+        if (!enabled) {
+            setStatus('idle');
+            setProgress(0);
+            setResults([]);
+            return;
+        }
         if (!isReady || combos.length === 0) return;
 
         let cancelled = false;
@@ -219,13 +203,14 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
             const end = Math.min(i + BATCH_SIZE, combos.length);
             for (; i < end; i++) {
                 const combo = combos[i];
-                const stats = new StatEngine(buildTempProfile(combo), libs).calculate();
+                const stats = new StatEngine(buildTempProfile(combo), libs, excludeSubstats).calculate();
                 acc.push({
                     ...combo,
                     // Real-time throughout: the stepped breakpoint model, matching
                     // the Real-Time Metrics card. Lifesteal/sec and HPS below
                     // are real-time too, so all three headline metrics agree.
                     dps: stats.realTotalDps,
+                    power: stats.power,
                     lifestealPerSec: stats.realWeaponDps * stats.lifeSteal,
                     healPerSec: stats.realTotalHps
                 });
@@ -247,19 +232,20 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
             cancelled = true;
             cancelAnimationFrame(frame);
         };
-    }, [combos, libs, isReady, engineKey, buildTempProfile]);
+    }, [combos, libs, isReady, engineKey, buildTempProfile, enabled, excludeSubstats]);
 
     // --- Scoring ------------------------------------------------------------
     // Each metric is normalised by its own max across the sweep so that combining
     // DPS and HPS isn't dominated by whichever has the bigger raw scale.
     const maxima = useMemo(() => {
-        let dps = 0, lifesteal = 0, heal = 0;
+        let dps = 0, power = 0, lifesteal = 0, heal = 0;
         for (const r of results) {
             if (r.dps > dps) dps = r.dps;
+            if (r.power > power) power = r.power;
             if (r.lifestealPerSec > lifesteal) lifesteal = r.lifestealPerSec;
             if (r.healPerSec > heal) heal = r.healPerSec;
         }
-        return { dps, lifesteal, heal };
+        return { dps, power, lifesteal, heal };
     }, [results]);
 
     /** 0..1 score for a result under the given metric (relative to the sweep's best). */
@@ -270,14 +256,15 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
 
         switch (metric) {
             case 'dps': return dpsScore;
+            case 'power': return maxima.power > 0 ? r.power / maxima.power : 0;
             case 'lifesteal': return lsScore;
             case 'heal': return healScore;
-            // Geometric mean of DPS and HPS, not a 0.5/0.5 average: the product rewards
-            // being strong on BOTH axes and collapses if either is weak, which is what a
-            // balanced build is. sqrt(dps/max · heal/max) ranks identically to the raw
-            // product dps·heal (the extra constants and sqrt are monotonic), and stays in
-            // 0..1 only so the "% of best" column can render it. Matches the Substats
-            // Calculator's dps·hps and useProfileOptimizer's balanced metric.
+            // A heuristic, not a game number: the geometric mean of DPS and HPS, each
+            // normalised by its best in the sweep. The product rewards being strong on BOTH
+            // axes and collapses if either is weak. sqrt(dps/max * heal/max) ranks
+            // identically to the raw product dps*heal (the constants and sqrt are monotonic)
+            // and stays in 0..1 so a "% of best" can be shown. Matches the Substats
+            // Calculator's dps*hps objective.
             case 'balanced': return Math.sqrt(dpsScore * healScore);
         }
     }, [maxima]);
@@ -304,6 +291,7 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
             petSet: combo.petSet,
             mount: combo.mount,
             dps: combo.dps ?? calcStats.realTotalDps,
+            power: combo.power ?? (excludeSubstats ? shownStats : calcStats).power,
             lifestealPerSec: combo.lifestealPerSec ?? calcStats.realWeaponDps * calcStats.lifeSteal,
             healPerSec: combo.healPerSec ?? calcStats.realTotalHps,
             calcStats,
@@ -313,7 +301,7 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
             shownHp: shownStats.totalHealth,
             calcHp: calcStats.totalHealth
         };
-    }, [isReady, libs, buildTempProfile]);
+    }, [isReady, libs, buildTempProfile, excludeSubstats]);
 
     return {
         status,

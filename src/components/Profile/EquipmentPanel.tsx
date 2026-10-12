@@ -19,6 +19,7 @@ import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
 import { AGES } from '../../utils/constants';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
+import { personalTechShare } from '../../utils/clanTechStacking';
 
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 
@@ -507,7 +508,8 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
     const handleLevelChange = (delta: number, e: React.MouseEvent) => {
         e.stopPropagation();
         if (!mount) return;
-        const newLevel = Math.max(1, Math.min(100, mount.level + delta));
+        const maxLevel = mountUpgradeLibrary?.[mount.rarity]?.LevelInfo?.length || 100;
+        const newLevel = Math.max(1, Math.min(maxLevel, mount.level + delta));
         if (newLevel === mount.level) return;
         const updatedMount = { ...mount, level: newLevel };
         
@@ -603,8 +605,8 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
             damageMulti: techDmgMulti * ascDmgMulti,
             healthMulti: techHpMulti * ascHpMulti,
             details: {
-                damage: { base: damage, techMulti: techDmgMulti, clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgMulti },
-                health: { base: health, techMulti: techHpMulti, clanTechMulti: clanMountHealthBonus, ascMulti: ascHpMulti }
+                damage: { base: damage, techMulti: personalTechShare(mountDamageBonus, clanMountDamageBonus), clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgMulti },
+                health: { base: health, techMulti: personalTechShare(mountHealthBonus, clanMountHealthBonus), clanTechMulti: clanMountHealthBonus, ascMulti: ascHpMulti }
             },
             ascLevel 
         };

@@ -8,6 +8,8 @@ import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { buildGameDictionaries } from '../../utils/ocr/gameLocalization';
+import { enforceGameLimits, rowLevelMax } from '../../utils/ocr/gameLimits';
+import { useGameLimits } from '../../hooks/useGameLimits';
 import { preloadOcr, terminateOcr } from '../../utils/ocr/ocrEngine';
 import {
     applyChanges, buildItemPatch, substatSummary, skinSummary, planPresetSaves,
@@ -112,9 +114,11 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
+    // The game's bounds for every value a read can write (see utils/ocr/gameLimits.ts).
+    const limits = useGameLimits();
     const dicts = useMemo(
-        () => buildGameDictionaries({ autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization }),
-        [autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization]
+        () => ({ ...buildGameDictionaries({ autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization }), limits }),
+        [autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization, limits]
     );
     const skinDict = useMemo(() => buildSkinDict(skinsLibrary, setsLibrary), [skinsLibrary, setsLibrary]);
 
@@ -246,10 +250,13 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
             detail: skinSummary(skin),
         };
     }));
-    const changeLevel = (id: string, lvl: number) => {
+    const changeLevel = (id: string, raw: number) => {
         markEdited(id, 'level');
         setRows(rs => rs.map(r => {
             if (r.id !== id || !r.detected) return r;
+            // A hand-typed level obeys the same game bounds as a read one.
+            const max = rowLevelMax(r, limits, profile);
+            const lvl = Math.max(1, max !== undefined ? Math.min(raw, max) : raw);
             const detected = { ...r.detected, level: lvl };
             if (r.category === 'item' && r.slot) {
                 const patch = buildItemPatch(profile, r.slot, detected, r.confidence >= 0.7);
@@ -271,7 +278,14 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
         markEdited(id, `substat${i}`);
         setRows(rs => rs.map(r => {
             if (r.id !== id || !r.detected?.substats) return r;
-            const subs = r.detected.substats.map((s, j) => j === i ? { ...s, ...patchObj } : s);
+            const subs = r.detected.substats.map((s, j) => {
+                if (j !== i) return s;
+                const next = { ...s, ...patchObj };
+                // One roll never exceeds its UpperRange: a typed 999 is clamped to the cap.
+                const cap = next.statId ? limits?.statMax.get(next.statId) : undefined;
+                if (cap !== undefined) next.value = Math.min(Math.max(0, next.value), cap);
+                return next;
+            });
             const detected = { ...r.detected, substats: subs };
             const ss = subs.filter(s => s.statId).map(s => ({ statId: s.statId!, value: s.value }));
             if (r.category === 'item' && r.slot) {
@@ -367,7 +381,8 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
         markEdited(id, 'level');
         setRows(rs => rs.map(r => {
             if (r.id !== id || r.patch.t !== 'clanTree') return r;
-            const v = Math.max(0, Math.min(r.patch.max || lvl, lvl || 0));
+            const cap = rowLevelMax(r, limits, profile) ?? r.patch.max;
+            const v = Math.max(0, Math.min(cap || lvl, lvl || 0));
             return {
                 ...r, patch: { ...r.patch, level: v },
                 after: `Lv ${v}`,
@@ -387,7 +402,9 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
     const [presetsWritten, setPresetsWritten] = useState(0);
     const apply = () => {
         setPresetsWritten(presetPlan.length);
-        updateProfile(applyChanges(profile, rows, { savePresets }));
+        // Last gate: whatever was typed or toggled, nothing outside the game's bounds is written.
+        const safeRows = limits ? enforceGameLimits(rows, limits, profile).map((r, k) => ({ ...r, accepted: rows[k].accepted })) : rows;
+        updateProfile(applyChanges(profile, safeRows, { savePresets }));
         setStage('done');
     };
     const grouped = useMemo(() => {
@@ -496,7 +513,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                 value === n
                                     ? (edited ? 'bg-amber-400/30 text-amber-100' : 'bg-white/15 text-text-primary')
                                     : 'bg-bg-input text-text-muted hover:text-text-primary')}>
-                            {n === 0 ? '—' : '★'.repeat(n)}
+                            {n === 0 ? '-' : '★'.repeat(n)}
                         </button>
                     ))}
                 </span>
@@ -537,7 +554,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                         <span className="text-text-muted">%</span>
                         <select value={s.statId ?? ''} onChange={e => changeSubstat(row.id, i, { statId: e.target.value || null })}
                             className={cn('px-1 py-0.5 max-w-[128px]', SELECT_CLS, isEdited(row.id, `substat${i}`) && EDITED_RING)}>
-                            <option value="">—</option>
+                            <option value="">-</option>
                             {SUBSTAT_DEFS.map(d => <option key={d.statId} value={d.statId}>{d.en}</option>)}
                         </select>
                     </div>
@@ -691,7 +708,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                     {r.patch.t === 'clanTree' && (
                                                         <span className="font-mono text-xs text-text-secondary shrink-0 flex items-center gap-1" onClick={e => e.stopPropagation()}>
                                                             {r.before} <span className="text-accent-primary">→</span> Lv
-                                                            <input type="number" min={0} max={r.patch.max} value={r.patch.level}
+                                                            <input type="number" min={0} max={rowLevelMax(r, limits, profile) ?? r.patch.max} value={r.patch.level}
                                                                 onChange={e => changeClanLevel(r.id, parseInt(e.target.value))}
                                                                 onFocus={e => e.target.select()}
                                                                 className={cn('w-12 px-1 py-0.5 text-center', NUM_CLS, isEdited(r.id, 'level') && EDITED_RING)} />
@@ -772,7 +789,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                     <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2">
                                                         <div className="text-center min-w-0">
                                                             <div className="text-[9px] uppercase tracking-widest text-text-muted mb-1">Found in screenshot</div>
-                                                            {r.cropUrl ? <img src={r.cropUrl} alt="" className="max-h-28 max-w-full mx-auto rounded-lg border border-border object-contain" /> : <div className="text-text-muted text-xs">—</div>}
+                                                            {r.cropUrl ? <img src={r.cropUrl} alt="" className="max-h-28 max-w-full mx-auto rounded-lg border border-border object-contain" /> : <div className="text-text-muted text-xs">-</div>}
                                                         </div>
                                                         <ArrowRight className="w-5 h-5 text-accent-primary shrink-0 mx-auto rotate-90 sm:rotate-0" />
                                                         <div className="flex items-center gap-2 justify-center min-w-0">
@@ -788,7 +805,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                                     <div className="text-[9px] uppercase tracking-widest text-text-muted">Will set</div>
                                                                     <div className="flex items-center gap-1 text-sm font-bold text-white flex-wrap">
                                                                         Lv.
-                                                                        <input type="number" value={r.detected?.level ?? ''} min={1}
+                                                                        <input type="number" value={r.detected?.level ?? ''} min={1} max={rowLevelMax(r, limits, profile)}
                                                                             onChange={e => changeLevel(r.id, parseInt(e.target.value) || 0)}
                                                                             onFocus={e => e.target.select()}
                                                                             className={cn('w-14 px-1 py-0.5 text-center', NUM_CLS, isEdited(r.id, 'level') && EDITED_RING)} />

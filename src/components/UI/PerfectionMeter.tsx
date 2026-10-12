@@ -30,7 +30,7 @@ export function PerfectionMeter({
                 <div className={cn('h-full', barColor)} style={{ width: `${Math.min(100, v)}%` }} />
             </div>
             <span className={cn('font-mono font-bold shrink-0', textColor)}>
-                {has ? `${v.toFixed(1)}%` : '—'}
+                {has ? `${v.toFixed(1)}%` : '-'}
             </span>
         </div>
     );

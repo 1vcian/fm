@@ -97,7 +97,7 @@ function choiceLabel(kind: MergeRow['kind'], choice: MergeChoice): { label: stri
 }
 
 const stamp = (epoch: number | null): string =>
-    epoch ? new Date(epoch).toLocaleString() : '—';
+    epoch ? new Date(epoch).toLocaleString() : '-';
 
 export function MergeDialog({ rows, busy, firstLogin, onChoose, onApply, onClose }: MergeDialogProps) {
     const destructive = rows.filter(r => r.kind === 'server-deleted' && r.choice === 'server').length;

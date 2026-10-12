@@ -80,6 +80,8 @@ export interface UnitSpec {
     /** Display-only passthrough for the visualizer (sprites, names). */
     tag?: string;
     weaponSpriteKey?: string;
+    /** Display only: the skill that created this unit (Drone), carried onto its shots and hits. */
+    skillId?: string;
     /** Skill summons (Drone): excluded from buffs and from enemy-center math. */
     isSummon?: boolean;
     /** Seconds until self-destruction (Drone's ActiveDuration). */
@@ -123,6 +125,7 @@ export interface Unit {
     destroyed: boolean;
     tag?: string;
     weaponSpriteKey?: string;
+    skillId?: string;
 }
 
 export interface Projectile {
@@ -139,6 +142,8 @@ export interface Projectile {
     /** Stats snapshot at fire time — the game copies the whole CombatStats into the shot. */
     srcStats: CombatStatsVec;
     destroyed: boolean;
+    /** Display only: the skill that fired it (Arrows, Shuriken, a Drone's shot); none = weapon. */
+    skillId?: string;
 }
 
 export interface AreaProjectile {
@@ -157,6 +162,9 @@ export interface AreaProjectile {
     hasFinalPulse: boolean;
     srcStats: CombatStatsVec;
     destroyed: boolean;
+    /** Display only: the skill that spawned it, and the tick of its last damage pulse. */
+    skillId?: string;
+    lastPulseTick?: number;
 }
 
 /** One CombatDmg event, same flags as the game's struct. Heal events reuse dmg as amount. */
@@ -170,4 +178,12 @@ export interface CombatEvent {
     critical: boolean;
     reflected: boolean;
     heal: boolean;
+    /**
+     * Display only. What dealt it: the weapon (melee/ranged), a skill (skillId set), a reflect,
+     * or lifesteal (heal). x/y: where the target stood (Position + CenterOfMass) when it landed.
+     */
+    source?: 'melee' | 'ranged' | 'skill' | 'reflect' | 'lifesteal' | 'buff';
+    skillId?: string;
+    x?: number;
+    y?: number;
 }

@@ -1,5 +1,6 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
-import { GameDataProvider } from './context/GameDataContext';
+import type { ReactNode } from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { GameDataProvider, useGameDataContext } from './context/GameDataContext';
 import { ProfileProvider } from './context/ProfileContext';
 import { ClanProvider } from './context/ClanContext';
 import { TreeModeProvider } from './context/TreeModeContext';
@@ -7,7 +8,6 @@ import { ComparisonProvider } from './context/ComparisonContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AppShell from './components/Layout/AppShell';
-import Home from './pages/Home';
 import Configs from './pages/Configs';
 import Mounts from './pages/Mounts';
 import Items from './pages/Items';
@@ -30,11 +30,9 @@ import ProgressPrediction from './pages/ProgressPrediction';
 import PvpArena from './pages/PvpArena';
 import SubstatsCalculator from './pages/Calculators/SubstatsCalculator';
 import ForgeCalculator from './pages/Calculators/ForgeCalculator';
-import MountCalculator from './pages/Calculators/MountCalculator';
-import SkillCalculator from './pages/Calculators/SkillCalculator';
+import SummonsCalculator from './pages/Calculators/SummonsCalculator';
 import TreeCalculator from './pages/Calculators/TreeCalculator';
 import WarPrizesCalculator from './pages/Calculators/WarPrizesCalculator';
-import LoadoutOptimizer from './pages/Calculators/LoadoutOptimizer';
 import Verify from './pages/Verify';
 import ForgeWiki from './pages/ForgeWiki';
 import SkinsPage from './pages/Skins';
@@ -43,12 +41,17 @@ import Shop from './pages/Shop';
 import ProgressPassWiki from './pages/ProgressPassWiki';
 import Gallery from './pages/Gallery';
 import FairiesWiki from './pages/FairiesWiki';
+import AchievementsWiki from './pages/AchievementsWiki';
 import Settings from './pages/Settings';
 import SecondaryStatsWiki from './pages/SecondaryStatsWiki';
 import MissionsWiki from './pages/MissionsWiki';
 import MissionSolo from './pages/MissionSolo';
 
-
+/** Developer pages (Configs, Verify) exist only with ?debug=true; anyone else lands on the profile. */
+function DebugOnly({ children }: { children: ReactNode }) {
+    const { isDebug } = useGameDataContext();
+    return isDebug ? <>{children}</> : <Navigate to="/" replace />;
+}
 
 function App() {
     return (
@@ -67,13 +70,14 @@ function App() {
                                 <Route path="/" element={<AppShell />}>
                                     <Route index element={<Profile />} />
                                     <Route path="progress-prediction" element={<ProgressPrediction />} />
-                                    <Route path="home" element={<Home />} />
-                                    <Route path="configs" element={<Configs />} />
+                                    {/* pages/Home.tsx was a legacy copy of the forge calculator: send its old URL there. */}
+                                    <Route path="home" element={<Navigate to="/calculators/forge" replace />} />
+                                    <Route path="configs" element={<DebugOnly><Configs /></DebugOnly>} />
                                     <Route path="mounts" element={<Mounts />} />
                                     <Route path="skills" element={<Skills />} />
                                     <Route path="eggs" element={<Eggs />} />
                                     <Route path="dungeons" element={<Dungeons />} />
-                                    <Route path="forge-calculator" element={<ForgeCalculator />} />
+                                    <Route path="forge-calculator" element={<Navigate to="/calculators/forge" replace />} />
                                     <Route path="items" element={<Items />} />
                                     <Route path="pets" element={<Pets />} />
 
@@ -81,7 +85,7 @@ function App() {
                                     <Route path="arena" element={<Arena />} />
                                     <Route path="guild-war" element={<GuildWar />} />
                                     <Route path="clan" element={<Clan />} />
-                                    <Route path="verify" element={<Verify />} />
+                                    <Route path="verify" element={<DebugOnly><Verify /></DebugOnly>} />
 
                                     <Route path="unlocks" element={<Unlocks />} />
                                     <Route path="offline" element={<Offline />} />
@@ -90,12 +94,13 @@ function App() {
                                     <Route path="faq" element={<FAQ />} />
                                     <Route path="pvp-arena" element={<PvpArena />} />
                                     <Route path="calculators/forge" element={<ForgeCalculator />} />
-                                    <Route path="calculators/mounts" element={<MountCalculator />} />
-                                    <Route path="calculators/skills" element={<SkillCalculator />} />
+                                    <Route path="calculators/summons" element={<SummonsCalculator />} />
+                                    {/* The mount and skill calculators are tabs of the Summons calculator now. */}
+                                    <Route path="calculators/mounts" element={<Navigate to="/calculators/summons?tab=mounts" replace />} />
+                                    <Route path="calculators/skills" element={<Navigate to="/calculators/summons?tab=skills" replace />} />
                                     <Route path="calculators/tree" element={<TreeCalculator />} />
                                     <Route path="calculators/substats" element={<SubstatsCalculator />} />
                                     <Route path="calculators/war-prizes" element={<WarPrizesCalculator />} />
-                                    <Route path="calculators/loadout" element={<LoadoutOptimizer />} />
                                     <Route path="solo-mission" element={<MissionSolo />} />
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
                                     <Route path="wiki/base-drops" element={<BaseDrops />} />
@@ -103,11 +108,12 @@ function App() {
                                     <Route path="wiki/progress-pass" element={<ProgressPassWiki />} />
                                     <Route path="wiki/secondary-stats" element={<SecondaryStatsWiki />} />
                                     <Route path="wiki/fairies" element={<FairiesWiki />} />
+                                    <Route path="wiki/achievements" element={<AchievementsWiki />} />
                                     <Route path="wiki/missions" element={<MissionsWiki />} />
                                     <Route path="skins" element={<SkinsPage />} />
                                     <Route path="gallery" element={<Gallery />} />
                                     <Route path="settings" element={<Settings />} />
-                                    <Route path="*" element={<Home />} />
+                                    <Route path="*" element={<Navigate to="/" replace />} />
                                 </Route>
                             </Routes>
                             </HashRouter>

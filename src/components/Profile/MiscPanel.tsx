@@ -188,12 +188,12 @@ export function MiscPanel() {
                                     )}
                                 </div>
                                 <div className="flex flex-col items-center bg-yellow-500/5 py-2 rounded border border-yellow-500/10">
-                                    <span className="text-yellow-500/70 font-bold mb-1">Cost / Step</span>
+                                    <span className="text-yellow-500/70 font-bold mb-1">Cost / Tier</span>
                                     <span className="font-bold text-yellow-400">
                                         {new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(upgradeStats.costPerTier)}
                                     </span>
                                     <span className="text-[9px] text-text-muted">
-                                        {upgradeStats.tiers} Steps
+                                        {upgradeStats.tiers} Tiers
                                     </span>
                                 </div>
                             </div>

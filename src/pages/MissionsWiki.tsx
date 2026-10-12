@@ -1,3 +1,4 @@
+import { calculateMissionPower, missionEnemyStats } from '../engine/enemies';
 import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
@@ -8,6 +9,14 @@ import { useGameDataContext } from '../context/GameDataContext';
 import { AGES } from '../utils/constants';
 import { getItemImage, getItemName } from '../utils/itemAssets';
 import { formatNumber } from '../utils/format';
+import missionTitles from '../data/missionTitles.json';
+
+/** Shipped English titles and blurbs (Missions string table, key = MissionTitleId). */
+const MISSION_TEXT: Record<string, { title: string; description: string }> = missionTitles;
+
+function missionTitle(id: string): string {
+    return MISSION_TEXT[id]?.title ?? id.replace(/([A-Z])/g, ' $1').trim();
+}
 
 interface Reward {
     Amount: number;
@@ -57,6 +66,7 @@ interface MissionBaseConfig {
     MissionBattleMatchTimerSeconds: number;
     HealthAndDamageLevelMultiplier: number;
     MissionOwnerRewardsCount: number;
+    DailyFreeRefreshCount?: number;
 }
 
 interface MissionRallyTime {
@@ -123,7 +133,8 @@ function hammerStageForMissionLevel(
  * The band you are in at a given Hammer Thief level: the highest row whose threshold you have
  * passed. Its MinLevel..MaxLevel is the range of mission levels that can appear for you.
  */
-const HAMMER_MAX_LEVEL = 399;
+/** Fallback only: the real ceiling is the highest MinHammerThiefLevel in MissionLevelLibrary. */
+const HAMMER_MAX_LEVEL_FALLBACK = 399;
 
 function bandForHammerLevel(
     hammerLevel: number,
@@ -148,8 +159,20 @@ export default function MissionsWiki() {
     const { data: rewardLibrary } = useGameData<Record<string, MissionReward>>('MissionRewardLibrary.json');
     const { data: allMemberRewardLibrary } = useGameData<Record<string, MissionAllMemberReward>>('MissionAllMemberRewardLibrary.json');
     const { data: baseConfig } = useGameData<MissionBaseConfig>('MissionBaseConfig.json');
+    const { data: itemBalancingConfig } = useGameData<{ PlayerPowerDamageMultiplier: number }>('ItemBalancingConfig.json');
     const { data: rallyTimeLibrary } = useGameData<Record<string, MissionRallyTime>>('MissionRallyTimeLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
+
+    // Both slider ceilings come from MissionLevelLibrary rather than literals: the highest MaxLevel
+    // (60 in 2026_10_08_09_03) and the highest MinHammerThiefLevel (399, the last band's threshold).
+    const maxMissionLevel = useMemo(
+        () => Math.max(1, ...Object.values(levelLibrary || {}).map((b) => b.MaxLevel)),
+        [levelLibrary]
+    );
+    const HAMMER_MAX_LEVEL = useMemo(() => {
+        const rows = Object.values(levelLibrary || {});
+        return rows.length ? Math.max(...rows.map((b) => b.MinHammerThiefLevel)) : HAMMER_MAX_LEVEL_FALLBACK;
+    }, [levelLibrary]);
 
     const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;
 
@@ -191,7 +214,7 @@ export default function MissionsWiki() {
     const filteredMissions = useMemo(() => {
         if (!battleLibrary) return [];
         return Object.values(battleLibrary)
-            .filter(m => m.MissionTitleId.toLowerCase().includes(searchTerm.toLowerCase()))
+            .filter(m => missionTitle(m.MissionTitleId).toLowerCase().includes(searchTerm.toLowerCase()))
             .sort((a, b) => a.MinLevel - b.MinLevel);
     }, [battleLibrary, searchTerm]);
 
@@ -201,11 +224,10 @@ export default function MissionsWiki() {
         return currentRewards.Rewards;
     }, [currentRewards]);
 
+    // MissionCombatScene.SetupEnemies (0x780E7D0): Convert.ToInt64(base x (float)multiplier ^ (level - 1)).
     const getScaledValue = (base: number) => {
         if (!baseConfig) return base;
-        // Formula: base * (1 + (level - 1) * (multiplier - 1))
-        const multiplier = baseConfig.HealthAndDamageLevelMultiplier;
-        return Math.floor(base * Math.pow(multiplier, effectiveLevel - 1));
+        return missionEnemyStats({ BaseDamage: base, BaseHealth: base }, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier).hp;
     };
 
     if (loading) {
@@ -230,11 +252,14 @@ export default function MissionsWiki() {
                 </div>
 
                 {/* Base Config Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-6 gap-3 w-full md:w-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-7 gap-3 w-full md:w-auto">
                     <ConfigStat label="Daily Energy" value={baseConfig.DailyEnergy} icon={Zap} />
                     <ConfigStat label="Max Support" value={baseConfig.MaxSupportMembers} icon={Users} />
                     <ConfigStat label="Refresh Cost" value={baseConfig.RefreshGemCost} suffix=" Gems" icon={Star} />
                     <ConfigStat label="Refresh Count" value={baseConfig.RefreshMissionCount} icon={Settings} />
+                    {baseConfig.DailyFreeRefreshCount !== undefined && (
+                        <ConfigStat label="Free Refreshes" value={`${baseConfig.DailyFreeRefreshCount}/day`} icon={Settings} />
+                    )}
                     <ConfigStat label="Match Timer" value={`${baseConfig.MissionBattleMatchTimerSeconds}s`} icon={Clock} />
                     <ConfigStat label="Owner Rewards" value={`${baseConfig.MissionOwnerRewardsCount}x`} icon={Trophy} />
                 </div>
@@ -300,7 +325,7 @@ export default function MissionsWiki() {
                         <input
                             type="range"
                             min={byHammer ? 0 : 1}
-                            max={byHammer ? HAMMER_MAX_LEVEL : 60}
+                            max={byHammer ? HAMMER_MAX_LEVEL : maxMissionLevel}
                             value={byHammer ? hammerLevel : missionLevel}
                             onChange={(e) =>
                                 byHammer
@@ -311,7 +336,7 @@ export default function MissionsWiki() {
                         />
                         <div className="flex justify-between text-[10px] font-black text-text-muted uppercase tracking-tighter">
                             <span>{byHammer ? formatStage(0) : 'Level 1'}</span>
-                            <span>{byHammer ? formatStage(HAMMER_MAX_LEVEL) : 'Level 60'}</span>
+                            <span>{byHammer ? formatStage(HAMMER_MAX_LEVEL) : `Level ${maxMissionLevel}`}</span>
                         </div>
 
                         {byHammer && hammerBand && (
@@ -372,7 +397,7 @@ export default function MissionsWiki() {
                         </div>
                         <div>
                             <h2 className="text-2xl font-black text-white uppercase tracking-tight">Mission Reward Pool</h2>
-                            <p className="text-xs text-text-secondary">Exactly <span className="text-accent-primary font-bold">4 items are picked</span> per battle. If fewer than 4 items exist, some are repeated.</p>
+                            <p className="text-xs text-text-secondary">Exactly <span className="text-accent-primary font-bold">{baseConfig.MissionOwnerRewardsCount} items are picked</span> per battle. If fewer than {baseConfig.MissionOwnerRewardsCount} items exist, some are repeated.</p>
                         </div>
                     </div>
 
@@ -415,15 +440,14 @@ export default function MissionsWiki() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredMissions.map((battle) => {
-                        // 1. Stats scale LINEARLY (Confirmed by user "K" values)
+                        // Stats scale geometrically with the mission level (see getScaledValue).
                         const scaledDmg = getScaledValue(battle.BaseDamage);
                         const scaledHp = getScaledValue(battle.BaseHealth);
                         
-                        // Suggested power is mission-SPECIFIC: 0.8 × UnitCount × (8·Damage + Health),
-                        // on the per-level-scaled enemy stats (scaling already applied by getScaledValue).
-                        // Calibrated to in-game values: Law L33 82.5B, Alien L33 49.5B, Black Sails L34 89.5B,
-                        // Star Blades L34 125B. (The old fixed 144000 was just Star Blades' 9×16000, hardcoded.)
-                        const suggestedPower = 0.8 * (battle.UnitCount || 1) * (8 * scaledDmg + scaledHp);
+                        // Suggested power: the game's CalculateMissionPower (0x780FEEC), see calculateMissionPower.
+                        const suggestedPower = baseConfig && itemBalancingConfig
+                            ? calculateMissionPower(battle, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier, itemBalancingConfig.PlayerPowerDamageMultiplier)
+                            : null;
 
                         return (
                             <Card key={battle.MissionId} className={cn(
@@ -451,8 +475,13 @@ export default function MissionsWiki() {
                                             </div>
                                         </div>
                                         <h3 className="text-xl font-black text-white uppercase tracking-tight group-hover:text-accent-primary transition-colors leading-tight">
-                                            {battle.MissionTitleId.replace(/([A-Z])/g, ' $1').trim()}
+                                            {missionTitle(battle.MissionTitleId)}
                                         </h3>
+                                        {MISSION_TEXT[battle.MissionTitleId]?.description && (
+                                            <p className="text-[11px] text-text-muted leading-snug">
+                                                {MISSION_TEXT[battle.MissionTitleId].description}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -484,10 +513,10 @@ export default function MissionsWiki() {
                                             <Activity size={12} /> Suggested Power
                                         </div>
                                         <div className="text-xl font-black text-white tracking-tighter relative z-10">
-                                            {formatNumber(suggestedPower)}
+                                            {suggestedPower === null ? '-' : formatNumber(suggestedPower)}
                                         </div>
                                         <div className="text-[8px] font-bold text-text-muted mt-0.5 opacity-0 group-hover/power:opacity-100 transition-all translate-y-2 group-hover/power:translate-y-0 relative z-10 text-center px-2">
-                                            Formula: 0.8 × {battle.UnitCount} units × (8×Dmg + HP)
+                                            0.8 x {battle.UnitCount} units x (Dmg x {itemBalancingConfig?.PlayerPowerDamageMultiplier ?? '?'} + HP)
                                         </div>
                                     </div>
 
@@ -553,7 +582,8 @@ function ElegantDropSection({ label, chance, items, autoMapping, version }: { la
                 </span>
             </div>
             <div className="flex flex-wrap gap-2">
-                {items.slice(0, 5).map((item, i) => {
+                {/* Every entry of MissionBattleLibrary Possible{Weapons,Helmets,Armours}: the config has no display cap (up to 6 entries in 2026_10_08_09_03). */}
+                {items.map((item, i) => {
                     const ageName = AGES[item.Item1] || AGES[0];
                     const labelForImage = label === 'Weaponry' ? 'Weapon' : label === 'Headgear' ? 'Helmet' : 'Armour';
                     const iconPath = getItemImage(ageName, labelForImage, item.Item2, autoMapping, version || undefined);

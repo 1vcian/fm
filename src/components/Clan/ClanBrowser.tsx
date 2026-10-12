@@ -421,7 +421,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
         if (authStatus !== 'signed-in') {
             return (
                 <Panel icon={<LogIn className="w-5 h-5" />} title="Sign in to browse clans">
-                    The clan list is only readable by a signed-in account — the server refuses it outright to
+                    The clan list is only readable by a signed-in account: the server refuses it outright to
                     anonymous callers, so there is nothing to show here yet.
                 </Panel>
             );
@@ -539,7 +539,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
                     <p className="text-[11px] text-text-muted">
                         {searchMode
                             ? 'Best matches, ranked by the server. Exact tags first.'
-                            : `The ${rows} most recently active clans. Search to find any other one — the full list is never downloaded.`}
+                            : `The ${rows} most recently active clans. Search to find any other one: the full list is never downloaded.`}
                     </p>
                 </>
             )}

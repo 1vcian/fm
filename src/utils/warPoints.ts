@@ -95,7 +95,9 @@ import {
     type WarCategory,
 } from './guildWarUtils';
 import { getTechNodeName } from './techUtils';
+import { clanNodeValueAtLevel } from './clanTechStacking';
 import { optimizeTechTree, type TechTreeLevels } from './techOptimizer';
+import { simulateSummons, baseSummonCount, summonCost, maxAscensionFrom } from './summonEngine';
 
 /* ------------------------------------------------------------------------------------------ *
  * Public shape
@@ -229,6 +231,8 @@ export interface WarPointsConfigs {
     eggSummonConfig?: any;
     /** EggLibrary.json — hatch times. OPTIONAL: only used for the feasibility note. */
     eggLibrary?: any;
+    /** AscensionConfigsLibrary.json: pet ascension count for the egg summoner (0 ascensions without it). */
+    ascensionConfigs?: any;
 }
 
 /** The slice of a profile this engine touches. A whole `UserProfile` satisfies it. */
@@ -331,19 +335,11 @@ export function warWeekHoursRemaining(now: Date = new Date()): number {
  * costs points but grants a smaller value (today: +4 %/level up to 10, then +1 %/level forever). A
  * war node at level 15 is therefore +45 %, not +60 %.
  *
- * `useTreeModifiers()` and `useClanNodeMax()` both do a flat `ValuePerLevel × level` and `grep -rn
- * "Infinite" src` finds nothing — so for a member above the cap this engine and the calculator
- * pages will legitimately differ, and this is the side that matches the game. Those hooks are not
- * this module's to change; the divergence is asserted and printed by the verification script.
+ * The calculator hooks and this engine share the same infinite-level math (clanNodeValueAtLevel in
+ * clanTechStacking.ts); the verification script asserts they agree.
  */
 function clanNodeValue(def: any, level: number): number {
-    if (!def || level <= 0) return 0;
-    const perLevel = Number(def.ValuePerLevel) || 0;
-    const maxLevel = Number(def.MaxLevel) || 0;
-    if (maxLevel <= 0 || level <= maxLevel) return perLevel * level;
-
-    const perInfinite = Number(def.ValuePerInfiniteLevel) || 0;
-    return perLevel * maxLevel + perInfinite * (level - maxLevel);
+    return clanNodeValueAtLevel(def, level);
 }
 
 /**
@@ -375,12 +371,14 @@ function readClanBonuses(configs: WarPointsConfigs, clanLevels: Record<number, n
 /**
  * Sum of a PLAYER tree node type over the three player trees.
  *
- * Deliberately the same summation every calculator does: walk `TechTreeMapping.trees[*].nodes`,
- * take the levels straight out of the profile, and value a level as
- * `Stats[0].Value + (level - 1) * ValueIncrease`. In particular it does NOT validate a node's
- * requirements — `useSkillsCalculator`, `useMountsCalculator`, `useEggSummonCalculator` and
- * `ForgeCalculator` all skip that check, so validating here would make this engine disagree with
- * every number on screen for a profile whose tree was typed in out of order.
+ * Walks `TechTreeMapping.trees[*].nodes`, takes the levels straight out of the profile, and values
+ * a level as `Stats[0].Value + (level - 1) * ValueIncrease`. It does NOT validate a node's unlock
+ * requirements and ignores the header's tree mode. The calculators (`useSkillsCalculator`,
+ * `useMountsCalculator`, `useEggSummonCalculator`, `useForgeCalculator`, `ForgeCalculator`) now
+ * read `useTreeModifiers`, which applies the tree mode and drops any node whose requirements are
+ * not met. So for a profile whose tree was typed in out of order (or under the Max/Empty tree
+ * mode) this sum can differ from the calculator pages. It stays a plain function because
+ * `computeWarPoints` runs outside React (ClanContext calls it directly).
  *
  * The Clan tree is not in this mapping at all; its values come from `readClanBonuses`.
  */
@@ -417,13 +415,10 @@ function singleSummonCost(config: any): number {
  *
  * The first entry is the single-summon size: 5 for skills, 1 for mounts and eggs (the later entries
  * are the bulk buttons, which cost proportionally more and so cannot change points per currency).
- * `useSkillsCalculator` reads `SkillBaseConfig.SummonCount` instead, a key that does NOT exist in
- * `2026_08_21_00_29`, so it falls through to a literal 5 — the same number this derives from config.
+ * This is SummonConfig.BaseSummonCount (RVA 0x7865E88), shared with the Summons calculator through
+ * `summonEngine.ts`.
  */
-function unitsPerSummon(config: any, fallback: number): number {
-    const first = Number(config?.PossibleSummonCount?.[0]);
-    return Number.isFinite(first) && first > 0 ? first : fallback;
-}
+const unitsPerSummon = baseSummonCount;
 
 /* ------------------------------------------------------------------------------------------ *
  * The rarity distribution of a pile of summons
@@ -445,23 +440,14 @@ interface SummonPool {
 /**
  * Spend a currency on summons and report the expected rarity mix.
  *
- * This is `useSkillsCalculator` / `useMountsCalculator` / `useEggSummonCalculator`'s shared inner
- * loop: each summon rolls against the CURRENT level's probability row, then adds to a progress
- * counter that levels the summoner up (and, at max level, ascends it and resets to 1). The mix
- * matters only where the reward differs by rarity — that is eggs, where a Mythic hatch pays 64× a
+ * A thin wrapper over `simulateSummons` (`summonEngine.ts`), the same engine the Summons
+ * calculator's Eggs / Mounts / Skills tabs run, so this figure and the calculator agree. The mix
+ * matters only where the reward differs by rarity: that is eggs, where a Mythic hatch pays 64x a
  * Common one. For skills (125 flat) and mounts (600 flat) the caller short-circuits this entirely,
- * because the mix cancels out and a player with a million tickets would otherwise cost a five-digit
- * loop for a number that is `units × 125`.
+ * because the mix cancels out.
  *
- * STEADY STATE IS CLOSED-FORM ON PURPOSE. Once the summoner can no longer level (max level with
- * ascension exhausted or disabled) every remaining summon draws the same row, so the tail is
- * multiplied out instead of iterated. That is exact, not an approximation, and it is what keeps this
- * synchronous for an endgame bank.
- *
- * One known deviation: `useEggSummonCalculator`'s copy of this loop tests `currentLevel >
- * maxPossibleLevel` where the skill/mount copies test `>=`, so at the very top of the level range
- * the two can sit one row apart. The skill/mount form is used here (two consumers to one) and the
- * verification script prints the resulting egg-page delta rather than hiding it.
+ * The engine multiplies out the frozen tail (top level, no ascension left) instead of iterating
+ * it, which keeps an endgame bank synchronous; `maxIterations` bounds the rest.
  */
 function simulateSummonPool(params: {
     levels: any[];
@@ -474,77 +460,26 @@ function simulateSummonPool(params: {
     unitsPerSummon: number;
     maxIterations?: number;
 }): SummonPool {
-    const {
-        levels, startProgress, startAscension, simulateAscension, maxAscension,
-        summons, unitsPerSummon: perSummon,
-    } = params;
-
-    const byRarity: Record<string, number> = {};
-    for (const rarity of RARITIES) byRarity[rarity] = 0;
-
-    const maxLevel = levels.length || 100;
-    const maxIterations = params.maxIterations ?? 1_000_000;
-
-    let level = Math.max(1, Math.min(params.startLevel || 1, maxLevel));
-    let progress = Math.max(0, startProgress || 0);
-    let ascension = Math.max(0, startAscension || 0);
-    let extrapolated = false;
-
-    const rowAt = (lvl: number) => levels[Math.min(Math.max(0, lvl - 1), levels.length - 1)];
-    const addRow = (row: any, times: number) => {
-        if (!row || times <= 0) return;
-        for (const rarity of RARITIES) {
-            const chance = Number(row[rarity]) || 0;
-            if (chance > 0) byRarity[rarity] += chance * perSummon * times;
-        }
+    const maxLevel = params.levels.length || 100;
+    const sim = simulateSummons({
+        levels: params.levels,
+        startLevel: Math.max(1, Math.min(params.startLevel || 1, maxLevel)),
+        startProgress: Math.max(0, params.startProgress || 0),
+        startAscension: Math.max(0, params.startAscension || 0),
+        simulateAscension: params.simulateAscension,
+        maxAscension: params.maxAscension,
+        summons: params.summons,
+        unitsPerSummon: params.unitsPerSummon,
+        maxIterations: params.maxIterations ?? 1_000_000,
+    });
+    return {
+        byRarity: sim.byRarity,
+        units: sim.units,
+        summons: params.summons,
+        endLevel: sim.endLevel,
+        endAscension: sim.endAscension,
+        extrapolated: sim.extrapolated,
     };
-
-    let done = 0;
-    while (done < summons) {
-        // Frozen? Then the rest of the pile draws this exact row — multiply and stop.
-        const frozen = level >= maxLevel && (!simulateAscension || ascension >= maxAscension);
-        if (frozen) {
-            addRow(rowAt(level), summons - done);
-            done = summons;
-            break;
-        }
-        if (done >= maxIterations) {
-            addRow(rowAt(level), summons - done);
-            extrapolated = true;
-            break;
-        }
-
-        // Free ascension: at max level the summoner resets to 1 without consuming a summon.
-        if (simulateAscension && ascension < maxAscension && level >= maxLevel) {
-            level = 1;
-            ascension += 1;
-        }
-
-        addRow(rowAt(level), 1);
-        done += 1;
-
-        progress += perSummon;
-        let threshold = rowAt(level)?.SummonsRequired;
-        while (threshold && progress >= threshold) {
-            progress -= threshold;
-            level += 1;
-            if (simulateAscension && ascension < maxAscension && level >= maxLevel) {
-                level = 1;
-                ascension += 1;
-                threshold = levels[0]?.SummonsRequired;
-            } else if (level > maxLevel) {
-                level = maxLevel;
-                break;
-            } else {
-                threshold = rowAt(level)?.SummonsRequired;
-            }
-        }
-    }
-
-    let units = 0;
-    for (const rarity of RARITIES) units += byRarity[rarity];
-
-    return { byRarity, units, summons, endLevel: level, endAscension: ascension, extrapolated };
 }
 
 /* ------------------------------------------------------------------------------------------ *
@@ -602,8 +537,9 @@ export function computeWarPoints(
     const clanBonuses = readClanBonuses(configs, clanLevels);
     const daysMap = computeWarDaysMap(dayConfig);
 
-    /** `WarPointsOnDay16` → index 05. Day N in the node name is war day index N-1. */
-    const dayBoosts = [0, 1, 2, 3, 4, 5].map(i => clanBonuses[`WarPointsOnDay${i + 1}`] || 0);
+    /** War days come from GuildWarDayConfigLibrary; `WarPointsOnDayN` boosts day index N-1. */
+    const warDayCount = dayConfig ? Object.keys(dayConfig).length : 0;
+    const dayBoosts = Array.from({ length: warDayCount }, (_, i) => clanBonuses[`WarPointsOnDay${i + 1}`] || 0);
 
     const configComplete = !!(
         dayConfig && configs.guildPositionLibrary && configs.guildUpgradeLibrary &&
@@ -836,11 +772,13 @@ export function computeWarPoints(
                 'No coin balance recorded. Fill it in under Resources.');
         } else {
             const forgeLevel = Number(misc.forgeLevel) || 1;
-            const costReduction = Math.min(0.95, sumPlayerNode(configs, profile, 'ForgeUpgradeCost'));
+            const costReduction = sumPlayerNode(configs, profile, 'ForgeUpgradeCost'); // unclamped: GetForgeTierUpgradeCost 0x77B2C74 rounds the summed stat
             let sink = 0;
             for (const [levelKey, def] of Object.entries<any>(configs.forgeUpgradeLibrary)) {
                 if (Number(levelKey) < forgeLevel) continue;
-                sink += (Number(def?.Cost) || 0) * (1 - costReduction);
+                // Per tier: RoundToInt((Cost / Tiers as int) * (1 - reduction)), ForgeExtensions.GetForgeTierUpgradeCost (RVA 0x77B2C74).
+                const tiers = Math.max(1, Number(def?.Tiers) || 1);
+                sink += tiers * Math.round(Math.floor((Number(def?.Cost) || 0) / tiers) * (1 - costReduction));
             }
 
             const spendableCoins = Math.min(coins, sink);
@@ -898,13 +836,13 @@ export function computeWarPoints(
                 'This game data version does not say what one skill summon costs, so tickets cannot be converted.');
         } else {
             const perSummon = unitsPerSummon(configs.skillSummonConfig, 5);
-            const costReduction = Math.min(0.9, sumPlayerNode(configs, profile, 'SkillSummonCost'));
+            const costReduction = sumPlayerNode(configs, profile, 'SkillSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
             // The two `ExtraSkillChance` / `ExtraSummonChance` node types do not appear in
             // TechTreeMapping for this config, so this term is 0 today — it is read anyway, because
             // the day it reappears every skill total should move without a code change.
             const extraChance = sumPlayerNode(configs, profile, 'ExtraSkillChance')
                 + sumPlayerNode(configs, profile, 'ExtraSummonChance');
-            const costPerSummon = Math.max(1, Math.ceil(unitCost * perSummon * (1 - costReduction)));
+            const costPerSummon = Math.max(1, summonCost(unitCost, perSummon, costReduction));
             const summons = Math.floor(tickets / costPerSummon);
             const units = summons * perSummon * (1 + extraChance);
 
@@ -955,9 +893,9 @@ export function computeWarPoints(
                 'This game data version does not say what one mount summon costs, so winders cannot be converted.');
         } else {
             const perSummon = unitsPerSummon(configs.mountSummonConfig, 1);
-            const costReduction = Math.min(0.9, sumPlayerNode(configs, profile, 'MountSummonCost'));
+            const costReduction = sumPlayerNode(configs, profile, 'MountSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
             const extraChance = sumPlayerNode(configs, profile, 'ExtraMountChance');
-            const costPerSummon = Math.max(1, Math.ceil(unitCost * perSummon * (1 - costReduction)));
+            const costPerSummon = Math.max(1, summonCost(unitCost, perSummon, costReduction));
             const summons = Math.floor(winders / costPerSummon);
             const units = summons * perSummon * (1 + extraChance);
 
@@ -1063,10 +1001,10 @@ export function computeWarPoints(
             if (shells > 0 && shellCost > 0 && Array.isArray(configs.eggSummonConfig?.Levels)) {
                 // `EggsSummonCost` is absent from TechTreeMapping in this config version, so the
                 // reduction is 0 today; read anyway, for the same reason as the skill one.
-                const costReduction = Math.min(0.9, sumPlayerNode(configs, profile, 'EggsSummonCost'));
+                const costReduction = sumPlayerNode(configs, profile, 'EggsSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
                 const extraChance = sumPlayerNode(configs, profile, 'ExtraEggChance');
                 const perSummon = unitsPerSummon(configs.eggSummonConfig, 1);
-                const costPerSummon = Math.max(1, Math.ceil(shellCost * perSummon * (1 - costReduction)));
+                const costPerSummon = Math.max(1, summonCost(shellCost, perSummon, costReduction));
                 shellSummons = Math.floor(shells / costPerSummon);
 
                 const pool = simulateSummonPool({
@@ -1075,7 +1013,7 @@ export function computeWarPoints(
                     startProgress: Number(misc.eggSummonProgress) || 0,
                     startAscension: Number(misc.petAscensionLevel) || 0,
                     simulateAscension: misc.simulateAscensionInCalculators !== false,
-                    maxAscension: 3,
+                    maxAscension: maxAscensionFrom(configs.ascensionConfigs, 'Pets'),
                     summons: shellSummons,
                     unitsPerSummon: perSummon * (1 + extraChance),
                 });
@@ -1107,7 +1045,8 @@ export function computeWarPoints(
                     const eggs = held + (shellEggs[rarity] || 0);
                     if (eggs <= 0) continue;
                     const base = Number(configs.eggLibrary[rarity]?.HatchTime) || 0;
-                    const speed = 1 + sumPlayerNode(configs, profile, `${rarity}EggTimer`);
+                    // The clan tree has the same TimerSpeed Divisor nodes; they add to the personal sum.
+                    const speed = 1 + sumPlayerNode(configs, profile, `${rarity}EggTimer`) + (clanBonuses[`${rarity}EggTimer`] || 0);
                     seconds += eggs * (speed > 0 ? base / speed : base);
                 }
                 if (seconds > 0) {
@@ -1331,7 +1270,7 @@ export function computeWarPoints(
     // applies, because that node is what a member earns for scoring ON that day. A member who
     // concentrates everything on their single boosted day beats `totalWithDayBoost`; this is a
     // projection of availability, not a plan.
-    const byDayBase = [0, 0, 0, 0, 0, 0];
+    const byDayBase = new Array<number>(warDayCount).fill(0);
     let total = 0;
     for (const category of WAR_CATEGORIES) {
         const entry = categories[category];

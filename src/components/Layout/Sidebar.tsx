@@ -6,40 +6,39 @@ import { cn } from '../../lib/utils';
 import {
     Star, Egg, Key, Shirt, Cat, Image, ChevronDown,
     Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart, Target, Sliders,
-    Trash2, Check, Copy, Trophy, Users, Sparkles
+    Trash2, Check, Copy, Trophy, Users, Sparkles, Settings as SettingsIcon, ShieldCheck
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { useGameData } from '../../hooks/useGameData';
+import { computeWarDaysMap, getWarDayIndex, type WarCategory } from '../../utils/guildWarUtils';
 
 interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-const getTodayIdx = () => {
-    const day = new Date().getDay(); // 0 is Sunday
-    const mapping: Record<number, number> = {
-        2: 0, 3: 1, 4: 2, 5: 3, 6: 4, 0: 5, 1: 5
-    };
-    return mapping[day] ?? 0;
+/**
+ * War-point categories each page helps with. Which days light up is never written here: it comes
+ * from GuildWarDayConfigLibrary.json (computeWarDaysMap) and the war day of the UTC reset.
+ */
+const PAGE_WAR_CATEGORIES: Record<string, WarCategory[]> = {
+    '/calculators/forge': ['forge', 'forgeSpend'],
+    '/wiki/forge': ['forge', 'forgeSpend'],
+    '/dungeons': ['dungeons'],
+    '/calculators/tree': ['tech'],
+    '/tech-tree': ['tech'],
+    '/skills': ['skills'],
+    '/mounts': ['mounts'],
+    '/eggs': ['eggs', 'pets'],
+    '/pets': ['pets'],
+    '/calculators/summons': ['skills', 'mounts', 'eggs'],
 };
 
-const isRecommended = (path: string) => {
-    const today = getTodayIdx();
-    // Forge
-    if (path === '/forge-calculator' || path === '/wiki/forge') return true;
-    // Dungeons
-    if (path === '/dungeons') return [1, 3, 4].includes(today);
-    // Tech Tree
-    if (path === '/calculators/tree' || path === '/tech-tree') return [0, 3].includes(today);
-    // Skills
-    if (path === '/calculators/skills' || path === '/skills') return [0, 2, 4].includes(today);
-    // Mounts
-    if (path === '/calculators/mounts' || path === '/mounts') return [2, 4].includes(today);
-    return false;
-};
+const isRecommended = (path: string, warDays: Partial<Record<WarCategory, number[]>>, today: number) =>
+    (PAGE_WAR_CATEGORIES[path] || []).some(c => warDays[c]?.includes(today));
 
 const CoffeeFountain = () => {
     return (
@@ -73,7 +72,10 @@ const CoffeeFountain = () => {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { profile, profiles, activeProfileId, switchProfile, createProfile, cloneProfile, deleteProfile } = useProfile();
-    const { selectedVersion } = useGameDataContext();
+    const { selectedVersion, isDebug } = useGameDataContext();
+    const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
+    const warDays = useMemo(() => computeWarDaysMap(warDayConfig), [warDayConfig]);
+    const warToday = getWarDayIndex();
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
@@ -127,14 +129,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             items: [
                 { name: 'Offline', path: '/offline', icon: Coins },
                 { name: 'Dungeons', path: '/dungeons', icon: Key },
-                { name: 'Forge', path: '/forge-calculator', icon: Hammer },
+                { name: 'Forge', path: '/calculators/forge', icon: Hammer },
                 { name: 'Tech Tree - Planner', path: '/calculators/tree', icon: Cpu },
                 { name: 'Eggs', path: '/eggs', icon: Egg },
-                { name: 'Skills', path: '/calculators/skills', icon: Star },
-                { name: 'Mounts', path: '/calculators/mounts', icon: Star },
+                { name: 'Summons', path: '/calculators/summons', icon: Star },
                 { name: 'War Prizes', path: '/calculators/war-prizes', icon: Trophy },
                 { name: 'Substats', path: '/calculators/substats', icon: Sliders },
-                { name: 'Loadout Optimizer', path: '/calculators/loadout', icon: Trophy },
             ]
         },
         {
@@ -157,14 +157,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Progress Pass', path: '/wiki/progress-pass', icon: Zap },
                 { name: 'Secondary Stats', path: '/wiki/secondary-stats', icon: TrendingUp },
                 { name: 'Fairies', path: '/wiki/fairies', icon: Sparkles },
+                { name: 'Achievements', path: '/wiki/achievements', icon: Trophy },
             ]
         },
         {
             title: 'Info',
             items: [
                 { name: 'Gallery', path: '/gallery', icon: Image, theme: 'interstellar' },
-                { name: 'Configs', path: '/configs', icon: FileJson, theme: 'multiverse' },
                 { name: 'FAQ', path: '/faq', icon: HelpCircle, theme: 'quantum' },
+                { name: 'Settings', path: '/settings', icon: SettingsIcon },
+                // Developer pages: listed (and routed) only with ?debug=true.
+                { name: 'Configs', path: '/configs', icon: FileJson, theme: 'multiverse', debugOnly: true },
+                { name: 'Verify', path: '/verify', icon: ShieldCheck, debugOnly: true },
                 { name: 'GitHub', path: 'https://github.com/1vcian/fm', icon: Github, external: true, theme: 'underworld' },
             ]
         }
@@ -348,10 +352,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                             transition={{ duration: 0.2 }}
                                             className="space-y-1"
                                         >
-                                            {group.items.map((item) => {
+                                            {group.items.filter((item) => isDebug || !('debugOnly' in item && item.debugOnly)).map((item) => {
                                                 const isActive = location.pathname === item.path;
                                                 const Icon = item.icon;
-                                                const recommended = isRecommended(item.path);
+                                                const recommended = isRecommended(item.path, warDays, warToday);
 
                                                 if ('external' in item && item.external) {
                                                     const isCoffee = item.name.toLowerCase().includes('awake');
@@ -412,7 +416,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 return (
                                                     <Link
                                                         key={item.path}
-                                                        to={item.path}
+                                                        // Debug pages keep the flag in the link so the route guard lets them through.
+                                                        to={'debugOnly' in item && item.debugOnly ? `${item.path}?debug=true` : item.path}
                                                         onClick={() => onClose()}
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",

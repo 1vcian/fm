@@ -85,7 +85,9 @@ export const getSkinSpritePosition = (
     const col = index % SKIN_SPRITE_COLS;
     const row = Math.floor(index / SKIN_SPRITE_COLS);
 
-    const isDoubleWidth = version && version >= '2026_07_03_12_39';
+    // Same resolved texture folder as getSkinSpriteStyle, so position and size agree.
+    const texVersion = resolveTextureVersion(version) ?? version;
+    const isDoubleWidth = texVersion && texVersion >= '2026_07_03_12_39';
     const bgX = (col * 100) / (isDoubleWidth ? 15 : (SKIN_SPRITE_COLS - 1));
     const bgY = (row * 100) / (isDoubleWidth ? 15 : (SKIN_SPRITE_ROWS - 1));
 

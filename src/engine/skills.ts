@@ -1,5 +1,5 @@
 /**
- * Skills — charge, activation, effects and buffs, from the 2.9.0 binary.
+ * Skills — charge, activation, effects and buffs, verified against build 2026_10_08_09_03.
  *
  * The load-bearing facts (all disassembled, see the skill recon in docs/combat-model.md):
  *
@@ -19,8 +19,9 @@
  *  - Damage skills spawn projectiles/AoEs with hardcoded radii and timing; their damage
  *    snapshot carries ONLY Dmg (no crit, no lifesteal), but the TARGET's dodge/block/reflect
  *    still roll. Hit counts divide the skill's damage (GetSkillDamageCount).
- *  - Skill jitter uses an UNSEEDED counter LCG shared by both sides: the same sequence every
- *    battle. Reproduced verbatim.
+ *  - Skill jitter uses an UNSEEDED counter LCG (PseudoRandom), one per scene, shared by both
+ *    sides in call order (PvP: ally activations first): the same sequence every battle.
+ *    Reproduced verbatim, with the two constant pairs at the exact call sites.
  */
 import { CombatScene, DT } from './scene';
 import { Unit, Vec2, defaultStats } from './types';
@@ -32,7 +33,7 @@ const INITIAL_CHARGE_MICRO = 4_000_000;
 
 const BUFF_SKILLS = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
 
-/** GetSkillDamageCount (0x773E37C): how many pieces the skill's damage is split into. */
+/** GetSkillDamageCount (0x77EDA78): how many pieces the skill's damage is split into. */
 const DAMAGE_COUNT: Record<string, number> = {
     Arrows: 3,
     Shuriken: 5,
@@ -48,17 +49,33 @@ export function skillDamageCount(id: string): number {
 }
 
 /**
- * PseudoRandom (0x773EA90): an unseeded counter LCG, offset starting at 0 every battle, so
- * skill jitter is the same sequence in every battle, shared by both sides in call order.
+ * PseudoRandom (Next 0x77EE190, build 2026_10_08_09_03): a counter LCG, one instance per
+ * SkillSystem, i.e. one per CombatScene (SkillSystem ctor 0x77F11A4 stores `new PseudoRandom()`
+ * at +0x18; CombatScene ctor 0x77EAE68 builds the SkillSystem). The battle seed never reaches it
+ * (the seed goes only to AttacksSystem's RandomPCG, 0x77F3344), so the jitter sequence is
+ * identical in every battle and is shared by both sides in call order.
+ *
+ *   Next(a, b, c): _offset += 1; v = (_offset * a + b) & 0x7FFFFFFF  (32-bit wrap);
+ *                  return F64.Ratio(v % c, c)  (Q32.32, truncated)
+ *
+ * Every call site passes c = 10000 and one of two constant pairs (see JITTER_A / JITTER_B).
  */
+export const JITTER_A: readonly [number, number] = [1103515245, 12345];
+export const JITTER_B: readonly [number, number] = [2003515245, 32425];
+const JITTER_C = 10000;
+const TWO_32 = 4294967296;
+
 export class PseudoRandom {
     private offset = 0;
-    next(): number {
-        this.offset++;
-        const v = (Math.imul(this.offset, 1103515245) + 12345) & 0x7fffffff;
-        return (v % 10000) / 10000;
+    next(a: number = JITTER_A[0], b: number = JITTER_A[1], c: number = JITTER_C): number {
+        this.offset = (this.offset + 1) | 0;
+        const v = (Math.imul(this.offset, a) + b) & 0x7fffffff;
+        return Math.floor(((v % c) * TWO_32) / c) / TWO_32;
     }
 }
+
+/** Q32.32 truncation of a non-negative value (F64 division by an int truncates). */
+const q32 = (x: number) => Math.floor(x * TWO_32) / TWO_32;
 
 export interface SkillSpec {
     /** SkillLibrary Type: 'Meteorite', 'Morale', ... */
@@ -134,12 +151,21 @@ export class SkillManager {
     }
 
     /** Ready right now (for visualizer state). */
-    snapshot(): { id: string; isAlly: boolean; state: 'ready' | 'active' | 'cooldown'; secondsLeft: number }[] {
+    snapshot(): {
+        id: string; isAlly: boolean; state: 'ready' | 'active' | 'cooldown'; secondsLeft: number;
+        /** Length of the current phase (active duration or cooldown), for progress rings. */
+        phaseSeconds: number;
+        damage: number; health: number; isBuff: boolean;
+    }[] {
         return this.skills.map((sk) => ({
             id: sk.id,
             isAlly: sk.isAlly,
             state: sk.isActive ? 'active' : sk.isOnCooldown ? 'cooldown' : 'ready',
             secondsLeft: Math.max(0, sk.timerMicro) / 1e6,
+            phaseSeconds: (sk.isActive ? sk.activeMicro : sk.isOnCooldown ? Math.max(sk.cooldownMicro, sk.timerMicro) : 0) / 1e6,
+            damage: sk.damage,
+            health: sk.health,
+            isBuff: BUFF_SKILLS.has(sk.id),
         }));
     }
 
@@ -155,7 +181,12 @@ export class SkillManager {
                 if (u.destroyed || u.isSummon || u.isAlly !== sk.isAlly) continue;
                 u.stats.hpMax = u.baseHpMax + hpBuff;
                 u.stats.hpMaxNoMulti = u.baseHpMaxNoMulti + hpBuff;
+                const before = u.hp;
                 u.hp = Math.min(u.hp + sk.health, u.stats.hpMax);
+                scene.emit({
+                    targetId: u.id, attackerId: u.id, dmg: u.hp - before, heal: true,
+                    source: 'buff', skillId: sk.id, x: u.pos.x + u.com.x, y: u.pos.y + u.com.y,
+                });
             }
         }
     }
@@ -188,14 +219,17 @@ export class SkillManager {
         if (BUFF_SKILLS.has(sk.id)) return; // buffs spawn nothing
 
         const fwd = sk.isAlly ? 1 : -1;
+        // Entities.TryGetPlayer(isAlly) (CreateSkillEffectEntities 0x77F1900): no player, no effect.
         const player =
             scene.units.find((u) => !u.destroyed && u.isAlly === sk.isAlly && u.isPlayer) ??
             scene.units.find((u) => !u.destroyed && u.isAlly === sk.isAlly && !u.isSummon);
         if (!player) return;
         const px = player.pos.x;
         const py = player.pos.y;
-        const center = this.enemyCenter(scene, sk.isAlly, px, fwd);
-        const r = () => this.rand.next();
+        const center = this.enemyCenter(scene, sk.isAlly, px, py, fwd);
+        // The two constant pairs, as each builder passes them (JITTER_A first, then JITTER_B).
+        const rA = () => this.rand.next(JITTER_A[0], JITTER_A[1]);
+        const rB = () => this.rand.next(JITTER_B[0], JITTER_B[1]);
 
         /** The skill's damage snapshot: Dmg only, everything else neutral (no crit ever). */
         const stats = (dmg: number) => ({ ...defaultStats(), dmg });
@@ -220,89 +254,135 @@ export class SkillManager {
                 srcStats: stats(dmg),
                 timer: opts.timer ?? 0,
                 pulseTimer: opts.pulseTimer ?? 0,
+                skillId: sk.id,
             });
 
+        // Builders: SkillBuilder.* in build 2026_10_08_09_03 (RVAs in docs/combat-model.md).
         switch (sk.id) {
             case 'Arrows':
             case 'Shuriken': {
-                // n ballistic shots from behind the caster, round-robin over enemy units.
+                // Arrows 0x77EDAB0 / Shurikens 0x77F0A90: n ballistic shots (speed 20, hit radius
+                // 0.4) from playerPos + (-12*fwd, 2), round-robin over EVERY opposite unit still
+                // in the entity table (summons and units killed this tick included: the filter is
+                // only IsAlly != caster), aimed at Position + CenterOfMass. Per shot: r1 (pair A),
+                // r2 (pair B); jitter x = (2*r1-1)*4*s, y = (2*r2-1)*2, where s = -fwd for Arrows
+                // and s = +fwd for Shurikens (the two builders differ only there).
                 const n = skillDamageCount(sk.id);
-                const targets = scene.units.filter((u) => !u.destroyed && u.targetable && u.isAlly !== sk.isAlly);
+                const targets = scene.units.filter((u) => !u.destroyed && u.isAlly !== sk.isAlly);
                 if (!targets.length) return;
+                const s = sk.id === 'Arrows' ? -fwd : fwd;
+                const bx = px - 12 * fwd;
+                const by = py + 2;
                 for (let i = 0; i < n; i++) {
                     const t = targets[i % targets.length];
-                    const p0: Vec2 = {
-                        x: px - 12 * fwd + (2 * r() - 1) * 4 * fwd,
-                        y: py + 2 + (2 * r() - 1) * 2,
-                    };
-                    this.fireBallistic(scene, sk, player.id, p0, t, perHit, 20, 0.4);
+                    const r1 = rA();
+                    const r2 = rB();
+                    const p0: Vec2 = { x: bx + (2 * r1 - 1) * 4 * s, y: by + (2 * r2 - 1) * 2 };
+                    this.fireBallistic(scene, sk, player.id, p0, t, perHit, 20, q32(0.4));
                 }
                 return;
             }
             case 'Shout':
-                aoe({ x: px + 5 * fwd, y: 0 }, 10, perHit, { hasPulse: true, pulse: 1.5 / 8, duration: 1.5 });
+                // 0x77F075C: playerPos + (5*fwd, 0), r=10, Duration 3/2, pulse every Duration/8.
+                aoe({ x: px + 5 * fwd, y: py }, 10, perHit, { hasPulse: true, pulse: 1.5 / 8, duration: 1.5 });
                 return;
             case 'Meteorite':
-                for (let i = 0; i < 5; i++) {
-                    const pos = { x: center.x + 2 * fwd * (2 * r() - 1), y: center.y + (2 * r() - 1) };
-                    aoe(pos, 5, perHit, { finalPulse: true, duration: 1.0 + r() });
+                // 0x77F0308: per meteor r1 (A), r2 (B), r3 (B); pos = center + ((2r1-1)*2*fwd, 2r2-1),
+                // r=5, final pulse at Duration = 1 + r3.
+                for (let i = 0; i < skillDamageCount(sk.id); i++) {
+                    const r1 = rA();
+                    const r2 = rB();
+                    const r3 = rB();
+                    const pos = { x: center.x + (2 * r1 - 1) * 2 * fwd, y: center.y + (2 * r2 - 1) };
+                    aoe(pos, 5, perHit, { finalPulse: true, duration: 1.0 + r3 });
                 }
                 return;
             case 'Stampede':
-                aoe({ x: px - 15 * fwd, y: 0 }, 3, sk.damage, { vel: { x: 8 * fwd, y: 0 }, hasPulse: true, pulse: 0.25, duration: 8.0 });
+                // 0x77EFF9C: playerPos + (-15*fwd, 0), velocity (8*fwd, 0), r=3, pulse 1/4, Duration 8.
+                aoe({ x: px - 15 * fwd, y: py }, 3, sk.damage, { vel: { x: 8 * fwd, y: 0 }, hasPulse: true, pulse: 0.25, duration: 8.0 });
                 return;
             case 'Thorns':
+                // 0x77EFD44: center, r=3, pulse 0.5, Duration 1.0, Timer starts at -0.5, both pulse kinds.
                 aoe(center, 3, sk.damage, { hasPulse: true, pulse: 0.5, duration: 1.0, timer: -0.5, finalPulse: true });
                 return;
             case 'Bomb':
+                // 0x77EF950: center, r=4, final pulse at 1.0.
                 aoe(center, 4, sk.damage, { finalPulse: true, duration: 1.0 });
                 return;
             case 'Worm':
-                aoe(center, 4, sk.damage, { finalPulse: true, duration: 0.1 });
+                // 0x77EFB4C: center, r=4, final pulse at Ratio(1,10).
+                aoe(center, 4, sk.damage, { finalPulse: true, duration: q32(0.1) });
                 return;
             case 'Lightning':
-                for (let i = 0; i < 5; i++) {
-                    const pos = { x: center.x + (2 * r() - 1) * 2 * fwd, y: center.y + (2 * r() - 1) };
-                    aoe(pos, 3, perHit, { finalPulse: true, duration: 0.5 * r() });
+                // 0x77EF500: per bolt r1 (A), r2 (B) for the position, then r3 (B);
+                // r=3, final pulse at Duration = r3 * 1/2.
+                for (let i = 0; i < skillDamageCount(sk.id); i++) {
+                    const r1 = rA();
+                    const r2 = rB();
+                    const pos = { x: center.x + (2 * r1 - 1) * 2 * fwd, y: center.y + (2 * r2 - 1) };
+                    const r3 = rB();
+                    aoe(pos, 3, perHit, { finalPulse: true, duration: r3 * 0.5 });
                 }
                 return;
             case 'RainOfArrows':
-                aoe(center, 6, perHit, { hasPulse: true, pulse: 0.2, pulseTimer: -1.0, duration: 4.0 });
+                // 0x77EF228: center, r=6, pulse 1/5, PulseTimer starts at -1, Duration 3+1,
+                // damage / FloorToInt(3 / (1/5)) = 15.
+                aoe(center, 6, perHit, { hasPulse: true, pulse: q32(0.2), pulseTimer: -1.0, duration: 4.0 });
                 return;
             case 'StrafeRun':
+                // 0x77EEFA0: center, r=3, pulse 1/4, Duration 1.0, full damage per pulse.
                 aoe(center, 3, sk.damage, { hasPulse: true, pulse: 0.25, duration: 1.0 });
                 return;
             case 'CannonBarrage':
-                for (let i = 0; i < 3; i++) {
-                    const pos = { x: center.x + (2 * r() - 1) * 2 * fwd, y: center.y + (2 * r() - 1) };
-                    aoe(pos, 6, perHit, { finalPulse: true, duration: 1.0 + r() / 2 });
+                // 0x77EEB4C: per ball r1 (A), r2 (B), r3 (B); pos = center + ((2r1-1)*2*fwd, 2r2-1),
+                // r=6, final pulse at Duration = 1 + r3/2.
+                for (let i = 0; i < skillDamageCount(sk.id); i++) {
+                    const r1 = rA();
+                    const r2 = rB();
+                    const r3 = rB();
+                    const pos = { x: center.x + (2 * r1 - 1) * 2 * fwd, y: center.y + (2 * r2 - 1) };
+                    aoe(pos, 6, perHit, { finalPulse: true, duration: 1.0 + q32(r3 / 2) });
                 }
                 return;
-            case 'Drone':
-                // A real summoned unit: untargetable, unsolid, excluded from buffs, ~2 shots/s.
-                scene.addUnit({
+            case 'Drone': {
+                // 0x77EE608: a real unit at playerPos + (-10*fwd, 1): radius 0.35, Hp/HpMax 1,
+                // CenterOfMass (0,0), LookDirection (0,0) until its first targeting pass, not solid,
+                // not targetable, timed (ActiveDuration), MoveSpeed 4, range 4, windup 10/60,
+                // AttackDuration 0.5, projectile speed 30 radius 0.2 no gravity, stats =
+                // CreateSkillCombatStats(Damage). Not solid and SourceSkillEntity set, so it is
+                // excluded from buffs, collisions and the enemy-center average.
+                const drone = scene.addUnit({
                     isAlly: sk.isAlly,
                     pos: { x: px - 10 * fwd, y: py + 1 },
-                    stats: { ...defaultStats(), dmg: sk.damage, moveSpeed: 4.0 },
-                    hp: 0,
+                    stats: { ...defaultStats(), dmg: sk.damage, moveSpeed: 4.0, hpMax: 1, hpMaxNoMulti: 1 },
+                    hp: 1,
+                    radius: 0.35,
+                    centerOfMass: { x: 0, y: 0 },
                     attackRange: 4.0,
-                    windupTime: 1 / 6,
+                    windupTime: 10 / 60,
                     attackDuration: 0.5,
-                    projectile: { speed: 30, collisionRadius: 0.2, affectedByGravity: false },
+                    projectile: { speed: 30, collisionRadius: q32(0.2), affectedByGravity: false },
                     isSummon: true,
                     destroyAfter: sk.activeDuration,
                     targetable: false,
                     solid: false,
                     tag: 'Drone',
+                    skillId: 'Drone',
                 });
+                drone.lookDir = { x: 0, y: 0 };
                 return;
+            }
             default:
                 return; // unknown skill: no effect rather than a guess
         }
     }
 
-    /** Average POSITION of nearby opposite non-summon units; fallback 10 ahead (0x7741A38). */
-    private enemyCenter(scene: CombatScene, isAlly: boolean, playerX: number, fwd: number): Vec2 {
+    /**
+     * CreateSkillEffectEntities (0x77F1900): the average Position (not center of mass) of the
+     * opposite non-summon units with |x - player.x| < 10, over every unit still in the entity
+     * table (a unit killed this tick still counts); none in reach = playerPos + (10*fwd, 0).
+     */
+    private enemyCenter(scene: CombatScene, isAlly: boolean, playerX: number, playerY: number, fwd: number): Vec2 {
         let sx = 0;
         let sy = 0;
         let n = 0;
@@ -314,7 +394,7 @@ export class SkillManager {
                 n++;
             }
         }
-        if (!n) return { x: playerX + 10 * fwd, y: 0 };
+        if (!n) return { x: playerX + 10 * fwd, y: playerY };
         return { x: sx / n, y: sy / n };
     }
 
@@ -358,6 +438,7 @@ export class SkillManager {
             collidedWith: -1,
             srcStats: { ...defaultStats(), dmg },
             destroyed: false,
+            skillId: sk.id,
         });
     }
 }

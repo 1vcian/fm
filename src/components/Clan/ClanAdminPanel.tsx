@@ -640,7 +640,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                                 and everyone&apos;s war summaries.
                             </p>
                             <p>
-                                Their own profile, their own tech trees and their own resources are untouched — this
+                                Their own profile, their own tech trees and their own resources are untouched: this
                                 only removes the membership. They can come back with the current join password
                                 (regenerate it below if you do not want that).
                             </p>
@@ -692,7 +692,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                                 owner. You become an admin.
                             </p>
                             <p className="text-red-300">
-                                You cannot undo this yourself. Only the new owner can give the clan back — or promote
+                                You cannot undo this yourself. Only the new owner can give the clan back, or promote
                                 you again, or remove you. There is exactly one owner at a time.
                             </p>
                         </>
@@ -707,7 +707,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                         <>
                             <p>
                                 The current password stops working the moment you confirm. Anyone you already gave it
-                                to — and anyone who has it written down in your clan chat — can no longer join with
+                                to, and anyone who has it written down in your clan chat: can no longer join with
                                 it.
                             </p>
                             <p>Members who are already in the clan are not affected.</p>
@@ -757,7 +757,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                             <p>Deleted:</p>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>
-                                    the membership of all {memberCount} member{memberCount === 1 ? '' : 's'} — they
+                                    the membership of all {memberCount} member{memberCount === 1 ? '' : 's'}: they
                                     are simply no longer in a clan;
                                 </li>
                                 <li>the shared clan tech tree;</li>
@@ -961,12 +961,12 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                                     autoComplete="off"
                                     autoCapitalize="off"
                                     spellCheck={false}
-                                    placeholder={`${JOIN_PASSWORD_MIN_LENGTH}–${JOIN_PASSWORD_MAX_LENGTH} characters`}
+                                    placeholder={`${JOIN_PASSWORD_MIN_LENGTH}-${JOIN_PASSWORD_MAX_LENGTH} characters`}
                                     className="h-10 w-full rounded-lg border border-border bg-bg-input px-3 font-mono text-sm text-text-primary placeholder:text-text-muted focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
                                 />
                             </label>
                             <p className="mt-1.5 text-xs text-text-muted">
-                                {JOIN_PASSWORD_MIN_LENGTH}–{JOIN_PASSWORD_MAX_LENGTH} characters, no line breaks.
+                                {JOIN_PASSWORD_MIN_LENGTH}-{JOIN_PASSWORD_MAX_LENGTH} characters, no line breaks.
                                 Leading and trailing spaces are dropped. The old password stops working immediately.
                             </p>
                             <div className="mt-2 flex justify-end">
@@ -989,7 +989,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                 <Section
                     icon={<Palette className="h-4 w-4" />}
                     title="Emblem"
-                    hint="Shape, symbol and their colours — the same set the game offers, nothing else."
+                    hint="Shape, symbol and their colours: the same set the game offers, nothing else."
                 >
                     <div className="flex flex-wrap items-center gap-3">
                         <ClanBadge badge={effectiveBadgeDraft} size={40} />
@@ -1079,7 +1079,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                 <Section
                     icon={<UserCheck className="h-4 w-4" />}
                     title={`Waiting to join (${requests.length})`}
-                    hint="They typed the right password; this clan asks a leader to approve each one. A pending request carries no profile name — the name only arrives with the membership."
+                    hint="They typed the right password; this clan asks a leader to approve each one. A pending request carries no profile name: the name only arrives with the membership."
                 >
                     <ul className="space-y-2">
                         {requests.map(request => (
@@ -1159,7 +1159,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                         <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
                             <Info className="mt-0.5 h-4 w-4 shrink-0" />
                             <span>
-                                You are the owner and this clan has other members, so you cannot just leave — a clan
+                                You are the owner and this clan has other members, so you cannot just leave: a clan
                                 is never ownerless. Hand it to somebody in the list above first (their row has a
                                 &ldquo;Make owner&rdquo; button), then leave. Alternatively, delete the clan.
                             </span>
@@ -1172,7 +1172,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                                 </Button>
                                 {isOnlyMember && (
                                     <span className="text-xs text-amber-300">
-                                        You are the only member — leaving deletes the clan.
+                                        You are the only member: leaving deletes the clan.
                                     </span>
                                 )}
                             </div>
@@ -1257,7 +1257,7 @@ function MemberRow({ member, viewerRole, isSelf, canManageRoles, canKickThem, bu
                     )}
                 </div>
                 <div className="mt-0.5 text-[11px] text-text-muted">
-                    Power {member.power === null ? '—' : formatCompactNumber(member.power)} · joined{' '}
+                    Power {member.power === null ? '-' : formatCompactNumber(member.power)} · joined{' '}
                     {new Date(member.joined_at).toLocaleDateString()}
                     {shares ? ' · sharing war data' : ' · no war data shared'}
                 </div>

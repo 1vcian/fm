@@ -29,21 +29,17 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
     };
 
     // --- LIFESTEAL CALCULATIONS ---
-    const { sourceWeaponDps, lifeStealPct, rawLifesteal, blockChance, blockFactor, effectiveLifesteal } = useMemo(() => {
+    // Lifesteal heals the attacker by Dmg * LifeSteal, clamped with FD6.Min(Hp + heal, HpMax)
+    // (BattleSystem.ApplyDmg, RVA 0x77F4BD0). Block is applied only to incoming damage there, so
+    // it never scales healing: it is shown separately as damage avoided.
+    const { sourceWeaponDps, lifeStealPct, rawLifesteal, blockChance } = useMemo(() => {
         const weaponDps = useRealTime ? stats.realWeaponDps : stats.weaponDps;
         const lsPct = stats.lifeSteal;
-        const raw = weaponDps * lsPct;
-        const bChance = Math.min(stats.blockChance || 0, 0.95);
-        const bFactor = 1 / (1 - bChance);
-        const effective = raw * bFactor;
-
         return {
             sourceWeaponDps: weaponDps,
             lifeStealPct: lsPct,
-            rawLifesteal: raw,
-            blockChance: bChance,
-            blockFactor: bFactor,
-            effectiveLifesteal: effective
+            rawLifesteal: weaponDps * lsPct,
+            blockChance: stats.blockChance || 0
         };
     }, [stats, useRealTime]);
 
@@ -162,18 +158,24 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                                         </div>
                                     </div>
 
-                                    {blockChance > 0 && (
-                                        <div className="mt-4 pt-4 border-t border-purple-500/20 flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-                                            <div className="text-[10px] md:text-[11px] text-white/40 font-mono">
-                                                Block Amplification: <span className="text-purple-300 font-bold">×{blockFactor.toFixed(2)}</span> ({formatPercent(blockChance)} block)
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider font-sans">Effective Lifesteal/sec</div>
-                                                <div className="text-base md:text-lg font-mono font-bold text-purple-300">{formatVal(effectiveLifesteal)}</div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    <div className="mt-4 pt-4 border-t border-purple-500/20 text-[10px] md:text-[11px] text-white/40 leading-relaxed">
+                                        Upper bound: each heal is capped at max HP, so lifesteal gained while already at full health is lost. Actual healing is this figure or less.
+                                    </div>
                                 </div>
+
+                                {/* Block: a defensive figure, kept apart from healing */}
+                                {blockChance > 0 && (
+                                    <div className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-2 min-w-0 sm:col-span-2">
+                                        <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Block (damage avoided)</div>
+                                        <div className="flex justify-between items-baseline gap-2">
+                                            <span className="text-[11px] text-white/60">Share of incoming hits blocked</span>
+                                            <span className="text-base md:text-lg font-mono font-bold text-white">{formatPercent(blockChance)}</span>
+                                        </div>
+                                        <div className="text-[9px] md:text-[10px] text-white/30 italic leading-relaxed">
+                                            Block only reduces damage you take. It does not add to lifesteal or any other healing.
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="text-center py-10 bg-bg-input/20 rounded-2xl border border-dashed border-white/10 text-white/30 text-[11px] italic font-mono">
@@ -188,20 +190,12 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                     <div className="flex-1 flex flex-wrap items-center justify-between md:justify-start gap-x-4 gap-y-3 md:gap-8 min-w-0">
                         <div className="flex flex-col min-w-0">
                             <span className="text-[8px] md:text-[9px] uppercase text-purple-400 font-bold tracking-widest bg-purple-500/10 px-2 py-1 rounded-md mb-1 leading-none font-sans w-fit">
-                                Total {useRealTime ? 'Real-Time' : 'Theoretical'} Lifesteal/sec
+                                {useRealTime ? 'Real-Time' : 'Theoretical'} Lifesteal/sec (upper bound)
                             </span>
                             <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] leading-none mt-1 break-all">
                                 {formatVal(rawLifesteal)}
                             </span>
                         </div>
-                        {blockChance > 0 && (
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Effective (Block-Amplified)</span>
-                                <span className="text-sm md:text-xl font-bold text-purple-300 leading-none whitespace-nowrap overflow-hidden text-clip">
-                                    {formatVal(effectiveLifesteal)}
-                                </span>
-                            </div>
-                        )}
                     </div>
                     <Button onClick={onClose} variant="primary" className="w-full md:w-auto px-8 py-2 md:py-3 text-sm md:text-base shadow-xl active:scale-95 transition-all shrink-0">Close</Button>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
@@ -11,16 +11,16 @@ import { AnimatedClock } from '../UI/AnimatedClock';
 import { Card } from '../UI/Card';
 import { cn } from '../../lib/utils';
 import { formatPercent, formatMultiplier, formatCompactNumber } from '../../utils/statsCalculator';
-import { useGlobalStats } from '../../hooks/useGlobalStats';
+import { useGlobalStats, useStatLibraries, applyTreeMode } from '../../hooks/useGlobalStats';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { getStatName } from '../../utils/statNames';
 import { useComparison } from '../../context/ComparisonContext';
 import { useProfile } from '../../context/ProfileContext';
-import { useGameData } from '../../hooks/useGameData';
-import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEngine';
+import { calculateStats, AggregatedStats } from '../../utils/statEngine';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { UserProfile, PetSlot, MountSlot } from '../../types/Profile';
-import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { LoadoutSweepPopover, AutoLoadoutMetric } from './LoadoutSweepPopover';
+import { LoadoutCombo } from '../../hooks/useLoadoutSweep';
 import { getAveragePerfection } from '../../utils/itemCalculations';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
@@ -456,20 +456,24 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const { profile, profiles, activeProfileId } = useProfile();
 
     // --- Auto-optimize the Test build (drives the strip's AUTO buttons) --------
-    const { optimizeLoadout, isReady: optimizerReady } = useProfileOptimizer();
+    // Each AUTO button runs the loadout sweep (useLoadoutSweep) over the Test build and opens
+    // a popover with the top results; a clicked row is loaded into Test.
     // undefined = nothing to revert; null = revert to "no mount equipped"
     const [previousTestPets, setPreviousTestPets] = useState<PetSlot[] | null>(null);
     const [previousTestMount, setPreviousTestMount] = useState<MountSlot | null | undefined>(undefined);
     // On: score saved builds at their own level. Off: score everything at level 1.
     const [respectSavedLevels, setRespectSavedLevels] = useState(true);
+    // The open popover: its metric and the Test build snapshot it searches over.
+    const [autoRequest, setAutoRequest] = useState<{ metric: AutoLoadoutMetric; base: UserProfile } | null>(null);
 
-    // Saved builds are global, so the optimizer has candidates whenever either pool is non-empty.
-    const autoOptimizeDisabled = !optimizerReady
-        || ((profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1);
+    // Saved builds are global, so the sweep has candidates whenever either pool is non-empty.
+    const autoOptimizeDisabled =
+        (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
 
-    const handleAutoOptimizeTest = (metric: 'dps' | 'power' | 'lifesteal' | 'balanced') => {
+    const handleAutoOptimizeTest = (metric: AutoLoadoutMetric) => {
         // Evaluate against the Test build's own items/mount/ascensions, keeping
         // everything the Test side doesn't override (tech tree, passives, saved builds).
+        // The header's tree mode is applied inside the sweep.
         const testBase: UserProfile = {
             ...profile,
             items: testItems ?? profile.items,
@@ -483,18 +487,24 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 petAscensionLevel: testPetAscension ?? profile.misc.petAscensionLevel,
                 skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel,
                 useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup,
+                fairy: testFairy ?? profile.misc.fairy,
             },
         };
-
-        setPreviousTestPets(testPets ? [...testPets] : null);
-        setPreviousTestMount(testMount);
-
-        const best = optimizeLoadout(metric, testBase, respectSavedLevels);
-        if (!best) return;
-
-        updateTestPet(best.pets);
-        updateTestMount(best.mount);
+        // Same metric again closes the popover; another metric re-ranks a fresh search.
+        setAutoRequest(prev => (prev?.metric === metric ? null : { metric, base: testBase }));
     };
+
+    const handleLoadIntoTest = (combo: LoadoutCombo) => {
+        // Remember the Test loadout from before the first row loaded, for REVERT.
+        if (!previousTestPets && previousTestMount === undefined) {
+            setPreviousTestPets(testPets ? [...testPets] : [...profile.pets.active]);
+            setPreviousTestMount(testMount);
+        }
+        updateTestPet(combo.petSet);
+        updateTestMount(combo.mount);
+    };
+
+    const closeAutoPopover = useCallback(() => setAutoRequest(null), []);
 
     const handleRevertTest = () => {
         if (previousTestPets) updateTestPet(previousTestPets);
@@ -506,22 +516,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const { treeMode, setTreeMode } = useTreeMode();
 
     // Load all libraries for comparison calculations
-    const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
-    const { data: petBalancingLibrary } = useGameData<any>('PetBalancingLibrary.json');
-    const { data: petLibrary } = useGameData<any>('PetLibrary.json');
-    const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
-    const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
-    const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
-    const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
-    const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');
-    const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
-    const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
-    const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
-    const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
-    const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
-    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
-    const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
-    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+    // Same libraries and tree-mode transform as the profile stats (useGlobalStats) and the AUTO
+    // sweep, so the compare cards include the clan tree and match both.
+    const { libs } = useStatLibraries();
+    const { itemBalancingConfig, itemBalancingLibrary, secondaryStatLibrary, skillLibrary } = libs as any;
 
     // Average perfection across all gear (items + pets + mount) for each compare side.
     const originalPerfection = useMemo(() => originalItems ? getAveragePerfection(
@@ -539,55 +537,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         max: 'Max Tree'
     };
 
-    const libs: LibraryData = useMemo(() => ({
-        petUpgradeLibrary,
-        petBalancingLibrary,
-        petLibrary,
-        skillLibrary,
-        skillPassiveLibrary,
-        mountUpgradeLibrary,
-        techTreeLibrary,
-        techTreePositionLibrary,
-        itemBalancingLibrary,
-        itemBalancingConfig,
-        weaponLibrary,
-        projectilesLibrary,
-        secondaryStatLibrary,
-        skinsLibrary,
-        setsLibrary,
-        ascensionConfigsLibrary,
-    }), [
-        petUpgradeLibrary, petBalancingLibrary, petLibrary,
-        skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
-        techTreeLibrary, techTreePositionLibrary,
-        itemBalancingLibrary, itemBalancingConfig,
-        weaponLibrary, projectilesLibrary, secondaryStatLibrary,
-        skinsLibrary, setsLibrary, ascensionConfigsLibrary
-    ]);
-
     const { originalStats, testStats, originalFullStats, testFullStats, originalProfile, testProfile } = useMemo(() => {
         if (!isComparing || !originalItems || !testItems || !itemBalancingConfig || !itemBalancingLibrary) {
             return { originalStats: null, testStats: null, originalFullStats: null, testFullStats: null, originalProfile: null, testProfile: null };
         }
 
-        let effectiveTechTree = profile.techTree;
-        if (treeMode === 'empty') {
-            effectiveTechTree = { Forge: {}, Power: {}, SkillsPetTech: {}, Clan: {} };
-        } else if (treeMode === 'max' && techTreePositionLibrary && techTreeLibrary) {
-            const maxTree: typeof profile.techTree = { Forge: {}, Power: {}, SkillsPetTech: {}, Clan: {} };
-            const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
-            for (const tree of trees) {
-                const treeData = techTreePositionLibrary[tree];
-                if (treeData?.Nodes) {
-                    for (const node of treeData.Nodes) {
-                        const nodeData = techTreeLibrary[node.Type];
-                        const maxLevel = nodeData?.MaxLevel || 5;
-                        maxTree[tree][node.Id] = maxLevel;
-                    }
-                }
-            }
-            effectiveTechTree = maxTree;
-        }
+        const effectiveTechTree = applyTreeMode(profile, treeMode, libs).techTree;
 
         const originalProfile = {
             ...profile,
@@ -644,7 +599,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         originalPets, testPets, originalSkills, testSkills,
         originalPetAscension, testPetAscension, originalSkillAscension, testSkillAscension,
         originalUseSkinWindup, testUseSkinWindup, originalFairy, testFairy,
-        treeMode, techTreePositionLibrary, techTreeLibrary, libs, excludeSubstats
+        treeMode, libs, excludeSubstats
     ]);
 
     const activePerfectionDetails = useMemo(() => {
@@ -724,22 +679,15 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         const regen = s.totalHealth * s.healthRegen;
         const lifesteal = dps * s.lifeSteal;
         const skills = s.skillHps;
-        const rawTotal = regen + lifesteal + skills;
-
-        // Effective HPS: Since blocking damage means you don't need to heal it,
-        // it acts as a multiplier to your effective recovery.
-        // EHPS = Raw HPS / (1 - BlockChance)
-        const blockChance = Math.min(s.blockChance || 0, 0.95); // Cap at 95% for calculation
-        const effectiveTotal = rawTotal / (1 - blockChance);
-        const blockBenefit = effectiveTotal - rawTotal;
-
+        // No block term: BattleSystem.ApplyDmg (RVA 0x77F4BD0) applies block only to incoming
+        // damage and clamps every heal with FD6.Min(Hp + heal, HpMax). Block is shown on its
+        // own as damage avoided; these totals are upper bounds (healing past max HP is lost).
         return {
-            total: effectiveTotal,
-            rawTotal,
+            total: regen + lifesteal + skills,
             regen,
             lifesteal,
             skills,
-            blockBenefit
+            blockChance: s.blockChance || 0
         };
     };
 
@@ -896,7 +844,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<Heart className="w-4 h-4 text-purple-400" />}
-                                label="Lifesteal/sec"
+                                label="Lifesteal/sec (upper bound)"
                                 originalValue={originalHpsDetails.lifesteal}
                                 testValue={testHpsDetails.lifesteal}
                                 color="text-purple-400"
@@ -968,7 +916,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<Heart className="w-4 h-4 text-purple-500" />}
-                                label="Lifesteal/sec"
+                                label="Lifesteal/sec (upper bound)"
                                 originalValue={originalRealHpsDetails.lifesteal}
                                 testValue={testRealHpsDetails.lifesteal}
                                 color="text-purple-500"
@@ -1296,32 +1244,21 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         <PerfectionMeter value={originalPerfection} className="gap-2" />
                     </div>
 
-                    {/* Auto Test Build controls (center) */}
-                    <div className="order-3 w-full sm:order-none sm:w-auto grid grid-cols-5 gap-1 sm:flex sm:items-center sm:justify-center sm:gap-1.5 sm:flex-wrap">
+                    {/* Auto Test Build controls (center). Each AUTO button opens the top-5 popover. */}
+                    <div className="relative order-3 w-full sm:order-none sm:w-auto grid grid-cols-4 gap-1 sm:flex sm:items-center sm:justify-center sm:gap-1.5 sm:flex-wrap">
                     <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-widest text-text-muted/60 mr-0.5">Auto Test Build</span>
-                    <button
-                        onClick={() => setRespectSavedLevels(v => !v)}
-                        role="switch"
-                        aria-checked={respectSavedLevels}
-                        title="On: score saved builds at their own level. Off: score everything at level 1, so only secondary stats decide. Equipping always keeps the saved level."
-                        className={cn(
-                            "h-7 px-2 text-[10px] font-bold rounded border gap-1 inline-flex items-center justify-center active:scale-95 transition-all w-full sm:w-fit",
-                            respectSavedLevels
-                                ? "border-accent-primary/40 bg-accent-primary/10 text-accent-primary"
-                                : "border-border bg-bg-input/30 text-text-muted hover:text-text-primary"
-                        )}
-                    >
-                        <Layers className="w-3 h-3" />
-                        <span className="hidden sm:inline">{respectSavedLevels ? 'SAVED LVL' : 'LVL 1'}</span>
-                        <span className="sm:hidden">{respectSavedLevels ? 'LVL' : 'L1'}</span>
-                    </button>
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
+                        data-auto-loadout-trigger
+                        aria-expanded={autoRequest?.metric === 'dps'}
+                        className={cn(
+                            "h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
+                            autoRequest?.metric === 'dps' && "bg-red-500/15 border-red-500/50"
+                        )}
                         onClick={() => handleAutoOptimizeTest('dps')}
                         disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for Max DPS on the Test build"
+                        title="Rank the best 3 pets + mount for DPS on the Test build"
                     >
                         <Sword className="w-3 h-3" />
                         <span className="hidden sm:inline">AUTO DPS</span>
@@ -1330,10 +1267,15 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
+                        data-auto-loadout-trigger
+                        aria-expanded={autoRequest?.metric === 'power'}
+                        className={cn(
+                            "h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
+                            autoRequest?.metric === 'power' && "bg-amber-500/15 border-amber-500/50"
+                        )}
                         onClick={() => handleAutoOptimizeTest('power')}
                         disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for Max Power on the Test build"
+                        title="Rank the best 3 pets + mount for Power on the Test build"
                     >
                         <Zap className="w-3 h-3" />
                         <span className="hidden sm:inline">AUTO POWER</span>
@@ -1342,10 +1284,15 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
+                        data-auto-loadout-trigger
+                        aria-expanded={autoRequest?.metric === 'lifesteal'}
+                        className={cn(
+                            "h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
+                            autoRequest?.metric === 'lifesteal' && "bg-purple-500/15 border-purple-500/50"
+                        )}
                         onClick={() => handleAutoOptimizeTest('lifesteal')}
                         disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for Max Lifesteal/sec on the Test build"
+                        title="Rank the best 3 pets + mount for Lifesteal/sec on the Test build"
                     >
                         <Heart className="w-3 h-3" />
                         <span className="hidden sm:inline">AUTO LIFESTEAL/SEC</span>
@@ -1354,10 +1301,15 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
+                        data-auto-loadout-trigger
+                        aria-expanded={autoRequest?.metric === 'balanced'}
+                        className={cn(
+                            "h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
+                            autoRequest?.metric === 'balanced' && "bg-violet-500/15 border-violet-500/50"
+                        )}
                         onClick={() => handleAutoOptimizeTest('balanced')}
                         disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for a balance of DPS and HPS on the Test build (same scoring as the Loadout Optimizer)"
+                        title="Rank the best 3 pets + mount by the geometric mean of DPS and HPS on the Test build (a heuristic, not a game number)"
                     >
                         <Scale className="w-3 h-3" />
                         <span className="hidden sm:inline">AUTO BALANCED</span>
@@ -1367,12 +1319,25 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
+                            className="col-span-4 h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
                             onClick={handleRevertTest}
                         >
                             <RotateCcw className="w-3 h-3" />
                             REVERT
                         </Button>
+                    )}
+                    {autoRequest && (
+                        <LoadoutSweepPopover
+                            metric={autoRequest.metric}
+                            base={autoRequest.base}
+                            respectSavedLevels={respectSavedLevels}
+                            onToggleRespectSavedLevels={() => setRespectSavedLevels(v => !v)}
+                            currentPets={testPets ?? profile.pets.active}
+                            currentMount={testMount ?? null}
+                            onLoad={handleLoadIntoTest}
+                            onClose={closeAutoPopover}
+                            targetLabel="Test"
+                        />
                     )}
                     </div>
 
@@ -1433,7 +1398,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 "text-[9px] font-bold tracking-wider mt-1 uppercase",
                                 excludeSubstats ? "text-purple-400" : "text-orange-400"
                             )}>
-                                {excludeSubstats ? "New Stats (Substats Off)" : "Old Stats (Substats On)"}
+                                {excludeSubstats ? "In-game Power (Substats Off)" : "Substats On (Not In-game)"}
                             </span>
                         </div>
                     </h3>
@@ -1450,7 +1415,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     ? "bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20"
                                     : "bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20"
                             )}
-                            title={excludeSubstats ? "Current: New Stats (Click to switch to Old)" : "Current: Old Stats (Click to switch to New)"}
+                            title={excludeSubstats ? "Current: in-game Power, substats excluded (click to include substats)" : "Current: substats included, not the in-game number (click to return to in-game Power)"}
                         >
                             <ArrowLeftRight className="w-4 h-4" />
                         </button>
@@ -1598,10 +1563,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 : "bg-orange-500/5 text-orange-400 border-orange-500/20"
                         )}
                         onClick={() => setExcludeSubstats(!excludeSubstats)}
-                        title="Click to toggle calculation basis between New Stats and Old Stats"
+                        title="Click to toggle between the in-game Power (substats excluded) and Power with substats included"
                         >
                             <ArrowLeftRight className="w-4 h-4 shrink-0" />
-                            <span>Comparing: {excludeSubstats ? 'New Stats (Substats Excluded)' : 'Old Stats (Substats Included)'}</span>
+                            <span>Comparing: {excludeSubstats ? 'In-game Power (Substats Excluded)' : 'Substats Included (Not In-game)'}</span>
                         </div>
                         <div className="flex bg-bg-secondary border border-border/50 rounded-xl p-1 shadow-lg flex-wrap gap-1">
                             <button
@@ -1721,14 +1686,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         icon={<TrendingUp className="w-4 h-4" />}
                                         label="Theoretical HPS"
                                         value={formatValue(effectiveHps)}
-                                        subValue={`Regen: ${formatCompactNumber(currentHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentHpsDetails.skills)}${currentHpsDetails.blockBenefit > 0 ? `, Block Benefit: +${formatCompactNumber(currentHpsDetails.blockBenefit)}` : ''}`}
+                                        subValue={`Regen: ${formatCompactNumber(currentHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentHpsDetails.skills)}${currentHpsDetails.blockChance > 0 ? `. Block ${formatPercent(currentHpsDetails.blockChance)} avoids damage, adds no healing` : ''}. Upper bound: healing is capped at max HP`}
                                         color="text-emerald-400"
                                     />
                                     <StatRow
                                         icon={<Heart className="w-4 h-4" />}
-                                        label="Lifesteal/sec"
+                                        label="Lifesteal/sec (upper bound)"
                                         value={formatValue(currentHpsDetails.lifesteal)}
-                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                         color="text-purple-400"
                                         onInfoPointsClick={() => setShowLifestealModal(true)}
                                     />
@@ -1754,14 +1719,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         icon={<TrendingUp className="w-4 h-4" />}
                                         label="Real-Time HPS"
                                         value={formatValue(realHps)}
-                                        subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}${currentRealHpsDetails.blockBenefit > 0 ? `, Block Benefit: +${formatCompactNumber(currentRealHpsDetails.blockBenefit)}` : ''}`}
+                                        subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}${currentRealHpsDetails.blockChance > 0 ? `. Block ${formatPercent(currentRealHpsDetails.blockChance)} avoids damage, adds no healing` : ''}. Upper bound: healing is capped at max HP`}
                                         color="text-emerald-500"
                                     />
                                     <StatRow
                                         icon={<Heart className="w-4 h-4" />}
-                                        label="Lifesteal/sec"
+                                        label="Lifesteal/sec (upper bound)"
                                         value={formatValue(currentRealHpsDetails.lifesteal)}
-                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                         color="text-purple-500"
                                         onInfoPointsClick={() => setShowLifestealModal(true)}
                                     />
@@ -2023,7 +1988,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     icon={<Heart className="w-4 h-4 text-purple-400" />}
                                     label="Theo Lifesteal/sec"
                                     value={formatCompactNumber(currentHpsDetails.lifesteal)}
-                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                     color="text-purple-400"
                                     onInfoPointsClick={() => setShowLifestealModal(true)}
                                 />
@@ -2031,7 +1996,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     icon={<Heart className="w-4 h-4 text-purple-500" />}
                                     label="Real Lifesteal/sec"
                                     value={formatCompactNumber(currentRealHpsDetails.lifesteal)}
-                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                     color="text-purple-500"
                                     onInfoPointsClick={() => setShowLifestealModal(true)}
                                 />

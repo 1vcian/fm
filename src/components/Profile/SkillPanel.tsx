@@ -26,6 +26,7 @@ import { formatNumber } from '../../utils/format';
 
 import { StatBreakdownTooltip } from '../UI/StatBreakdownTooltip';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
+import { personalTechShare } from '../../utils/clanTechStacking';
 
 // Using global formatNumber from ../../utils/format
 
@@ -215,10 +216,11 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
         const skillDmgMulti = (1 + techSkillBonus) * (1 + itemSkillDmgBonus) * (activeAscensionDmgMulti || 1);
         const skillHpMulti = (1 + techSkillBonus) * (1 + itemSkillHpBonus) * (activeAscensionHpMulti || 1);
 
-        // Common Layer from globalStats (Tech Tree Dmg/HP + Item Dmg%/HP%)
-        // Item HealthMulti carries an ActiveSkill target, so healing reads the health multiplier.
-        const commonDmgMulti = globalStats?.damageMultiplier || 1;
-        const commonHpMulti = globalStats?.healthMultiplier || 1;
+        // Common Layer: the DamageMulti/HealthMulti substats, as statEngine applies them to
+        // active skills (CalculateValueFromStats). HealthMulti carries an ActiveSkill target,
+        // so healing reads the health one.
+        const commonDmgMulti = 1 + (globalStats?.secondaryDamageMulti || 0);
+        const commonHpMulti = 1 + (globalStats?.secondaryHealthMulti || 0);
 
         // Total = skillLayer * commonLayer
         const totalDamageMulti = skillDmgMulti * commonDmgMulti;
@@ -248,7 +250,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
             details: {
                 damage: {
                     base: baseDmg,
-                    techMulti: techSkillBonus,
+                    techMulti: personalTechShare(techSkillBonus, clanSkillBonus),
                     clanTechMulti: clanSkillBonus,
                     itemMulti: itemSkillDmgBonus,
                     ascMulti: activeAscensionDmgMulti || 1,
@@ -258,7 +260,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                 },
                 health: {
                     base: baseHp,
-                    techMulti: techSkillBonus,
+                    techMulti: personalTechShare(techSkillBonus, clanSkillBonus),
                     clanTechMulti: clanSkillBonus,
                     itemMulti: itemSkillHpBonus,
                     ascMulti: activeAscensionHpMulti || 1,

@@ -4,8 +4,8 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { Zap as PowerIcon, Cat, Sword, RotateCcw, Heart, Scale } from 'lucide-react';
 import { Button } from '../UI/Button';
-import { PetSlot, MountSlot } from '../../types/Profile';
-import { useState, useMemo } from 'react';
+import { PetSlot, MountSlot, UserProfile } from '../../types/Profile';
+import { useState, useMemo, useCallback } from 'react';
 import { cn } from '../../lib/utils';
 import { MAX_ACTIVE_PETS } from '../../utils/constants';
 
@@ -13,15 +13,18 @@ import { MAX_ACTIVE_PETS } from '../../utils/constants';
 const SLOT_ART = 'w-12 h-12 sm:w-20 sm:h-20 xl:w-24 xl:h-24';
 import { PetSelectorModal } from './PetSelectorModal';
 import { useGameData } from '../../hooks/useGameData';
+import { usePetNames } from '../../hooks/usePetNames';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
+import { personalTechShare } from '../../utils/clanTechStacking';
 
 import { InputModal } from '../UI/InputModal';
 import { SectionSyncButton } from './SectionSyncButton';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
-import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { LoadoutSweepPopover, AutoLoadoutMetric } from './LoadoutSweepPopover';
+import { LoadoutCombo } from '../../hooks/useLoadoutSweep';
 
 interface PetPanelProps {
     variant?: 'default' | 'original' | 'test';
@@ -44,7 +47,10 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         updateTestPetAscension,
         isCompactStats
     } = useComparison();
-    const { optimizeLoadout, isReady } = useProfileOptimizer();
+    // AUTO buttons: the open top-5 popover (metric + profile snapshot it searches over).
+    const [autoRequest, setAutoRequest] = useState<{ metric: AutoLoadoutMetric; base: UserProfile } | null>(null);
+    const [respectSavedLevels, setRespectSavedLevels] = useState(true);
+    const closeAutoPopover = useCallback(() => setAutoRequest(null), []);
     
     const activePets = useMemo(() => {
         if (variant === 'original' && originalPets) return originalPets;
@@ -72,6 +78,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     const { data: petUpgradeLib } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const petName = usePetNames();
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
 
     // Helper to calculate item perfection (avg of secondary stats vs max)
@@ -221,15 +228,20 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
 
     // Only rendered for the default (non-compare) panel. Compare mode drives its
     // own optimizer from the comparison strip (see StatsSummaryPanel).
-    const handleAutoOptimize = (metric: 'dps' | 'power' | 'lifesteal' | 'balanced') => {
-        setPreviousPets([...activePets]);
-        setPreviousMount(profile.mount.active);
+    // Each AUTO button runs the loadout sweep over the profile and opens the top-5 popover;
+    // the same button again closes it.
+    const handleAutoOptimize = (metric: AutoLoadoutMetric) => {
+        setAutoRequest(prev => (prev?.metric === metric ? null : { metric, base: profile }));
+    };
 
-        const best = optimizeLoadout(metric);
-        if (!best) return;
-
-        updatePets(best.pets);
-        updateNestedProfile('mount', { active: best.mount });
+    const handleLoadLoadout = (combo: LoadoutCombo) => {
+        // Remember the loadout from before the first row loaded, for REVERT.
+        if (!previousPets && previousMount === undefined) {
+            setPreviousPets([...activePets]);
+            setPreviousMount(profile.mount.active);
+        }
+        updatePets(combo.petSet);
+        updateNestedProfile('mount', { active: combo.mount });
     };
 
     const handleRevert = () => {
@@ -283,7 +295,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
             return {
                 spriteIndex: parseInt(entry[0]),
                 config: spriteMapping.pets,
-                name: (entry[1] as any).name
+                name: petName(rarity, petId)
             };
         }
         return null;
@@ -347,14 +359,15 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                     </h2>
                     
                     {variant === 'default' && (
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="relative flex items-center gap-1.5 flex-wrap">
                         <Button
                             variant="outline"
                             size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('dps')}
-                            disabled={!isReady || autoDisabled}
-                            title="Select best 3 pets + mount for Max DPS"
+                            disabled={autoDisabled}
+                            data-auto-loadout-trigger
+                            title="Rank the best 3 pets + mount for DPS"
                         >
                             <Sword className="w-3 h-3" />
                             AUTO DPS
@@ -364,8 +377,9 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('power')}
-                            disabled={!isReady || autoDisabled}
-                            title="Select best 3 pets + mount for Max Power"
+                            disabled={autoDisabled}
+                            data-auto-loadout-trigger
+                            title="Rank the best 3 pets + mount for Power"
                         >
                             <PowerIcon className="w-3 h-3" />
                             AUTO POWER
@@ -375,8 +389,9 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('lifesteal')}
-                            disabled={!isReady || autoDisabled}
-                            title="Select best 3 pets + mount for Max Lifesteal/sec"
+                            disabled={autoDisabled}
+                            data-auto-loadout-trigger
+                            title="Rank the best 3 pets + mount for Lifesteal/sec"
                         >
                             <Heart className="w-3 h-3" />
                             AUTO LIFESTEAL/SEC
@@ -386,8 +401,9 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('balanced')}
-                            disabled={!isReady || autoDisabled}
-                            title="Select best 3 pets + mount for a balance of DPS and HPS (same scoring as the Loadout Optimizer)"
+                            disabled={autoDisabled}
+                            data-auto-loadout-trigger
+                            title="Rank the best 3 pets + mount by the geometric mean of DPS and HPS (a heuristic, not a game number)"
                         >
                             <Scale className="w-3 h-3" />
                             AUTO BALANCED
@@ -402,6 +418,19 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 <RotateCcw className="w-3 h-3" />
                                 REVERT
                             </Button>
+                        )}
+                        {autoRequest && (
+                            <LoadoutSweepPopover
+                                metric={autoRequest.metric}
+                                base={autoRequest.base}
+                                respectSavedLevels={respectSavedLevels}
+                                onToggleRespectSavedLevels={() => setRespectSavedLevels(v => !v)}
+                                currentPets={activePets}
+                                currentMount={profile.mount.active}
+                                onLoad={handleLoadLoadout}
+                                onClose={closeAutoPopover}
+                                targetLabel="your profile"
+                            />
                         )}
                     </div>
                     )}
@@ -507,8 +536,8 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 damageMulti: (1 + petDamageBonus) * (ascensionDmgMulti || 1),
                                 healthMulti: (1 + petHealthBonus) * (ascensionHpMulti || 1),
                                 details: {
-                                    damage: { base: baseDamage, techMulti: (1 + petDamageBonus), clanTechMulti: clanPetDamageBonus, ascMulti: (ascensionDmgMulti || 1) },
-                                    health: { base: baseHealth, techMulti: (1 + petHealthBonus), clanTechMulti: clanPetHealthBonus, ascMulti: (ascensionHpMulti || 1) }
+                                    damage: { base: baseDamage, techMulti: personalTechShare(petDamageBonus, clanPetDamageBonus), clanTechMulti: clanPetDamageBonus, ascMulti: (ascensionDmgMulti || 1) },
+                                    health: { base: baseHealth, techMulti: personalTechShare(petHealthBonus, clanPetHealthBonus), clanTechMulti: clanPetHealthBonus, ascMulti: (ascensionHpMulti || 1) }
                                 },
                                 isMelee: false
                             }}

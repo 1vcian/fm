@@ -5,7 +5,8 @@ import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { useGameData } from '../../hooks/useGameData';
-import { useTreeModifiers, useClanNodeMax } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeLimits } from '../../hooks/useTreeLimits';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { DndContext, closestCenter, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -513,7 +514,7 @@ import { usePersistentState } from '../../hooks/usePersistentState';
 export default function TreeCalculator() {
     // Sandbox: local override of the clan tech tree war-point boost (see SandboxPanel).
     const clanModifiers = useTreeModifiers();
-    const clanMax = useClanNodeMax();
+    const treeLimits = useTreeLimits();
     const warDayConfigForSandbox = useGameData<any>('GuildWarDayConfigLibrary.json').data;
     const profileTechWarBonus = clanModifiers['WarPointsFromTechUpgrade'] || 0;
     const techDayActive = isWarPointDay(new Date(), 'tech', warDayConfigForSandbox);
@@ -524,8 +525,8 @@ export default function TreeCalculator() {
     const treeSandbox = {
         reset: () => setSandbox({}),
         fields: [
-            { key: 'warTech', label: 'War points: tech upgrade', value: techWarBonus, profileValue: profileTechWarBonus, min: 0, max: clanMax['WarPointsFromTechUpgrade'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warTech: v })) },
-            { key: 'dayBoost', label: 'Day war-points boost (completion day)', value: dayBoost, profileValue: profileDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
+            { key: 'warTech', label: 'War points: tech upgrade', value: techWarBonus, profileValue: profileTechWarBonus, min: 0, ...treeLimits.clan('WarPointsFromTechUpgrade'), onChange: (v: number) => setSandbox(p => ({ ...p, warTech: v })) },
+            { key: 'dayBoost', label: 'Day war-points boost (completion day)', value: dayBoost, profileValue: profileDayBoost, min: 0, ...treeLimits.clan('WarPointsOnDay1'), onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
         ],
     };
 
@@ -659,12 +660,16 @@ export default function TreeCalculator() {
             const currentEndTime = currentStartTime + action.duration;
 
             let recalculatedGemCost = 0;
+            let skipSeconds = 0;
             if (currentEndTime > baseTimeLimitSeconds && profile.misc.useGemsInCalculators) {
                 const overlap = Math.min(action.duration, currentEndTime - Math.max(currentStartTime, baseTimeLimitSeconds));
-                recalculatedGemCost = Math.ceil(overlap * gemSkipCostPerSecond);
+                if (overlap > 0) {
+                    // TimerModel.CalculateGemSkipCost (RVA 0x7868754): Max(1, RoundToInt(remainingSeconds * costPerSecond)).
+                    recalculatedGemCost = Math.max(1, Math.round(overlap * gemSkipCostPerSecond));
+                    skipSeconds = overlap;
+                }
             }
 
-            const skipSeconds = recalculatedGemCost ? recalculatedGemCost / gemSkipCostPerSecond : 0;
             const effectiveDuration = Math.max(0, action.duration - skipSeconds);
 
             // Recalculate if it lands on a war day based on NEW completion time after reordering/gems
@@ -1344,12 +1349,16 @@ export default function TreeCalculator() {
                                                             const currentStartTimeSec = currentAccumulated;
                                                             const currentEndTime = currentStartTimeSec + action.duration;
 
+                                                            let skipSeconds = 0;
                                                             if (currentEndTime > baseTimeLimitSeconds && profile.misc.useGemsInCalculators) {
                                                                 const overlap = Math.min(action.duration, currentEndTime - Math.max(currentStartTimeSec, baseTimeLimitSeconds));
-                                                                recalculatedGemCost = Math.ceil(overlap * gemSkipCostPerSecond);
+                                                                if (overlap > 0) {
+                                                                    // Same rule as actionsWithGemCosts (CalculateGemSkipCost, RVA 0x7868754).
+                                                                    recalculatedGemCost = Math.max(1, Math.round(overlap * gemSkipCostPerSecond));
+                                                                    skipSeconds = overlap;
+                                                                }
                                                             }
 
-                                                            const skipSeconds = recalculatedGemCost ? recalculatedGemCost / gemSkipCostPerSecond : 0;
                                                             const effectiveDuration = Math.max(0, action.duration - skipSeconds);
 
                                                             const startObj = new Date(new Date(startTime).getTime() + currentAccumulated * 1000);

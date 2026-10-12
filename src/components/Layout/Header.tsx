@@ -63,7 +63,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
 
     /** Exact figure for the popover. The header itself stays compact ("8.18M"). */
     const exact = (value: number | undefined) =>
-        typeof value === 'number' ? Math.round(value).toLocaleString() : '—';
+        typeof value === 'number' ? Math.round(value).toLocaleString() : '-';
 
     const handleShare = () => {
         if (sharing) return;
@@ -148,7 +148,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                                 ? "bg-purple-600 text-white border-purple-400 hover:bg-purple-500 shadow-purple-500/20"
                                 : "bg-orange-600 text-white border-orange-400 hover:bg-orange-500 shadow-orange-500/20"
                         )}
-                        title={excludeSubstats ? "New Stats (Substats excluded). Click to switch to Old Stats." : "Old Stats (Substats included). Click to switch to New Stats."}
+                        title={excludeSubstats ? "In-game Power (substats excluded, as the game computes it). Click to include substats." : "Power with substats included: NOT the in-game number. Click to return to the in-game Power."}
                     >
                         <ArrowLeftRight className="w-3 h-3" />
                     </button>
@@ -226,8 +226,8 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                             {/* Which reading these numbers are, because the toggle changes what they mean. */}
                             <p className="mt-2.5 pt-2.5 border-t border-border text-[10px] text-text-secondary leading-snug">
                                 {excludeSubstats
-                                    ? 'New Stats. Item substats excluded from Power.'
-                                    : 'Old Stats. Item substats included in Power.'}
+                                    ? 'In-game Power. Item substats excluded, as the game computes it.'
+                                    : 'Substats included in Power. This is not the number the game shows.'}
                             </p>
                         </div>
                     )}

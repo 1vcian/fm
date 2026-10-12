@@ -68,7 +68,11 @@ export interface TechTreeLevels {
 }
 
 export interface TechBonuses {
-    /** Potion cost reduction from `TechNodeUpgradeCost`, capped at 0.95 as the game does. */
+    /**
+     * Potion cost reduction from `TechNodeUpgradeCost` (Cost / OneMinusMultiplier, target TechTree).
+     * Not clamped: the stat pipeline (StatHelper.CalculateValueFromStats 0x78605C4, LayerBucket.Add
+     * 0x7860320) only sums contributions, and the action applies no cap of its own.
+     */
     costReduction: number;
     /** Research speed-up from `TechResearchTimer`, applied as `duration / (1 + speedBonus)`. */
     speedBonus: number;
@@ -149,7 +153,7 @@ export interface TechOptimizerResult {
  * The literal fallbacks are the pre-config values and are kept only so a missing/renamed task never
  * silently zeroes a tier; every shipped config since has overwritten all five.
  */
-function tierPointsFrom(dayConfig: any, warBonus: number, dayBoost: number): Record<number, number> {
+export function tierPointsFrom(dayConfig: any, warBonus: number, dayBoost: number): Record<number, number> {
     const tierPoints: Record<number, number> = {
         0: 300,   // I
         1: 7500,  // II
@@ -211,7 +215,7 @@ export function calculateTechBonuses(
             const nodeType = node.type;
             if (nodeType !== 'TechNodeUpgradeCost' && nodeType !== 'TechResearchTimer') return;
 
-            const nodeConfig = library[nodeType];
+            const nodeConfig = library?.[nodeType];
             if (!nodeConfig) return;
 
             const nodeLevel = treeNodes[node.id] || 0;
@@ -227,10 +231,56 @@ export function calculateTechBonuses(
         });
     });
 
-    return {
-        costReduction: Math.min(0.95, costReduction), // Cap at 95%
-        speedBonus,
-    };
+    return { costReduction, speedBonus };
+}
+
+/** FD6 (Metaplay.Core.Math.FD6) raw scale: values are stored as integers times 10^6. */
+const FD6_ONE = 1_000_000n;
+
+/**
+ * Potion cost and research seconds of the upgrade from `currentLevel` to `currentLevel + 1` on a
+ * node of `tier`, with the tree's own bonuses applied, or `null` when TechTreeUpgradeLibrary has no
+ * row for that level. Shared by the optimiser and the Tree Calculator planner (`useTreePlanner`).
+ *
+ * Mirrors TechTreeNodeUpgradeStartAction.Execute (RVA 0x7868888) in FD6 fixed point:
+ *   cost     = FD6.RoundToInt(Cost * (1 - costReduction))          (RoundToInt 0x719864C, half up)
+ *   duration = StatHelper.CalculateValue(TimerSpeed, Duration) = Duration / (1 + speedBonus)
+ *              (FD6 division 0x71977A8 truncates), converted with FD6.get_F64 (0x71964F8, Q32.32,
+ *              truncating) and handed to TimerModel..ctor (0x78692EC), which calls
+ *              MetaDuration.FromSeconds(F64, RoundingMode.Floor) (0x72B4690): whole milliseconds,
+ *              floored. The returned duration is therefore in seconds with millisecond resolution.
+ */
+export function techUpgradeCostAndDuration(
+    upgradeLibrary: any,
+    tier: number,
+    currentLevel: number,
+    bonuses: TechBonuses,
+): { cost: number; duration: number } | null {
+    const levelData = upgradeLibrary?.[tier.toString()]?.Levels?.find((l: any) => l.Level === currentLevel);
+    if (!levelData) return null;
+    return techLevelCostAndDuration(levelData, bonuses);
+}
+
+/** The arithmetic of `techUpgradeCostAndDuration` on one TechTreeUpgradeLibrary row `{ Cost, Duration }`. */
+export function techLevelCostAndDuration(
+    levelData: { Cost: number; Duration: number },
+    bonuses: TechBonuses,
+): { cost: number; duration: number } {
+    // Cost: FD6(Cost) * (1 - r) is exact for an integer Cost, then RoundToInt rounds half up.
+    const oneMinusRaw = 1_000_000 - Math.round(bonuses.costReduction * 1_000_000);
+    const costRaw = Math.round(levelData.Cost) * oneMinusRaw;
+    const costInt = Math.trunc(costRaw / 1_000_000);
+    const costRem = costRaw - costInt * 1_000_000;
+    const cost = costInt + (costRem * 2 >= 1_000_000 ? 1 : 0);
+
+    // Duration: FD6 division (truncating), FD6 -> F64 (truncating), F64 -> milliseconds (floor).
+    const durationRaw = BigInt(Math.round(levelData.Duration * 1_000_000));
+    const divisorRaw = FD6_ONE + BigInt(Math.round(bonuses.speedBonus * 1_000_000));
+    const quotientRaw = (durationRaw * FD6_ONE) / divisorRaw;
+    const f64Raw = (quotientRaw << 32n) / FD6_ONE;
+    const durationMs = (f64Raw * 1000n) >> 32n;
+
+    return { cost, duration: Number(durationMs) / 1000 };
 }
 
 /**
@@ -340,7 +390,7 @@ export function optimizeTechTree(input: TechOptimizerInput): TechOptimizerResult
             // Past the time budget the only way to finish is to buy the remaining seconds.
             if (gemLimit <= 0) return null;
             const overlap = Math.min(upg.duration, earliestEnd - Math.max(startSec, baseTimeLimitSeconds));
-            if (overlap > 0) gemCost = Math.ceil(overlap * gemCostPerSecond);
+            if (overlap > 0) gemCost = Math.max(1, Math.round(overlap * gemCostPerSecond)); // CalculateGemSkipCost RVA 0x7868754
         }
         if (gemCost > (gemLimit - accumulatedGemCost)) return null;
 
@@ -373,28 +423,22 @@ export function optimizeTechTree(input: TechOptimizerInput): TechOptimizerResult
 
                     if (reqsMet) {
                         const tier = node.tier || 0;
-                        const upgradeData = upgradeLibrary[tier.toString()];
-                        if (upgradeData) {
-                            const levelData = upgradeData.Levels.find((l: any) => l.Level === currentLvl);
-                            if (levelData) {
-                                const finalCost = Math.ceil(levelData.Cost * (1 - bonuses.costReduction));
-                                const finalDuration = Math.ceil(levelData.Duration / (1 + bonuses.speedBonus));
-
-                                possibleUpgrades.push({
-                                    tree: treeName,
-                                    nodeId: node.id,
-                                    nodeName: nodeType,
-                                    type: nodeType,
-                                    fromLevel: currentLvl,
-                                    toLevel: currentLvl + 1,
-                                    cost: finalCost,
-                                    duration: finalDuration,
-                                    points: tierPoints[tier] || 0,
-                                    warPoints: 0, // Calculated on selection based on completion date
-                                    tier,
-                                    sprite_rect: node.sprite_rect,
-                                });
-                            }
+                        const step = techUpgradeCostAndDuration(upgradeLibrary, tier, currentLvl, bonuses);
+                        if (step) {
+                            possibleUpgrades.push({
+                                tree: treeName,
+                                nodeId: node.id,
+                                nodeName: nodeType,
+                                type: nodeType,
+                                fromLevel: currentLvl,
+                                toLevel: currentLvl + 1,
+                                cost: step.cost,
+                                duration: step.duration,
+                                points: tierPoints[tier] || 0,
+                                warPoints: 0, // Calculated on selection based on completion date
+                                tier,
+                                sprite_rect: node.sprite_rect,
+                            });
                         }
                     }
                 }

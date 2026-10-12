@@ -2,6 +2,7 @@
 // current profile, and produce reviewable change rows. Nothing is applied until the user
 // accepts rows in the diff modal (applyChanges builds the updateProfile payload).
 
+import { enforceGameLimits, type GameLimits } from './gameLimits';
 import type { UserProfile, ItemSlot, PetSlot, MountSlot } from '../../types/Profile';
 import { extractScreenshot, type ScreenExtraction, type DetItem, type DetUnit, type DetSubstat } from './extract';
 import { readScreenshots } from './autoSyncPipeline';
@@ -388,7 +389,11 @@ const withCardWarning = (res: ScreenReadResult, extra: string[] = []): string[] 
     res.authoritative === false ? [...res.warnings, ...extra, CARD_READ_WARNING] : [...res.warnings, ...extra];
 
 /** Diff ScreenReadResult[] (new template pipeline) against the profile into reviewable rows. */
-export function buildChangesFromReads(results: ScreenReadResult[], profile: UserProfile): ChangeRow[] {
+export function buildChangesFromReads(
+    results: ScreenReadResult[],
+    profile: UserProfile,
+    limits?: GameLimits | null,
+): ChangeRow[] {
     const rows: ChangeRow[] = [];
     let n = 0;
     const seenCurrency = new Set<string>();
@@ -828,7 +833,11 @@ export function buildChangesFromReads(results: ScreenReadResult[], profile: User
         || (a.category === 'clanTree' && b.category === 'clanTree' && a.patch.t === 'clanTree' && b.patch.t === 'clanTree'
             ? a.patch.globalId - b.patch.globalId
             : b.confidence - a.confidence));
-    return rows;
+    // Every number must sit inside the game's own bounds before anything is pre-accepted. Without
+    // the configs there is nothing to check against, so nothing may be pre-accepted either.
+    if (limits) return enforceGameLimits(rows, limits, profile);
+    return rows.map(r => r.accepted ? { ...r, accepted: false, warnings: [...r.warnings, 'Game data still loading: check this value by hand.'] } : r);
+
 }
 
 /**
@@ -1088,7 +1097,7 @@ export async function runAutoSyncV2(
             done = d;
             onProgress?.({ fileIndex: d, total });
         });
-        const rows = buildChangesFromReads(results, profile);
+        const rows = buildChangesFromReads(results, profile, dicts.limits);
         return { rows, results };
     } finally {
         setOcrProgress(null);

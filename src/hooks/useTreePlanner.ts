@@ -5,6 +5,7 @@ import { useTreeMode } from '../context/TreeModeContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { getWarDayIndex } from '../utils/guildWarUtils';
 import { calculateStats, LibraryData } from '../utils/statEngine';
+import { tierPointsFrom, calculateTechBonuses as calculateTreeTechBonuses, techUpgradeCostAndDuration } from '../utils/techOptimizer';
 import { UserProfile } from '../types/Profile';
 
 export interface PlanStep {
@@ -143,32 +144,12 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
     const treeModifiers = useTreeModifiers();
     const techUpgradeWarBonus = warBonusOverride ?? (treeModifiers['WarPointsFromTechUpgrade'] || 0);
 
-    // Tier -> War Points
-    const tierPoints = useMemo(() => {
-        const points: Record<number, number> = { 0: 300, 1: 7500, 2: 20000, 3: 35000, 4: 62000 };
-        if (dayConfig) {
-            const taskToTier: Record<string, number> = {
-                'FinishITechTreeUpgrade': 0, 'FinishIITechTreeUpgrade': 1,
-                'FinishIIITechTreeUpgrade': 2, 'FinishIVTechTreeUpgrade': 3,
-                'FinishVTechTreeUpgrade': 4
-            };
-            Object.values(dayConfig).forEach((dayData: any) => {
-                dayData.Tasks?.forEach((task: any) => {
-                    const tier = taskToTier[task.Task];
-                    if (tier !== undefined) {
-                        const amount = task.Rewards?.find((r: any) => r.$type === "WarPointsReward")?.Amount;
-                        if (amount) points[tier] = amount;
-                    }
-                });
-            });
-        }
-        // Apply the clan tech tree war-point boost (+ optional day boost) uniformly.
-        const dayBoost = dayBoostOverride ?? 0;
-        for (const tier of Object.keys(points)) {
-            points[Number(tier)] = points[Number(tier)] * (1 + techUpgradeWarBonus + dayBoost);
-        }
-        return points;
-    }, [dayConfig, techUpgradeWarBonus, dayBoostOverride]);
+    // Tier -> War Points: the config amounts with the clan boost (+ optional day boost) applied,
+    // computed by the same function the optimiser uses.
+    const tierPoints = useMemo(
+        () => tierPointsFrom(dayConfig, techUpgradeWarBonus, dayBoostOverride ?? 0),
+        [dayConfig, techUpgradeWarBonus, dayBoostOverride]
+    );
 
     // War Point Days: which GW days give war points for tech upgrades
     const warPointDays = useMemo((): number[] => {
@@ -186,31 +167,11 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
         return days;
     }, [dayConfig]);
 
-    // Tech Bonuses
-    const calculateTechBonuses = useCallback((tree: Record<string, Record<number, number>>) => {
-        let costReduction = 0;
-        let speedBonus = 0;
-
-        Object.entries(tree).forEach(([treeName, treeNodes]) => {
-            const treeDef = mapping?.trees?.[treeName];
-            if (!treeDef?.nodes) return;
-            treeDef.nodes.forEach((node: any) => {
-                const nodeType = node.type;
-                if (nodeType !== 'TechNodeUpgradeCost' && nodeType !== 'TechResearchTimer') return;
-                const nodeConfig = techTreeLibrary?.[nodeType];
-                if (!nodeConfig) return;
-                const nodeLevel = treeNodes[node.id] || 0;
-                if (nodeLevel > 0 && nodeConfig.Stats?.[0]) {
-                    const stat = nodeConfig.Stats[0];
-                    const val = stat.Value + ((nodeLevel - 1) * stat.ValueIncrease);
-                    if (nodeType === 'TechNodeUpgradeCost') costReduction += val;
-                    else if (nodeType === 'TechResearchTimer') speedBonus += val;
-                }
-            });
-        });
-
-        return { costReduction: Math.min(0.95, costReduction), speedBonus };
-    }, [mapping, techTreeLibrary]);
+    // Tech Bonuses (shared with the optimiser, src/utils/techOptimizer.ts)
+    const calculateTechBonuses = useCallback(
+        (tree: Record<string, Record<number, number>>) => calculateTreeTechBonuses(mapping, techTreeLibrary, tree),
+        [mapping, techTreeLibrary]
+    );
 
     // Calculate the schedule from the queue
     const schedule = useMemo((): ScheduleEntry[] => {
@@ -301,11 +262,9 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
 
             const bonuses = calculateTechBonuses(virtualTree);
             const tier = nodeDetails.tier || 0;
-            const upgradeData = upgradeLibrary[tier.toString()];
-            const levelData = upgradeData?.Levels?.find((l: any) => l.Level === currentLvl);
-
-            const finalCost = levelData ? Math.ceil(levelData.Cost * (1 - bonuses.costReduction)) : 0;
-            const finalDuration = levelData ? Math.ceil(levelData.Duration / (1 + bonuses.speedBonus)) : 0;
+            const upgradeStep = techUpgradeCostAndDuration(upgradeLibrary, tier, currentLvl, bonuses);
+            const finalCost = upgradeStep?.cost ?? 0;
+            const finalDuration = upgradeStep?.duration ?? 0;
             const pts = tierPoints[tier] || 0;
 
             // Cost validation: if hasBudgetLimit, must have enough runningPotions
@@ -435,12 +394,11 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
 
                     if (reqsMet) {
                         const tier = node.tier || 0;
-                        const upgradeData = upgradeLibrary[tier.toString()];
-                        const levelData = upgradeData?.Levels?.find((l: any) => l.Level === currentLvl);
-                        if (!levelData) return;
+                        const upgradeStep = techUpgradeCostAndDuration(upgradeLibrary, tier, currentLvl, bonuses);
+                        if (!upgradeStep) return;
 
-                        const finalCost = Math.ceil(levelData.Cost * (1 - bonuses.costReduction));
-                        const finalDuration = Math.ceil(levelData.Duration / (1 + bonuses.speedBonus));
+                        const finalCost = upgradeStep.cost;
+                        const finalDuration = upgradeStep.duration;
 
                         nodes.push({
                             tree: treeName,
@@ -644,12 +602,12 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
                     if (!reqsMet) return;
 
                     const tier = node.tier || 0;
-                    const upgradeData = upgradeLibrary[tier.toString()];
-                    const levelData = upgradeData?.Levels?.find((l: any) => l.Level === currentLvl);
-                    if (!levelData) return;
+                    const upgradeStep = techUpgradeCostAndDuration(upgradeLibrary, tier, currentLvl, bonuses);
+                    if (!upgradeStep) return;
 
-                    const finalCost = Math.ceil(levelData.Cost * (1 - bonuses.costReduction));
-                    const finalDuration = Math.max(1, Math.ceil(levelData.Duration / (1 + bonuses.speedBonus)));
+                    const finalCost = upgradeStep.cost;
+                    // At least one second, so the per-minute scoring below never divides by zero.
+                    const finalDuration = Math.max(1, upgradeStep.duration);
 
                     if (totalPotions + finalCost > budget) return;
 

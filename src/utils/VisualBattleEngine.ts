@@ -50,11 +50,18 @@ export interface VisualProjectile {
 import {
     BattleContext,
     CombatScene,
+    MISSION_ENEMY_BASE_X,
+    MISSION_PLAYER_RADIUS,
+    RandomPCG,
+    missionSoloPlayerPosition,
+    timerFrames,
     SkillManager,
     SkillSpec,
     Unit,
     UnitSpec,
     WaveEnemySpec,
+    describeEvent,
+    sceneVisuals,
     playerUnitSpec,
 } from '../engine';
 
@@ -88,31 +95,72 @@ export class VisualBattleEngine {
     private waveIdx = 0;
     private totalWaves = 0;
     private delayTicks: number;
-    private readonly interDelayTicks = 10; // 1.0 s between waves (0x77377E0)
+    /**
+     * No delay between waves in any mode, like WaveRunner: the main battle's WaveTimer is already
+     * negative when a wave is seen cleared, so the next one spawns on the next Update (see
+     * WaveRunnerConfig.initialDelay in src/engine/modes.ts).
+     */
+    private readonly interDelayTicks = 0;
     private readonly spawnDistance: number;
+    /** Missions spawn at the absolute X = 15 (MissionCombatScene.SetupEnemies). */
+    private readonly absoluteBaseX?: number;
+    private readonly isMission: boolean;
+    private readonly itemRng: RandomPCG;
     private acc = 0;
+    /** Frames the battle may run (mission BattleTimer); past it the battle is lost. */
+    private frameLimit = Infinity;
 
+    /**
+     * The enemy item stream for missionWaveSpecs: the game builds it with
+     * RandomPCG.CreateFromSeed(battleSeed), separate from the combat RNG.
+     */
     get rng() {
-        return this.scene.rng;
+        return this.itemRng;
     }
 
     constructor(playerStats: AggregatedStats, debugConfig?: DebugConfig, seed?: number, context?: BattleContext) {
         this.agg = playerStats;
+        const battleSeed = seed ?? Math.floor(Math.random() * 2 ** 31);
+        this.itemRng = new RandomPCG(battleSeed);
+        this.isMission = context === 'mission';
         this.mgr = new SkillManager(debugConfig?.skillStartupTimer);
         this.scene = new CombatScene({
-            seed: seed ?? Math.floor(Math.random() * 2 ** 31),
+            seed: battleSeed,
             keepEvents: true,
             skillSystem: (s) => this.mgr.execute(s),
         });
-        const spec = playerUnitSpec(playerStats as never, { x: debugConfig?.playerStartPos ?? 0, y: 0 }, context);
+        const start = this.isMission ? missionSoloPlayerPosition(!!playerStats.isRangedWeapon) : { x: 0, y: 0 };
+        const spec = playerUnitSpec(playerStats as never, { x: debugConfig?.playerStartPos ?? start.x, y: start.y }, context);
+        if (this.isMission) spec.radius = MISSION_PLAYER_RADIUS;
         if (debugConfig?.playerSpeed !== undefined) spec.stats.moveSpeed = debugConfig.playerSpeed;
         if (debugConfig?.playerRangeMultiplier) spec.attackRange *= debugConfig.playerRangeMultiplier;
         this.player = this.scene.addUnit(spec);
         this.spawnDistance = debugConfig?.enemySpawnDistance ?? 15;
-        this.delayTicks = 20; // 2.0 s before the first wave (0x7736968)
+        this.absoluteBaseX = this.isMission ? debugConfig?.enemySpawnDistance ?? MISSION_ENEMY_BASE_X : undefined;
+        const isMainBattle = !context || context === 'main';
+        this.delayTicks = isMainBattle ? 20 : 0; // 2.0 s before the first main-battle wave (SetupBattle)
     }
 
+    /** Mission BattleTimer: the same frame budget the batch simulator gives WaveRunner. */
+    setTimeLimit(seconds: number): void {
+        this.frameLimit = timerFrames(seconds);
+    }
+
+    /** True once the frame budget ran out with the battle still undecided. */
+    get timedOut(): boolean {
+        return this.scene.tickCount >= this.frameLimit && !this.player.destroyed;
+    }
+
+    /** The equipped mount's collider (UpdateMount); main battles and dungeons only. */
+    setPlayerCollider(radius: number, centerOfMass?: { x: number; y: number }): void {
+        if (this.isMission) return;
+        this.player.radius = radius;
+        if (centerOfMass) this.player.com = { ...centerOfMass };
+    }
+
+    /** Mission participants fight without active skills, so skill specs are ignored there. */
     addSkillSpec(spec: SkillSpec): void {
+        if (this.isMission) return;
         this.mgr.addSkill(spec);
     }
 
@@ -129,7 +177,7 @@ export class VisualBattleEngine {
     }
 
     private spawn(wave: WaveInput[]): void {
-        const baseX = this.player.pos.x + this.spawnDistance;
+        const baseX = this.absoluteBaseX ?? this.player.pos.x + this.spawnDistance;
         wave.forEach((e, i) => {
             if (isSpec(e)) {
                 const { offset, ...spec } = e;
@@ -164,9 +212,14 @@ export class VisualBattleEngine {
         }
     }
 
+    /**
+     * One battle Update. Wave completion and defeat are read from the entity table like the
+     * game's GetUnitCounts: a unit killed in a frame is only gone after the next frame's sweep.
+     */
     private step(): void {
-        if (this.player.killed) return;
-        if (this.scene.alive(false).length === 0 && this.pendingWaves.length > 0) {
+        if (this.player.destroyed || this.scene.tickCount >= this.frameLimit) return;
+        const enemiesPresent = this.scene.units.some((u) => !u.isAlly && !u.destroyed && !u.isSummon);
+        if (!enemiesPresent && this.pendingWaves.length > 0) {
             if (this.delayTicks-- <= 0) {
                 const wave = this.pendingWaves.shift();
                 if (wave) {
@@ -219,15 +272,20 @@ export class VisualBattleEngine {
                 .map((p) => ({ id: p.id, currentX: p.pos.x, currentY: p.pos.y, isPlayerSource: p.isAllied })),
             logs: this.scene.events.slice(-100).map((e) => ({
                 time: e.tick / 10,
-                event: e.heal ? 'Heal' : e.dodged ? 'Dodge' : e.blocked ? 'Block' : e.critical ? 'Crit' : 'Hit',
-                details: `${Math.round(e.dmg).toLocaleString()} (#${e.targetId})`,
+                ...describeEvent(
+                    e,
+                    (id) => (id === this.player.id ? 'you' : this.scene.units.find((u) => u.id === id)?.isAlly ? 'your Drone' : `enemy #${id}`),
+                    (n) => Math.round(n).toLocaleString('en-US')
+                ),
             })),
+            visuals: sceneVisuals(this.scene, this.mgr),
             remainingWaves: this.pendingWaves.length,
             waveIndex: this.waveIdx - 1,
             playerStats: this.agg,
             isEngaged: this.player.targetInRange,
             engagementTime: this.scene.tickCount / 10,
             waveEngagementTimer: 0,
+            timedOut: this.timedOut,
         };
     }
 }

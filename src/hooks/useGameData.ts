@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameDataContext } from '../context/GameDataContext';
+import { goesToClanLayer } from '../utils/clanTechStacking';
 
 // Cache to store loaded data and prevent redundant fetches
 const dataCache: Record<string, any> = {};
@@ -157,7 +158,10 @@ async function fetchAndReconstruct(selectedVersion: string, fileName: string): P
                 Stats: stats,
                 StatsByTier: statsByTier,
                 MaxLevel: maxLevel,
-                TierAddition: nodeType === 'AutoForge' ? [0, 1, 2, 3, 4] : null
+                TierAddition: nodeType === 'AutoForge' ? [0, 1, 2, 3, 4] : null,
+                // The clan copy of this node compounds with the personal one instead of
+                // adding to it (see utils/clanTechStacking.ts).
+                ClanTechTreeLayer: (nodeDef.StatNodes || []).some((n: any) => goesToClanLayer(n))
             };
         }
         return reconstructed;

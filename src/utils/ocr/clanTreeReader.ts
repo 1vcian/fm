@@ -288,6 +288,8 @@ interface Layout {
     clipTop: number;
     clipBottom: number;
     cards: [number, number][];
+    /** Gray row-runs the layout was derived from (debug only). */
+    runs?: { top: number; bot: number; wide: boolean; card: boolean }[];
 }
 
 /**
@@ -364,7 +366,12 @@ function findLayout(px: Uint8ClampedArray, W: number, H: number): Layout {
         } else y++;
     }
 
-    const firstWide = runs.find(r => r.wide);
+    // The first CARD (wide and tall), not the first wide run: a short header slab sits on the
+    // card-shape boundary (measured on clantree_only_vials_2 upscaled to 1080 px: an 11-row run at
+    // y=242 flips from narrow to wide under resampling), and taking it as the first card put
+    // clipTop 76 px too high, which lost the potion counter and every node. A short wide run is
+    // neither a card nor the header pill, so it is ignored for the anchor as well.
+    const firstWide = runs.find(r => r.card) ?? runs.find(r => r.wide);
     let clipTop = CLIP_TOP_FALLBACK;
     if (firstWide) {
         let anchor = -1;
@@ -379,7 +386,7 @@ function findLayout(px: Uint8ClampedArray, W: number, H: number): Layout {
         const top = Math.max(r.top, clipTop), bot = Math.min(r.bot, clipBottom);
         if (bot - top + 1 >= CARD_MIN_H) cards.push([top, bot]);
     }
-    return { clipTop, clipBottom, cards };
+    return { clipTop, clipBottom, cards, runs };
 }
 
 /** Precomputed (dy,dx) offsets of the proto's exact annulus (radii RING_R-4 .. RING_R-1). */
@@ -668,10 +675,10 @@ export async function readClanTree(input: HTMLCanvasElement): Promise<DetectedCl
     const gray = new Float32Array(W * H);
     for (let i = 0, p = 0; p < W * H; i += 4, p++) gray[p] = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
 
-    const { clipTop, clipBottom, cards } = findLayout(px, W, H);
+    const { clipTop, clipBottom, cards, runs } = findLayout(px, W, H);
     const circles = findCircles(gray, W, H, cards, clipTop, clipBottom);
     const dbg: any[] | undefined = (globalThis as any).__CLANTREE_DEBUG__;
-    if (dbg) dbg.push({ W, H, clipTop, clipBottom, cards, circles: circles.map(c => ({ ...c, ann: Math.round(annulusMean(gray, W, H, c.x, c.y)) })), titles: [] as (string | null)[] });
+    if (dbg) dbg.push({ W, H, clipTop, clipBottom, cards, runs, circles: circles.map(c => ({ ...c, ann: Math.round(annulusMean(gray, W, H, c.x, c.y)) })), titles: [] as (string | null)[] });
     const guildPotions = readPotion(canvas, bank, clipTop);
     const potionCropUrl = guildPotions != null ? evidenceCropUrl(canvas, potionRect(clipTop), 140) : undefined;
 

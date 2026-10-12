@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useProfile } from '../../context/ProfileContext';
-import { useTreeModifiers, useClanNodeMax } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeLimits } from '../../hooks/useTreeLimits';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
@@ -34,6 +35,7 @@ const CURRENCY_ICON: Record<string, string> = {
 export default function WarPrizesCalculator() {
     const { data: tierConfig } = useGameData<Record<string, TierConfig>>('GuildTierConfig.json');
     const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
+    const { data: starsBonusLibrary } = useGameData<any>('AscensionStarsBonusLibrary.json');
     const { selectedVersion } = useGameDataContext();
     const { profile } = useProfile();
     const defaultAscension =
@@ -42,14 +44,10 @@ export default function WarPrizesCalculator() {
         (profile?.misc?.forgeAscensionLevel || 0) +
         (profile?.misc?.petAscensionLevel || 0);
 
-    const winStep = guildUpgradeLibrary?.['ClanWarWinRewards']?.ValuePerLevel || 0.005;
-    const loseStep = guildUpgradeLibrary?.['ClanWarLoseRewards']?.ValuePerLevel || 0.005;
-    const potWinStep = guildUpgradeLibrary?.['GuildPotionsFromClanWarWin']?.ValuePerLevel || 0.01;
-    const potLoseStep = guildUpgradeLibrary?.['GuildPotionsFromClanWarLose']?.ValuePerLevel || 0.01;
 
     // Clan tech tree reward multipliers (already effective, see useGameData).
     const treeModifiers = useTreeModifiers();
-    const clanMax = useClanNodeMax();
+    const treeLimits = useTreeLimits();
     const profileWin = treeModifiers['ClanWarWinRewards'] || 0;
     const profileLose = treeModifiers['ClanWarLoseRewards'] || 0;
     const profilePotionsWin = treeModifiers['GuildPotionsFromClanWarWin'] || 0;
@@ -76,10 +74,10 @@ export default function WarPrizesCalculator() {
     const sandboxControls = {
         reset: () => setSandbox({}),
         fields: [
-            { key: 'win', label: 'Win war rewards', value: winBonus, profileValue: profileWin, min: 0, max: clanMax['ClanWarWinRewards'] || 0.1, step: winStep, onChange: (v: number) => setSandbox(p => ({ ...p, win: v })) },
-            { key: 'lose', label: 'Lost war rewards', value: loseBonus, profileValue: profileLose, min: 0, max: clanMax['ClanWarLoseRewards'] || 0.1, step: loseStep, onChange: (v: number) => setSandbox(p => ({ ...p, lose: v })) },
-            { key: 'potWin', label: 'Guild potions (win)', value: potionsWinBonus, profileValue: profilePotionsWin, min: 0, max: clanMax['GuildPotionsFromClanWarWin'] || 1, step: potWinStep, onChange: (v: number) => setSandbox(p => ({ ...p, potWin: v })) },
-            { key: 'potLose', label: 'Guild potions (lose)', value: potionsLoseBonus, profileValue: profilePotionsLose, min: 0, max: clanMax['GuildPotionsFromClanWarLose'] || 1, step: potLoseStep, onChange: (v: number) => setSandbox(p => ({ ...p, potLose: v })) },
+            { key: 'win', label: 'Win war rewards', value: winBonus, profileValue: profileWin, min: 0, ...treeLimits.clan('ClanWarWinRewards'), onChange: (v: number) => setSandbox(p => ({ ...p, win: v })) },
+            { key: 'lose', label: 'Lost war rewards', value: loseBonus, profileValue: profileLose, min: 0, ...treeLimits.clan('ClanWarLoseRewards'), onChange: (v: number) => setSandbox(p => ({ ...p, lose: v })) },
+            { key: 'potWin', label: 'Guild potions (win)', value: potionsWinBonus, profileValue: profilePotionsWin, min: 0, ...treeLimits.clan('GuildPotionsFromClanWarWin'), onChange: (v: number) => setSandbox(p => ({ ...p, potWin: v })) },
+            { key: 'potLose', label: 'Guild potions (lose)', value: potionsLoseBonus, profileValue: profilePotionsLose, min: 0, ...treeLimits.clan('GuildPotionsFromClanWarLose'), onChange: (v: number) => setSandbox(p => ({ ...p, potLose: v })) },
         ],
     };
 
@@ -87,12 +85,29 @@ export default function WarPrizesCalculator() {
     const [tierIdx, setTierIdx] = useState(0);
     const tier = tiers[tierIdx];
 
-    // Apply the multipliers; GuildPotions get an extra win/lose-specific boost and ascension stars boost (+10% per star).
+    // Ascension stars bonus on GuildPotions (CurrencyType 11): every AscensionStarsBonusLibrary row whose
+    // RequiredStars is reached adds its Value (+5% per star since 2026_09_08, it was +10% before).
+    const starsBonusAt = (stars: number) => {
+        let sum = 0;
+        for (const row of Object.values<any>(starsBonusLibrary || {})) {
+            if ((row?.RequiredStars ?? Infinity) > stars) continue;
+            for (const st of row?.BonusStats?.Stats || []) {
+                const target = st?.StatNode?.Target;
+                const isPotions = target?.Kind === 'Currency' && (target.Qualifiers || []).some((q: any) => q.Type === 'CurrencyType' && q.Value === 11);
+                if (isPotions && st?.StatNode?.UniqueStat?.StatType === 'Bonus') sum += Number(st.Value) || 0;
+            }
+        }
+        return Math.round(sum * 1e6) / 1e6;
+    };
+    const starsPotionBonus = starsBonusAt(ascensionStars);
+    const maxAscensionStars = useMemo(() => Math.max(0, ...Object.values<any>(starsBonusLibrary || {}).map(r => Number(r?.RequiredStars) || 0)), [starsBonusLibrary]);
+
+    // Apply the multipliers; GuildPotions get an extra win/lose-specific boost and the ascension stars boost.
     // The calculation is multiplicative between the war/potions tree multipliers and the ascension stars.
     const applyBonus = (rewards: CurrencyReward[], baseBonus: number, potionBonus: number) =>
         (rewards || []).map(r => {
             if (r.Type === 'GuildPotions') {
-                const boosted = r.Amount * (1 + baseBonus + potionBonus) * (1 + ascensionStars * 0.1);
+                const boosted = r.Amount * (1 + baseBonus + potionBonus) * (1 + starsPotionBonus);
                 return { ...r, boosted };
             }
             return { ...r, boosted: r.Amount * (1 + baseBonus) };
@@ -153,9 +168,9 @@ export default function WarPrizesCalculator() {
                                 onChange={(e) => setSandbox(p => ({ ...p, ascensionStars: parseInt(e.target.value) }))}
                                 className="bg-bg-input border border-purple-500/30 hover:border-purple-500/50 focus:border-purple-500/80 rounded-lg px-3 py-1.5 text-xs text-white outline-none transition-all font-mono cursor-pointer appearance-none pr-8"
                             >
-                                {Array.from({ length: 13 }).map((_, idx) => (
+                                {Array.from({ length: Math.max(maxAscensionStars, ascensionStars) + 1 }).map((_, idx) => (
                                     <option key={idx} value={idx}>
-                                        {idx} {idx === 1 ? 'Star' : 'Stars'} (+{idx * 10}%)
+                                        {idx} {idx === 1 ? 'Star' : 'Stars'} (+{Math.round(starsBonusAt(idx) * 100)}%)
                                     </option>
                                 ))}
                             </select>

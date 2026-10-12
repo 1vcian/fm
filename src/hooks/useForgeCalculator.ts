@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { forgeProbabilities } from '../constants/forgeData';
+import { tierNames } from '../constants/forgeData';
 import { useGameData } from './useGameData';
 import { useTreeModifiers } from './useCalculatedStats';
 
@@ -7,6 +7,23 @@ export type CalculationMode = 'calculate' | 'target';
 
 interface UseForgeCalculatorProps {
     initialLevel?: number;
+}
+
+/**
+ * Coins for one forge tier, as ForgeExtensions.GetForgeTierUpgradeCost (RVA 0x77B2C74):
+ * RoundToInt(CalculateValue(Cost, Forge, Cost / Tiers)) with an integer division first. The
+ * ForgeUpgradeCost node is a OneMinusMultiplier. The row is ForgeUpgradeLibrary[ForgeLevel + 1] on the
+ * game's 0-based ForgeLevel, which is the displayed level, so key N prices leaving level N.
+ */
+export function forgeTierCost(def: { Cost?: number; Tiers?: number } | null | undefined, costReduction: number): number {
+    if (!def?.Cost) return 0;
+    const tiers = Math.max(1, def.Tiers || 1);
+    return Math.round(Math.floor(def.Cost / tiers) * (1 - costReduction));
+}
+
+/** Coins for a whole forge level: every tier is paid separately (ForgeTierUpgradeAction, RVA 0x783A080). */
+export function forgeLevelCost(def: { Cost?: number; Tiers?: number } | null | undefined, costReduction: number): number {
+    return forgeTierCost(def, costReduction) * Math.max(1, def?.Tiers || 1);
 }
 
 // Separate hook for reuse in Profile/MiscPanel
@@ -29,11 +46,11 @@ export function useForgeUpgradeStats(level: number) {
 
         const baseCost = nextLevelData.Cost || 0;
         const reduction = forgeCostReduction;
-        const cost = Math.floor(baseCost * (1 - reduction));
 
-        // Tiers (Steps)
+        // Tiers (Steps), each paid on its own
         const tiers = nextLevelData.Tiers || 1;
-        const costPerTier = Math.floor(cost / tiers);
+        const costPerTier = forgeTierCost(nextLevelData, reduction);
+        const cost = costPerTier * tiers;
 
         // Steps (Hammers) & Time Calculation
         // JSON "Duration" is the Base Time in SECONDS for the entire Level (Total).
@@ -103,6 +120,20 @@ export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps
 
     // Use shared hook for upgrade stats
     const upgradeStats = useForgeUpgradeStats(level);
+
+    // Age odds (percent) from ItemAgeDropChancesLibrary, keyed by the game's 0-based ForgeLevel
+    // (displayed level - 1): key 0 is 100% Primitive. Age index N is the N-th tierNames key.
+    const { data: dropChances } = useGameData<any>('ItemAgeDropChancesLibrary.json');
+    const probs = useMemo((): Record<string, number> | null => {
+        const row = dropChances?.[String(level - 1)];
+        if (!row) return null;
+        const out: Record<string, number> = {};
+        Object.keys(tierNames).forEach((tier, idx) => {
+            const p = Number(row[`Age${idx}`]) || 0;
+            if (p > 0) out[tier] = Math.round(p * 1e6) / 1e4;
+        });
+        return out;
+    }, [dropChances, level]);
     const expPerHammer = upgradeStats?.expPerHammer || 0;
 
     const freeMultiplier = useMemo(() => {
@@ -139,8 +170,6 @@ export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps
     // Coin Calculation
     const coinEstimates = useMemo(() => {
         const bonusMultiplier = 1 + (priceBonus / 100);
-        const probs = forgeProbabilities[level];
-
         let lowestProb = 0;
         if (probs) {
             lowestProb = Math.min(...Object.values(probs));
@@ -167,11 +196,10 @@ export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps
             min: avgPriceMin * effectiveHammers * bonusMultiplier,
             max: avgPriceMax * effectiveHammers * bonusMultiplier
         };
-    }, [level, maxItemLevel, priceBonus, effectiveHammers]);
+    }, [probs, maxItemLevel, priceBonus, effectiveHammers]);
 
     // Probability Breakdown Data
     const probabilityData = useMemo(() => {
-        const probs = forgeProbabilities[level];
         if (!probs) return [];
 
         return Object.entries(probs)
@@ -183,7 +211,7 @@ export function useForgeCalculator({ initialLevel = 1 }: UseForgeCalculatorProps
                     ? Math.floor(effectiveHammers * (probability / 100))
                     : 0
             }));
-    }, [level, effectiveHammers, mode]);
+    }, [probs, effectiveHammers, mode]);
 
     return {
         // State setters

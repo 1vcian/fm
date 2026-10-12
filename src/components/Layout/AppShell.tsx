@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Coffee, ExternalLink, Github, Sparkles } from 'lucide-react';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
 import { cn } from '../../lib/utils';
@@ -105,9 +106,20 @@ const formatVersionDate = (version: string): string => {
     return version;
 };
 
+/** Per-file cap on delta lines in the update popup: a 25-line file would bury the rest. */
+const DELTA_LINES_SHOWN = 4;
+
+/** The import script writes composite keys as Python dict reprs ("{'Rarity': 'Common', 'Id': 0}.Name");
+ *  show them as "Common #0.Name". */
+function prettyDeltaLine(line: string): string {
+    return line.replace(/\{([^{}]*)\}/g, (_, inner: string) =>
+        inner.split(',').map(part => part.split(':').slice(1).join(':').trim().replace(/^'|'$/g, '')).join(' #'));
+}
+
 export default function AppShell() {
     const { selectedVersion, versions, isLoadingVersions } = useGameDataContext();
     const { profile } = useProfile();
+    const { data: forgeDropChances } = useGameData<Record<string, Record<string, number>>>('ItemAgeDropChancesLibrary.json');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false);
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
@@ -159,18 +171,17 @@ export default function AppShell() {
         // profile.misc.forgeLevel is 0-indexed (0 = Lvl 1 in UI)
         const uiLevel = (profile.misc.forgeLevel || 0) + 1;
 
-        // Determine max age index based on level (Thresholds from forgeData.ts)
+        // Highest age this forge level can drop. ForgeAction.RollAge 0x7838958 rolls the age from
+        // ItemAgeDropChancesLibrary[PlayerForgeModel.ForgeLevel] (stored, 0-based); ForgeLevelUiView.UpdateUi
+        // 0x404800C displays ForgeLevel + 1. So row uiLevel - 1 is the player's row, and an age appears from
+        // the first displayed level whose row gives it a chance > 0 (Divine: row 28, displayed 29).
         let ageIdx = 0;
-        if (uiLevel >= 30) ageIdx = 9;
-        else if (uiLevel >= 24) ageIdx = 8;
-        else if (uiLevel >= 20) ageIdx = 7;
-        else if (uiLevel >= 17) ageIdx = 6;
-        else if (uiLevel >= 14) ageIdx = 5;
-        else if (uiLevel >= 11) ageIdx = 4;
-        else if (uiLevel >= 8) ageIdx = 3;
-        else if (uiLevel >= 5) ageIdx = 2;
-        else if (uiLevel >= 2) ageIdx = 1;
-        else ageIdx = 0;
+        const row = forgeDropChances?.[String(uiLevel - 1)];
+        if (row) {
+            for (let a = 9; a >= 0; a--) {
+                if ((row[`Age${a}`] ?? 0) > 0) { ageIdx = a; break; }
+            }
+        }
 
         const visuals = [
             { id: 'primitive', name: "Primitive", anim: "primitive-animation", bg: "bg-age-primitive", texture: "PrimitiveBackground.png" },
@@ -186,7 +197,23 @@ export default function AppShell() {
         ];
 
         return visuals[ageIdx];
-    }, [profile.misc.forgeLevel]);
+    }, [profile.misc.forgeLevel, forgeDropChances]);
+
+    // Only some ages ship a background texture. Point --theme-url at a file only when the texture
+    // manifest lists it: a missing file behind the infinite theme animation is re-requested forever.
+    const [textureNames, setTextureNames] = useState<Set<string> | null>(null);
+    useEffect(() => {
+        let alive = true;
+        fetch(`${import.meta.env.BASE_URL}parsed_configs/TextureManifest.json`)
+            .then(r => (r.ok ? r.json() : []))
+            .then((names: unknown) => { if (alive && Array.isArray(names)) setTextureNames(new Set(names as string[])); })
+            .catch(() => { /* no manifest: render the age colour only */ });
+        return () => { alive = false; };
+    }, []);
+    const textureVersion = resolveTextureVersion(selectedVersion) ?? selectedVersion;
+    const themeUrl = maxAgeVisuals.texture && textureNames?.has(maxAgeVisuals.texture)
+        ? `url(${import.meta.env.BASE_URL}Texture2D/${textureVersion ? `${textureVersion}/` : ''}${maxAgeVisuals.texture})`
+        : 'none';
 
     const donationLabel = useMemo(() => {
         const labels = [
@@ -431,7 +458,7 @@ export default function AppShell() {
                 >
                     <div
                         className={cn(maxAgeVisuals.anim, "rounded-full")}
-                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${(resolveTextureVersion(selectedVersion) ?? selectedVersion) ? `${resolveTextureVersion(selectedVersion) ?? selectedVersion}/` : ''}${maxAgeVisuals.texture})` } as React.CSSProperties}
+                        style={{ '--theme-url': themeUrl } as React.CSSProperties}
                     >
                         {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
                             <span key={i} />
@@ -548,11 +575,16 @@ export default function AppShell() {
                                                         </div>
                                                         {change.lines.length > 0 && (
                                                             <ul className="mt-1 space-y-0.5">
-                                                                {change.lines.map(line => (
+                                                                {change.lines.slice(0, DELTA_LINES_SHOWN).map(line => (
                                                                     <li key={line} className="font-mono text-[10px] text-text-secondary break-words">
-                                                                        {line}
+                                                                        {prettyDeltaLine(line)}
                                                                     </li>
                                                                 ))}
+                                                                {change.lines.length > DELTA_LINES_SHOWN && (
+                                                                    <li className="text-[10px] text-text-muted italic">
+                                                                        and {change.lines.length - DELTA_LINES_SHOWN} more
+                                                                    </li>
+                                                                )}
                                                             </ul>
                                                         )}
                                                     </li>
@@ -573,7 +605,7 @@ export default function AppShell() {
                                     <div
                                         className={cn(maxAgeVisuals.anim, "absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none")}
                                         style={{
-                                            '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${(resolveTextureVersion(selectedVersion) ?? selectedVersion) ? `${resolveTextureVersion(selectedVersion) ?? selectedVersion}/` : ''}${maxAgeVisuals.texture})`
+                                            '--theme-url': themeUrl
                                         } as React.CSSProperties}
                                     >
                                         {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (

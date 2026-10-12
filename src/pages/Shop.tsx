@@ -294,7 +294,7 @@ export default function Shop() {
                             }[deal.type] || 'Package';
 
                             return (
-                                <div className="bg-bg-secondary/10 border border-border/30 rounded-2xl p-5 space-y-4">
+                                <div key={deal.type} className="bg-bg-secondary/10 border border-border/30 rounded-2xl p-5 space-y-4">
                                     <div className="flex items-center gap-6">
                                         <div className="w-24 h-24 rounded-2xl bg-bg-secondary border-2 border-border flex items-center justify-center shadow-inner overflow-hidden">      <GameIcon name={categoryIcon} className="w-full h-full" />
                                         </div>

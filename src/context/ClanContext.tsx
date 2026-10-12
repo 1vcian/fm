@@ -108,6 +108,7 @@
  * body push that landed in between is not un-remembered). `useProfileSync.ts` is not touched.
  */
 
+import { clanNodeCaps as computeClanNodeCaps } from '../utils/clanTechStacking';
 import React, {
     createContext,
     useCallback,
@@ -1714,20 +1715,18 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: guildUpgradeLibrary, loading: guildUpgradeLoading } =
         useGameData<Record<string, { MaxLevel?: number } | null>>(clanId ? 'GuildTechTreeUpgradeLibrary.json' : '');
 
+    // Base caps (MaxLevel per node). The size check below uses them as "configs have landed".
     const clanNodeCaps = useMemo(() => {
-        const caps = new Map<number, number>();
-        if (!guildPositionLibrary || !guildUpgradeLibrary) return caps;
-        let globalId = 0;
-        for (const category of Object.keys(guildPositionLibrary)) {
-            for (const type of guildPositionLibrary[category]?.Nodes || []) {
-                const max = guildUpgradeLibrary[type]?.MaxLevel;
-                // The same fallback the page and MiscPanel use, so the two never disagree on a cap.
-                caps.set(globalId, typeof max === 'number' && max > 0 ? Math.floor(max) : 20);
-                globalId += 1;
-            }
-        }
-        return caps;
+        if (!guildPositionLibrary || !guildUpgradeLibrary) return new Map<number, number>();
+        return computeClanNodeCaps(guildPositionLibrary, guildUpgradeLibrary as never, null).caps;
     }, [guildPositionLibrary, guildUpgradeLibrary]);
+    // Caps for a specific row: once that row has every node at MaxLevel, infinite nodes are
+    // open-ended (GuildTechTreeHelpers.IsInfinite), so a maxed clan's 15/10 war node survives a pull.
+    const capsForRow = useCallback(
+        (levels: Record<string, number> | null | undefined) =>
+            computeClanNodeCaps(guildPositionLibrary, guildUpgradeLibrary as never, levels).caps,
+        [guildPositionLibrary, guildUpgradeLibrary],
+    );
 
     const saveTree = useCallback(
         (levels: Record<string, number>) =>
@@ -1798,7 +1797,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
             }
 
-            const { levels, clamped } = clampLevels(row.levels, clanNodeCaps);
+            const { levels, clamped } = clampLevels(row.levels, capsForRow(row.levels));
             // EVERY DECISION BELOW IS AGAINST THE TREE AS IT IS NOW. The round trip above is the
             // whole reason this function can lose data: the checks the auto-pull effect made before
             // starting it describe a moment that has passed. See `liveClanTree`.
@@ -1866,7 +1865,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } finally {
             if (!auto) setBusy(false);
         }
-    }, [isSharedProfile, clanId, clanNodeCaps, updateNestedProfile]);
+    }, [isSharedProfile, clanId, clanNodeCaps, capsForRow, updateNestedProfile]);
 
     const pullTree = useCallback(() => runPull(false), [runPull]);
 
@@ -1939,7 +1938,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const rowSig = signLevels(row.levels);
         if (publishedRowSig.current !== null && rowSig === publishedRowSig.current) return;
 
-        const target = clampLevels(row.levels, clanNodeCaps).levels;
+        const target = clampLevels(row.levels, capsForRow(row.levels)).levels;
         if (signLevels(target) === localTreeSig) return; // already in step: the fixed point
 
         // Somebody is typing in this tree right now (only a leader can be — see
@@ -1956,7 +1955,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (autoPullBusy.current) return;
         autoPullBusy.current = true;
         void runPull(true).finally(() => { autoPullBusy.current = false; });
-    }, [autoPullOn, view.tree, clanNodeCaps, localTreeSig, autoPullTick, runPull]);
+    }, [autoPullOn, view.tree, clanNodeCaps, capsForRow, localTreeSig, autoPullTick, runPull]);
 
     /* -------------------------------------------------------------------------------------- *
      * The join password — leaders only, and "no rows" is not an error
@@ -2050,7 +2049,8 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
      * `computeWarPoints` needs the war day config for every point value and day assignment, the
      * three tech-tree libraries plus ForgeConfig for the real optimiser, the age drop table and the
      * forge upgrade costs for the forge and forge-spend halves, the three summon configs for
-     * tickets/winders/eggshells, and the two guild libraries for the clan `WarPointsFrom`
+     * tickets/winders/eggshells (plus AscensionConfigsLibrary for the pet ascension count), and the
+     * two guild libraries for the clan `WarPointsFrom`
      * multipliers. A missing one is not a crash — it downgrades the categories that needed it to
      * `unavailable` with a reason — but publishing a document full of `unavailable` because a fetch
      * had not landed yet would tell fifty people the wrong thing, so the draft waits for all of
@@ -2084,6 +2084,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const mountSummonQuery = useGameData<unknown>(file('MountSummonConfig.json'));
     const eggSummonQuery = useGameData<unknown>(file('EggSummonConfig.json'));
     const eggLibraryQuery = useGameData<unknown>(file('EggLibrary.json'));
+    const ascensionConfigsQuery = useGameData<unknown>(file('AscensionConfigsLibrary.json'));
 
     const dayConfig = dayConfigQuery.data;
 
@@ -2096,7 +2097,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         techLibraryQuery.loading || techUpgradeQuery.loading || forgeConfigQuery.loading ||
         ageDropQuery.loading || forgeUpgradeQuery.loading || skillSummonQuery.loading ||
         mountSummonQuery.loading || eggSummonQuery.loading || eggLibraryQuery.loading ||
-        guildPositionLoading || guildUpgradeLoading;
+        ascensionConfigsQuery.loading || guildPositionLoading || guildUpgradeLoading;
 
     /**
      * The profile the war maths is run against: `profile`, trailing by `WAR_COMPUTE_DEBOUNCE_MS`
@@ -2117,7 +2118,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [profile, computeSnapshot]);
 
     /**
-     * The thirteen configs as one object, hoisted so the local draft and every clan mate's
+     * The war configs as one object, hoisted so the local draft and every clan mate's
      * breakdown run against the SAME game data. Two assemblies would be two versions of the truth
      * the moment one of them forgot a field.
      *
@@ -2145,13 +2146,14 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
             mountSummonConfig: mountSummonQuery.data,
             eggSummonConfig: eggSummonQuery.data,
             eggLibrary: eggLibraryQuery.data,
+            ascensionConfigs: ascensionConfigsQuery.data,
         };
     }, [
         wantsWarConfigs, configsLoading, dayConfig, warConfigQuery.data,
         guildPositionLibrary, guildUpgradeLibrary,
         techMappingQuery.data, techLibraryQuery.data, techUpgradeQuery.data, forgeConfigQuery.data,
         ageDropQuery.data, forgeUpgradeQuery.data, skillSummonQuery.data, mountSummonQuery.data,
-        eggSummonQuery.data, eggLibraryQuery.data,
+        eggSummonQuery.data, eggLibraryQuery.data, ascensionConfigsQuery.data,
     ]);
 
     const built = useMemo(() => {

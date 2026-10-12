@@ -6,6 +6,7 @@ import { Shield, Sword, Heart, Zap } from 'lucide-react';
 import { getSkinSpriteStyle } from '../utils/skinSprites';
 import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
 import { useGameDataContext } from '../context/GameDataContext';
+import skinSetNames from '../data/skinSetNames.json';
 
 interface SkinStat {
     StatNode: {
@@ -46,6 +47,13 @@ interface SetBonus {
 interface SetEntry {
     Id: string;
     BonusTiers: SetBonus[];
+}
+
+/** English set names from the game's Skins string table (key = set id, e.g. DarkPlanetWarriorSet -> "Shadow Set"),
+ *  extracted from the localization dump; the raw id is shown only when the table has no string. */
+const SKIN_SET_NAMES: Record<string, string> = skinSetNames;
+function setDisplayName(setId: string): string {
+    return SKIN_SET_NAMES[setId] ?? setId;
 }
 
 export default function Skins() {
@@ -103,12 +111,12 @@ export default function Skins() {
                 if (age === -1000) {
                     lookup[idx].melee = { 
                         windup: data.WindupTime ?? 0.5, 
-                        duration: data.AttackDuration || 1.1 
+                        duration: data.AttackDuration || 1.5 
                     };
                 } else if (age === -1001) {
                     lookup[idx].ranged = { 
                         windup: data.WindupTime ?? 0.5, 
-                        duration: data.AttackDuration || 1.1 
+                        duration: data.AttackDuration || 1.5 
                     };
                 }
             }
@@ -141,7 +149,7 @@ export default function Skins() {
                 isOpen={breakpointModal.isOpen}
                 onClose={() => setBreakpointModal({ isOpen: false })}
                 weaponName={breakpointModal.weapon?.Name || 'Skin'}
-                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.1}
+                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.5}
                 weaponWindupTime={breakpointModal.weapon?.WindupTime || 0.4}
             />
             <div className="flex flex-col gap-2">
@@ -211,7 +219,7 @@ export default function Skins() {
                                             <div className="absolute inset-0 bg-accent-primary/10"></div>
                                             <img
                                                 src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${setIcon}`}
-                                                alt={setId}
+                                                alt={setDisplayName(setId)}
                                                 className="w-full h-full object-contain pixelated relative z-10"
                                             />
                                         </div>
@@ -219,7 +227,7 @@ export default function Skins() {
                                     <div>
                                         <h2 className="text-2xl font-bold text-accent-primary flex items-center gap-2">
                                             {!setIcon && <Shield className="w-6 h-6" />}
-                                            {setId}
+                                            {setDisplayName(setId)}
                                         </h2>
                                         <p className="text-xs text-text-muted mt-1">
                                             Collect {setInfo.BonusTiers[0]?.RequiredPieces || 2} pieces to activate bonuses.
@@ -257,7 +265,7 @@ export default function Skins() {
                                         timing={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx] : undefined}
                                         onShowBreakpoints={(w, d) => setBreakpointModal({
                                             isOpen: true,
-                                            weapon: { Name: `${skin.BaseSetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
+                                            weapon: { Name: `${skin.BaseSetId ? setDisplayName(skin.BaseSetId) : 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
                                         })}
                                     />
                                 ))}
@@ -283,7 +291,7 @@ export default function Skins() {
                                 timing={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx] : undefined}
                                 onShowBreakpoints={(w, d) => setBreakpointModal({
                                     isOpen: true,
-                                    weapon: { Name: `${skin.BaseSetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
+                                    weapon: { Name: `${skin.BaseSetId ? setDisplayName(skin.BaseSetId) : 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
                                 })}
                             />
                         ))}

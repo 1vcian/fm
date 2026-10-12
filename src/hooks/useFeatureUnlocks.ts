@@ -26,6 +26,7 @@
 import { useMemo } from 'react';
 import { useGameData } from './useGameData';
 import { useGameDataContext } from '../context/GameDataContext';
+import { stageLabel as difficultyStageLabel } from '../utils/difficulty';
 
 /** First extraction whose `PlayerSegments.json` carries the real table rather than a placeholder. */
 const SEGMENTS_FROM_VERSION = '2026_07_03_12_39';
@@ -43,6 +44,8 @@ export const FEATURE_NAMES: Record<string, string> = {
     Shop: 'Shop',
     StarterPackage: 'Starter Package',
     Dungeons: 'Dungeons',
+    // Dungeon names as the game localizes them (Dungeons string table: HammerDungeonTitle,
+    // SkillDungeonTitle, PetDungeonTitle = Invasion, PotionDungeonTitle = Zombie Rush).
     Dungeon_Hammer: 'Hammer Thief',
     AutoForge: 'Auto Forge',
     SkillCollection: 'Skills',
@@ -50,12 +53,12 @@ export const FEATURE_NAMES: Record<string, string> = {
     Dungeon_Skill: 'Ghost Town',
     Pets: 'Pets',
     PetSlot0: 'Pet Slot 1',
-    Dungeon_Pet: 'Pet Dungeon',
+    Dungeon_Pet: 'Invasion',
     Chat: 'Chat',
     Arena: 'Arena',
     SkillSlot1: 'Skill Slot 2',
     TechTree: 'Tech Tree',
-    Dungeon_Potion: 'Invasion',
+    Dungeon_Potion: 'Zombie Rush',
     PetSlot1: 'Pet Slot 2',
     Guilds: 'Guilds',
     SkillSlot2: 'Skill Slot 3',
@@ -79,6 +82,17 @@ export const FEATURE_NAMES: Record<string, string> = {
     ClanTechTree: 'Clan Tech Tree',
     AutoForgeStack: 'Auto Forge Stack',
     EggStarterOffer: 'Egg Starter Offer',
+    // Ids renamed or added in the 2026_10_08_09_03 segments. Dungeons: game strings
+    // Dungeons.{Hammer,Skill,Pet,Potion}DungeonTitle; SteppingStones: Skins.SteppingStones;
+    // Fairies / ChatTranslation: PlayerSegments.json DisplayName. AutoHammer1/2 have no game
+    // string, so they fall back to the config DisplayName.
+    HammerDungeon: 'Hammer Thief',
+    SkillDungeon: 'Ghost Town',
+    PetDungeon: 'Invasion',
+    PotionDungeon: 'Zombie Rush',
+    SteppingStones: 'Stepping Stones',
+    Fairies: 'Fairies',
+    ChatTranslation: 'Chat Translation',
 };
 
 /* ------------------------------------------------------------------------------------------ *
@@ -117,6 +131,8 @@ export interface FeatureUnlock {
     /** null when the feature is not gated on story progress, so it has no place on a stage timeline. */
     ageIdx: number | null;
     battleIdx: number | null;
+    /** MainBattleId.DifficultyIdx of the gate (0 = Normal); the legacy file has none. */
+    difficultyIdx: number | null;
     /** The game is deliberately withholding this feature. */
     forceLocked: boolean;
     /** Legacy config only: the newer segments have no equivalent field. */
@@ -130,7 +146,7 @@ export interface FeatureUnlock {
  * ------------------------------------------------------------------------------------------ */
 
 function stageLabel(value: any): string {
-    return `Stage ${(value?.AgeIdx ?? 0) + 1}-${(value?.BattleIdx ?? 0) + 1}`;
+    return `Stage ${difficultyStageLabel(value?.DifficultyIdx ?? 0, value?.AgeIdx ?? 0, value?.BattleIdx ?? 0)}`;
 }
 
 function plural(count: number, unit: string): string {
@@ -212,6 +228,7 @@ function fromSegments(raw: Record<string, Segment>): FeatureUnlock[] {
             description: segment?.Description,
             ageIdx: start ? start.Min?._value?.AgeIdx ?? null : null,
             battleIdx: start ? start.Min?._value?.BattleIdx ?? null : null,
+            difficultyIdx: start ? start.Min?._value?.DifficultyIdx ?? 0 : null,
             // Min true means the gate only opens while the flag is set, which is how the game
             // withholds a feature. Min false is satisfied by anything and is no gate at all.
             forceLocked: forceLock?.Min?._value === true,
@@ -227,6 +244,7 @@ function fromLegacy(raw: Record<string, LegacyUnlock>): FeatureUnlock[] {
         name: featureName(id),
         ageIdx: typeof data?.AgeIdx === 'number' ? data.AgeIdx : null,
         battleIdx: typeof data?.BattleIdx === 'number' ? data.BattleIdx : null,
+        difficultyIdx: typeof data?.AgeIdx === 'number' ? 0 : null,
         forceLocked: Boolean(data?.FeatureToggle),
         requiresCompliance: Boolean(data?.RequireCompliance),
         extraRequirements: [],

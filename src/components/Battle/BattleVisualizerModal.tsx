@@ -2,18 +2,28 @@ import React, { useEffect, useRef, useState } from 'react';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import type { EntityState, VisualProjectile as Projectile, DebugConfig } from '../../utils/VisualBattleEngine';
 import { VisualBattleEngine } from '../../utils/VisualBattleEngine';
+import { PvpVisualEngine } from '../../pvp/simulate';
+import type { PvpFighter } from '../../pvp/fighter';
+import type { PvpHpConfig } from '../../engine';
 import { dungeonWaveSpecs, mainBattleWaveSpecs, missionWaveSpecs, skillSpecs, skillDamageCount } from '../../engine';
 import type { AggregatedStats } from '../../utils/statEngine';
 import type { LibraryData } from '../../utils/BattleHelper';
-import { calculateEnemyHp, calculateEnemyDmg, calculateProgressDifficultyIdx } from '../../utils/BattleHelper';
+import { stageLabel } from '../../utils/difficulty';
+import { calculateProgressDifficultyIdx } from '../../utils/BattleHelper';
+import { mountCollider } from '../../utils/BattleSimulator';
 import { UserProfile } from '../../types/Profile';
 import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { SkillLayer, BuffAura, type SkillIconSource } from './SkillLayer';
+import type { SceneVisuals } from '../../engine/visualSnapshot';
 import { Play, Pause, X, Zap, Heart, Sword, Shield, Clock, Users } from 'lucide-react';
 
 const basePath = import.meta.env.BASE_URL;
+/** 1.69 -> "1.69", 4658.5 -> "4,658.5": multipliers here span from ~1 to thousands (skill ascension). */
+const formatMultiplier = (m: number) => m >= 100 ? m.toLocaleString('en-US', { maximumFractionDigits: 1 }) : m.toFixed(2);
 import { getItemImage } from '../../utils/itemAssets';
+import { formatNumber } from '../../utils/format';
 import { AGES, SKILL_MECHANICS } from '../../utils/constants';
 import { getRarityBgStyle } from '../../lib/utils';
 import { useGameData } from '../../hooks/useGameData';
@@ -33,6 +43,11 @@ interface BattleVisualizerModalProps {
     customWaves?: any[];
     debugConfig?: DebugConfig;
     onDebugConfigChange?: (config: DebugConfig) => void;
+    /**
+     * Arena mode: Player 2 takes the enemies' place, with the arena rules (shared HP
+     * multiplier, timer, HP % decides a timeout). Everything else is the same visualizer.
+     */
+    pvp?: { p1: PvpFighter; p2: PvpFighter; cfg: PvpHpConfig; seed: number };
 }
 
 export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
@@ -48,15 +63,16 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     dungeonLevel,
     customWaves,
     debugConfig,
-    onDebugConfigChange
+    onDebugConfigChange,
+    pvp
 }) => {
     const { selectedVersion } = useGameDataContext();
-    const [engine, setEngine] = useState<VisualBattleEngine | null>(null);
+    const [engine, setEngine] = useState<{ tick(dt: number): void; getSnapshot(): any } | null>(null);
     const [snapshot, setSnapshot] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [speed, setSpeed] = useState(1);
     const [waveIndex, setWaveIndex] = useState(0);
-    const [battleOutcome, setBattleOutcome] = useState<'playing' | 'victory' | 'defeat'>('playing');
+    const [battleOutcome, setBattleOutcome] = useState<'playing' | 'victory' | 'defeat' | 'draw'>('playing');
     const [restartKey, setRestartKey] = useState(0); // Used to trigger re-initialization
     const animationFrameRef = useRef<number>();
     const autoPlayRef = useRef(false);
@@ -96,11 +112,39 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
     // Initialization
     useEffect(() => {
-        if (!isOpen || !libs.mainBattleLibrary) return;
+        if (!isOpen) return;
 
         // Reset state
         setBattleOutcome('playing');
         setBattleLogs([]);
+
+        if (pvp) {
+            const pvpEngine = new PvpVisualEngine(pvp.p1, pvp.p2, pvp.cfg, pvp.seed, playerStats);
+            setEngine(pvpEngine);
+            setSnapshot(pvpEngine.getSnapshot());
+            setIsPlaying(autoPlayRef.current);
+            autoPlayRef.current = false;
+            setWaveIndex(0);
+            const BUFFS = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+            let bDmg = 0, bHp = 0;
+            for (const sk of pvp.p1.skills) if (BUFFS.has(sk.id)) { bDmg += sk.damage; bHp += sk.health; }
+            const total = ((playerStats as any).skillDamageMultiplier || 1) - 1;
+            const fromStats = (playerStats as any).skillDamageBreakdown?.substats ?? 0;
+            setCombatStats({
+                playerDamageBase: pvp.p1.loadout.stats.dmg ?? 0,
+                playerDamageWithBuff: (pvp.p1.loadout.stats.dmg ?? 0) + bDmg,
+                buffDamage: bDmg,
+                buffHealth: bHp,
+                enemyDamage: pvp.p2.loadout.stats.dmg ?? 0,
+                skillDamages: pvp.p1.skills.filter(sk => sk.damage > 0 && !BUFFS.has(sk.id))
+                    .map(sk => ({ id: sk.id, damage: sk.damage, hits: skillDamageCount(sk.id), damageIsPerHit: false })),
+                skillDmgMultiTotal: total * 100,
+                skillDmgMultiFromTree: (total - fromStats) * 100,
+                skillDmgMultiFromStats: fromStats * 100,
+            });
+            return () => { if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current); };
+        }
+        if (!libs.mainBattleLibrary) return;
 
         // Create Engine
         // Use debugConfig prop if available, otherwise fallback
@@ -111,10 +155,16 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                 : 'main';
         const newEngine = new VisualBattleEngine(playerStats, debugConfig, undefined, battleContext);
 
+        // The equipped mount's collider (UpdateMount 0x77E96EC, called from UpdatePlayer 0x77E8E98),
+        // resolved exactly like the batch simulator (mountCollider); setPlayerCollider is a no-op in
+        // missions, where SetupPlayerGroup keeps radius 0.5.
+        const collider = mountCollider(profile, libs);
+        if (collider) newEngine.setPlayerCollider(collider.radius, collider.centerOfMass);
+
         // Skills through the shared resolver (verified layers; the engine owns per-skill
-        // mechanics, hit counts and buff behaviour). Missions included: the game gives you
-        // your skills there too.
-        const specs = profile && libs.skillLibrary
+        // mechanics, hit counts and buff behaviour). Not in missions: mission participants carry
+        // no active skills (MissionCombatScene.SetupPlayers), same as the batch simulator.
+        const specs = battleContext !== 'mission' && profile && libs.skillLibrary
             ? skillSpecs(playerStats as any, profile.skills.equipped || [], libs.skillLibrary as any)
             : [];
         for (const spec of specs) newEngine.addSkillSpec(spec);
@@ -145,6 +195,9 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             if (mission) {
                 const levelMulti = (libs as any).missionBaseConfig?.HealthAndDamageLevelMultiplier ?? 1.524;
                 wavesList = [missionWaveSpecs(mission, difficultyMode, levelMulti, enemyLibs, newEngine.rng)];
+                // MissionBattleMatchTimerSeconds: lost when it runs out, as in simulateMissionBattleMulti.
+                const timer = (libs as any).missionBaseConfig?.MissionBattleMatchTimerSeconds;
+                if (typeof timer === 'number') newEngine.setTimeLimit(timer);
             }
         } else {
             const battleConfig =
@@ -152,20 +205,17 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                 libs.mainBattleLibrary?.[`{'AgeIdx': ${ageIdx}, 'BattleIdx': ${battleIdx}}`];
             const ageScaling = libs.enemyAgeScalingLibrary?.[String(ageIdx)];
             if (battleConfig && ageScaling) {
-                const hpM = libs.mainBattleConfig?.EnemyHpDifficultyMulti ?? 6_000_000;
-                const dmgM = libs.mainBattleConfig?.EnemyDmgDifficultyMulti ?? 6_000_000;
                 const raw = (battleConfig as any).Waves?.length ? (battleConfig as any).Waves : [battleConfig];
                 wavesList = raw.map((w: any) =>
-                    mainBattleWaveSpecs(w, ageScaling as any, difficultyMode, hpM, dmgM, enemyLibs)
+                    mainBattleWaveSpecs(w, ageScaling as any, difficultyMode, libs.mainBattleConfig, enemyLibs)
                 );
             }
         }
 
         // Setup Engine
-        if (wavesList.length > 0) {
-            newEngine.setNextWaves(wavesList.slice(1));
-            newEngine.startWave(wavesList[0]);
-        }
+        // Every wave goes through the engine's own wave timer, so the main battle keeps its 2.0 s
+        // before the first wave exactly like the batch simulator (WaveRunner).
+        if (wavesList.length > 0) newEngine.setNextWaves(wavesList);
 
         setEngine(newEngine);
         setSnapshot(newEngine.getSnapshot());
@@ -215,7 +265,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
         return () => {
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
-    }, [isOpen, ageIdx, battleIdx, difficultyMode, libs, playerStats, customWaves, dungeonType, dungeonLevel, restartKey, debugConfig, isDebugMode]);
+    }, [isOpen, ageIdx, battleIdx, difficultyMode, libs, playerStats, customWaves, dungeonType, dungeonLevel, restartKey, debugConfig, isDebugMode, pvp]);
 
     // Helper functions setupDungeonWave, setupWave, startWaveLogic removed as we preload everything now
 
@@ -270,6 +320,17 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             }
 
             // Check End Conditions
+            if (state.pvpResult) {
+                const r = state.pvpResult;
+                setBattleOutcome(r.outcome === 'p1' ? 'victory' : r.outcome === 'p2' ? 'defeat' : 'draw');
+                setIsPlaying(false);
+                loopCancelled = true;
+                return;
+            }
+            if (pvp) {
+                if (!loopCancelled) animationFrameRef.current = requestAnimationFrame(loop);
+                return;
+            }
             if (state.player.isDead) {
                 setBattleOutcome('defeat');
                 setIsPlaying(false);
@@ -280,6 +341,12 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             const hasLiveEnemies = state.enemies.some((e: any) => !e.isDead);
             if (!hasLiveEnemies && state.remainingWaves === 0) {
                 setBattleOutcome('victory');
+                setIsPlaying(false);
+                loopCancelled = true;
+                return;
+            }
+            if (state.timedOut) {
+                setBattleOutcome('defeat');
                 setIsPlaying(false);
                 loopCancelled = true;
                 return;
@@ -309,17 +376,35 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     // ADAPTIVE VIEWPORT: "si adatta all'input graficamente"
     // "niente min 20, metti la grandezza vera"
     const fieldW = debugConfig?.fieldWidth ?? 28;
-    const VIEWPORT_WIDTH = fieldW; // Show the full field width
+    // PvP is a fixed arena: spawns at 0 and 18 around CombatCenter (9,0), Drones 10 units behind
+    // each player. Show all of it, centred, instead of following Player 1.
+    const VIEWPORT_WIDTH = pvp ? 44 : fieldW; // Show the full field width
 
     // Calculate viewport bounds based on player position
     // Keep player at ~25% from left edge, showing combat ahead
-    const viewportStart = Math.max(0, player.position - VIEWPORT_WIDTH * 0.25);
+    // Mission players stand left of 0 (-2 melee / -3 ranged), so the left bound follows them there.
+    const viewportStart = pvp ? 9 - VIEWPORT_WIDTH / 2 : Math.max(Math.min(0, player.position - 1), player.position - VIEWPORT_WIDTH * 0.25);
 
     const worldToScreen = (worldPos: number): number => {
         // Convert world position to screen percentage (5% - 95% to leave margins)
         const normalized = (worldPos - viewportStart) / VIEWPORT_WIDTH;
         return 5 + normalized * 90;
     };
+
+    /** World y is up; 11 px per field unit on screen. */
+    const Y_PX = 11;
+    const yPx = (y: number) => -y * Y_PX;
+    const unitsToPct = (u: number) => (u / VIEWPORT_WIDTH) * 90;
+    const visuals: SceneVisuals | null = snapshot.visuals ?? null;
+    const skillSheet = spriteMapping?.skills;
+    const skillIcons: SkillIconSource | null = skillSheet?.mapping ? {
+        textureSrc: `${basePath}Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/SkillIcons.png`,
+        sheet: skillSheet,
+        indexOf: (id: string) => {
+            const hit = Object.entries(skillSheet.mapping).find(([, info]: [string, any]) => info.name === id);
+            return hit ? parseInt(hit[0]) : -1;
+        },
+    } : null;
 
     const getPlayerPosition = () => {
         return worldToScreen(player.position);
@@ -334,6 +419,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
     // Get title - use same format as main app
     const getTitle = () => {
+        if (pvp) return `${pvp.p1.name} vs ${pvp.p2.name}`;
         if (dungeonType) {
             const world = Math.floor((dungeonLevel || 0) / 10) + 1;
             const stage = ((dungeonLevel || 0) % 10) + 1;
@@ -345,8 +431,61 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             return mission ? (mission.MissionTitleId.replace(/([A-Z])/g, ' $1').trim()) : 'Mission';
         }
         // Main battle: format as "Age-Battle" like "5-10" for Age 5, Battle 10
-        return `${difficultyMode > 0 ? 'Hard ' : ''}${ageIdx + 1}-${battleIdx + 1}`;
+        return stageLabel(difficultyMode, ageIdx, battleIdx);
     };
+
+    const renderSkillRow = (list: any[]) => (
+        <>
+                            {list.map((skill: any, idx: number) => {
+                const isActive = skill.state === 'Active';
+                const isCooldown = skill.state === 'Cooldown';
+
+                // Get skill sprite index from ManualSpriteMapping
+                // Get skill sprite index from ManualSpriteMapping
+                const spriteMap = spriteMapping?.skills;
+                const spriteEntry = spriteMap?.mapping
+                    ? Object.entries(spriteMap.mapping).find(([_, info]: [string, any]) => info.name === skill.id)
+                    : null;
+                const spriteIndex = spriteEntry ? parseInt(spriteEntry[0]) : -1;
+
+                // Get Rarity directly from SkillLibrary
+                const libSkill = skillsConfig ? skillsConfig[skill.id] : null;
+                const rarity = libSkill?.Rarity || 'Common';
+
+                return (
+                    <div
+                        key={idx}
+                        className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden ${isActive ? 'border-green-500 bg-green-900/30' :
+                            isCooldown ? 'border-gray-700 bg-gray-900 opacity-60' :
+                                'border-gray-600 bg-gray-800'
+                            }`}
+                        title={skill.id}
+                        style={getRarityBgStyle(rarity)}
+                    >
+                        {(spriteIndex >= 0 && spriteMapping) ? (
+                            <SpriteSheetIcon
+                                textureSrc={`${basePath}Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/SkillIcons.png`}
+                                spriteWidth={spriteMapping.skills.sprite_size.width}
+                                spriteHeight={spriteMapping.skills.sprite_size.height}
+                                sheetWidth={spriteMapping.skills.texture_size.width}
+                                sheetHeight={spriteMapping.skills.texture_size.height}
+                                iconIndex={spriteIndex}
+                                className="w-full h-full"
+                            />
+                        ) : (
+                            /* Fallback text */
+                            <span className="text-[10px] text-gray-400 font-bold">{skill.id.substring(0, 3)}</span>
+                        )}
+                        {isCooldown && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-lg">
+                                <span className="text-sm font-bold text-white">{Math.ceil(skill.timer)}</span>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </>
+    );
 
     return (
         <div style={{ margin: '0' }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-2 sm:p-4">
@@ -361,10 +500,17 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                 <Clock className="w-3 h-3" />
                                 {(time || 0).toFixed(1)}s
                             </span>
+                            {pvp ? (
+                                <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    Timer {pvp.cfg.PvpMatchTimerSeconds}s, shared HP x{Number((snapshot.player?.maxHealth / Math.max(1e-9, pvp.p1.loadout.health)).toFixed(2))}
+                                </span>
+                            ) : (
                             <span className="flex items-center gap-1">
                                 <Users className="w-3 h-3" />
-                                Wave {(snapshot?.waveIndex || 0) + 1}
+                                Wave {Math.max(0, snapshot?.waveIndex ?? 0) + 1}
                             </span>
+                            )}
                             <span className={isEngaged ? "text-red-400 font-semibold" : "text-blue-400"}>
                                 {isEngaged ? "⚔️ Combat" : `🏃 ${(engagementTime - waveEngagementTimer).toFixed(1)}s`}
                             </span>
@@ -528,10 +674,16 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                 <div className="flex items-center gap-1">
                                     <Zap className="w-3 h-3 text-purple-400" />
                                     <span className="text-gray-400">Skill Dmg:</span>
-                                    <span className="text-purple-300 font-bold">+{combatStats.skillDmgMultiTotal.toFixed(1)}%</span>
-                                    <span className="text-gray-500 text-[10px]">
-                                        ({combatStats.skillDmgMultiFromTree.toFixed(1)}% tree, {combatStats.skillDmgMultiFromStats.toFixed(1)}% stats)
-                                    </span>
+                                    <span className="text-purple-300 font-bold">x{formatMultiplier(1 + combatStats.skillDmgMultiTotal / 100)}</span>
+                                    {(() => {
+                                        // Each stat layer multiplies: (1 + tree) x (1 + substats) x ascension.
+                                        const b = (playerStats as any).skillDamageBreakdown ?? {};
+                                        return (
+                                            <span className="text-gray-500 text-[10px]">
+                                                (tree +{((b.tree ?? 0) * 100).toFixed(1)}%, stats +{((b.substats ?? 0) * 100).toFixed(1)}%, ascension x{formatMultiplier(b.ascension || 1)})
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>
@@ -558,9 +710,12 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
                 {/* Battle Outcome Overlay */}
                 {battleOutcome !== 'playing' && (
-                    <div className={`py-3 text-center font-bold text-lg flex items-center justify-center gap-4 ${battleOutcome === 'victory' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                    <div className={`py-3 text-center font-bold text-lg flex items-center justify-center gap-4 ${battleOutcome === 'victory' ? 'bg-green-500/20 text-green-400' : battleOutcome === 'draw' ? 'bg-gray-500/20 text-gray-300' : 'bg-red-500/20 text-red-400'
                         }`}>
-                        <span>{battleOutcome === 'victory' ? 'VICTORY!' : 'DEFEAT'}</span>
+                        <span>{pvp
+                            ? (battleOutcome === 'draw' ? 'DRAW'
+                                : `${(battleOutcome === 'victory' ? pvp.p1.name : pvp.p2.name).toUpperCase()} WINS${snapshot.pvpResult?.timedOut ? ' ON TIME' : ''}`)
+                            : battleOutcome === 'victory' ? 'VICTORY!' : 'DEFEAT'}</span>
                         <button
                             onClick={() => {
                                 autoPlayRef.current = true;
@@ -603,46 +758,16 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     {/* Player */}
                     <div
                         className="absolute top-1/2 z-50 flex flex-col items-center"
-                        style={{ left: `${getPlayerPosition()}%`, transform: `translate(-50%, calc(-50% + ${((snapshot.player as any)?.positionY ?? 0) * 11}px))` }}
+                        style={{ left: `${getPlayerPosition()}%`, transform: `translate(-50%, calc(-100% + 24px + ${yPx((snapshot.player as any)?.positionY ?? 0)}px))` }}
                     >
-                        {/* Active Buffs Display */}
-                        <div className="flex gap-1 mb-1 absolute bottom-full pb-2">
-                            {(snapshot.activeBuffs || []).map((buff: any, idx: number) => {
-                                const mapping = spriteMapping?.[buff.skillId];
-                                if (!mapping) return null; // Or fallback
-
-                                return (
-                                    <div key={`${buff.skillId}-${idx}`} className="relative group">
-                                        <div className="w-6 h-6 border border-yellow-500 rounded bg-black/50 overflow-hidden relative">
-                                            <SpriteSheetIcon
-                                                textureSrc={`${basePath}${mapping.texture}`}
-                                                spriteWidth={mapping.sprite_size.width}
-                                                spriteHeight={mapping.sprite_size.height}
-                                                sheetWidth={mapping.texture_size.width}
-                                                sheetHeight={mapping.texture_size.height}
-                                                iconIndex={mapping.index}
-                                                className="w-full h-full"
-                                            />
-                                            {/* Buff Type Indicator */}
-                                            <div className={`absolute bottom-0 right-0 text-[6px] font-bold px-0.5 rounded-tl flex items-center justify-center ${buff.bonusMaxHealth > 0 ? 'bg-green-600' : 'bg-red-600'
-                                                } text-white`}>
-                                                {buff.bonusMaxHealth > 0 ? 'HP' : 'DMG'}
-                                            </div>
-                                        </div>
-                                        {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-black/90 border border-gray-700 rounded text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
-                                            <div className="font-bold text-yellow-400">{buff.skillId}</div>
-                                            {buff.bonusMaxHealth > 0 && <span className="block text-green-400">+{fmt(buff.bonusMaxHealth)} HP</span>}
-                                            {buff.bonusDamage > 0 && <span className="block text-red-400">+{fmt(buff.bonusDamage)} DMG</span>}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        {/* Active buffs: aura + icons with the time left */}
+                        {visuals && <BuffAura buffs={visuals.buffs.ally} icons={skillIcons} />}
 
                         {/* HP Text (Real Values) */}
                         <span className="text-[9px] sm:text-[10px] font-mono text-gray-300 mb-1 font-bold drop-shadow-md">
-                            {Math.round(snapshot.player?.health || 0).toLocaleString()} / {Math.round(snapshot.player?.maxHealth || 0).toLocaleString()}
+                            {pvp
+                                ? `${formatNumber(snapshot.player?.health || 0)} / ${formatNumber(snapshot.player?.maxHealth || 0)}`
+                                : `${Math.round(snapshot.player?.health || 0).toLocaleString()} / ${Math.round(snapshot.player?.maxHealth || 0).toLocaleString()}`}
                         </span>
 
                         {/* Health Bar */}
@@ -663,8 +788,29 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             />
                         </div>
                     </div>
+                    {/* Player 2 in PvP: drawn as a player, like Player 1 */}
+                    {pvp && enemies[0] && !enemies[0].isDead && (() => {
+                        const p2 = enemies[0];
+                        return (
+                            <div className="absolute top-1/2 z-40 flex flex-col items-center"
+                                style={{ left: `${worldToScreen(p2.position)}%`, transform: `translate(-50%, calc(-100% + 24px + ${yPx((p2 as any).positionY ?? 0)}px))` }}>
+                                {visuals && <BuffAura buffs={visuals.buffs.enemy} icons={skillIcons} />}
+                                <span className="text-[9px] sm:text-[10px] font-mono text-gray-300 mb-1 font-bold drop-shadow-md">
+                                    {formatNumber(p2.health)} / {formatNumber(p2.maxHealth)}
+                                </span>
+                                <div className="w-20 h-2.5 bg-gray-800 rounded-full mb-1 overflow-hidden border border-gray-700">
+                                    <div className="h-full bg-red-500" style={{ width: `${Math.max(0, Math.min(100, (p2.health / (p2.maxHealth || 1)) * 100))}%` }} />
+                                </div>
+                                <div className={`relative ${p2.combatPhase === 'CHARGING' ? 'scale-110' : 'scale-100'} transition-transform`}>
+                                    <ProfileIcon iconIndex={pvp.p2.profile.iconIndex ?? 0} size={48}
+                                        className="border-2 border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)] rounded-full bg-gray-900" />
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     {/* Enemies */}
-                    {enemies.map((enemy: EntityState, idx: number) => {
+                    {!pvp && enemies.map((enemy: EntityState, idx: number) => {
                         if (enemy.isDead) return null;
                         const pos = getEnemyPosition(enemy.position);
                         const ehp = Math.max(0, Math.min(100, (enemy.health / (enemy.maxHealth || 1)) * 100));
@@ -695,7 +841,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <div
                                 key={idx}
                                 className="absolute top-1/2 -translate-y-1/2 z-40"
-                                style={{ left: `${pos}%`, transform: `translateX(-50%) translateY(${((enemy as any).positionY ?? 0) * 11}px)` }}
+                                style={{ left: `${pos}%`, transform: `translateX(-50%) translateY(calc(-50% + ${yPx((enemy as any).positionY ?? 0)}px))` }}
                             >
                                 <div className="relative flex flex-col items-center">
                                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${enemy.isRanged ? 'bg-purple-600/80' : 'bg-red-600/80'} flex items-center justify-center border-2 ${enemy.isWindingUp ? 'border-yellow-400 animate-pulse' : 'border-gray-700'} overflow-hidden relative shadow-md z-10`}>
@@ -748,32 +894,8 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                         );
                     })}
 
-                    {/* Projectiles */}
-                    {(snapshot.projectiles || []).map((proj: Projectile) => {
-                        const posPercent = worldToScreen(proj.currentX);
-                        // Real vertical position from the engine (ballistic arcs included).
-                        const yPx = -((proj as any).currentY ?? 0) * 11;
-
-                        return (
-                            <div
-                                key={proj.id}
-                                className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-20 ${!proj.isPlayerSource ? 'flex-row-reverse' : ''}`}
-                                style={{
-                                    left: `${posPercent}%`,
-                                    transform: `translateX(-50%) translateY(calc(-50% + ${yPx}px))`
-                                }}
-                            >
-                                {/* Trail */}
-                                <div className={`w-2 h-1 rounded-full opacity-50 ${proj.isPlayerSource ? 'bg-yellow-300' : 'bg-red-400'}`} />
-                                <div className={`w-3 h-1.5 rounded-full opacity-70 ${proj.isPlayerSource ? 'bg-yellow-400' : 'bg-red-500'}`} />
-                                {/* Main projectile */}
-                                <div className={`w-4 h-4 rounded-full ${proj.isPlayerSource
-                                    ? 'bg-yellow-400 shadow-[0_0_12px_rgba(250,204,21,1)]'
-                                    : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,1)]'
-                                    }`} />
-                            </div>
-                        );
-                    })}
+                    {/* Skills, shots, Drones and hits, straight from the engine */}
+                    {visuals && <SkillLayer visuals={visuals} worldToScreen={worldToScreen} unitsToPct={unitsToPct} yPx={yPx} icons={skillIcons} />}
                 </div>
 
                 {/* Bottom Stats & Skills */}
@@ -815,7 +937,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             </div>
                             <div className="flex flex-col items-center">
                                 <div className="text-[10px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3 text-purple-400" /> Skill Dmg</div>
-                                <div className="text-xs font-bold text-purple-400">+{((snapshot.playerStats?.skillDamageMultiplier || 0) * 100).toFixed(0)}%</div>
+                                <div className="text-xs font-bold text-purple-400">x{formatMultiplier(snapshot.playerStats?.skillDamageMultiplier || 1)}</div>
                             </div>
                             <div className="flex flex-col items-center">
                                 <div className="text-[10px] text-gray-500 flex items-center gap-1"><Clock className="w-3 h-3 text-purple-400" /> Skill CD</div>
@@ -826,55 +948,15 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
                     {/* Skills */}
                     {skills.length > 0 && ageIdx !== -2 && (
-                        <div className="px-3 py-2 flex gap-2 justify-center flex-wrap">
-                            {skills.map((skill: any, idx: number) => {
-                                const isActive = skill.state === 'Active';
-                                const isCooldown = skill.state === 'Cooldown';
-
-                                // Get skill sprite index from ManualSpriteMapping
-                                // Get skill sprite index from ManualSpriteMapping
-                                const spriteMap = spriteMapping?.skills;
-                                const spriteEntry = spriteMap?.mapping
-                                    ? Object.entries(spriteMap.mapping).find(([_, info]: [string, any]) => info.name === skill.id)
-                                    : null;
-                                const spriteIndex = spriteEntry ? parseInt(spriteEntry[0]) : -1;
-
-                                // Get Rarity directly from SkillLibrary
-                                const libSkill = skillsConfig ? skillsConfig[skill.id] : null;
-                                const rarity = libSkill?.Rarity || 'Common';
-
-                                return (
-                                    <div
-                                        key={idx}
-                                        className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden ${isActive ? 'border-green-500 bg-green-900/30' :
-                                            isCooldown ? 'border-gray-700 bg-gray-900 opacity-60' :
-                                                'border-gray-600 bg-gray-800'
-                                            }`}
-                                        title={skill.id}
-                                        style={getRarityBgStyle(rarity)}
-                                    >
-                                        {(spriteIndex >= 0 && spriteMapping) ? (
-                                            <SpriteSheetIcon
-                                                textureSrc={`./Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/SkillIcons.png`}
-                                                spriteWidth={spriteMapping.skills.sprite_size.width}
-                                                spriteHeight={spriteMapping.skills.sprite_size.height}
-                                                sheetWidth={spriteMapping.skills.texture_size.width}
-                                                sheetHeight={spriteMapping.skills.texture_size.height}
-                                                iconIndex={spriteIndex}
-                                                className="w-full h-full"
-                                            />
-                                        ) : (
-                                            /* Fallback text */
-                                            <span className="text-[10px] text-gray-400 font-bold">{skill.id.substring(0, 3)}</span>
-                                        )}
-                                        {isCooldown && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-lg">
-                                                <span className="text-sm font-bold text-white">{Math.ceil(skill.timer)}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                        <div className="px-3 py-2 flex gap-2 justify-center flex-wrap items-center">
+                            {pvp && <span className="text-[10px] font-bold text-blue-300 mr-1">{pvp.p1.name}</span>}
+                            {renderSkillRow(skills)}
+                        </div>
+                    )}
+                    {pvp && (snapshot.enemySkills || []).length > 0 && (
+                        <div className="px-3 pb-2 flex gap-2 justify-center flex-wrap items-center">
+                            <span className="text-[10px] font-bold text-red-300 mr-1">{pvp.p2.name}</span>
+                            {renderSkillRow(snapshot.enemySkills)}
                         </div>
                     )}
 

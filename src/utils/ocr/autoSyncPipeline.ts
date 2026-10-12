@@ -16,7 +16,7 @@
 // arg (item/pet/mount use it for stat/identity lookups); the skills + currency readers are purely
 // geometric and take no dictionary. readScreenshots simply maps readScreenshot over a batch.
 
-import { loadImage, imageToCanvas } from './imagePrep';
+import { loadImage, imageToCanvas, screenshotCanvas } from './imagePrep';
 import { classifyScreen } from './templateClassifier';
 import { readItem, readUnit, readForgeAscension } from './templateReaders';
 import { readSkills } from './skillsReader';
@@ -73,7 +73,7 @@ export async function readScreenshot(
 ): Promise<ScreenReadResult> {
     const warnings: string[] = [];
 
-    const canvas = imageToCanvas(await loadImage(input));
+    const canvas = screenshotCanvas(await loadImage(input));
     // `type` is the SCREEN (what the currency header says) and drives the currency/forge readers;
     // `subject` is what the popup in the foreground is about and drives the subject readers. They
     // differ exactly when a detail popup sits on a frame with no header — see ScreenSubject.

@@ -27,6 +27,77 @@ export function imageToCanvas(img: HTMLImageElement): HTMLCanvasElement {
     return c;
 }
 
+// ---------------------------------------------------------------------------------------------
+// Device bars (pillarbox). A tablet, or a phone shorter than the game's design aspect, can show
+// the game's phone layout centred between two bars that are not part of the game. Every reader
+// works in fractions of the GAME frame (the 576 px canonical width, x bands, the card anchor's
+// path-width tests), so the bars are cut off before anything else looks at the screenshot.
+//
+// A bar is a run of columns from the edge in which (nearly) every row keeps the colour of that
+// row's outermost pixel: a solid fill, or the edge-stretched fill some devices draw. The game's
+// own flat side margins (dimmed backdrop beside a popup, the white skills/clan panels) were
+// measured on every real fixture at no more than 4.4% of the width under this same test, so only
+// a SYMMETRIC pair of runs, each at least 7% of the width, is taken for device bars.
+
+/** Top rows ignored by the bar test: an OS status bar is drawn across the bars there. */
+const BAR_STATUS_ZONE = 0.04;
+/** Rows below that zone allowed to break a bar column (JPEG noise). A small game icon near the
+ *  frame edge covers well over this, so a run never eats into the game's own art. */
+const BAR_BAD_ROWS = 0.003;
+/** Per-row colour tolerance against the bar's outermost pixel (sum of |dR|+|dG|+|dB|). */
+const BAR_TOL = 12;
+const BAR_MIN_FRAC = 0.07;
+const BAR_ASYM_FRAC = 0.04;
+
+/** Width of the bar on one side (0 when there is none). */
+function barWidth(d: Uint8ClampedArray, W: number, H: number, fromLeft: boolean): number {
+    const step = Math.max(1, Math.floor(H / 600));
+    const y0 = Math.round(BAR_STATUS_ZONE * H);
+    const xr = fromLeft ? 0 : W - 1;
+    let n = 0;
+    for (let k = 1; k < W >> 1; k++) {
+        const x = fromLeft ? k : W - 1 - k;
+        let bad = 0, t = 0;
+        for (let y = y0; y < H; y += step) {
+            t++;
+            const i = (y * W + x) * 4, j = (y * W + xr) * 4;
+            if (Math.abs(d[i] - d[j]) + Math.abs(d[i + 1] - d[j + 1]) + Math.abs(d[i + 2] - d[j + 2]) > BAR_TOL) bad++;
+        }
+        if (bad > BAR_BAD_ROWS * t) break;
+        n = k + 1;
+    }
+    return n;
+}
+
+/** The game's frame inside a screenshot: the full image, or the part between two device bars. */
+export function gameFrameRect(src: HTMLCanvasElement): Rect {
+    const W = src.width, H = src.height;
+    const full = { x: 0, y: 0, w: W, h: H };
+    if (W < 64 || H < 64) return full;
+    const d = src.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, W, H).data;
+    const L = barWidth(d, W, H, true);
+    if (L < BAR_MIN_FRAC * W) return full;
+    const R = barWidth(d, W, H, false);
+    if (R < BAR_MIN_FRAC * W || Math.abs(L - R) > BAR_ASYM_FRAC * W) return full;
+    const w = W - L - R;
+    // the game is a portrait layout; a crop that leaves a landscape frame is not a pillarbox
+    if (H < 1.2 * w) return full;
+    return { x: L, y: 0, w, h: H };
+}
+
+/** Cut the device bars off a screenshot (the same canvas back when there are none). */
+export function trimDeviceBars(src: HTMLCanvasElement): HTMLCanvasElement {
+    const r = gameFrameRect(src);
+    if (r.w === src.width && r.h === src.height) return src;
+    return cropCanvas(src, r);
+}
+
+/** Decode a screenshot into a canvas of the game's frame (device bars removed). Use this, not
+ *  imageToCanvas, for every user screenshot; imageToCanvas stays for templates and sprites. */
+export function screenshotCanvas(img: HTMLImageElement | HTMLCanvasElement): HTMLCanvasElement {
+    return trimDeviceBars(img instanceof HTMLCanvasElement ? img : imageToCanvas(img));
+}
+
 export function relToPx(w: number, h: number, r: RelRect): Rect {
     return {
         x: Math.max(0, Math.round(r.x0 * w)),

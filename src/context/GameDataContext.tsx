@@ -14,7 +14,8 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     const [versions, setVersions] = useState<string[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<string>('');
     const [isLoadingVersions, setIsLoadingVersions] = useState(true);
-    const [isDebug, setIsDebug] = useState(false);
+    // Read synchronously so debug-only routes do not redirect away on the first render.
+    const [isDebug, setIsDebug] = useState(() => typeof window !== 'undefined' && window.location.href.includes('debug=true'));
 
     useEffect(() => {
         const checkDebug = () => {
@@ -41,6 +42,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
                             console.log(`[GameDataContext] Versions loaded: ${v.join(', ')}`);
                             setVersions(v);
                             setSelectedVersion(v[0]);
+                            setIsLoadingVersions(false);
                             return;
                         }
                     } catch (parseError) {
@@ -51,24 +53,32 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
                 }
             } catch (e) {
                 console.error("[GameDataContext] Failed to fetch versions", e);
-            } finally {
-                setIsLoadingVersions(false);
-                // Last resort fallback if everything failed
-                setVersions(prev => {
-                    if (prev.length === 0) {
-                        const fallback = ["2026_05_06_11_12"];
-                        setSelectedVersion(fallback[0]);
-                        return fallback;
-                    }
-                    return prev;
-                });
             }
+            // Last resort: version_delta.json is rewritten by every config import and names the
+            // newest version, so this fallback can never pin the app to an old config.
+            try {
+                const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/version_delta.json`);
+                const delta = res.ok ? await res.json() : null;
+                if (delta && typeof delta.version === 'string') {
+                    setVersions([delta.version]);
+                    setSelectedVersion(delta.version);
+                }
+            } catch (e) {
+                console.error("[GameDataContext] Failed to resolve a fallback version", e);
+            }
+            setIsLoadingVersions(false);
         }
         fetchVersions();
     }, []);
 
+    // The app only ever shows the newest config. The setter is kept for API compatibility but
+    // refuses anything other than the newest version, so no page can drift onto old data.
+    const setLatestOnly = (version: string) => {
+        if (versions.length === 0 || version === versions[0]) setSelectedVersion(version);
+    };
+
     return (
-        <GameDataContext.Provider value={{ versions, selectedVersion, setSelectedVersion, isLoadingVersions, isDebug }}>
+        <GameDataContext.Provider value={{ versions, selectedVersion, setSelectedVersion: setLatestOnly, isLoadingVersions, isDebug }}>
             {children}
         </GameDataContext.Provider>
     );

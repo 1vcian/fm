@@ -1,3 +1,4 @@
+import { clanNodeValueAtLevel, clanNodeCaps } from '../utils/clanTechStacking';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -159,22 +160,20 @@ export default function Clan() {
     const localLevels = useMemo(() => readLevels(profile.techTree?.Clan), [profile.techTree?.Clan]);
 
     /**
-     * `MaxLevel` per flattened globalId. Same flattening as `categories` below and as
-     * `ClanContext.clanNodeCaps`, with the same `?? 20` fallback, so the three cannot disagree.
+     * Level cap per flattened globalId, from utils/clanTechStacking.clanNodeCaps: the same
+     * flattening as `categories` below and as ClanContext, with the same `?? 20` fallback, so they
+     * cannot disagree. Caps of the clan's published row: infinite nodes are open once THAT row is
+     * fully maxed.
      */
-    const nodeCaps = useMemo(() => {
-        const caps = new Map<number, number>();
-        if (!guildPositionLibrary) return caps;
-        let globalId = 0;
-        for (const name of Object.keys(guildPositionLibrary)) {
-            for (const type of guildPositionLibrary[name]?.Nodes || []) {
-                const max = guildUpgradeLibrary?.[type]?.MaxLevel;
-                caps.set(globalId, typeof max === 'number' && max > 0 ? Math.floor(max) : 20);
-                globalId += 1;
-            }
-        }
-        return caps;
-    }, [guildPositionLibrary, guildUpgradeLibrary]);
+    const nodeCaps = useMemo(
+        () => clanNodeCaps(guildPositionLibrary, guildUpgradeLibrary, sharedLevels).caps,
+        [guildPositionLibrary, guildUpgradeLibrary, sharedLevels]
+    );
+    // Caps for editing this profile's copy: same rule, against the local levels.
+    const editCaps = useMemo(
+        () => clanNodeCaps(guildPositionLibrary, guildUpgradeLibrary, localLevels),
+        [guildPositionLibrary, guildUpgradeLibrary, localLevels]
+    );
 
     /**
      * WHAT A PULL WOULD ACTUALLY LEAVE BEHIND — which is not always what the clan published.
@@ -226,9 +225,9 @@ export default function Clan() {
         // VERIFIED IN GAME (2026-08-24): the node caps at +10000% ("10k%") at MaxLevel 100, so
         // ValuePerLevel = 1.0 is a MULTIPLIER addend of +100% per level, not "1 percent". The old
         // "/100" here assumed +1%/level and under-reported war damage and health by 100x.
-        // This matches every other consumer (useCalculatedStats does ValuePerLevel * level with no
-        // division), so the guild ValuePerLevel semantics are now uniform across the codebase.
-        return node ? (def?.ValuePerLevel || 0) * getTechLevel('Clan', node.globalId) : 0;
+        // Every consumer reads the value through clanNodeValueAtLevel (ValuePerLevel per level up
+        // to MaxLevel, ValuePerInfiniteLevel past it), so the semantics are uniform.
+        return node ? clanNodeValueAtLevel(def, getTechLevel('Clan', node.globalId)) : 0;
     };
     const warDamageMult = warMult('ClanWarDamage');
     const warHealthMult = warMult('ClanWarHealth');
@@ -331,12 +330,17 @@ export default function Clan() {
                                     {cat.nodes.map(({ globalId, type }: { globalId: number; type: string }) => {
                                         const def = guildUpgradeLibrary?.[type];
                                         const maxLevel = def?.MaxLevel ?? 20;
+                                        // Editing bound: MaxLevel, or open-ended for an infinite node
+                                        // once the whole tree is maxed (GuildTechTreeHelpers.IsInfinite).
+                                        const cap = editCaps.caps.get(globalId) ?? maxLevel;
+                                        const infiniteOpen = cap > maxLevel;
                                         const level = getTechLevel('Clan', globalId);
+                                        const nowValue = clanNodeValueAtLevel(def, level);
                                         // Used by the heading AND by every control's accessible name below.
                                         const nodeName = getTechNodeName(type);
                                         const valPerLevel = def?.ValuePerLevel ?? 0;
                                         const style = getClanIconStyle(type, clanIconsMap, selectedVersion, import.meta.env.BASE_URL, treeMapping);
-                                        const pct = maxLevel > 0 ? (level / maxLevel) * 100 : 0;
+                                        const pct = maxLevel > 0 ? Math.min(1, level / maxLevel) * 100 : 0;
                                         return (
                                             <Card key={globalId} className={cn('p-3 flex flex-col gap-2.5 border-2 transition-colors',
                                                 level >= maxLevel ? 'border-green-500/50 bg-green-500/10' : level > 0 ? 'border-accent-primary/40 bg-accent-primary/5' : 'border-border/50 bg-bg-primary/50')}>
@@ -348,6 +352,14 @@ export default function Clan() {
                                                         <h4 className="text-xs font-bold whitespace-nowrap overflow-hidden text-clip">{nodeName}</h4>
                                                         <p className="text-[9px] text-text-muted uppercase tracking-wider flex items-center gap-1.5 flex-wrap">
                                                             <span>Rank {level}/{maxLevel}</span>
+                                                            {infiniteOpen && (
+                                                                <span
+                                                                    className="normal-case tracking-normal font-bold text-purple-300"
+                                                                    title={`The whole clan tree is maxed, so this node keeps levelling: +${((def?.ValuePerInfiniteLevel ?? 0) * 100).toFixed(1)}% per level past ${maxLevel}.`}
+                                                                >
+                                                                    ∞{level > maxLevel ? ` +${level - maxLevel}` : ''}
+                                                                </span>
+                                                            )}
                                                             {/* The clan's published level, but only when it disagrees with this
                                                                 copy: printing "clan 7" next to a 7 would be noise on 61 cards. */}
                                                             {clanRole !== null && (sharedLevels.get(globalId) ?? 0) !== level && (
@@ -368,7 +380,7 @@ export default function Clan() {
                                                     {valPerLevel > 0 && level > 0 && (
                                                         <div className="text-right shrink-0">
                                                             <div className="text-[8px] text-text-muted uppercase tracking-wider">Now</div>
-                                                            <div className="text-xs font-black text-accent-primary">+{(valPerLevel * level * 100).toFixed(valPerLevel < 0.1 ? 1 : 0)}%</div>
+                                                            <div className="text-xs font-black text-accent-primary">+{(nowValue * 100).toFixed(valPerLevel < 0.1 ? 1 : 0)}%</div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -389,7 +401,7 @@ export default function Clan() {
                                                     <div className="flex items-center justify-center bg-bg-input rounded-lg border border-border py-1.5">
                                                         <span className="font-mono font-bold text-sm text-white">
                                                             {level}
-                                                            <span className="text-text-muted font-normal">/{maxLevel}</span>
+                                                            <span className="text-text-muted font-normal">/{maxLevel}{infiniteOpen ? '+' : ''}</span>
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -400,7 +412,7 @@ export default function Clan() {
                                                         title="-10"
                                                         className="px-1.5 py-1.5 text-[10px] font-bold text-text-muted hover:text-white active:scale-90 transition disabled:opacity-30 disabled:hover:text-text-muted"
                                                         disabled={level <= 0}
-                                                        onClick={() => setClanLevel(globalId, Math.max(0, level - 10), maxLevel)}
+                                                        onClick={() => setClanLevel(globalId, Math.max(0, level - 10), cap)}
                                                     >
                                                         -10
                                                     </button>
@@ -409,26 +421,26 @@ export default function Clan() {
                                                         aria-label={`${nodeName}: one level down`}
                                                         className="px-2 py-1.5 text-text-muted hover:text-white active:scale-90 transition disabled:opacity-30 disabled:hover:text-text-muted"
                                                         disabled={level <= 0}
-                                                        onClick={() => setClanLevel(globalId, level - 1, maxLevel)}
+                                                        onClick={() => setClanLevel(globalId, level - 1, cap)}
                                                     >
                                                         <Minus className="w-3.5 h-3.5" />
                                                     </button>
                                                     <input
                                                         type="number"
-                                                        aria-label={`${nodeName} level, 0 to ${maxLevel}`}
+                                                        aria-label={`${nodeName} level, 0 to ${infiniteOpen ? `${maxLevel} or more` : maxLevel}`}
                                                         className="bg-transparent text-center font-mono font-bold text-sm text-white w-full min-w-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                         value={level}
                                                         min={0}
-                                                        max={maxLevel}
-                                                        onChange={e => { const v = parseInt(e.target.value); setClanLevel(globalId, isNaN(v) ? 0 : v, maxLevel); }}
+                                                        max={cap}
+                                                        onChange={e => { const v = parseInt(e.target.value); setClanLevel(globalId, isNaN(v) ? 0 : v, cap); }}
                                                         onFocus={e => e.target.select()}
                                                     />
                                                     <button
                                                         type="button"
                                                         aria-label={`${nodeName}: one level up`}
                                                         className="px-2 py-1.5 text-text-muted hover:text-white active:scale-90 transition disabled:opacity-30 disabled:hover:text-text-muted"
-                                                        disabled={level >= maxLevel}
-                                                        onClick={() => setClanLevel(globalId, level + 1, maxLevel)}
+                                                        disabled={level >= cap}
+                                                        onClick={() => setClanLevel(globalId, level + 1, cap)}
                                                     >
                                                         <Plus className="w-3.5 h-3.5" />
                                                     </button>
@@ -437,8 +449,8 @@ export default function Clan() {
                                                         aria-label={`${nodeName}: ten levels up`}
                                                         title="+10"
                                                         className="px-1.5 py-1.5 text-[10px] font-bold text-text-muted hover:text-white active:scale-90 transition disabled:opacity-30 disabled:hover:text-text-muted"
-                                                        disabled={level >= maxLevel}
-                                                        onClick={() => setClanLevel(globalId, Math.min(maxLevel, level + 10), maxLevel)}
+                                                        disabled={level >= cap}
+                                                        onClick={() => setClanLevel(globalId, Math.min(cap, level + 10), cap)}
                                                     >
                                                         +10
                                                     </button>
@@ -748,7 +760,7 @@ const ClanTreeSyncBar: React.FC<{ diff: TreeDiff; localLevels: Map<number, numbe
                     <ArrowDownToLine className="w-3.5 h-3.5 shrink-0 mt-0.5 text-accent-primary" />
                     <span className="min-w-0 flex-1">
                         <b className="text-white">Your clan tree was updated from {clan.clan.name}.</b>{' '}
-                        {clan.autoPull.changed} node{clan.autoPull.changed === 1 ? '' : 's'} changed —{' '}
+                        {clan.autoPull.changed} node{clan.autoPull.changed === 1 ? '' : 's'} changed: {' '}
                         <span className="text-green-400 font-bold">{clan.autoPull.up} up</span>,{' '}
                         <span className={cn('font-bold', clan.autoPull.down > 0 ? 'text-red-400' : 'text-text-secondary')}>
                             {clan.autoPull.down} down

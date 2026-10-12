@@ -306,9 +306,10 @@ export default function SubstatsCalculator() {
                     const theorDps = weaponTheor + (stats.reflectDps || 0) + (includeSkills ? stats.skillDps + (stats.skillBuffDps || 0) : 0);
                     const realDps = weaponReal + (stats.realReflectDps || 0) + (includeSkills ? stats.skillDps + (stats.skillBuffDps || 0) : 0);
 
-                    const blockChance = Math.min(stats.blockChance || 0, 0.95);
-                    const theorHps = (stats.totalHealth * stats.healthRegen + weaponTheor * stats.lifeSteal + (includeSkills ? stats.skillHps : 0)) / (1 - blockChance);
-                    const realHps = (stats.totalHealth * stats.healthRegen + weaponReal * stats.lifeSteal + (includeSkills ? stats.skillHps : 0)) / (1 - blockChance);
+                    // No block term: block only reduces incoming damage (BattleSystem.ApplyDmg,
+                    // RVA 0x77F4BD0), it never scales healing.
+                    const theorHps = stats.totalHealth * stats.healthRegen + weaponTheor * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
+                    const realHps = stats.totalHealth * stats.healthRegen + weaponReal * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
 
                     const dps = optimizeType === 'real' ? realDps : theorDps;
                     const hps = optimizeType === 'real' ? realHps : theorHps;

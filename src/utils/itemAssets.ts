@@ -429,7 +429,13 @@ export const getItemImage = (ageName: string, slotType: string, idx: number, aut
     return null;
 };
 
-export const getItemName = (ageName: string, slotType: string, idx: number, autoMapping?: any): string | null => {
+/**
+ * Display name of an item. With `localization` (public/parsed_configs/Localization.json) the
+ * official English string for the mapping's LocalizationId wins: the mapping's `ItemName` is the
+ * asset name and differs from the game text for many items ("BarkGloves" vs "Bark",
+ * "DeathHat" vs "Death's Hat").
+ */
+export const getItemName = (ageName: string, slotType: string, idx: number, autoMapping?: any, localization?: any): string | null => {
     // 1. Try dynamic mapping from JSON (AutoItemMapping)
     if (autoMapping) {
         const ageIndex = AGES.indexOf(ageName);
@@ -438,6 +444,10 @@ export const getItemName = (ageName: string, slotType: string, idx: number, auto
         if (ageIndex !== -1 && typeId !== undefined) {
             const key = `${ageIndex}_${typeId}_${idx}`;
             const mapping = autoMapping[key];
+            const official = mapping?.LocalizationId != null
+                ? localization?.items?.[String(mapping.LocalizationId)]?.en
+                : undefined;
+            if (official) return official;
             if (mapping && mapping.ItemName) {
                 return mapping.ItemName.replace(/([a-z])([A-Z])/g, '$1 $2').replace('&', ' & ');
             }

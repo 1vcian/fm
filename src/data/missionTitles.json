@@ -1,0 +1,82 @@
+{
+  "HowlOfTheFirstAge": {
+    "title": "Howl of the First Age",
+    "description": "A forgotten tribe has crawled out of the wilds, raiding caravans with stone and bone. If they aren’t driven back, their hunting grounds will soon include your clan."
+  },
+  "TheSecondStoneAge": {
+    "title": "The Second Stone Age",
+    "description": "What was once a simple band has become something worse. If your clan does not act, they will soon rule these lands."
+  },
+  "TheTwinSamurai": {
+    "title": "The Twin Samurai",
+    "description": "Two master swordsmen walk your lands, cutting down any who challenge them. Defeat the twins before their legend drowns your clan in fear."
+  },
+  "TheHelmLegion": {
+    "title": "The Helm Legion",
+    "description": "These fighters hide behind iron and heavy weapons, believing themselves untouchable. Show them that even steel bends before your clan."
+  },
+  "TheBlackSails": {
+    "title": "The Black Sails",
+    "description": "Ships without flags have anchored near your lands. The pirates plan to loot everything that isn’t nailed down."
+  },
+  "TheThreeMusketeers": {
+    "title": "The Three Musketeers",
+    "description": "These masters seek to prove that only they deserve respect and rule. Show them your clan bows to no blade."
+  },
+  "ThugAttack": {
+    "title": "Thug attack",
+    "description": "A gang of thugs has come to collect a “tax” on your clan’s hard-earned income. You’ve refused to pay, and now they’re at your gates. Stand your ground and show them your clan doesn't bow to threats."
+  },
+  "TheLawComesKnocking": {
+    "title": "The Law comes knocking",
+    "description": "You turned down the dictator’s partnership, choosing freedom over chains. Now his armored units march in to make an example of your people."
+  },
+  "ToxicVanguard": {
+    "title": "Toxic Vanguard",
+    "description": "A masked unit armed with forbidden tech has entered your territory, leaving scorched air behind them. Stop their advance before they cause more damage."
+  },
+  "TheStarBlades": {
+    "title": "The Star Blades",
+    "description": "A squad of glowing-sword warriors has landed, declaring your clan unfit to rule these lands. Drive them out before they decide your fate for good."
+  },
+  "AlienInvasion": {
+    "title": "Alien Invasion",
+    "description": "Beings from another star have begun to harvest your people like cattle. Fight back before your home becomes their colony."
+  },
+  "TheColossalBlade": {
+    "title": "The Colossal Blade",
+    "description": "The warrior fights with a blade bigger than any house. If your clan cannot stop him, nothing else will."
+  },
+  "DigitalBreach": {
+    "title": "Digital Breach",
+    "description": "A tear in the data realm has unleashed strange warriors of light and numbers. Close the breach before they rewrite your lands."
+  },
+  "TechIsNotEnough": {
+    "title": "Tech is not enough",
+    "description": "Ordinary fighters have armed themselves with glowing tech blades, believing it makes them invincible. Prove that real strength still matters."
+  },
+  "QuantumRebels": {
+    "title": "Quantum Rebels",
+    "description": "A crew of flashy warriors has appeared, armed with unstable quantum weapons. Their power is wild and dangerous, and your clan must stop them before the damage spreads."
+  },
+  "OrderOfTheThrone": {
+    "title": "Order of the Throne",
+    "description": "The ruler has sent his elite guards to bring your clan under the crown. Show that your clan answers to no throne."
+  },
+  "TheTwoWizards": {
+    "title": "The Two Wizards",
+    "description": "The mages claim they come to “reshape” your territory to their liking. Your clan must answer steel with courage and break their enchantments."
+  },
+  "DescendFromAbove": {
+    "title": "Descend from above",
+    "description": "A host of angels has descended, claiming your clan has grown too proud. Prove your worth, or be erased in the name of purity."
+  },
+  "NightSorcerers": {
+    "title": "Night Sorcerers",
+    "description": "Wherever these spellcasters walk, crops fail and people vanish. Drive them out before your home becomes another dead place."
+  },
+  "FromTheUnderworld": {
+    "title": "From the Underworld",
+    "description": "Warriors have risen from the depths where the living do not belong. If your clan fails to stop them, the surface will become their new kingdom."
+  }
+}

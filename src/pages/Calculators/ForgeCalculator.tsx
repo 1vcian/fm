@@ -2,7 +2,9 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useProfile } from '../../context/ProfileContext';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { useGameData } from '../../hooks/useGameData';
-import { useTreeModifiers, useClanNodeMax } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeLimits } from '../../hooks/useTreeLimits';
+import { forgeLevelCost } from '../../hooks/useForgeCalculator';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { ArrowRightLeft, HelpCircle, RefreshCw, Trophy } from 'lucide-react';
 import { isWarPointDay, getDayBoostNodeType, getWarPointsForTask } from '../../utils/guildWarUtils';
@@ -77,9 +79,9 @@ function getTechTreeIconStyle(spriteIndex: number, size: number = 32, version?: 
     const spriteSize = 128;
     const sheetSize = 1024;
     const scale = size / spriteSize;
-    const { selectedVersion } = useGameDataContext();
-
-    const versionPath = version || selectedVersion;
+    // Plain helper, not a hook: the caller passes the version (calling useGameDataContext here broke
+    // the Rules of Hooks, since the call count changed once the configs finished loading).
+    const versionPath = version || '';
     return {
         backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}/TechTreeIcons.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
@@ -179,7 +181,7 @@ export default function ForgeCalculator() {
 
     // Clan tech tree boost to war points earned from forging (effective value, see useGameData).
     const treeModifiers = useTreeModifiers();
-    const clanMax = useClanNodeMax();
+    const treeLimits = useTreeLimits();
     const profileForgeWarBonus = treeModifiers['WarPointsFromForging'] || 0;
 
     // Sandbox: local override of the result-altering tree bonus (see SandboxPanel).
@@ -198,10 +200,10 @@ export default function ForgeCalculator() {
     const sandboxControls = {
         reset: () => setSandbox({}),
         fields: [
-            { key: 'warForging', label: 'War points: forging', value: forgeWarBonus, profileValue: profileForgeWarBonus, min: 0, max: clanMax['WarPointsFromForging'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warForging: v })) },
-            { key: 'warForgeSpend', label: 'War points: forge spend', value: forgeSpendBonus, profileValue: profileForgeSpendBonus, min: 0, max: clanMax['WarPointsFromForgeSpend'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warForgeSpend: v })) },
-            { key: 'dayBoost', label: 'Day boost. Crafting (today)', value: dayBoost, profileValue: profileDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
-            { key: 'spendDayBoost', label: 'Day boost. Forge spend (today)', value: spendDayBoost, profileValue: profileSpendDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, spendDayBoost: v })) },
+            { key: 'warForging', label: 'War points: forging', value: forgeWarBonus, profileValue: profileForgeWarBonus, min: 0, ...treeLimits.clan('WarPointsFromForging'), onChange: (v: number) => setSandbox(p => ({ ...p, warForging: v })) },
+            { key: 'warForgeSpend', label: 'War points: forge spend', value: forgeSpendBonus, profileValue: profileForgeSpendBonus, min: 0, ...treeLimits.clan('WarPointsFromForgeSpend'), onChange: (v: number) => setSandbox(p => ({ ...p, warForgeSpend: v })) },
+            { key: 'dayBoost', label: 'Day boost. Crafting (today)', value: dayBoost, profileValue: profileDayBoost, min: 0, ...treeLimits.clan('WarPointsOnDay1'), onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
+            { key: 'spendDayBoost', label: 'Day boost. Forge spend (today)', value: spendDayBoost, profileValue: profileSpendDayBoost, min: 0, ...treeLimits.clan('WarPointsOnDay1'), onChange: (v: number) => setSandbox(p => ({ ...p, spendDayBoost: v })) },
         ],
     };
 
@@ -225,7 +227,7 @@ export default function ForgeCalculator() {
         if (forgeUpgradeData) {
             for (let i = 0; i < effectiveForgeSteps; i++) {
                 const def = forgeUpgradeData[String(simulatedForgeLevel + i)];
-                if (def?.Cost) coins += def.Cost * (1 - forgeUpgradeCostReduction);
+                coins += forgeLevelCost(def, forgeUpgradeCostReduction);
             }
         }
         const mult = (1 + forgeSpendBonus + spendDayBoost);
@@ -1159,7 +1161,7 @@ export default function ForgeCalculator() {
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
                             <div className="flex items-center gap-3">
                                 <div className="p-1 rounded bg-green-500/20">
-                                    <div style={getTechTreeIconStyle(3, 32)} />
+                                    <div style={getTechTreeIconStyle(3, 32, selectedVersion)} />
                                 </div>
                                 <span className="font-medium text-text-secondary">Sell Bonus</span>
                             </div>
@@ -1169,7 +1171,7 @@ export default function ForgeCalculator() {
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
                             <div className="flex items-center gap-3">
                                 <div className="p-1 rounded bg-blue-500/20">
-                                    <div style={getTechTreeIconStyle(32, 32)} />
+                                    <div style={getTechTreeIconStyle(32, 32, selectedVersion)} />
                                 </div>
                                 <span className="font-medium text-text-secondary">Free Forges</span>
                             </div>

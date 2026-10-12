@@ -17,7 +17,7 @@ type SecondaryStatLibrary = Record<string, SecondaryStat>;
 export default function SecondaryStatsWiki() {
     const [versions, setVersions] = useState<string[]>([]);
     const [baseVersion, setBaseVersion] = useState<string>('');
-    const [targetVersion, setTargetVersion] = useState<string>('');
+    const [targetVersion, setTargetVersion] = useState<string>(''); // always versions[0]
     const [baseData, setBaseData] = useState<SecondaryStatLibrary | null>(null);
     const [targetData, setTargetData] = useState<SecondaryStatLibrary | null>(null);
     const [loading, setLoading] = useState(true);
@@ -136,18 +136,11 @@ export default function SecondaryStatsWiki() {
                     </div>
                     <ArrowRight className="w-4 h-4 text-text-muted mt-3" />
                     <div className="flex flex-col">
-                        <label className="text-[10px] font-bold text-accent-primary uppercase tracking-widest ml-1">Target Version</label>
-                        <select
-                            value={targetVersion}
-                            onChange={(e) => setTargetVersion(e.target.value)}
-                            className="bg-transparent text-sm font-medium outline-none cursor-pointer hover:text-accent-primary transition-colors text-accent-primary"
-                        >
-                            {versions.map(v => (
-                                <option key={v} value={v} className="bg-bg-card">
-                                    {formatVersion(v)} {v === versions[0] ? '(Latest)' : ''}
-                                </option>
-                            ))}
-                        </select>
+                        <label className="text-[10px] font-bold text-accent-primary uppercase tracking-widest ml-1">Current Version</label>
+                        {/* The target is always the newest config; only the comparison base is selectable. */}
+                        <span className="text-sm font-medium text-accent-primary">
+                            {targetVersion ? `${formatVersion(targetVersion)} (Latest)` : ''}
+                        </span>
                     </div>
                 </Card>
             </div>
@@ -160,7 +153,8 @@ export default function SecondaryStatsWiki() {
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Stat Name</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Lower Range (Min)</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Upper Range (Max)</th>
-                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-accent-primary">Max Total (12 Slots)</th>
+                                {/* 8 = ItemType enum (Helmet..Belt), 3 = PetBaseConfig.PetSlotsCount, 1 mount; a piece keeps one value per stat type (SecondaryStats.AddOrReplaceStatContribution 0x785F368). */}
+                                <th title="8 equipment items, 3 pets and 1 mount, each rolling the stat at most once at its upper range" className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-accent-primary">Max Total (12 pieces)</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted text-right">Status</th>
                             </tr>
                         </thead>
@@ -252,7 +246,12 @@ export default function SecondaryStatsWiki() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="text-sm font-black text-accent-primary drop-shadow-[0_0_8px_rgba(255,221,0,0.15)]">
-                                                    {target ? formatValue(calculateMaxTotal(name, target.UpperRange)) : 'N/A'}
+                                                    {!target ? 'N/A'
+                                                        // MoveSpeed, AttackRange and ReflectChance ship a 0..0 range. The game rolls only
+                                                        // stats with UpperRange > 0 (SecondaryStatLibrary.get_IsRollable 0x78360F8, split into
+                                                        // _rollableStats / _nonRollableStats by SharedGameConfig.OnLoaded 0x77FE5F0).
+                                                        : target.UpperRange <= 0 ? <span className="text-text-muted font-medium">Not rollable</span>
+                                                        : formatValue(calculateMaxTotal(name, target.UpperRange))}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">

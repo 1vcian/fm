@@ -13,7 +13,7 @@
  *    anchoring (melee waves queue up instead of all hitting at once)
  *  - real skill model: 4.0 s initial charge, cooldown from effect end, per-skill hardcoded
  *    areas/timings, buffs that raise max HP without healing per tick, the activation Hp grant
- *  - real enemy scaling: AgeScaling * pow(difficultyMulti, idx), no cancelling magic numbers
+ *  - real enemy scaling: AgeScaling * DifficultyScaling[idx], no cancelling magic numbers
  *  - Monte Carlo runs are seeded (1..N), so the same inputs give the same win rate
  */
 import { AggregatedStats } from './statEngine';
@@ -30,7 +30,11 @@ import {
     SkillManager,
     WaveEnemySpec,
     WaveRunner,
+    MISSION_ENEMY_BASE_X,
+    MISSION_PLAYER_RADIUS,
     dungeonWaveSpecs,
+    missionSoloPlayerPosition,
+    timerFrames,
     mainBattleWaveSpecs,
     missionWaveSpecs,
     playerUnitSpec,
@@ -54,26 +58,63 @@ interface BuiltScene {
     mgr: SkillManager;
 }
 
+/**
+ * The equipped mount's collider (BattleModelExtensions.UpdateMount, 0x77E96EC, run by UpdatePlayer
+ * in main battles and dungeons): Radius = ColliderRadius, CenterOfMass and UnitOffSet from the
+ * MountLibrary row. Without a mount the unit keeps the defaults (radius 0.35, COM (0, 0.45)).
+ * The radius is part of every range check, so a bigger mount reaches (and is reached) further.
+ */
+export function mountCollider(
+    profile: UserProfile | null,
+    libs: Pick<LibraryData, 'mountLibrary'>
+): { radius: number; centerOfMass: { x: number; y: number } } | null {
+    const active = profile?.mount?.active;
+    if (!active || !libs.mountLibrary) return null;
+    const row = libs.mountLibrary[`{'Rarity': '${active.rarity}', 'Id': ${active.id}}`];
+    if (!row || typeof row.ColliderRadius !== 'number') return null;
+    return {
+        radius: row.ColliderRadius,
+        centerOfMass: { x: row.CenterOfMass?.X ?? 0, y: row.CenterOfMass?.Y ?? 0.45 },
+    };
+}
+
+type SceneMode = 'main' | 'dungeon' | 'mission';
+
 function buildScene(
     playerStats: AggregatedStats,
     profile: UserProfile | null,
     libs: LibraryData,
     seed: number,
     debugConfig?: DebugConfig,
-    context?: BattleContext
+    context?: BattleContext,
+    mode: SceneMode = 'main'
 ): BuiltScene {
     const mgr = new SkillManager(debugConfig?.skillStartupTimer);
     const scene = new CombatScene({ seed, skillSystem: (s) => mgr.execute(s) });
 
+    const isMission = mode === 'mission';
+    const defaultPos = isMission ? missionSoloPlayerPosition(!!playerStats.isRangedWeapon) : { x: 0, y: 0 };
     const spec = playerUnitSpec(playerStats as never, {
-        x: debugConfig?.playerStartPos ?? 0,
-        y: 0,
+        x: debugConfig?.playerStartPos ?? defaultPos.x,
+        y: defaultPos.y,
     }, context);
+    if (isMission) {
+        // SetupPlayerGroup gives every mission participant radius 0.5 and never runs UpdateMount.
+        spec.radius = MISSION_PLAYER_RADIUS;
+    } else {
+        const mount = mountCollider(profile, libs);
+        if (mount) {
+            spec.radius = mount.radius;
+            spec.centerOfMass = mount.centerOfMass;
+        }
+    }
     if (debugConfig?.playerSpeed !== undefined) spec.stats.moveSpeed = debugConfig.playerSpeed;
     if (debugConfig?.playerRangeMultiplier) spec.attackRange *= debugConfig.playerRangeMultiplier;
     const player = scene.addUnit(spec);
 
-    if (profile?.skills?.equipped?.length && libs.skillLibrary) {
+    // Mission participants carry no skills (MissionParticipantModel has none and SetupPlayers
+    // adds none): the skills' passive stats are in the profile, their actives never fire.
+    if (!isMission && profile?.skills?.equipped?.length && libs.skillLibrary) {
         for (const sk of skillSpecs(playerStats as never, profile.skills.equipped, libs.skillLibrary as never)) {
             mgr.addSkill(sk);
         }
@@ -148,14 +189,19 @@ function runOnce(
     seed: number,
     debugConfig: DebugConfig | undefined,
     maxTicks: number,
-    context?: BattleContext
+    context?: BattleContext,
+    mode: SceneMode = 'main'
 ): RunOutcome {
-    const { scene, player, mgr } = buildScene(playerStats, profile, libs, seed, debugConfig, context);
+    const { scene, player, mgr } = buildScene(playerStats, profile, libs, seed, debugConfig, context, mode);
+    // Dungeon models spawn the first wave in SetupBattle and each next wave on the Update after
+    // the previous one is seen cleared: no wave timer (NormalDungeonBattleModel 0x7802ADC/0x78031E0,
+    // HammerThiefDungeonBattleModel 0x78022E4).
+    const delays = mode === 'main' ? {} : { initialDelay: 0, interWaveDelay: 0 };
     const runner = new WaveRunner(
         scene,
         player,
         applyEnemyDebug(waves, debugConfig),
-        { spawnDistance: debugConfig?.enemySpawnDistance ?? 15, maxTicks },
+        { spawnDistance: debugConfig?.enemySpawnDistance ?? 15, maxTicks, ...delays },
         mgr
     );
     const lite = runner.run();
@@ -193,16 +239,12 @@ function toResult(
 // Wave builders per mode
 // ---------------------------------------------------------------------------------------------
 
-const DIFFICULTY_MULTI_FALLBACK = 6_000_000;
-
 function mainWaves(ageIdx: number, battleIdx: number, difficultyIdx: number, libs: LibraryData): WaveEnemySpec[][] | null {
     const battleConfig =
         libs.mainBattleLookup?.[`${ageIdx}-${battleIdx}`] ??
         libs.mainBattleLibrary?.[`{'AgeIdx': ${ageIdx}, 'BattleIdx': ${battleIdx}}`];
     const ageScaling = libs.enemyAgeScalingLibrary?.[String(ageIdx)];
     if (!battleConfig || !ageScaling) return null;
-    const hpMulti = libs.mainBattleConfig?.EnemyHpDifficultyMulti ?? DIFFICULTY_MULTI_FALLBACK;
-    const dmgMulti = libs.mainBattleConfig?.EnemyDmgDifficultyMulti ?? DIFFICULTY_MULTI_FALLBACK;
     const enemyLibs = {
         enemyLibrary: libs.enemyLibrary as never,
         weaponLibrary: libs.weaponLibrary as never,
@@ -211,7 +253,7 @@ function mainWaves(ageIdx: number, battleIdx: number, difficultyIdx: number, lib
     };
     const rawWaves = battleConfig.Waves?.length ? battleConfig.Waves : [battleConfig as never];
     return rawWaves.map((w: { Enemies: { Id: number; Count: number }[] | null }) =>
-        mainBattleWaveSpecs(w, ageScaling, difficultyIdx, hpMulti, dmgMulti, enemyLibs)
+        mainBattleWaveSpecs(w, ageScaling, difficultyIdx, libs.mainBattleConfig, enemyLibs)
     );
 }
 
@@ -298,7 +340,7 @@ export function simulateDungeonBattleMulti(
     const n = runs > 0 ? runs : 100;
     const outcomes: RunOutcome[] = [];
     for (let seed = 1; seed <= n; seed++) {
-        outcomes.push(runOnce(playerStats, profile, libs, waves, seed, debugConfig, DEFAULT_MAX_TICKS, `dungeon:${dungeonType}` as BattleContext));
+        outcomes.push(runOnce(playerStats, profile, libs, waves, seed, debugConfig, DEFAULT_MAX_TICKS, `dungeon:${dungeonType}` as BattleContext, 'dungeon'));
     }
     return toResult(playerStats, outcomes, { dungeonType, dungeonLevel: level, difficultyIdx: 0 });
 }
@@ -325,7 +367,9 @@ export function simulateMissionBattleMulti(
 ): BattleResult | null {
     if (!mission) return null;
     const levelMulti = libs.missionBaseConfig?.HealthAndDamageLevelMultiplier ?? 1.524;
-    const maxTicks = Math.round((libs.missionBaseConfig?.MissionBattleMatchTimerSeconds ?? 180) * 10);
+    // MissionCombatScene.BattleTimer = MissionBattleMatchTimerSeconds, minus dt before each frame;
+    // at <= 0 the mission is LOST (Update 0x780DE54): 180 s -> 1800 frames.
+    const maxTicks = timerFrames(libs.missionBaseConfig?.MissionBattleMatchTimerSeconds ?? 180);
     const enemyLibs = {
         enemyLibrary: libs.enemyLibrary as never,
         weaponLibrary: libs.weaponLibrary as never,
@@ -335,15 +379,20 @@ export function simulateMissionBattleMulti(
     const n = runs > 0 ? runs : 100;
     const outcomes: RunOutcome[] = [];
     for (let seed = 1; seed <= n; seed++) {
-        // The wave (weapon picks) is rolled per run from the run's own RNG, like the game
-        // rolling a fresh mission battle each time.
-        const { scene, player, mgr } = buildScene(playerStats, profile, libs, seed, debugConfig, 'mission');
-        const wave = missionWaveSpecs(mission as never, level, levelMulti, enemyLibs, scene.rng);
+        // Enemy items come from their own RandomPCG built from the battle seed, like the game's
+        // RandomPCG.CreateFromSeed in SetupEnemies; the combat RNG is untouched by them.
+        const { scene, player, mgr } = buildScene(playerStats, profile, libs, seed, debugConfig, 'mission', 'mission');
+        const wave = missionWaveSpecs(mission as never, level, levelMulti, enemyLibs, seed);
         const runner = new WaveRunner(
             scene,
             player,
             applyEnemyDebug([wave], debugConfig),
-            { spawnDistance: debugConfig?.enemySpawnDistance ?? 15, maxTicks },
+            {
+                absoluteBaseX: debugConfig?.enemySpawnDistance ?? MISSION_ENEMY_BASE_X,
+                initialDelay: 0,
+                interWaveDelay: 0,
+                maxTicks,
+            },
             mgr
         );
         const lite = runner.run();

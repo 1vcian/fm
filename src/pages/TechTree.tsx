@@ -6,8 +6,10 @@ import { cn } from '../lib/utils';
 import { Hammer, Zap, Info, X, RefreshCw, Star, Plus, Minus, Download, Upload } from 'lucide-react';
 import { getTechNodeName, getTechNodeDescription, getClanIconStyle } from '../utils/techUtils';
 import { useTreeMode } from '../context/TreeModeContext';
+import { clanNodeValueAtLevel, mergeClanModifiers } from '../utils/clanTechStacking';
 import { useGameDataContext } from '../context/GameDataContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
+import { techLevelCostAndDuration } from '../utils/techOptimizer';
 
 const ICON_SIZE = 48;
 const NODE_HEIGHT = 140;
@@ -445,6 +447,7 @@ export default function TechTree() {
         if (!treeEffects || !techTreePositionLibrary || !treeMapping) return {};
 
         const mods: Record<string, number> = {};
+        const clanSums: Record<string, number> = {};
         const trees: TreeName[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan']; // Should match keys in localRanks/mapping
 
         trees.forEach(treeName => {
@@ -470,11 +473,9 @@ export default function TechTree() {
                     const upgradeDef = guildUpgradeLibrary[nodeType];
                     if (!upgradeDef) continue;
                     
-                    // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
-                    const valPerLevel = upgradeDef.ValuePerLevel || 0;
-                    const totalVal = valPerLevel * level;
-                    
-                    mods[nodeType] = (mods[nodeType] || 0) + totalVal;
+                    // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData).
+                    // ValueAtLevel semantics (infinite levels included), folded in after the loop.
+                    clanSums[nodeType] = (clanSums[nodeType] || 0) + clanNodeValueAtLevel(upgradeDef, level);
                 }
                 return;
             }
@@ -526,9 +527,10 @@ export default function TechTree() {
                     const nodeDef = treeData.Nodes.find((n: any) => n.Id === nodeId);
                     if (nodeDef) {
                         const ef = treeEffects[nodeDef.Type];
-                        if (ef?.Stats?.[0]) {
-                            const base = ef.Stats[0].Value;
-                            const inc = ef.Stats[0].ValueIncrease;
+                        const tierStat = ef?.StatsByTier?.[nodeDef.Tier ?? 0]?.[0] ?? ef?.Stats?.[0];
+                        if (tierStat) {
+                            const base = tierStat.Value;
+                            const inc = tierStat.ValueIncrease;
                             const val = base + (Math.max(0, level - 1) * inc);
                             mods[nodeDef.Type] = (mods[nodeDef.Type] || 0) + val;
                         }
@@ -536,6 +538,8 @@ export default function TechTree() {
                 }
             });
         });
+        // Clan Damage/Health multipliers compound with the personal tree (ClanTechTree layer).
+        mergeClanModifiers(mods, clanSums, treeEffects);
         return mods;
     }, [localRanks, treeEffects, techTreePositionLibrary, treeMapping, guildPositionLibrary, guildUpgradeLibrary]);
 
@@ -577,8 +581,9 @@ export default function TechTree() {
                 const costBonus = calculatedModifiers['TechNodeUpgradeCost'] || 0;
                 const timeBonus = calculatedModifiers['TechResearchTimer'] || 0;
 
-                const finalCost = Math.floor(baseCost * (1 - costBonus));
-                const finalDuration = baseDuration / (1 + timeBonus);
+                // Same FD6 arithmetic as TechTreeNodeUpgradeStartAction (RVA 0x7868888).
+                const { cost: finalCost, duration: finalDuration } = techLevelCostAndDuration(
+                    { Cost: baseCost, Duration: baseDuration }, { costReduction: costBonus, speedBonus: timeBonus });
 
                 totalTime += finalDuration;
                 totalCost += finalCost;
@@ -1355,8 +1360,8 @@ export default function TechTree() {
                                                         const costBonus = calculatedModifiers['TechNodeUpgradeCost'] || 0;
                                                         const timeBonus = calculatedModifiers['TechResearchTimer'] || 0;
 
-                                                        const myCost = Math.floor(lvl.Cost * (1 - costBonus));
-                                                        const myDuration = lvl.Duration / (1 + timeBonus);
+                                                        const { cost: myCost, duration: myDuration } = techLevelCostAndDuration(
+                                                            lvl, { costReduction: costBonus, speedBonus: timeBonus });
 
                                                         return (
                                                             <div key={idx} className={cn(

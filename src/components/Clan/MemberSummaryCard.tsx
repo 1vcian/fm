@@ -361,7 +361,7 @@ export const CONFIDENCE_META: Record<MemberConfidence, ConfidenceMeta> = {
         chip: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
         prefix: '',
         legend: 'exact for the resources held',
-        fallback: 'The game config pays this for the resources held — an expected value where the game rolls dice.',
+        fallback: 'The game config pays this for the resources held: an expected value where the game rolls dice.',
     },
     'lower-bound': {
         label: 'at least',
@@ -378,7 +378,7 @@ export const CONFIDENCE_META: Record<MemberConfidence, ConfidenceMeta> = {
         text: 'text-text-muted',
         chip: 'bg-white/5 text-text-muted border-border',
         prefix: '',
-        legend: 'not modelled — not zero',
+        legend: 'not modelled, not zero',
         fallback: 'The input does not exist in the publisher\'s profile, or the game mechanic is not modelled. This is not a zero.',
     },
     unknown: {
@@ -387,7 +387,7 @@ export const CONFIDENCE_META: Record<MemberConfidence, ConfidenceMeta> = {
         text: 'text-text-secondary',
         chip: 'bg-sky-500/10 text-sky-300 border-sky-500/25',
         prefix: '~ ',
-        legend: 'unverified — older tool',
+        legend: 'unverified: older tool',
         fallback: 'Published by an older version of this tool, which did not record how much each figure can be trusted.',
     },
 };
@@ -853,7 +853,7 @@ const ConfidenceIcon: React.FC<{ confidence: MemberConfidence; className?: strin
  */
 function confidenceTitle(confidence: MemberConfidence, reason: string | null, ceiling: number): string {
     const meta = CONFIDENCE_META[confidence];
-    const parts = [`${meta.label.toUpperCase()} — ${meta.fallback}`];
+    const parts = [`${meta.label.toUpperCase()}: ${meta.fallback}`];
     if (ceiling > 0) parts.push(`Not counted, at most: ${exact(ceiling)} points.`);
     if (reason) parts.push(`They published: “${reason}”`);
     return parts.join('\n');
@@ -875,7 +875,7 @@ const ConfidenceCounts: React.FC<{ counts: Record<MemberConfidence, number>; cla
                     <span
                         key={key}
                         className={cn('flex items-center gap-0.5 text-[10px] tabular-nums', meta.text)}
-                        title={`${counts[key]} of the eight war categories: ${meta.label} — ${meta.fallback}`}
+                        title={`${counts[key]} of the eight war categories: ${meta.label}: ${meta.fallback}`}
                     >
                         <ConfidenceIcon confidence={key} />
                         {counts[key]}
@@ -1058,7 +1058,7 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
                     {hasShare && summary.implausible && (
                         <span
                             className={cn(CHIP, CHIP_RED)}
-                            title="This member's summary contains a figure that is not a war-point number — negative, not a number, or too large to be an exact integer. Those figures count as nothing and their categories read n/a, so one hostile row cannot swamp the clan total."
+                            title="This member's summary contains a figure that is not a war-point number: negative, not a number, or too large to be an exact integer. Those figures count as nothing and their categories read n/a, so one hostile row cannot swamp the clan total."
                         >
                             impossible figure
                         </span>
@@ -1082,7 +1082,7 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
                     >
                         {summary.points === null ? (
                             <span className="text-sm font-bold text-text-muted" title="This member has not published a summary.">
-                                —
+                                -
                             </span>
                         ) : summary.allBlind ? (
                             <span
@@ -1173,7 +1173,7 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
                                         value === undefined && 'text-text-muted',
                                     )}
                                 >
-                                    {value === undefined ? '—' : formatCompactNumber(value)}
+                                    {value === undefined ? '-' : formatCompactNumber(value)}
                                 </span>
                             );
                         })}
@@ -1200,7 +1200,7 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
                            press. */
                         <p className="text-xs text-text-secondary leading-relaxed">
                             <span className="font-bold text-amber-400">Nothing shared.</span>{' '}
-                            {summary.name} is in the clan, but no summary of theirs has reached it — they may not
+                            {summary.name} is in the clan, but no summary of theirs has reached it: they may not
                             have opened the planner since clan sharing existed, or may have turned clan sync off.
                             Either way their trees, resources and war points are unknown here, not zero, and this
                             card is left out of every clan and per-day total.
@@ -1248,7 +1248,7 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
                                     <span className="font-bold">Older version of the tool.</span>{' '}
                                     This summary was written in summary format v{finite(summary.share?.v)}; this app writes
                                     v{CLAN_SHARE_VERSION}. It carries no record of how each figure was arrived at, so
-                                    none of the numbers above can be called exact — and the three categories that
+                                    none of the numbers above can be called exact, and the three categories that
                                     version could not compute at all (tech tree, forging, pet merges) read n/a rather
                                     than 0. They will fill in by themselves the next time {summary.name} opens the app.
                                 </p>
@@ -1347,8 +1347,8 @@ const PartsList: React.FC<{ entry: CategoryBreakdown; total: number }> = ({ entr
                     ))}
                 </ul>
                 <p className="mt-1 text-[9px] leading-relaxed text-text-muted">
-                    Ceilings, not amounts. Each needs something the app cannot see — a duplicate to merge, a
-                    coin sink to spend into — so none of it is in the {exact(total)} above.
+                    Ceilings, not amounts. Each needs something the app cannot see: a duplicate to merge, a
+                    coin sink to spend into, so none of it is in the {exact(total)} above.
                 </p>
             </div>
         )}
@@ -1463,13 +1463,13 @@ const NodeCurrencies: React.FC<{
             <p className="text-[9px] leading-relaxed text-text-muted">
                 {c.level === 0
                     ? `They hold no levels in this node, so nothing is multiplied. Each level is worth ${pct(c.nextValueStep)} more on every point this category scores, on every day it pays.`
-                    : `Each level is ${pct(c.nextValueStep > 0 ? c.nextValueStep : 0)} and it applies every time they score here, on every day this category pays — it is a multiplier, not points they are holding.`}
+                    : `Each level is ${pct(c.nextValueStep > 0 ? c.nextValueStep : 0)} and it applies every time they score here, on every day this category pays: it is a multiplier, not points they are holding.`}
             </p>
 
             {/* ROW TWO — the price. A different unit, its own line, and the word "costs". */}
             <div className="flex items-baseline gap-2 border-t border-border/60 pt-1 text-[10px]" data-currency="cost">
                 <span className="min-w-0 break-words text-text-secondary">
-                    {capped ? 'That node is finished — no level left to buy' : 'One more level costs, once'}
+                    {capped ? 'That node is finished: no level left to buy' : 'One more level costs, once'}
                 </span>
                 <span className="flex-1" />
                 {!capped && (
@@ -1480,7 +1480,7 @@ const NodeCurrencies: React.FC<{
             </div>
             {!capped && (
                 <p className="text-[9px] leading-relaxed text-text-muted">
-                    Clan tech points — the clan tree&apos;s own currency, paid once
+                    Clan tech points: the clan tree&apos;s own currency, paid once
                     {c.potionsPerPoint !== null && (
                         <> and bought at {c.potionsPerPoint} guild potion{c.potionsPerPoint === 1 ? '' : 's'} each,
                         so {exact(c.costOfNextLevel * c.potionsPerPoint)} potions</>
@@ -1492,7 +1492,7 @@ const NodeCurrencies: React.FC<{
                         did not reconcile there is none, and the multiplier move is all that can
                         honestly be said — see `nextLevelWorth`. */}
                     {c.nextLevelWorth !== null
-                        ? <> — worth <span className="text-emerald-300 font-mono">{exact(c.nextLevelWorth)}</span>{' '}
+                        ? <>, worth <span className="text-emerald-300 font-mono">{exact(c.nextLevelWorth)}</span>{' '}
                           more war points from the resources they hold right now.</>
                         : <>. What that is worth in points cannot be said here: it needs their figure for this
                           category, and the lines behind that figure could not be reproduced.</>}
@@ -1571,7 +1571,7 @@ const WarBreakdown: React.FC<{
                     </>
                 ) : summary.confidence === 'exact' ? (
                     <>
-                        <span className="font-bold text-emerald-300">{exact(summary.points ?? 0)}</span> — all
+                        <span className="font-bold text-emerald-300">{exact(summary.points ?? 0)}</span>: all
                         eight categories are exact for the resources this member holds.
                     </>
                 ) : summary.confidence === 'unknown' ? (
@@ -1588,7 +1588,7 @@ const WarBreakdown: React.FC<{
                                 <span className="font-bold">{exact((summary.points ?? 0) + summary.ceiling)}</span>
                             </>
                         )}
-                        {' — '}
+                        {': '}
                         {summary.counts.exact > 0 && `${summary.counts.exact} exact`}
                         {summary.counts.exact > 0 && summary.counts['lower-bound'] > 0 && ', '}
                         {summary.counts['lower-bound'] > 0 && `${summary.counts['lower-bound']} a floor`}
@@ -1756,7 +1756,7 @@ const WarBreakdown: React.FC<{
             <p className="text-[10px] leading-relaxed text-text-muted" data-breakdown-count={breakdown.reconciledCount}>
                 {breakdown.reconciledCount} of the {summary.war.length} categories can be broken down here.
                 A clan summary carries the eight totals, not the lines behind them, so the lines are worked
-                out again on this machine — and only shown where that reproduces {summary.name}&apos;s own
+                out again on this machine, and only shown where that reproduces {summary.name}&apos;s own
                 figure exactly.
             </p>
         )}
@@ -1814,7 +1814,7 @@ const WarBreakdown: React.FC<{
                                     : `${exact(value)} points`
                             }`}
                         >
-                            {value === undefined ? '—' : formatCompactNumber(value)}
+                            {value === undefined ? '-' : formatCompactNumber(value)}
                         </div>
                         {boostedShown && (
                             <div
@@ -1831,7 +1831,7 @@ const WarBreakdown: React.FC<{
                                 // tooltip has to be able to find the node it is talking about.
                                 title={
                                     `${exact(value!)} becomes ${exact(boosted!)} once this member's own ` +
-                                    `"${getTechNodeName(`WarPointsOnDay${day + 1}`)}" clan node is applied — that node ` +
+                                    `"${getTechNodeName(`WarPointsOnDay${day + 1}`)}" clan node is applied: that node ` +
                                     'multiplies what they score on this day and nothing else. It is a multiplier, ' +
                                     'not extra points they already hold.'
                                 }
@@ -1898,7 +1898,7 @@ const MountsStoryBlock: React.FC<{ summary: MemberSummary; breakdown: MemberBrea
             ) : m.mounts <= 0 ? (
                 <p className="text-[11px] leading-relaxed text-text-secondary">
                     {summary.name} holds {exact(m.winders)} clock winder{m.winders === 1 ? '' : 's'}, and one
-                    summon costs {exact(m.costPerSummon)} — so there is nothing here to summon, merge or
+                    summon costs {exact(m.costPerSummon)}, so there is nothing here to summon, merge or
                     ascend for yet.
                 </p>
             ) : (
@@ -1928,7 +1928,7 @@ const MountsStoryBlock: React.FC<{ summary: MemberSummary; breakdown: MemberBrea
                     </ul>
                     <p className="text-[10px] leading-relaxed text-text-muted">
                         Only the {exact(m.summonPoints)} is counted. A merge needs two of the same mount, and
-                        nothing in this app knows which mounts anyone owns — so the merge line is the most it
+                        nothing in this app knows which mounts anyone owns, so the merge line is the most it
                         could ever be worth, not what it will be. The Mount calculator shows both added
                         together, which is why its total is about twice this one.
                     </p>
@@ -2010,7 +2010,7 @@ const TreeBreakdown: React.FC<{ summary: MemberSummary; treeIndex: TreeIndex | n
                                     {tree.pct !== null && tree.pct < 100 && (
                                         <span
                                             className={cn(CHIP, CHIP_AMBER)}
-                                            title={`${tree.pct}% of the levels this tree can hold — ${entry.maxLevels.toLocaleString('en-US')} in total`}
+                                            title={`${tree.pct}% of the levels this tree can hold: ${entry.maxLevels.toLocaleString('en-US')} in total`}
                                         >
                                             {tree.pct}%
                                         </span>
@@ -2120,7 +2120,7 @@ const ResourceBreakdown: React.FC<{ share: ClanShare }> = ({ share }) => {
             {items.length === 0 ? (
                 <p className="text-[11px] text-text-muted">
                     No non-zero resource in this summary. This block records what was entered, and a
-                    blank field publishes as 0 — which is why the markers above, and not these chips,
+                    blank field publishes as 0, which is why the markers above, and not these chips,
                     are what say whether a category could be computed.
                 </p>
             ) : (

@@ -20,7 +20,7 @@
 // verdict came with a currency header (the user's own screen) or without one (a card that may be
 // somebody else's — a read the caller must never pre-accept). `type` keeps its exact old meaning
 // and value set, so every existing consumer of it is unaffected.
-import { loadImage, imageToCanvas, findStarTiles, detectPopupCard, detectPopupTile, type Rect } from './imagePrep';
+import { loadImage, imageToCanvas, screenshotCanvas, findStarTiles, detectPopupCard, detectPopupTile, type Rect } from './imagePrep';
 import { detectOutlinedTile } from './skinReader';
 
 export type ScreenTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 'enemy' | 'unknown';
@@ -440,14 +440,19 @@ export function subjectFromPopup(src: HTMLCanvasElement, headerCard: boolean): P
 }
 
 export async function classifyScreen(input: HTMLImageElement | HTMLCanvasElement | Blob | string): Promise<ClassifyResult> {
-    const img = (input instanceof HTMLImageElement || input instanceof HTMLCanvasElement) ? input : await loadImage(input);
+    // device bars (tablet / short-phone pillarbox) are not part of the game frame: see trimDeviceBars
+    const img = screenshotCanvas((input instanceof HTMLImageElement || input instanceof HTMLCanvasElement) ? input : await loadImage(input));
     const canon = canvasAtWidth(img, CANON_W);
     const gray = toGray(canon);
     const templates = await loadTemplates();
     const W = gray.w, H = gray.h;
 
-    // header currencies: y band 0.045..0.145, per-currency x band (proto_screen.header_currencies)
-    const yTop = Math.round(H * 0.045), yBot = Math.round(H * 0.145);
+    // header currencies: y band 0.045..0.19, per-currency x band (proto_screen.header_currencies).
+    // The proto's 0.145 lower edge lost the header on a capture with an OS status bar above the
+    // game (measured: the tester's 923x2000 pet and clan shots with a 3.5% status bar and a 5%
+    // navigation bar, egg 0.97 -> 0.55, tube 0.96 -> 0.65). 0.19 reads those again and changes
+    // no verdict on any other labelled fixture or device variant (reverseForge/scratch/audit).
+    const yTop = Math.round(H * 0.045), yBot = Math.round(H * 0.19);
     const cur: Record<string, number> = {};
     for (const name of ['coin', 'gem', 'egg', 'ticket', 'tube'] as const) {
         const [xa, xb] = XBAND[name];

@@ -104,7 +104,7 @@ function sampleTileColor(src: HTMLCanvasElement, tile: Rect): RGB | null {
  * Matches the validated proto_age.classify_rgb: a bright near-grey fill is Primitive/Common, else
  * NEAREST palette colour by Euclidean RGB distance. (Hue-only NN collides Underworld≈(176,120,121)
  * with Space≈(255,93,93) — both hue≈0/360 — so RGB distance is required to keep them apart.) */
-function classifyColor(rgb: RGB | null, palette: RGB[]): number {
+export function classifyColor(rgb: RGB | null, palette: RGB[]): number {
     if (!rgb) return 0;
     const mx = Math.max(rgb[0], rgb[1], rgb[2]), mn = Math.min(rgb[0], rgb[1], rgb[2]);
     const sat = mx > 0 ? (mx - mn) / mx : 0;
@@ -133,6 +133,84 @@ function correctByBound(v: number, max: number): number {
     while (ipc.length > 1 && parseFloat(ipc + (fp ? '.' + fp : '')) > max * 1.2) ipc = ipc.slice(1);
     const c = parseFloat(ipc + (fp ? '.' + fp : ''));
     return isNaN(c) ? v : (neg ? -c : c);
+}
+
+// ---- substat display format (binary 2026_10_08_09_03) and roll range (config) ----
+// Item / pet / mount panels print a substat through PlayerItemModelExtensions.FormatSecondaryStats
+// -> StatsFormat.FormatStatValueString (RVA 0x3F57A20) -> NumberFormat.FormatPercentage(FD6)
+// (RVA 0x3F78C40) = Numbers.FormatMultiplier3SignificantDigits(value * 100) + "%"
+// (RVA 0x3F74154): FLOORED to 2 decimals below 10, 1 decimal from 10 to 100, 0 decimals from 100
+// to 1000, trailing zeros stripped (GetStringWithoutTrailingZeroes). A secondary stat is one roll
+// in [SecondaryStatLibrary.LowerRange, UpperRange]; AscensionConfigsLibrary only adds Damage and
+// Health, never a secondary stat, so the printed value stays inside that range.
+
+/** Most decimals the game prints for a percent of this magnitude. */
+function displayDecimals(v: number): number {
+    const a = Math.abs(v);
+    return a < 10 ? 2 : a < 100 ? 1 : 0;
+}
+
+function decimalsOf(s: string): number {
+    const i = s.indexOf('.');
+    return i < 0 ? 0 : s.length - i - 1;
+}
+
+/** Can the game print exactly this string for a substat with roll range [lo, hi]? */
+function printable(s: string, lo: number, hi: number): boolean {
+    if (!/^\d+(\.\d+)?$/.test(s) || /^0\d/.test(s)) return false;
+    const v = parseFloat(s);
+    if (!(v >= Math.floor(lo * 100 + 1e-6) / 100 - 1e-9 && v <= hi + 1e-6)) return false;
+    // trailing zeros are stripped by the game
+    if (s.includes('.') && s.endsWith('0')) return false;
+    return decimalsOf(s) <= displayDecimals(v);
+}
+
+/**
+ * Resolve a substat value from the glyph-bank read and the tesseract read, constrained to what
+ * the game can print (format above) and to the stat's roll range. Repairs considered, each one
+ * edit: a dropped or misplaced decimal point ("922" -> "9.22"), glyphs after the last printable
+ * decimal (the "%" read as "16"/"96": "13.796" -> "13.7"), a sign read as a leading digit
+ * ("411.2" -> "11.2"). Returns null when nothing printable is found or two different repairs
+ * remain equally likely and the tesseract read does not pick one.
+ */
+function resolveSubstatValue(bankRaw: string, pct: number | null, lo: number, hi: number): number | null {
+    const raw = (bankRaw.match(/[\d.]+/g) ?? []).join('');
+    const pctStr = pct != null && Number.isFinite(pct) ? String(pct) : null;
+    const pctOk = pctStr != null && printable(pctStr, lo, hi);
+    const cands = new Map<string, number>(); // printable string -> edit cost
+    const add = (s: string, cost: number) => {
+        s = s.replace(/^\./, '');
+        if (printable(s, lo, hi) && (cands.get(s) ?? 9) > cost) cands.set(s, cost);
+    };
+    const forms: [string, number][] = [[raw, 0]];
+    if (raw.length > 1) forms.push([raw.slice(1), 1]);
+    for (const [f, c0] of forms) {
+        if (!f) continue;
+        add(f, c0);
+        const digits = f.replace(/\./g, '');
+        if (!digits) continue;
+        // re-place the decimal point anywhere (one edit when the read had none or another one)
+        for (let k = 1; k <= digits.length; k++) {
+            const s = k === digits.length ? digits : `${digits.slice(0, k)}.${digits.slice(k)}`;
+            if (s !== f) add(s, c0 + 1);
+            // ... and drop trailing glyphs past what the game prints at that magnitude
+            for (let cut = s.length - 1; cut > 0; cut--) {
+                const t = s.slice(0, cut);
+                if (t.endsWith('.')) continue;
+                add(t, c0 + (s !== f ? 2 : 1));
+            }
+        }
+    }
+    if (!cands.size) return pctOk ? parseFloat(pctStr!) : null;
+    const best = Math.min(...cands.values());
+    const top = [...cands].filter(([, c]) => c === best).map(([s]) => s);
+    if (top.length === 1) {
+        // a repaired glyph read loses to a printable tesseract read of the same line
+        if (best === 0 || !pctOk) return parseFloat(top[0]);
+        return parseFloat(pctStr!);
+    }
+    if (pctOk && top.includes(pctStr!)) return parseFloat(pctStr!);
+    return null;
 }
 
 // ---- value-token reading via the digit-template bank (measured winner, reader_bank_v2) ----
@@ -227,7 +305,14 @@ async function readCardText(src: HTMLCanvasElement, dicts?: GameDictionaries): P
     // to the substat rows on pet/mount screens, losing the main-stat lines above them).
     const card = detectPopupCard(src) ?? detectBrightCard(src) ?? { x: 0, y: 0, w: src.width, h: src.height };
     const cardRect = clampRect(card, src.width, src.height);
-    const cardCanvas = cropCanvas(src, cardRect, OCR_SCALE);
+    // OCR only the text column right of the subject tile. The tile's own "Lv. N" label sits on the
+    // first substat's row; tesseract merged the two into one line ("LVN02 Critical Damage +73.8%")
+    // and, on resampled or recompressed captures, dropped that line altogether (measured: the
+    // first substat of two item fixtures lost at 1080 px with bars and at JPEG q55). Line rects
+    // keep cardRect's vertical origin, so lineRectOnSource is unchanged.
+    const textX = Math.round(cardRect.x + TILE_X * cardRect.w);
+    const textRect = clampRect({ x: textX, y: cardRect.y, w: cardRect.x + cardRect.w - textX, h: cardRect.h }, src.width, src.height);
+    const cardCanvas = cropCanvas(src, textRect, OCR_SCALE);
     let lines: PageLine[] = [];
     try { lines = await ocrPageLines(cardCanvas); } catch { lines = []; }
 
@@ -247,8 +332,15 @@ async function readCardText(src: HTMLCanvasElement, dicts?: GameDictionaries): P
             }
             const gapPx = Math.max(3, Math.round(5 * src.width / CANON_W)); // 5px word gap @576w canonical
             const bankRaw = await readValueToken(src, cardRect, l, SUBSTAT_VALUE_OPTS, gapPx);
-            let value = parseSubstatRaw(bankRaw) ?? pct;
-            if (statId && dicts?.statMax.has(statId)) value = correctByBound(value, dicts.statMax.get(statId)!);
+            let value: number | null = parseSubstatRaw(bankRaw) ?? pct;
+            const hi = statId ? dicts?.statMax.get(statId) : undefined;
+            const lo = statId ? dicts?.statMin?.get(statId) : undefined;
+            if (hi !== undefined && lo !== undefined) {
+                value = resolveSubstatValue(bankRaw, pct, lo, hi);
+                // nothing the game could print, or two repairs equally likely: not read (a wrong
+                // value inside the roll range would pass every later check)
+                if (value === null) continue;
+            } else if (statId && hi !== undefined) value = correctByBound(value, hi);
             // evidence crop of the whole line band ("+X% StatName") for the diff modal
             const cropUrl = evidenceCropUrl(src, lineRectOnSource(src, cardRect, l));
             substats.push({ statId, name: label, value, percent: true, raw: bankRaw || text, cropUrl });

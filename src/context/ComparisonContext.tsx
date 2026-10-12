@@ -109,11 +109,16 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [testFairy, setTestFairy] = useState<FairySelection | null>(null);
     const [snapshotFairy, setSnapshotFairy] = useState<FairySelection | null>(null);
     const [isCompactStats, setIsCompactStats] = useState(true);
-    const [excludeSubstats, setExcludeSubstatsState] = useState(() => localStorage.getItem('fm_exclude_substats') === 'true');
+    // The game computes Power on substat-free totals: PlayerPowerExtensions.CalculatePower 0x785E258 calls
+    // Stats.WithoutSecondaryStats 0x785E500 before PlayerDamage/PlayerHealth ((damage - 10) * 8 + (health - 80)) * 3,
+    // so that is the default. A new storage key resets everyone who had the old default saved.
+    const [excludeSubstats, setExcludeSubstatsState] = useState(() => {
+        try { return localStorage.getItem('fm_exclude_substats_v2') !== 'false'; } catch { return true; }
+    });
 
     const setExcludeSubstats = useCallback((val: boolean) => {
         setExcludeSubstatsState(val);
-        localStorage.setItem('fm_exclude_substats', String(val));
+        try { localStorage.setItem('fm_exclude_substats_v2', String(val)); } catch { /* storage unavailable */ }
     }, []);
 
     const enterCompareMode = useCallback(() => {

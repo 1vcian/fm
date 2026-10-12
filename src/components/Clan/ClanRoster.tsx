@@ -226,7 +226,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
             if (here.length === 0) {
                 return {
                     short: 'battle day',
-                    long: 'The game sets no scoring tasks for this day — it is the battle day, so points come from attacking, not from spending resources.',
+                    long: 'The game sets no scoring tasks for this day: it is the battle day, so points come from attacking, not from spending resources.',
                     idle: true,
                 };
             }
@@ -500,7 +500,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                         <span
                                             className="text-sm font-bold text-text-muted tabular-nums"
                                             title={
-                                                `Every publisher's own "not counted, at most" figures add up to ${totals.ceiling.toLocaleString('en-US')} more points — mount merges, pet merges and coins past the forge sink.` +
+                                                `Every publisher's own "not counted, at most" figures add up to ${totals.ceiling.toLocaleString('en-US')} more points: mount merges, pet merges and coins past the forge sink.` +
                                                 (totals.unverified > 0
                                                     ? ` It is a range over the rows that named a ceiling; the ${totals.unverified} from an older version of the tool named none, so the clan is not guaranteed to be inside it.`
                                                     : ' The clan is somewhere in this range.')
@@ -518,7 +518,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                     <>
                                         <br />
                                         <span className="text-amber-400">
-                                            {totals.missing} shared nothing — not counted as zero
+                                            {totals.missing} shared nothing, not counted as zero
                                         </span>
                                     </>
                                 )}
@@ -572,7 +572,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                 ) : totals.confidence === 'unavailable' ? (
                                     <>
                                         All {totals.sharing} published summaries came back with nothing computable, so
-                                        this clan&apos;s obtainable points are unknown — not zero.
+                                        this clan&apos;s obtainable points are unknown, not zero.
                                     </>
                                 ) : totals.confidence === 'unknown' ? (
                                     <>
@@ -609,7 +609,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                                     {totals.unverifiedPoints.toLocaleString('en-US')}
                                                 </span>{' '}
                                                 from the older ones records nothing about how it was reached and could
-                                                be too big as easily as too small — open those rows to see which.
+                                                be too big as easily as too small: open those rows to see which.
                                             </>
                                         ) : (
                                             <>
@@ -670,7 +670,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                             className="font-mono text-[9px] tabular-nums text-emerald-300"
                                             title={
                                                 `${value.toLocaleString('en-US')} becomes ${totals.byDayBoosted[day].toLocaleString('en-US')} once each member's own ` +
-                                                `"${getTechNodeName(`WarPointsOnDay${day + 1}`)}" clan node is applied — that node multiplies what you score on ` +
+                                                `"${getTechNodeName(`WarPointsOnDay${day + 1}`)}" clan node is applied: that node multiplies what you score on ` +
                                                 `this day and nothing else. It is a multiplier, not extra points you already hold.`
                                             }
                                             data-day-boosted={totals.byDayBoosted[day]}
@@ -691,7 +691,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                             <p className="text-[10px] text-text-muted">
                                 <span className="text-emerald-300">The green number is the same day after each
                                 member&apos;s own <span className="text-text-secondary">War Points On Day</span> clan
-                                node is applied</span> — not points on top of the white one, the white one
+                                node is applied</span>, not points on top of the white one, the white one
                                 multiplied. Each of those six nodes gives <span className="text-text-secondary">+4%
                                 per level</span> and only on its own day, which is why the arrow moves by a
                                 different amount on each tile. Across the whole week the nodes are worth{' '}
@@ -700,7 +700,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                 </span>.{' '}
                                 The headline above stays on the white figures on purpose: those are the ones that
                                 add up to the categories, so you can check them. And note the other half of a clan
-                                node, which this row does not show — <em>raising</em> one scores war points too,
+                                node, which this row does not show: <em>raising</em> one scores war points too,
                                 but only on a day that pays for the tech tree.
                             </p>
                         )}
@@ -792,7 +792,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                             <span>
                                 Every figure is the member&apos;s own published estimate of the war points still{' '}
                                 <span className="text-text-secondary">obtainable</span> from the resources they
-                                hold — not points already scored — split evenly across the war days the game
+                                hold, not points already scored, split evenly across the war days the game
                                 config gives each category, with their own clan multipliers applied. It is
                                 computed on their machine, with their game config version, and it is not
                                 verified by anything: read it as a claim.
@@ -817,7 +817,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                                     : WAR_CATEGORY_LABELS[c];
                                             }).join(', ')}
                                         </span>
-                                        {' — '}
+                                        {', '}
                                         {state === 'exact' && 'exact: the game config pays this for the resources those members hold.'}
                                         {state === 'lower-bound' && 'a floor: something obtainable is knowingly not counted. Open a row to read why, in that member\'s own words.'}
                                         {state === 'unavailable' && 'not modelled: those figures read n/a rather than 0 and are missing from this clan total entirely.'}

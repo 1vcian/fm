@@ -5,6 +5,7 @@ import { GameIcon } from '../components/UI/GameIcon';
 import { TrendingUp, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { AGES } from '../utils/constants';
+import { difficultyName } from '../utils/difficulty';
 
 interface Reward {
     Amount: number;
@@ -52,6 +53,12 @@ export default function ProgressPassWiki() {
     const [difficulty, setDifficulty] = useState<number>(0);
     const { data: passData } = useGameData<Record<string, PassTier>>('MainGameProgressPassLibrary.json');
     
+    const difficulties = useMemo(() => {
+        if (!passData) return [0];
+        const found = new Set(Object.values(passData).map(t => t.ProgressKey?.MainBattleId?.DifficultyIdx ?? 0));
+        return [...found].sort((a, b) => a - b);
+    }, [passData]);
+
     const sortedTiers = useMemo(() => {
         if (!passData) return [];
         const filtered = Object.values(passData).filter(t => t.ProgressKey?.MainBattleId?.DifficultyIdx === difficulty);
@@ -95,30 +102,22 @@ export default function ProgressPassWiki() {
                 </div>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs: one per difficulty the pass actually has tiers for */}
             <div className="flex bg-bg-secondary/40 p-1 rounded-xl border border-border w-fit mx-auto sm:mx-0 shadow-lg mb-4">
-                <button
-                    onClick={() => setDifficulty(0)}
-                    className={cn(
-                        "px-6 sm:px-10 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300",
-                        difficulty === 0
-                            ? "bg-accent-primary text-black shadow-lg"
-                            : "text-text-muted hover:text-text-primary hover:bg-white/5"
-                    )}
-                >
-                    Normal
-                </button>
-                <button
-                    onClick={() => setDifficulty(1)}
-                    className={cn(
-                        "px-6 sm:px-10 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300",
-                        difficulty === 1
-                            ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
-                            : "text-text-muted hover:text-text-primary hover:bg-white/5"
-                    )}
-                >
-                    Hard
-                </button>
+                {difficulties.map(d => (
+                    <button
+                        key={d}
+                        onClick={() => setDifficulty(d)}
+                        className={cn(
+                            "px-6 sm:px-10 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300",
+                            difficulty === d
+                                ? (d === 0 ? "bg-accent-primary text-black shadow-lg" : "bg-red-500 text-white shadow-lg shadow-red-500/20")
+                                : "text-text-muted hover:text-text-primary hover:bg-white/5"
+                        )}
+                    >
+                        {difficultyName(d)}
+                    </button>
+                ))}
             </div>
 
             {/* List */}

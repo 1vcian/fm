@@ -22,11 +22,11 @@ const METRICS: { id: SweepMetric; label: string; icon: typeof Heart; blurb: stri
     },
     {
         id: 'heal', label: 'HPS', icon: Activity,
-        blurb: 'Maximises total real-time healing: lifesteal plus health regen and skill healing, block-amplified.'
+        blurb: 'Maximises total real-time healing: lifesteal plus health regen and skill healing. An upper bound: healing is capped at max HP.'
     },
     {
         id: 'balanced', label: 'Balanced', icon: Check,
-        blurb: 'Balances DPS and HPS 50/50, normalised across every combination so neither metric dominates by raw scale.'
+        blurb: 'Geometric mean of DPS and HPS, each normalised by its best across every combination. A heuristic for ranking, not a game number.'
     }
 ];
 
@@ -45,7 +45,7 @@ export default function LoadoutOptimizer() {
     const { profile, updateNestedProfile } = useProfile();
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     const [respectSavedLevels, setRespectSavedLevels] = useState(true);
-    const { status, progress, results, evaluatedCount, totalCombos, rank, expand, isReady } = useLoadoutSweep(respectSavedLevels);
+    const { status, progress, results, evaluatedCount, totalCombos, rank, expand, isReady } = useLoadoutSweep({ respectSavedLevels });
 
     const [metric, setMetric] = useState<SweepMetric>('balanced');
     const [showComparison, setShowComparison] = useState(false);

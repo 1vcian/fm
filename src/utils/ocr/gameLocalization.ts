@@ -5,6 +5,7 @@
 // having to know the language up front. English (from the base configs) is registered
 // first and never overwritten.
 
+import type { GameLimits } from './gameLimits';
 import { normalizeName } from './parse';
 import {
     buildItemDictionary, buildSkillDictionary, buildSubstatDictionary,
@@ -99,7 +100,20 @@ export interface GameDictionaries {
     /** statId -> max % for a single roll (from SecondaryStatLibrary.UpperRange*100). Used to
      *  catch OCR reading a "+"/"-" sign as a leading digit (e.g. 46% where the cap is 12%). */
     statMax: Map<string, number>;
+    /** statId -> min % for a single roll (SecondaryStatLibrary.LowerRange*100). */
+    statMin?: Map<string, number>;
     loc: LocalizationData | null;
+    /** The game's bounds for every value a read can write (gameLimits.ts). Null until loaded. */
+    limits?: GameLimits | null;
+}
+
+function buildStatMin(secondaryStatLibrary: any): Map<string, number> {
+    const map = new Map<string, number>();
+    for (const [statId, def] of Object.entries<any>(secondaryStatLibrary || {})) {
+        const lo = def?.LowerRange, up = def?.UpperRange;
+        if (typeof lo === 'number' && typeof up === 'number' && up > 0) map.set(statId, lo * 100);
+    }
+    return map;
 }
 
 function buildStatMax(secondaryStatLibrary: any): Map<string, number> {
@@ -125,6 +139,7 @@ export function buildGameDictionaries(cfg: {
         mounts: buildMountDictLocalized(cfg.spriteMapping, loc),
         rarities: buildRarityDictLocalized(loc),
         statMax: buildStatMax(cfg.secondaryStatLibrary),
+        statMin: buildStatMin(cfg.secondaryStatLibrary),
         loc,
     };
 }

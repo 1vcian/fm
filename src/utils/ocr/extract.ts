@@ -6,7 +6,7 @@
 // from fuzzy-matching against the localized game dictionaries. The diff modal shows the
 // user each proposed change to accept/skip, so imperfect reads are safe.
 
-import { loadImage, imageToCanvas, cropCanvas, countGoldStars, findColorNameBand, detectItemTile, tileArtRect, tileLevelRect, relToPx, type Rect, type RelRect } from './imagePrep';
+import { loadImage, imageToCanvas, screenshotCanvas, cropCanvas, countGoldStars, findColorNameBand, detectItemTile, tileArtRect, tileLevelRect, relToPx, type Rect, type RelRect } from './imagePrep';
 import { ocrPageLines, ocr, PSM, type PageLine } from './ocrEngine';
 import { embedIcon, matchItemIcon } from './iconMatcher';
 import {
@@ -185,7 +185,7 @@ function extractCurrencies(lines: Line[], screen: ScreenType, kind: string | nul
 
 export async function extractScreenshot(src: Blob | string, dicts: GameDictionaries): Promise<ScreenExtraction> {
     const img = await loadImage(src);
-    const base = imageToCanvas(img);
+    const base = screenshotCanvas(img);
     const W = base.width, H = base.height;
     const big = cropCanvas(base, { x: 0, y: 0, w: W, h: H }, OCR_SCALE);
     const lines = toLines(await ocrPageLines(big));

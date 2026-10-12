@@ -173,7 +173,7 @@ export const ClanTabShell: React.FC<ClanTabShellProps> = ({ className }) => {
                 <div className="w-16 h-16 mx-auto rounded-2xl bg-accent-primary/15 flex items-center justify-center mb-4">
                     <Sparkles className="w-8 h-8 text-accent-primary" />
                 </div>
-                <h2 className="text-2xl font-black text-white mb-2">Clan hub — coming soon</h2>
+                <h2 className="text-2xl font-black text-white mb-2">Clan hub: coming soon</h2>
                 <p className="text-text-secondary max-w-xl mx-auto text-sm leading-relaxed">
                     Create or join a clan with a shared password, then see every member&apos;s resources and builds in one place.
                     Profiles will sync to the cloud so your clan can plan Guild War together.
@@ -202,7 +202,7 @@ export const ClanTabShell: React.FC<ClanTabShellProps> = ({ className }) => {
                 <Notice icon={<LogIn className="w-7 h-7" />} title="Sign in to use clans">
                     <p>
                         A clan is shared between people, so it needs an account to hang on to. Everything else in
-                        this app keeps working without one — your profiles, the calculators and the tech trees all
+                        this app keeps working without one: your profiles, the calculators and the tech trees all
                         live in this browser.
                     </p>
                     <p className="text-text-muted text-xs">
@@ -225,7 +225,7 @@ export const ClanTabShell: React.FC<ClanTabShellProps> = ({ className }) => {
                 <Notice icon={<Link2 className="w-7 h-7" />} title="This is somebody else's profile">
                     <p>
                         You opened a share link, so what is on screen is a copy that exists only in this tab. Clan
-                        membership never travels inside a shared profile — it belongs to a profile of your own.
+                        membership never travels inside a shared profile: it belongs to a profile of your own.
                     </p>
                     <p className="text-text-muted text-xs">
                         Use <span className="text-text-secondary font-semibold">Save to My Profiles</span> in the

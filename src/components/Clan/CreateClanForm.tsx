@@ -210,7 +210,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
         : storedTag.length > maxTag
             ? `At most ${maxTag} characters.`
             : !tagPattern.test(storedTag)
-                ? 'A–Z, 0–9, - and _ only.'
+                ? 'A-Z, 0-9, - and _ only.'
                 : null;
 
     const canSubmit =
@@ -342,7 +342,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary" />
                 <span>
                     You are looking at a profile somebody shared with you. A shared profile is not
-                    yours and belongs to no clan — save it as your own profile first, then create a
+                    yours and belongs to no clan: save it as your own profile first, then create a
                     clan with it.
                 </span>
             </p>,
@@ -375,7 +375,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
                     </span>
                 </p>
                 <p className="text-xs text-text-muted">
-                    Leave that clan first, or switch to another profile — membership is per profile,
+                    Leave that clan first, or switch to another profile: membership is per profile,
                     so a second profile on this account can found its own clan.
                 </p>
             </div>,
@@ -424,7 +424,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
                         This is what your members need. To join, they type the clan name{' '}
                         <span className="font-semibold text-text-primary">{created.name}</span>, the tag{' '}
                         <span className="font-mono font-semibold text-text-primary">{created.tag}</span>{' '}
-                        and this password. Post it in your clan chat — and copy it now, because after
+                        and this password. Post it in your clan chat, and copy it now, because after
                         this screen only you and your admins can look it up again.
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
@@ -526,7 +526,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary" />
                 <span>
                     <span className="font-semibold text-text-primary">{profile.name}</span> becomes the
-                    owner. Clan membership belongs to a profile, not to your account — your other
+                    owner. Clan membership belongs to a profile, not to your account: your other
                     profiles stay unaffected and can be in other clans.
                 </span>
             </p>

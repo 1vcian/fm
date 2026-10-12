@@ -3,11 +3,24 @@ import { Link } from 'react-router-dom';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
-import { getWarDayIndex, getWarDayName } from '../utils/guildWarUtils';
-import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X } from 'lucide-react';
+import { getWarDayIndex, getWarDayName, computeWarDaysMap, type WarCategory } from '../utils/guildWarUtils';
+import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X, Egg, type LucideIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/**
+ * Calculators worth opening on a war day. Which days they show on is never written here: it comes
+ * from the task categories each day carries in GuildWarDayConfigLibrary.json (computeWarDaysMap).
+ */
+const RECOMMENDED_TOOLS: { to: string; label: string; icon: LucideIcon; categories: WarCategory[] }[] = [
+    { to: '/calculators/forge', label: 'Forge Calculator', icon: Shield, categories: ['forge', 'forgeSpend'] },
+    { to: '/calculators/summons?tab=skills', label: 'Skill Summons', icon: Zap, categories: ['skills'] },
+    { to: '/calculators/summons?tab=mounts', label: 'Mount Trainer', icon: Shield, categories: ['mounts'] },
+    { to: '/calculators/summons?tab=eggs', label: 'Eggs and Pets', icon: Egg, categories: ['eggs', 'pets'] },
+    { to: '/calculators/tree', label: 'Tree Optimizer', icon: Zap, categories: ['tech'] },
+    { to: '/dungeons', label: 'Dungeon Analyzer', icon: Shield, categories: ['dungeons'] },
+];
 
 const getTodayIdx = () => {
     return getWarDayIndex();
@@ -27,6 +40,7 @@ export default function GuildWar() {
     const [activeDay, setActiveDay] = useState(getInitialDay());
 
     const loading = l1 || l2 || l3 || l4 || l5;
+    const warDays = useMemo(() => computeWarDaysMap(dayConfig), [dayConfig]);
 
     // Process tasks for the active day
     const dayTasks = useMemo(() => {
@@ -127,63 +141,24 @@ export default function GuildWar() {
                                     Recommended Calculators
                                 </h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <Link to="/calculators/forge" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
-                                        <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
-                                            <Shield className="w-5 h-5 text-accent-primary" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Forge Master</div>
-                                            <div className="text-[10px] text-text-muted">Daily Points</div>
-                                        </div>
-                                    </Link>
-
-                                    {(activeDay === 0 || activeDay === 2 || activeDay === 4 || activeDay === 5) && (
-                                        <Link to="/calculators/skills" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-secondary/40 hover:bg-accent-secondary/5 transition-all group shadow-sm hover:shadow-accent-secondary/5">
-                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
-                                                <Zap className="w-5 h-5 text-accent-secondary" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Skill Summons</div>
-                                                <div className="text-[10px] text-text-muted">Tue, Thu, Sat</div>
-                                            </div>
-                                        </Link>
+                                    {!RECOMMENDED_TOOLS.some(tool => tool.categories.some(c => warDays[c]?.includes(activeDay))) && (
+                                        <div className="sm:col-span-3 text-xs text-text-muted p-3">No preparation tasks on this day in the current game data.</div>
                                     )}
-
-                                    {(activeDay === 2 || activeDay === 4 || activeDay === 5) && (
-                                        <Link to="/calculators/mounts" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
-                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
-                                                <Shield className="w-5 h-5 text-accent-primary" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Mount Trainer</div>
-                                                <div className="text-[10px] text-text-muted">Thu, Sat</div>
-                                            </div>
-                                        </Link>
-                                    )}
-
-                                    {(activeDay === 0 || activeDay === 3 || activeDay === 5) && (
-                                        <Link to="/calculators/tree" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-secondary/40 hover:bg-accent-secondary/5 transition-all group shadow-sm hover:shadow-accent-secondary/5">
-                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
-                                                <Zap className="w-5 h-5 text-accent-secondary" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Tree Optimizer</div>
-                                                <div className="text-[10px] text-text-muted">Tue, Fri</div>
-                                            </div>
-                                        </Link>
-                                    )}
-
-                                    {(activeDay === 1 || activeDay === 3 || activeDay === 4 || activeDay === 5) && (
-                                        <Link to="/dungeons" className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
-                                            <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
-                                                <Shield className="w-5 h-5 text-accent-primary" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">Dungeon Analyzer</div>
-                                                <div className="text-[10px] text-text-muted">Wed, Fri, Sat</div>
-                                            </div>
-                                        </Link>
-                                    )}
+                                    {RECOMMENDED_TOOLS.filter(tool => tool.categories.some(c => warDays[c]?.includes(activeDay))).map(tool => {
+                                        const days = Array.from(new Set(tool.categories.flatMap(c => warDays[c] || []))).sort((a, b) => a - b);
+                                        const Icon = tool.icon;
+                                        return (
+                                            <Link key={tool.to} to={tool.to} className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
+                                                <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
+                                                    <Icon className="w-5 h-5 text-accent-primary" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">{tool.label}</div>
+                                                    <div className="text-[10px] text-text-muted">{days.map(d => DAYS[d].slice(0, 3)).join(', ')}</div>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
 

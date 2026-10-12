@@ -2,13 +2,14 @@ import { useMemo } from 'react';
 import { useProfile } from '../context/ProfileContext';
 import { useGameData } from './useGameData';
 import { calculateStats, LibraryData, AggregatedStats } from '../utils/statEngine';
-import { useTreeMode } from '../context/TreeModeContext';
+import { useTreeMode, TreeMode } from '../context/TreeModeContext';
 import { UserProfile } from '../types/Profile';
 
-export function useGlobalStats(excludeSubstats = false): AggregatedStats | null {
-    const { profile } = useProfile();
-    const { treeMode } = useTreeMode();
-
+/**
+ * Every library the stat engine needs, for the selected game data version. Shared by
+ * useGlobalStats (the active profile) and by pages that compute stats for other profiles (PvP).
+ */
+export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
     // Load all required game data
     // We use deduplicated caching so this shouldn't fire multiple network requests if already loaded
     const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
@@ -65,65 +66,90 @@ export function useGlobalStats(excludeSubstats = false): AggregatedStats | null 
         skinsLibrary, setsLibrary, ascensionConfigsLibrary,
     ]);
 
-    // Build effective profile based on tree mode
-    const effectiveProfile = useMemo((): UserProfile => {
-        if (treeMode === 'my') {
-            return profile;
-        }
+    const ready = !!(itemBalancingConfig && itemBalancingLibrary && techTreeLibrary && techTreePositionLibrary);
+    return { libs, ready };
+}
 
-        if (treeMode === 'empty') {
-            // Empty tree: all nodes at 0
-            return {
-                ...profile,
-                techTree: {
-                    Forge: {},
-                    Power: {},
-                    SkillsPetTech: {},
-                    Clan: {}
-                }
-            };
-        }
+/**
+ * The profile with its tech tree replaced according to the header's tree mode
+ * ('my' keeps the profile tree, 'empty' zeroes every node, 'max' maxes every node).
+ * Pure so every stat consumer (useGlobalStats, useLoadoutSweep) builds the exact same input.
+ */
+export function applyTreeMode(profile: UserProfile, treeMode: TreeMode, libs: LibraryData): UserProfile {
+    if (treeMode === 'my') {
+        return profile;
+    }
 
-        // Max tree: all nodes at max level
-        // We need to build max levels from techTreePositionLibrary
-        const maxTree: UserProfile['techTree'] = {
-            Forge: {},
-            Power: {},
-            SkillsPetTech: {},
-            Clan: {}
-        };
-
-        if (techTreePositionLibrary && techTreeLibrary) {
-            const trees: ('Forge' | 'Power' | 'SkillsPetTech')[] = ['Forge', 'Power', 'SkillsPetTech'];
-            for (const tree of trees) {
-                const treeData = techTreePositionLibrary[tree];
-                if (treeData?.Nodes) {
-                    for (const node of treeData.Nodes) {
-                        const nodeData = techTreeLibrary[node.Type];
-                        const maxLevel = nodeData?.MaxLevel || 5;
-                        maxTree[tree][node.Id] = maxLevel;
-                    }
-                }
-            }
-        }
-
-        if (guildPositionLibrary && guildUpgradeLibrary) {
-            const nodesList: string[] = [];
-            for (const cat of Object.keys(guildPositionLibrary)) {
-                if (guildPositionLibrary[cat]?.Nodes) {
-                    nodesList.push(...guildPositionLibrary[cat].Nodes);
-                }
-            }
-            nodesList.forEach((type, idx) => {
-                maxTree.Clan[idx] = guildUpgradeLibrary[type]?.MaxLevel || 20;
-            });
-        }
-
+    if (treeMode === 'empty') {
+        // Empty tree: all nodes at 0
         return {
             ...profile,
-            techTree: maxTree
+            techTree: {
+                Forge: {},
+                Power: {},
+                SkillsPetTech: {},
+                Clan: {}
+            }
         };
-    }, [profile, treeMode, techTreePositionLibrary, techTreeLibrary, guildPositionLibrary, guildUpgradeLibrary]);
+    }
+
+    const { techTreeLibrary, techTreePositionLibrary, guildTechTreePositionLibrary: guildPositionLibrary, guildTechTreeUpgradeLibrary: guildUpgradeLibrary } = libs as any;
+
+    // Max tree: all nodes at max level, built from techTreePositionLibrary
+    const maxTree: UserProfile['techTree'] = {
+        Forge: {},
+        Power: {},
+        SkillsPetTech: {},
+        Clan: {}
+    };
+
+    if (techTreePositionLibrary && techTreeLibrary) {
+        const trees: ('Forge' | 'Power' | 'SkillsPetTech')[] = ['Forge', 'Power', 'SkillsPetTech'];
+        for (const tree of trees) {
+            const treeData = techTreePositionLibrary[tree];
+            if (treeData?.Nodes) {
+                for (const node of treeData.Nodes) {
+                    const nodeData = techTreeLibrary[node.Type];
+                    const maxLevel = nodeData?.MaxLevel || 5;
+                    maxTree[tree][node.Id] = maxLevel;
+                }
+            }
+        }
+    }
+
+    if (guildPositionLibrary && guildUpgradeLibrary) {
+        const nodesList: string[] = [];
+        for (const cat of Object.keys(guildPositionLibrary)) {
+            if (guildPositionLibrary[cat]?.Nodes) {
+                nodesList.push(...guildPositionLibrary[cat].Nodes);
+            }
+        }
+        nodesList.forEach((type, idx) => {
+            maxTree.Clan[idx] = guildUpgradeLibrary[type]?.MaxLevel || 20;
+        });
+    }
+
+    return {
+        ...profile,
+        techTree: maxTree
+    };
+}
+
+/** The active profile with the header's tree mode applied (see applyTreeMode). */
+export function useTreeModeProfile(): { profile: UserProfile; libs: LibraryData; ready: boolean } {
+    const { profile } = useProfile();
+    const { treeMode } = useTreeMode();
+    const { libs, ready } = useStatLibraries();
+    const effectiveProfile = useMemo(
+        () => applyTreeMode(profile, treeMode, libs),
+        [profile, treeMode, libs]
+    );
+    return { profile: effectiveProfile, libs, ready };
+}
+
+export function useGlobalStats(excludeSubstats = false): AggregatedStats | null {
+    const { profile: effectiveProfile, libs } = useTreeModeProfile();
+    const { itemBalancingConfig, itemBalancingLibrary } = libs as any;
 
     // Calculate stats
     // We memoize the result to avoid recalculating on every render if inputs haven't changed

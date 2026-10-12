@@ -1,0 +1,47 @@
+{
+  "0": {
+    "ColorId": 0,
+    "ColorType": "Background",
+    "HexCode": "#FC672A"
+  },
+  "1": {
+    "ColorId": 1,
+    "ColorType": "Background",
+    "HexCode": "#FC3F2A"
+  },
+  "2": {
+    "ColorId": 2,
+    "ColorType": "Background",
+    "HexCode": "#FC2A76"
+  },
+  "3": {
+    "ColorId": 3,
+    "ColorType": "Background",
+    "HexCode": "#A646FF"
+  },
+  "4": {
+    "ColorId": 4,
+    "ColorType": "Background",
+    "HexCode": "#327DF3"
+  },
+  "5": {
+    "ColorId": 5,
+    "ColorType": "Background",
+    "HexCode": "#469EFF"
+  },
+  "6": {
+    "ColorId": 6,
+    "ColorType": "Background",
+    "HexCode": "#5A5A5A"
+  },
+  "7": {
+    "ColorId": 7,
+    "ColorType": "Foreground",
+    "HexCode": "#FFD700"
+  },
+  "8": {
+    "ColorId": 8,
+    "ColorType": "Foreground",
+    "HexCode": "#FFFFFF"
+  }
+}

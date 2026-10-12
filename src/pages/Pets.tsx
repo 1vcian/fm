@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useGameData } from '../hooks/useGameData';
+import { usePetNames } from '../hooks/usePetNames';
 import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
@@ -51,9 +52,15 @@ export default function Pets() {
     const { profile } = useProfile();
     const { selectedVersion } = useGameDataContext();
     const { data: petLibrary, loading: l1 } = useGameData<any>('PetLibrary.json');
+    const petName = usePetNames();
     const { data: petUpgrades, loading: l2 } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: petBalancing, loading: l3 } = useGameData<any>('PetBalancingLibrary.json');
     const { data: petUnlockLib, loading: l3b } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
+    // Enumerable.Last over the library rows, in config order (used once pets are ascended).
+    const lastPetUnlockRow = useMemo(() => {
+        const rows = petUnlockLib ? Object.values(petUnlockLib) : [];
+        return rows.length ? (rows[rows.length - 1] as any) : undefined;
+    }, [petUnlockLib]);
     const { data: spriteMapping, loading: l4 } = useGameData<any>('ManualSpriteMapping.json');
     const { data: ascensionConfigs, loading: l5 } = useGameData<any>('AscensionConfigsLibrary.json');
 
@@ -115,7 +122,7 @@ export default function Pets() {
                     rarity,
                     type,
                     key,
-                    name: spriteInfo?.name || `Pet #${id}`,
+                    name: petName(rarity, id),
                     spriteIndex: spriteInfo?.spriteIndex ?? -1,
                 };
             })
@@ -174,7 +181,7 @@ export default function Pets() {
         Object.keys(petUpgrades).forEach(rarity => {
             const levelInfo = petUpgrades[rarity]?.LevelInfo || [];
             let sum = 0;
-            const sums = [0]; // Level 1 (index 0) has 0 total exp
+            const sums = [0]; // sums[D] = game total XP of a display level D pet with 0 progress (includes LevelInfo[0], the pet's own base XP)
             for (let i = 0; i < levelInfo.length; i++) {
                 sum += levelInfo[i].Experience || 0;
                 sums.push(sum);
@@ -243,8 +250,9 @@ export default function Pets() {
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
                         <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                        {/* Ascensions-layer Multiplier: x(1 + Value) of AscensionConfigPerLevel[Level - 1] only (AscensionModel.GetLevelStats 0x77E7364; layer math in docs/skill-verification-2026_10.md section 2). */}
                         {ascensionLevel > 0 && (
-                            <span className="text-xs text-amber-400 font-mono">+{((ascensionMulti.dmg) * 100).toFixed(0)}%</span>
+                            <span className="text-xs text-amber-400 font-mono">x{formatNumber(ascensionMulti.dmg)}</span>
                         )}
                     </div>
                 </div>
@@ -284,7 +292,7 @@ export default function Pets() {
                                 {rarity}
                             </span>
                             <div className="text-[10px] font-mono text-text-muted bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                                Exp: {(petUpgrades?.[rarity]?.LevelInfo?.[0]?.Experience || 0).toLocaleString()}
+                                Base Exp: {(petUpgrades?.[rarity]?.LevelInfo?.[0]?.Experience || 0).toLocaleString()}
                             </div>
                         </div>
                     ))}
@@ -392,7 +400,8 @@ export default function Pets() {
                                             <TrendingUp className="w-2.5 h-2.5 text-accent-primary" /> Next Lvl
                                         </div>
                                         <div className="font-mono font-bold text-accent-primary text-xs">
-                                            {globalLevel >= upgradeData.length - 1 ? 'MAX' : (upgradeData[globalLevel]?.Experience || 0).toLocaleString()}
+                                            {/* Stored level is 0-based (display D = stored D - 1); the game needs LevelInfo[stored + 1].Experience to level up, i.e. LevelInfo[D]. LevelInfo[0] is the pet's base XP. */}
+                                            {globalLevel >= upgradeData.length ? 'MAX' : (upgradeData[globalLevel]?.Experience || 0).toLocaleString()}
                                         </div>
                                     </div>
                                     <div className="bg-bg-primary/50 p-2 rounded border border-white/5 flex flex-col items-center">
@@ -406,9 +415,12 @@ export default function Pets() {
                                 </div>
 
                                 <div className="flex items-center justify-between mt-4 pb-1">
-                                    <div className="text-[10px] font-bold text-text-muted uppercase">Skills</div>
+                                    {/* Count of secondary stats (PetExtensions.CreatePet 0x7845D44): with pets ascended
+                                        (PetsAscensionLevel >= 1) the game takes the LAST SecondaryStatPetUnlockLibrary row,
+                                        otherwise the row of the pet's rarity; its NumberOfSecondStats is the count. */}
+                                    <div className="text-[10px] font-bold text-text-muted uppercase">Substats</div>
                                     <div className="bg-accent-primary/10 text-accent-primary px-2 py-0.5 rounded text-xs font-mono font-bold">
-                                        {ascensionLevel > 0 ? 2 : (petUnlockLib?.[pet.rarity]?.NumberOfSecondStats || 0)}
+                                        {(ascensionLevel > 0 ? lastPetUnlockRow : petUnlockLib?.[pet.rarity])?.NumberOfSecondStats || 0}
                                     </div>
                                 </div>
                             </Card>

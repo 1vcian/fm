@@ -3,6 +3,7 @@
  * Central engine for calculating player stats from all sources (Items, Pets, Tech Tree, Mounts, Skills).
  */
 
+import { mergeClanModifiers, clanNodeValueAtLevel } from './clanTechStacking';
 import { UserProfile } from '../types/Profile';
 import { SEASON_STATS as FAIRY_SEASON_STATS, applyFairyBonus } from './fairies';
 import { SKILL_MECHANICS, attackIntervalSeconds, doubleDelaySeconds } from './constants';
@@ -85,8 +86,8 @@ export interface AggregatedStats {
     rangedDamageMultiplier: number; // RangedDamageMulti secondary stat
     attackSpeedMultiplier: number;
     moveSpeed: number;
-    /** PlayerAttackRange tech/clan node total (Multiplier fraction on the weapon's range). */
-    attackRangeMultiplier: number;
+    /** PlayerAttackRange tech/clan node total: Additive world units on top of the weapon's range. */
+    attackRangeBonus: number;
     /**
      * Battle-context Damage/Health multipliers from conditional tech and clan nodes
      * (StatCondition-gated: InMission, InClanWarOrBrawl, InLeagueBattle, the four dungeons).
@@ -229,7 +230,7 @@ export const DEFAULT_STATS: AggregatedStats = {
     skillPassiveHealth: 0,
     mountDamage: 0,
     mountHealth: 0,
-    attackRangeMultiplier: 0,
+    attackRangeBonus: 0,
     contextBonuses: {
         mission: { dmg: 0, hp: 0 },
         clanWar: { dmg: 0, hp: 0 },
@@ -677,6 +678,7 @@ export class StatEngine {
                 const guildPos = this.libs.guildTechTreePositionLibrary;
                 const guildUpgrade = this.libs.guildTechTreeUpgradeLibrary;
                 if (!guildPos || !guildUpgrade) continue;
+                const clanSums: Record<string, number> = {};
 
                 // Flatten all nodes from categories to index -> type mapping
                 const nodesList: string[] = [];
@@ -696,11 +698,12 @@ export class StatEngine {
                     if (!upgradeDef) continue;
 
                     // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
-                    const valPerLevel = upgradeDef.ValuePerLevel || 0;
-                    const totalVal = valPerLevel * level;
+                    const totalVal = clanNodeValueAtLevel(upgradeDef, level);
 
-                    this.techModifiers[nodeType] = (this.techModifiers[nodeType] || 0) + totalVal;
+                    clanSums[nodeType] = (clanSums[nodeType] || 0) + totalVal;
                 }
+                // Clan is the last tree, so the personal modifiers are complete here.
+                mergeClanModifiers(this.techModifiers, clanSums, this.libs.techTreeLibrary);
                 continue;
             }
 
@@ -1291,8 +1294,9 @@ export class StatEngine {
             const passiveData = this.libs.skillPassiveLibrary[rarity];
             if (!passiveData?.LevelStats) continue;
 
-            const levelIdx = Math.max(0, Math.min(level - 1, passiveData.LevelStats.length - 1));
-            const levelInfo = passiveData.LevelStats[levelIdx];
+            // LevelStats[Level] with the stored 0-based level; out of range contributes nothing
+            // (GetResolvedPassiveSkillStats, 0x77AD528), so no clamp to the last row.
+            const levelInfo = passiveData.LevelStats[level - 1];
             if (!levelInfo?.Stats) continue;
 
             let skillBaseDmg = 0;
@@ -1307,10 +1311,10 @@ export class StatEngine {
 
             // Apply tech tree bonus, ascension, and ROUND to integer for EACH skill (as the game does)
             const withBonusDmg = skillBaseDmg * (1 + skillPassiveDamageBonus) * ascensionPassiveDmgMulti;
-            totalPassiveDmg += Math.floor(withBonusDmg);
+            totalPassiveDmg += withBonusDmg; // the game keeps FD6 precision, no rounding
 
             const withBonusHp = skillBaseHp * (1 + skillPassiveHealthBonus) * ascensionPassiveHpMulti;
-            totalPassiveHp += Math.floor(withBonusHp);
+            totalPassiveHp += withBonusHp;
         }
 
         this.stats.skillPassiveDamage = totalPassiveDmg;
@@ -1354,8 +1358,7 @@ export class StatEngine {
                     if (!nodeData?.Stats) continue;
 
                     // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
-                    const valPerLevel = upgradeDef.ValuePerLevel || 0;
-                    const totalValue = valPerLevel * level;
+                    const totalValue = clanNodeValueAtLevel(upgradeDef, level);
 
                     for (const stat of nodeData.Stats) {
                         if (stat.StatNode?.Condition && stat.StatNode.Condition !== 'None') {
@@ -1744,12 +1747,15 @@ export class StatEngine {
         this.debugLogs.push(`Calculation Layers: CommonDmg=${commonDamageMulti.toFixed(3)}, EquipDmg=${equipDamageMulti.toFixed(3)} (Forge: +${this.forgeAscensionDamageMulti.toFixed(3)})`);
 
         // 5. Final Calculation by Buckets
-        // (Equipment) * EquipMulti + (Systems) * CommonMulti
-        const equipContributionDmg = (this.stats.basePlayerDamage + weaponWithMelee + otherItemDamage) * equipDamageMulti;
-        const equipContributionHp = (this.stats.basePlayerHealth + this.stats.itemHealth) * equipHealthMulti;
+        // (Equipment) * EquipMulti + (Base player + Systems) * CommonMulti
+        // The base 10 dmg / 80 hp is a Player-target Additive node (GetBaseStats, 0x77B44DC), not
+        // an Equipment one, so the Equipment-target forge ascension (Ascensions layer, resolved
+        // per item in GetResolvedItemStats 0x77B3710) never reaches it.
+        const equipContributionDmg = (weaponWithMelee + otherItemDamage) * equipDamageMulti;
+        const equipContributionHp = this.stats.itemHealth * equipHealthMulti;
 
-        const systemContributionDmg = (this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMulti;
-        const systemContributionHp = (this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMulti;
+        const systemContributionDmg = (this.stats.basePlayerDamage + this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMulti;
+        const systemContributionHp = (this.stats.basePlayerHealth + this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMulti;
 
         // Populate breakdowns for GENERIC Multipliers
         // Note: Tree contribution was already tracked in applyStat during collectTechTreeStats
@@ -1799,11 +1805,11 @@ export class StatEngine {
         const equipDamageMultiPow = commonDamageMultiPow * (this.forgeAscensionDamageMulti || 1);
         const equipHealthMultiPow = commonHealthMultiPow * (this.forgeAscensionHealthMulti || 1);
         const powDmgBeforeGlobal =
-            (this.stats.basePlayerDamage + weaponWithMelee + otherItemDamage) * equipDamageMultiPow
-            + (this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMultiPow;
+            (weaponWithMelee + otherItemDamage) * equipDamageMultiPow
+            + (this.stats.basePlayerDamage + this.stats.petDamage + this.stats.skillPassiveDamage + this.mountDamage) * commonDamageMultiPow;
         const powHpBeforeGlobal =
-            (this.stats.basePlayerHealth + this.stats.itemHealth) * equipHealthMultiPow
-            + (this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMultiPow;
+            this.stats.itemHealth * equipHealthMultiPow
+            + (this.stats.basePlayerHealth + this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMultiPow;
         const powerDamageTotal = powDmgBeforeGlobal * globalFactorDmg * specificDamageMultiPow;
         const powerHealthTotal = powHpBeforeGlobal * globalFactorHp;
 
@@ -1901,7 +1907,8 @@ export class StatEngine {
         const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale"];
         const equipped = this.profile.skills.equipped || [];
         const skillFactor = this.stats.skillDamageMultiplier || 1;
-        const globalFactor = this.stats.damageMultiplier || 1;
+        // Skill values: base x (1 + DamageMulti substat) x skill multiplier (binary, CalculateValueFromStats).
+        const globalFactor = 1 + (this.stats.secondaryDamageMulti || 0);
         const totalDamageMulti = skillFactor * globalFactor;
 
         if (this.libs.skillLibrary) {
@@ -2021,7 +2028,7 @@ export class StatEngine {
         // Move Speed: the PlayerMoveSpeed tech/clan node plus the substat pool. Both are
         // Multiplier-nature contributions on the game's base 2.0 (the engine applies the base).
         this.stats.moveSpeed = (this.techModifiers['PlayerMoveSpeed'] || 0) + this.secondaryStats.moveSpeed;
-        this.stats.attackRangeMultiplier = this.techModifiers['PlayerAttackRange'] || 0;
+        this.stats.attackRangeBonus = this.techModifiers['PlayerAttackRange'] || 0;
 
         // Conditional battle-context nodes: collected like every other node, but the game only
         // applies them inside the matching battle (StatCondition), so they live in their own
@@ -2059,8 +2066,8 @@ export class StatEngine {
                 const baseSkillHeal = skillData.HealthPerLevel?.[levelIdx] || 0;
                 const cooldown = skillData.Cooldown || 1;
 
-                const cdMult = Math.max(0.1, 1 - this.stats.skillCooldownReduction);
-                const finalCd = Math.max(0.1, cooldown * cdMult);
+                // Cooldown x (1 - CDR): no floor in the game.
+                const finalCd = cooldown * (1 - this.stats.skillCooldownReduction);
 
                 if (baseSkillDmg > 0 || baseSkillHeal > 0) {
                     // SKILL DPS FORMULA (mirrors Forge Ascension for equipment)
@@ -2076,7 +2083,7 @@ export class StatEngine {
                     // 3. The ratio between two builds stays constant across ascension levels
                     
                     const skillMulti = this.stats.skillDamageMultiplier; // Already = (1 + tech + items) * ascension
-                    const commonMulti = this.stats.damageMultiplier;     // Common layer (tech tree + item dmg%)
+                    const commonMulti = 1 + (this.stats.secondaryDamageMulti || 0); // DamageMulti substat layer (binary)
                     const effectiveMultiplier = skillMulti * commonMulti;
 
                     // Technical Debug Log
@@ -2099,13 +2106,14 @@ export class StatEngine {
                     const isBuffSkill = BUFF_SKILLS.includes(String(skill.id));
 
                     if (isBuffSkill) {
-                        const skillVal = baseSkillDmg > 0 ? baseSkillDmg : baseSkillHeal;
-                        const finalBonus = skillVal * effectiveMultiplier;
+                        const finalBonus = baseSkillDmg > 0
+                            ? baseSkillDmg * effectiveMultiplier
+                            : baseSkillHeal * this.stats.skillHealthMultiplier * (1 + (this.stats.secondaryHealthMulti || 0));
 
                         // Uptime calculation (average contribution)
                         const duration = skillData.ActiveDuration || 0;
                         const cycle = finalCd + duration;
-                        const uptime = duration / Math.max(0.1, cycle);
+                        const uptime = cycle > 0 ? duration / cycle : 0;
 
                         // Buff damage benefits from weapon stats (Power x APS x Crit x Double)
                         const aps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
@@ -2132,9 +2140,9 @@ export class StatEngine {
 
                     if (baseSkillHeal > 0) {
                         // SKILL HEALING (Same pattern as damage)
-                        // Use damageMultiplier as the common layer for active skills (per user request)
+                        // Health chain of the binary: HealthMulti substat layer, not the damage one.
                         const hSkillMulti = this.stats.skillHealthMultiplier; // (1 + tech + items) * ascension
-                        const hCommonMulti = this.stats.damageMultiplier;
+                        const hCommonMulti = 1 + (this.stats.secondaryHealthMulti || 0);
                         const hEffectiveMultiplier = hSkillMulti * hCommonMulti;
 
 
@@ -2191,16 +2199,17 @@ export class StatEngine {
         // --- HPS CALCULATION (Theoretical vs Real-Time) ---
         const regen = this.stats.totalHealth * this.stats.healthRegen;
         const skills = this.stats.skillHps;
-        const blockChance = Math.min(this.stats.blockChance || 0, 0.95);
-        const blockFactor = 1 / (1 - blockChance);
+        // No block term: BattleSystem.ApplyDmg (RVA 0x77F4BD0) applies block only to incoming
+        // damage and heals lifesteal with FD6.Min(Hp + heal, HpMax), so block never scales
+        // healing. These are upper bounds: healing past max HP is lost in the game.
 
         // Theoretical HPS (based on Theoretical Weapon DPS)
         const lifestealTheo = this.stats.weaponDps * this.stats.lifeSteal;
-        this.stats.theoreticalTotalHps = (regen + lifestealTheo + skills) * blockFactor;
+        this.stats.theoreticalTotalHps = regen + lifestealTheo + skills;
 
         // Real-Time HPS (based on Real Weapon DPS)
         const lifestealReal = this.stats.realWeaponDps * this.stats.lifeSteal;
-        this.stats.realTotalHps = (regen + lifestealReal + skills) * blockFactor;
+        this.stats.realTotalHps = regen + lifestealReal + skills;
 
         this.debugLogs.push(`FINAL DPS: Weapon=${this.stats.weaponDps.toFixed(0)}, RealWeapon=${this.stats.realWeaponDps.toFixed(0)}, Total=${this.stats.averageTotalDps.toFixed(0)}`);
         this.debugLogs.push(`FINAL HPS: Theo=${this.stats.theoreticalTotalHps.toFixed(0)}, Real=${this.stats.realTotalHps.toFixed(0)}`);

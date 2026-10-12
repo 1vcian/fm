@@ -1,64 +1,105 @@
 {
-  "version": "2026_09_08_08_08",
-  "previous": "2026_09_02_09_08",
+  "version": "2026_10_08_09_03",
+  "previous": "2026_09_08_08_08",
   "changes": [
     {
-      "file": "AscensionStarsBonusLibrary",
+      "file": "AchievementLibrary",
+      "kind": "added",
+      "lines": []
+    },
+    {
+      "file": "MainBattleConfig",
       "kind": "changed",
       "lines": [
-        "1.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "2.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "3.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "4.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "5.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "6.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "7.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "8.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "9.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "10.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "11.BonusStats.Stats[0].Value: 0.1 -> 0.05",
-        "12.BonusStats.Stats[0].Value: 0.1 -> 0.05"
+        "DifficultyScaling: added"
       ]
     },
     {
-      "file": "GuildBaseConfig",
+      "file": "PetLibrary",
       "kind": "changed",
       "lines": [
-        "ResetGuildPotionsOnTechTreeReset: false -> true"
+        "{'Rarity': 'Common', 'Id': 0}.Name: added",
+        "{'Rarity': 'Common', 'Id': 1}.Name: added",
+        "{'Rarity': 'Common', 'Id': 2}.Name: added",
+        "{'Rarity': 'Common', 'Id': 3}.Name: added",
+        "{'Rarity': 'Common', 'Id': 4}.Name: added",
+        "{'Rarity': 'Common', 'Id': 5}.Name: added",
+        "{'Rarity': 'Rare', 'Id': 0}.Name: added",
+        "{'Rarity': 'Rare', 'Id': 1}.Name: added",
+        "{'Rarity': 'Rare', 'Id': 2}.Name: added",
+        "{'Rarity': 'Rare', 'Id': 3}.Name: added",
+        "{'Rarity': 'Rare', 'Id': 4}.Name: added",
+        "{'Rarity': 'Epic', 'Id': 0}.Name: added",
+        "{'Rarity': 'Epic', 'Id': 1}.Name: added",
+        "{'Rarity': 'Epic', 'Id': 2}.Name: added",
+        "{'Rarity': 'Epic', 'Id': 3}.Name: added",
+        "{'Rarity': 'Epic', 'Id': 4}.Name: added",
+        "{'Rarity': 'Legendary', 'Id': 0}.Name: added",
+        "{'Rarity': 'Legendary', 'Id': 1}.Name: added",
+        "{'Rarity': 'Legendary', 'Id': 2}.Name: added",
+        "{'Rarity': 'Ultimate', 'Id': 0}.Name: added",
+        "{'Rarity': 'Ultimate', 'Id': 1}.Name: added",
+        "{'Rarity': 'Ultimate', 'Id': 2}.Name: added",
+        "{'Rarity': 'Mythic', 'Id': 0}.Name: added",
+        "{'Rarity': 'Mythic', 'Id': 1}.Name: added",
+        "and 1 more changes in this file"
       ]
     },
     {
-      "file": "GuildTechRaceEliminationLibrary",
+      "file": "PlayerSegments",
       "kind": "changed",
       "lines": [
-        "Tuesday.MaxRemainingParticipantsEOD: 7 -> 6",
-        "Wednesday.MaxRemainingParticipantsEOD: 7 -> 5",
-        "Thursday.MaxRemainingParticipantsEOD: 7 -> 4",
-        "Friday.MaxRemainingParticipantsEOD: 7 -> 3",
-        "Saturday.MaxRemainingParticipantsEOD: 7 -> 2",
-        "Sunday.MaxRemainingParticipantsEOD: 7 -> 1"
+        "ChatTranslation.PlayerCondition.PropertyRequirements[0].Min._value: true -> false"
       ]
     },
     {
-      "file": "GuildTechRaceRewardLibrary",
+      "file": "TechNodesLibrary",
       "kind": "changed",
       "lines": [
-        "1.Rewards[0].Amount: 400 -> 800",
-        "2.Rewards[0].Amount: 150 -> 300",
-        "3.Rewards[0].Amount: 50 -> 150",
-        "4.Rewards[0].Amount: 30 -> 80",
-        "5.Rewards[0].Amount: 20 -> 40",
-        "6.Rewards[0].Amount: 10 -> 20",
-        "7.Rewards[0].Amount: 5 -> 10"
+        "MissionRewards.StatNodes[0].Layer: None -> TechTree",
+        "MissionRewards.StatNodes[1].Layer: None -> TechTree",
+        "GuildTechRaceRewardMultiplier.StatNodes[0].Layer: None -> TechTree",
+        "GuildTechRaceRewardMultiplier.StatNodes[1].Layer: None -> TechTree"
+      ]
+    },
+    {
+      "file": "TrackingEventLibrary",
+      "kind": "changed",
+      "lines": [
+        "lm_skills_unlocked.ProductIds: added",
+        "lm_pets_unlocked.ProductIds: added",
+        "lm_techtree_unlocked.ProductIds: added",
+        "lm_guilds_unlocked.ProductIds: added",
+        "lm_chat_unlocked.ProductIds: added",
+        "lm_arena_unlocked.ProductIds: added",
+        "lm_stepping_stones_unlocked.ProductIds: added",
+        "lm_battle_2_5.ProductIds: added",
+        "lm_battle_2_15.ProductIds: added",
+        "lm_battle_3_1.ProductIds: added",
+        "lm_battle_3_8.ProductIds: added",
+        "lm_battle_3_15.ProductIds: added",
+        "lm_battle_4_1.ProductIds: added",
+        "lm_battle_4_8.ProductIds: added",
+        "lm_battle_4_15.ProductIds: added",
+        "lm_battle_5_1.ProductIds: added",
+        "lm_battle_5_8.ProductIds: added",
+        "lm_battle_5_15.ProductIds: added",
+        "lm_battle_6_1.ProductIds: added",
+        "lm_battle_6_8.ProductIds: added",
+        "lm_battle_6_15.ProductIds: added",
+        "lm_battle_7_1.ProductIds: added",
+        "lm_battle_7_8.ProductIds: added",
+        "lm_battle_7_15.ProductIds: added",
+        "and 31 more changes in this file"
       ]
     },
     {
       "file": "WorldIndexConfigLibrary",
       "kind": "changed",
       "lines": [
-        "0.WorldIndex: 55 -> 58",
-        "1.WorldIndex: 56 -> 59",
-        "2.WorldIndex: 57 -> 60"
+        "0.WorldIndex: 58 -> 61",
+        "1.WorldIndex: 59 -> 62",
+        "2.WorldIndex: 60 -> 63"
       ]
     }
   ]

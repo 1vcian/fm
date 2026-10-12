@@ -3,11 +3,13 @@
  * cancelling magic numbers (x50 fixed-point patch and x0.02 "calibration").
  *
  *   main battle (MainBattleBalancing, 0x7736064):
- *     hp  = AgeScaling[age].Health * pow(EnemyHpDifficultyMulti,  difficultyIdx)
- *     dmg = AgeScaling[age].Damage * pow(EnemyDmgDifficultyMulti, difficultyIdx)
+ *     hp  = AgeScaling[age].Health * DifficultyScaling[difficultyIdx].HpMulti
+ *     dmg = AgeScaling[age].Damage * DifficultyScaling[difficultyIdx].DmgMulti
  *           * (weapon.IsRanged ? EnemyRangedDamageMultiplier : 1)
- *   dungeons: flat Health/Damage straight from the level's library row.
- *   missions: floor(Base * HealthAndDamageLevelMultiplier^(level-1)), UnitCount clones.
+ *     (before 2026_10 the multipliers were pow(Enemy*DifficultyMulti, difficultyIdx))
+ *   dungeons: flat Health/Damage straight from the level's library row (Hammer Thief: one
+ *     hardcoded thief, see hammerThiefSpec).
+ *   missions: ToInt64(Base * (float)HealthAndDamageLevelMultiplier^(level-1)), UnitCount clones.
  *
  * BattleIdx never scales stats; it only picks the wave composition. Enemies carry ONLY
  * hp/dmg (never crit/block/dodge/reflect/lifesteal/regen, speed 1.0, move 2.0).
@@ -42,21 +44,25 @@ interface WeaponInfoJson {
     ProjectileId?: number;
 }
 
-/** Weapon + projectile of an enemy id, resolved exactly like SetupEnemies does. */
-function enemyLoadout(enemyId: number | string, libs: EnemyConfigLibs) {
-    const enemy = libs.enemyLibrary[String(enemyId)];
-    const wid = enemy?.WeaponId;
-    const weaponSpriteKey = wid ? `${wid.Age}_5_${wid.Idx}` : undefined;
-    const weapon: WeaponInfoJson | undefined = wid
-        ? libs.weaponLibrary[`{'Age': ${wid.Age}, 'Type': 'Weapon', 'Idx': ${wid.Idx}}`]
-        : undefined;
+/** ItemId.get_DefaultWeapon (0x7835200): Age 10000, Weapon, Idx 0 (the bare-handed enemy weapon). */
+export const DEFAULT_WEAPON = { Age: 10000, Idx: 0 } as const;
+
+const weaponKey = (age: number, idx: number) => `{'Age': ${age}, 'Type': 'Weapon', 'Idx': ${idx}}`;
+
+/**
+ * SetUnitWeapon (0x77E8D10): AttackRange, WindUp and AttackDuration straight from the weapon row;
+ * a projectile only when IsRanged and ProjectileId >= 0 (a ranged weapon without one hits
+ * instantly at range, like melee). The fallbacks below only fire on a broken config.
+ */
+function weaponLoadout(age: number, idx: number, libs: EnemyConfigLibs) {
+    const weapon: WeaponInfoJson | undefined = libs.weaponLibrary[weaponKey(age, idx)];
     const isRanged = weapon?.IsRanged ?? (weapon ? weapon.AttackRange > 1.0 : false);
     const proj =
         isRanged && weapon && weapon.ProjectileId !== undefined && weapon.ProjectileId >= 0
             ? libs.projectilesLibrary?.[String(weapon.ProjectileId)]
             : undefined;
     return {
-        weaponSpriteKey,
+        weaponSpriteKey: `${age}_5_${idx}`,
         attackRange: weapon?.AttackRange ?? 0.3,
         windupTime: weapon?.WindupTime ?? 0.5,
         attackDuration: weapon?.AttackDuration ?? 1.5,
@@ -71,8 +77,55 @@ function enemyLoadout(enemyId: number | string, libs: EnemyConfigLibs) {
     };
 }
 
+/** Weapon + projectile of an enemy id, resolved exactly like SetupEnemies does. */
+function enemyLoadout(enemyId: number | string, libs: EnemyConfigLibs) {
+    const wid = libs.enemyLibrary[String(enemyId)]?.WeaponId ?? DEFAULT_WEAPON;
+    return weaponLoadout(wid.Age, wid.Idx, libs);
+}
+
 export interface MainBattleWave {
     Enemies: { Id: number; Count: number }[] | null;
+}
+
+export interface MainBattleConfigJson {
+    EnemyHpDifficultyMulti?: number;
+    EnemyDmgDifficultyMulti?: number;
+    DifficultyScaling?: { DifficultyIdx: number; HpMulti: number; DmgMulti: number }[] | null;
+}
+
+/** Hard's multiplier in every build that predates the DifficultyScaling table. */
+const LEGACY_DIFFICULTY_MULTI = 6_000_000;
+
+/**
+ * How many main-battle difficulties a build has. From 2026_10 it is the length of
+ * MainBattleConfig.DifficultyScaling (`HasDifficulty(i)` is `0 <= i < Count` in the binary);
+ * older builds shipped Normal and Hard only.
+ */
+export function mainBattleDifficultyCount(config: MainBattleConfigJson | null | undefined): number {
+    const table = config?.DifficultyScaling;
+    return table && table.length > 0 ? table.length : 2;
+}
+
+/**
+ * Total enemy HP/damage multipliers for a difficulty.
+ *
+ * From 2026_10 the binary reads them from the DifficultyScaling table, clamping the index into
+ * [0, Count-1] (`MainBattleConfig.GetDifficultyScaling`). Older builds computed
+ * `pow(Enemy*DifficultyMulti, idx)`, which is what the table reproduces for 0..2.
+ */
+export function mainBattleDifficultyMultipliers(
+    config: MainBattleConfigJson | null | undefined,
+    difficultyIdx: number
+): { hp: number; dmg: number } {
+    const table = config?.DifficultyScaling;
+    if (table && table.length > 0) {
+        const clamped = Math.min(Math.max(difficultyIdx, 0), table.length - 1);
+        const row = table.find(r => r.DifficultyIdx === clamped) ?? table[clamped];
+        return { hp: row.HpMulti, dmg: row.DmgMulti };
+    }
+    const hpBase = config?.EnemyHpDifficultyMulti ?? LEGACY_DIFFICULTY_MULTI;
+    const dmgBase = config?.EnemyDmgDifficultyMulti ?? LEGACY_DIFFICULTY_MULTI;
+    return { hp: Math.pow(hpBase, difficultyIdx), dmg: Math.pow(dmgBase, difficultyIdx) };
 }
 
 /** One main-battle wave -> engine specs, at the real magnitudes. */
@@ -80,12 +133,12 @@ export function mainBattleWaveSpecs(
     wave: MainBattleWave,
     ageScaling: { Health: unknown; Damage: unknown },
     difficultyIdx: number,
-    hpDifficultyMulti: number,
-    dmgDifficultyMulti: number,
+    mainBattleConfig: MainBattleConfigJson | null | undefined,
     libs: EnemyConfigLibs
 ): WaveEnemySpec[] {
-    const baseHp = realAgeScale(ageScaling.Health) * Math.pow(hpDifficultyMulti, difficultyIdx);
-    const baseDmg = realAgeScale(ageScaling.Damage) * Math.pow(dmgDifficultyMulti, difficultyIdx);
+    const multi = mainBattleDifficultyMultipliers(mainBattleConfig, difficultyIdx);
+    const baseHp = realAgeScale(ageScaling.Health) * multi.hp;
+    const baseDmg = realAgeScale(ageScaling.Damage) * multi.dmg;
     const rangedMulti = libs.itemBalancingConfig?.EnemyRangedDamageMultiplier ?? 0.67;
 
     const flat: { id: number }[] = [];
@@ -121,21 +174,42 @@ export interface DungeonLevelRow {
 }
 
 /**
- * Dungeon waves: flat stats, enemies alternating between the two ids. A row with no Wave
- * fields is a single boss (the Hammer Thief library ships only Level/Damage/Health), and a
- * NEGATIVE enemy id means "unused" (skill/potion dungeons ship EnemyId2 = -1).
+ * The Hammer Thief (HammerThiefDungeonBattleModel.SetupEnemies, 0x7802464): ONE unit, no
+ * weapon item, IsHammerThief set, at (player.X + 15, 0), with hardcoded combat data:
+ * Radius 1.0, AttackRange 0.5 (F64.Ratio(1,2)), WindUp 0.8 (Ratio(48,60)), AttackDuration 1.5
+ * (Ratio(3,2)), MoveSpeed 2.0, Hp/HpMax = Health, Dmg = Damage. It is melee.
+ */
+export function hammerThiefSpec(row: { Health: number; Damage: number }): WaveEnemySpec {
+    return {
+        offset: { x: 0, y: 0 },
+        stats: { hpMax: row.Health, hpMaxNoMulti: row.Health, dmg: row.Damage },
+        hp: row.Health,
+        radius: 1.0,
+        attackRange: 0.5,
+        windupTime: 0.8,
+        attackDuration: 1.5,
+        tag: 'enemy:hammerThief',
+    };
+}
+
+/**
+ * Dungeon waves (NormalDungeonBattleModel.SetupEnemies, 0x7802CC8): flat Health/Damage from the
+ * level's row (no ranged multiplier), enemy i takes EnemyIds[i % count] where EnemyIds is
+ * [EnemyId1, EnemyId2] without the negative ones (DungeonBattleLibrary.EnemyIds, 0x7801F2C), and
+ * the waves are [Wave1, Wave2, Wave3] without the negative ones (0x7802070): a zero-sized wave
+ * stays (it clears on its first frame). Positions: player.X + 15 plus the main-battle formation.
+ * A row with no Wave fields is the Hammer Thief library: one hardcoded thief.
  */
 export function dungeonWaveSpecs(row: DungeonLevelRow, libs: EnemyConfigLibs): WaveEnemySpec[][] {
-    const id1 = row.EnemyId1 !== undefined && row.EnemyId1 >= 0 ? row.EnemyId1 : 0;
-    const id2 = row.EnemyId2 !== undefined && row.EnemyId2 >= 0 ? row.EnemyId2 : id1;
-    const counts = row.Wave1 === undefined ? [1] : [row.Wave1 ?? 0, row.Wave2 ?? 0, row.Wave3 ?? 0];
-    const waves: WaveEnemySpec[][] = [];
-    for (const count of counts) {
-        if (count <= 0) continue;
+    if (row.Wave1 === undefined) return [[hammerThiefSpec(row)]];
+    const ids = [row.EnemyId1, row.EnemyId2].filter((id): id is number => id !== undefined && id >= 0);
+    if (ids.length === 0) ids.push(0);
+    const counts = [row.Wave1, row.Wave2, row.Wave3].filter((c): c is number => c !== undefined && c >= 0);
+    return counts.map((count) => {
         const offsets = mainBattleFormation(count);
         const wave: WaveEnemySpec[] = [];
         for (let k = 0; k < count; k++) {
-            const id = k % 2 === 0 ? id1 : id2;
+            const id = ids[k % ids.length];
             const w = enemyLoadout(id, libs);
             wave.push({
                 offset: offsets[k],
@@ -149,71 +223,120 @@ export function dungeonWaveSpecs(row: DungeonLevelRow, libs: EnemyConfigLibs): W
                 weaponSpriteKey: w.weaponSpriteKey,
             });
         }
-        waves.push(wave);
-    }
-    return waves;
+        return wave;
+    });
 }
 
 export interface MissionConfigRow {
     BaseDamage: number;
     BaseHealth: number;
     UnitCount?: number;
+    ChanceToHaveWeapon?: number;
+    ChanceToHaveHelmet?: number;
+    ChanceToHaveArmour?: number;
     PossibleWeapons?: { Item1: number; Item2: number }[] | null;
+    PossibleHelmets?: { Item1: number; Item2: number }[] | null;
+    PossibleArmours?: { Item1: number; Item2: number }[] | null;
+}
+
+/** .NET Convert.ToInt64(double): round to nearest, ties to even. */
+function toInt64(x: number): number {
+    const f = Math.floor(x);
+    const diff = x - f;
+    if (diff > 0.5) return f + 1;
+    if (diff < 0.5) return f;
+    return f % 2 === 0 ? f : f + 1;
 }
 
 /**
- * Mission wave: UnitCount clones at floor(base * multiplier^(level-1)); each picks a random
- * weapon from PossibleWeapons — randomness drawn from the caller's RNG so a seeded run stays
- * reproducible.
+ * GetMissionLevelMultiplier (0x785E6DC): Math.Pow((double)(float)HealthAndDamageLevelMultiplier,
+ * level - 1). The F64 config value goes through a FLOAT first, so 1.524 becomes 1.52400005...
+ */
+export function missionLevelMultiplier(levelMultiplier: number, level: number): number {
+    return Math.pow(Math.fround(levelMultiplier), level - 1);
+}
+
+/** Mission enemy Hp / Dmg: Convert.ToInt64(multiplier * Base) (MissionCombatScene.SetupEnemies). */
+export function missionEnemyStats(mission: Pick<MissionConfigRow, 'BaseDamage' | 'BaseHealth'>, level: number, levelMultiplier: number) {
+    const m = missionLevelMultiplier(levelMultiplier, level);
+    return { hp: toInt64(m * mission.BaseHealth), dmg: toInt64(m * mission.BaseDamage) };
+}
+
+/**
+ * Suggested mission power, MissionExtensions.CalculateMissionPower (0x780FEEC) ->
+ * PlayerPowerExtensions.CalculateMissionPower (0x785E79C), 2026_10_08_09_03 binary:
+ *   m      = GetMissionLevelMultiplier(level)                       (0x785E6DC, see above)
+ *   dmg    = Convert.ToInt64(m * BaseDamage * (double)(float)ItemBalancingConfig.PlayerPowerDamageMultiplier)
+ *   hp     = Convert.ToInt64(m * BaseHealth)
+ *   power  = (long)((float)(dmg + hp) * 0.8f * (float)UnitCount)   (float32 math, truncation)
+ * The 0.8f is PlayerPowerExtensions.MissionPowerMultiplier (constant at 0x19B43B8).
+ */
+export function calculateMissionPower(
+    mission: Pick<MissionConfigRow, 'BaseDamage' | 'BaseHealth' | 'UnitCount'>,
+    level: number,
+    levelMultiplier: number,
+    playerPowerDamageMultiplier: number
+): number {
+    const m = missionLevelMultiplier(levelMultiplier, level);
+    const dmg = toInt64(m * mission.BaseDamage * Math.fround(playerPowerDamageMultiplier));
+    const hp = toInt64(m * mission.BaseHealth);
+    const f = Math.fround(Math.fround(Math.fround(dmg + hp) * Math.fround(0.8)) * Math.fround(mission.UnitCount ?? 0));
+    return Math.trunc(f);
+}
+
+/**
+ * BattleModelExtensions.GetRandomItem (0x77E8B8C): one NextF64 roll, ALWAYS consumed; the item
+ * exists iff roll != 0 and roll <= chance (Q32.32 compare), and then a second draw,
+ * Choice = list[NextInt(count)] with NextInt(n) = (NextUInt >> 1) % n, picks it.
+ */
+function randomItem(
+    chance: number | undefined,
+    possible: { Item1: number; Item2: number }[] | null | undefined,
+    rng: RandomPCG
+): { Item1: number; Item2: number } | null {
+    const roll = rng.nextUInt32();
+    const chanceRaw = Math.round((chance ?? 0) * 4294967296);
+    if (roll === 0 || roll > chanceRaw || !possible || possible.length < 1) return null;
+    return possible[(rng.nextUInt32() >>> 1) % possible.length];
+}
+
+/**
+ * Mission wave (MissionCombatScene.SetupEnemies, 0x780E7D0): UnitCount clones at
+ * (15, 0) + MissionFormationBuilder.GetPositions(count), Hp/Dmg from missionEnemyStats. The items
+ * come from their OWN RandomPCG created from the battle seed (RandomPCG.CreateFromSeed), not from
+ * the combat RNG: per unit GetRandomItems rolls weapon, helmet, armour in that order (helmets and
+ * armour are cosmetic but consume draws). No weapon = ItemId.DefaultWeapon.
+ *
+ * `rng` must be that dedicated item stream: pass `new RandomPCG(seed)` (or the seed itself).
  */
 export function missionWaveSpecs(
     mission: MissionConfigRow,
     level: number,
     levelMultiplier: number,
     libs: EnemyConfigLibs,
-    rng: RandomPCG
+    rng: RandomPCG | number | bigint
 ): WaveEnemySpec[] {
+    const itemRng = rng instanceof RandomPCG ? rng : new RandomPCG(rng);
     const count = mission.UnitCount ?? 6;
-    const hp = Math.floor(mission.BaseHealth * Math.pow(levelMultiplier, level - 1));
-    const dmg = Math.floor(mission.BaseDamage * Math.pow(levelMultiplier, level - 1));
+    const { hp, dmg } = missionEnemyStats(mission, level, levelMultiplier);
     const offsets = missionFormation(count);
-    const weapons = mission.PossibleWeapons ?? [];
 
     const out: WaveEnemySpec[] = [];
     for (let i = 0; i < count; i++) {
-        let loadout = { attackRange: 0.3, windupTime: 0.5, attackDuration: 1.5, isRanged: false, projectile: undefined as WaveEnemySpec['projectile'] };
-        let weaponSpriteKey: string | undefined;
-        if (weapons.length) {
-            const pick = weapons[Math.floor(rng.nextF64() * weapons.length) % weapons.length];
-            weaponSpriteKey = `${pick.Item1}_5_${pick.Item2}`;
-            const weapon = libs.weaponLibrary[`{'Age': ${pick.Item1}, 'Type': 'Weapon', 'Idx': ${pick.Item2}}`];
-            if (weapon) {
-                const isRanged = weapon.IsRanged ?? weapon.AttackRange > 1.0;
-                const proj =
-                    isRanged && weapon.ProjectileId !== undefined && weapon.ProjectileId >= 0
-                        ? libs.projectilesLibrary?.[String(weapon.ProjectileId)]
-                        : undefined;
-                loadout = {
-                    attackRange: weapon.AttackRange,
-                    windupTime: weapon.WindupTime,
-                    attackDuration: weapon.AttackDuration,
-                    isRanged,
-                    projectile: proj
-                        ? { speed: proj.Speed ?? 15, collisionRadius: proj.CollisionRadius ?? 0.2, affectedByGravity: proj.AffectedByGravity ?? false }
-                        : undefined,
-                };
-            }
-        }
+        const weapon = randomItem(mission.ChanceToHaveWeapon ?? 1, mission.PossibleWeapons, itemRng);
+        randomItem(mission.ChanceToHaveHelmet, mission.PossibleHelmets, itemRng);
+        randomItem(mission.ChanceToHaveArmour, mission.PossibleArmours, itemRng);
+        const w = weapon ? weaponLoadout(weapon.Item1, weapon.Item2, libs) : weaponLoadout(DEFAULT_WEAPON.Age, DEFAULT_WEAPON.Idx, libs);
         out.push({
             offset: offsets[i],
             stats: { hpMax: hp, hpMaxNoMulti: hp, dmg },
             hp,
-            attackRange: loadout.attackRange,
-            windupTime: loadout.windupTime,
-            attackDuration: loadout.attackDuration,
-            projectile: loadout.projectile,
+            attackRange: w.attackRange,
+            windupTime: w.windupTime,
+            attackDuration: w.attackDuration,
+            projectile: w.projectile,
             tag: 'mission',
-            weaponSpriteKey,
+            weaponSpriteKey: w.weaponSpriteKey,
         });
     }
     return out;

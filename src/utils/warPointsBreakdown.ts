@@ -576,7 +576,7 @@ function itemise(
  * — not a hard comparison, an absent one — and this renders nothing rather than a guess.
  *
  * The egg summoner IS ascension-driven (`startAscension: misc.petAscensionLevel`,
- * `simulateAscension: misc.simulateAscensionInCalculators !== false`, `maxAscension: 3`), so the
+ * `simulateAscension: misc.simulateAscensionInCalculators !== false`, `maxAscension` from AscensionConfigsLibrary), so the
  * comparison exists there in principle — but `clan_share` publishes neither field, so the baseline
  * would be a fabricated "level 1, never ascended" member. Also refused, and for that reason.
  */

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Card } from '../components/UI/Card';
 import { cn, getAgeIconStyle, getRarityBorderStyle } from '../lib/utils';
 import { formatVersion } from '../lib/formatVersion';
@@ -8,12 +9,22 @@ import { Button } from '../components/UI/Button';
 import { AGES, RARITIES } from '../utils/constants';
 
 type TabType = 'forge' | 'eggs' | 'mounts' | 'skills';
+const TABS: TabType[] = ['forge', 'eggs', 'mounts', 'skills'];
+
+/**
+ * The single home of every base odds table (forge Age odds per Forge level, egg, mount and
+ * skill summon rarity odds per summon level). The Forge wiki links here with ?tab=forge
+ * instead of repeating the forge odds.
+ */
 
 export default function BaseDrops() {
-    const [activeTab, setActiveTab] = useState<TabType>('forge');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab') as TabType | null;
+    const activeTab: TabType = tabParam && TABS.includes(tabParam) ? tabParam : 'forge';
+    const setActiveTab = (tab: TabType) => setSearchParams({ tab }, { replace: true });
     const [isCompareMode, setIsCompareMode] = useState(false);
     const [baseVersion, setBaseVersion] = useState('');
-    const [targetVersion, setTargetVersion] = useState('');
+    const [targetVersion, setTargetVersion] = useState(''); // always versions[0]
     const [versions, setVersions] = useState<string[]>([]);
 
     // Cache for relevant files: { [version]: { [fileName]: data } }
@@ -195,9 +206,13 @@ export default function BaseDrops() {
             }
 
         // Compute cumulative sums
+            // Levels[i].SummonsRequired is what it takes to REACH 1-based level i + 1
+            // (SummonModel.IncrementSummonCount 0x78666A4: while Level + 1 < Levels.Count and
+            // Count >= Levels[Level + 1].SummonsRequired, Count -= it and Level++; Level is 0-based),
+            // so row 0 (level 1, the starting level) costs nothing and is left out of the totals.
             let tCumulative = 0;
-            const targetCumSums = levels.map((l: any) => {
-                tCumulative += (l.SummonsRequired || 0);
+            const targetCumSums = levels.map((l: any, idx: number) => {
+                if (idx > 0) tCumulative += (l.SummonsRequired || 0);
                 return tCumulative;
             });
 
@@ -205,7 +220,7 @@ export default function BaseDrops() {
             const baseLevels = summonConfigBase?.Levels;
             const baseCumSums = levels.map((l: any, idx: number) => {
                 const bLvlRow = baseLevels ? baseLevels[idx] : baseData?.[l.key];
-                bCumulative += (bLvlRow?.SummonsRequired ?? l.SummonsRequired ?? 0);
+                if (idx > 0) bCumulative += (bLvlRow?.SummonsRequired ?? l.SummonsRequired ?? 0);
                 return bCumulative;
             });
 
@@ -254,7 +269,7 @@ export default function BaseDrops() {
                                 // Get summons required for next level
                                 let tSummons = 0;
                                 let bSummons = 0;
-                                if (summonConfigTarget?.Levels?.[lvlIdx]) {
+                                if (lvlIdx > 0 && summonConfigTarget?.Levels?.[lvlIdx]) {
                                     tSummons = summonConfigTarget.Levels[lvlIdx].SummonsRequired;
                                     bSummons = isCompareMode ? (summonConfigBase?.Levels?.[lvlIdx]?.SummonsRequired ?? tSummons) : tSummons;
                                 }
@@ -345,13 +360,10 @@ export default function BaseDrops() {
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="flex flex-col">
                             <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1 ml-1">Current Version</label>
-                            <select
-                                value={targetVersion}
-                                onChange={(e) => setTargetVersion(e.target.value)}
-                                className="bg-bg-input border border-border/50 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors appearance-none cursor-pointer pr-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJ3aGl0ZSI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSA5bC03IDctNy03Ii8+PC9zdmc+')] bg-[length:16px] bg-[right_8px_center] bg-no-repeat"
-                            >
-                                {versions.map(v => <option key={v} value={v}>{formatVersion(v)}</option>)}
-                            </select>
+                            {/* Always the newest config; only the comparison base is selectable. */}
+                            <span className="bg-bg-input border border-border/50 rounded-lg px-3 py-2 text-xs font-bold">
+                                {targetVersion ? `${formatVersion(targetVersion)} (Latest)` : ''}
+                            </span>
                         </div>
 
                         {isCompareMode && (
@@ -418,6 +430,13 @@ export default function BaseDrops() {
                     </button>
                 ))}
             </div>
+
+            {activeTab === 'forge' && (
+                <p className="text-xs text-text-muted">
+                    Chance of forging an item of each Age at every Forge level. Upgrade costs and times are on the{' '}
+                    <Link to="/wiki/forge" className="text-accent-primary font-bold hover:underline">Forge wiki</Link>.
+                </p>
+            )}
 
             {/* Content */}
             <Card className="p-0 overflow-hidden border-border/40 shadow-2xl relative bg-bg-primary/40 backdrop-blur-sm border-2">

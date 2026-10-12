@@ -264,7 +264,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
         : trimmedTag.length > tagMax
             ? `At most ${tagMax} characters.`
             : !tagPattern.test(trimmedTag)
-                ? 'A–Z, 0–9, - and _ only.'
+                ? 'A-Z, 0-9, - and _ only.'
                 : null;
 
     // No length rule: an old clan's password may be shorter than today's 12-character minimum.
@@ -413,7 +413,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                 return {
                     icon: <Info className="w-5 h-5" />,
                     title: 'This is a shared profile',
-                    body: 'A profile opened from a share link is not yours and is never in a clan — membership never travels inside a profile. Save it as your own profile first, then join with that one.',
+                    body: 'A profile opened from a share link is not yours and is never in a clan: membership never travels inside a profile. Save it as your own profile first, then join with that one.',
                 };
             case 'in-a-clan':
                 return {
@@ -450,7 +450,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                             Join a clan
                         </h3>
                         <p className="text-xs text-text-secondary mt-1">
-                            Name, tag and the clan&apos;s join password — the same three the game asks for.
+                            Name, tag and the clan&apos;s join password: the same three the game asks for.
                         </p>
                     </div>
                     <button
@@ -506,7 +506,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                                 <Users className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent-primary" />
                                 <p className="text-[11px] text-text-secondary leading-relaxed">
                                     Joining as <span className="font-bold text-white">{profileName}</span>. A clan
-                                    belongs to one profile, not to your whole account — switch profile first if this is
+                                    belongs to one profile, not to your whole account: switch profile first if this is
                                     not the right one.
                                 </p>
                             </div>
@@ -539,7 +539,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                                 autoComplete: 'off',
                                 mono: true,
                                 autoFocus: !!initialName,
-                                hint: 'Ask a clan leader — they are the only ones who can see it.',
+                                hint: 'Ask a clan leader: they are the only ones who can see it.',
                             })}
 
                             {/* ---- the limiter: a state, not a toast ---- */}
@@ -548,12 +548,12 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                                     <Timer className="w-4 h-4 mt-0.5 shrink-0 text-accent-primary" />
                                     <div className="min-w-0">
                                         <p className="text-xs font-bold text-white">
-                                            Too many attempts — try again in{' '}
+                                            Too many attempts: try again in{' '}
                                             <span className="font-mono tabular-nums">{mmss(waitSeconds)}</span>
                                         </p>
                                         <p className="text-[11px] text-text-secondary mt-0.5 leading-relaxed">
                                             The server allows twelve join attempts every ten minutes per account, and it
-                                            stops checking the password while the limit is on — so even the right one
+                                            stops checking the password while the limit is on, so even the right one
                                             would be refused. Waiting is the only thing that helps; retrying does not
                                             make it longer.
                                         </p>
@@ -572,7 +572,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                                         <p className="text-[11px] text-text-secondary mt-0.5 leading-relaxed">
                                             The server answers the same way for all three, on purpose, so that nobody can
                                             use this box to find out which clans exist. Check all three with a clan
-                                            leader — the tag has to match exactly.
+                                            leader: the tag has to match exactly.
                                         </p>
                                     </div>
                                 </div>

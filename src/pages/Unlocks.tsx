@@ -4,8 +4,8 @@ import { GameIcon } from '../components/UI/GameIcon';
 import { useFeatureUnlocks, type FeatureUnlock } from '../hooks/useFeatureUnlocks';
 import { Unlock, AlertCircle, Shield, Info, ListChecks } from 'lucide-react';
 import { cn } from '../lib/utils';
-// Constants for Ages as they might not be in a simple config list
-const AGES = ['Primitive', 'Medieval', 'Early-Modern', 'Modern', 'Space', 'Interstellar', 'Multiverse', 'Quantum', 'Underworld', 'Divine'];
+import { AGES } from '../utils/constants';
+import { stageLabel } from '../utils/difficulty';
 const AGE_COLORS = ['#F1F1F1', '#5DD8FF', '#5CFE89', '#FDFF5D', '#FF5D5D', '#D55DFF', '#75FFEE', '#886DFF', '#A77373', '#FF9E0D'];
 
 
@@ -47,9 +47,9 @@ export default function Unlocks() {
     if (failed) return (
         <div className="text-center p-12 text-amber-300 flex flex-col items-center gap-2">
             <AlertCircle className="w-8 h-8" />
-            <p>This game version does not carry the feature unlock table.</p>
+            <p>The feature unlock table could not be loaded.</p>
             <p className="text-xs text-text-muted">
-                Nothing to show for version {version}. Pick another game version at the top of the page.
+                PlayerSegments for game data {version} did not load. Reload the page to try again.
             </p>
         </div>
     );
@@ -116,7 +116,7 @@ export default function Unlocks() {
                                 <FeatureCard
                                     key={feature.id}
                                     feature={feature}
-                                    stage={`Stage ${group.age + 1}-${(feature.battleIdx ?? 0) + 1}`}
+                                    stage={`Stage ${stageLabel(feature.difficultyIdx ?? 0, group.age, feature.battleIdx ?? 0)}`}
                                 />
                             ))}
                         </div>
@@ -200,10 +200,10 @@ function getFeatureIcon(feature: string): string {
     const f = feature.toLowerCase();
     // The dungeon keys have to be tested first: every one of these ids also contains
     // the plain resource word, so a later branch can never be reached.
-    if (f.includes('dungeon_hammer')) return 'HammerKey';
-    if (f.includes('dungeon_skill')) return 'SkillKey';
-    if (f.includes('dungeon_pet')) return 'PetKey';
-    if (f.includes('dungeon_potion')) return 'PotionKey';
+    if (f.includes('dungeon_hammer') || f === 'hammerdungeon') return 'HammerKey';
+    if (f.includes('dungeon_skill') || f === 'skilldungeon') return 'SkillKey';
+    if (f.includes('dungeon_pet') || f === 'petdungeon') return 'PetKey';
+    if (f.includes('dungeon_potion') || f === 'potiondungeon') return 'PotionKey';
     if (f.includes('dungeon')) return 'Battle';
     if (f.includes('ascension')) return 'Star';
     if (f.includes('hammer')) return 'Hammer';

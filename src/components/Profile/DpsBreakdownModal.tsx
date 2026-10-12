@@ -101,12 +101,13 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
             if (baseSkillValue <= 0) return null;
 
             const cdr = stats.skillCooldownReduction;
-            const cdMult = Math.max(0.1, 1 - cdr);
-            const finalCd = Math.max(0.1, baseCooldown * cdMult);
+            // Cooldown x (1 - CDR): no floor in the game (same as statEngine).
+            const finalCd = baseCooldown * (1 - cdr);
 
-            // SKILL LAYER: (1 + tech + items) * ascension (mirrors Forge Ascension)
-            const skillMulti = stats.skillDamageMultiplier; // Already computed in statEngine
-            const commonMulti = stats.damageMultiplier;     // Common layer
+            // SKILL LAYER: (1 + tech) * (1 + items) * ascension, computed in statEngine
+            const skillMulti = stats.skillDamageMultiplier;
+            // DamageMulti substat layer, as statEngine applies it to active skills
+            const commonMulti = 1 + (stats.secondaryDamageMulti || 0);
             
             // BREAKDOWN COMPONENTS (for display only)
             const skillTech = stats.skillDamageBreakdown.tree || 0;
@@ -131,15 +132,14 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                 skillAsc,
                 cooldown: finalCd,
                 // Common Multi breakdown
-                commonTech: stats.damageBreakdown.tree || 0,
-                commonItems: stats.damageBreakdown.substats || 0,
+                commonItems: stats.secondaryDamageMulti || 0,
                 commonSkins: stats.skinDamageMulti || 0,
                 commonSets: stats.setDamageMulti || 0,
             };
 
             if (isBuff) {
                 const cycle = finalCd + duration;
-                const uptime = duration / Math.max(0.1, cycle);
+                const uptime = cycle > 0 ? duration / cycle : 0;
                 const bonusPower = baseSkillValue * effectiveMultiplier;
                 const weaponSynergy = displayAps * critMult * doubleMult;
                 const dpsContrib = bonusPower * weaponSynergy * uptime;
@@ -477,7 +477,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                             <div className="col-span-2 pt-2 border-t border-purple-300/10">
                                                 <div className="text-purple-300/50 uppercase text-[8px] mb-1 font-sans text-left">Formula:</div>
                                                 <div className="text-[9px] text-white/40 leading-tight">
-                                                    (1 + {s.skillTech.toFixed(2)} + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(0)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
+                                                    (1 + {s.skillTech.toFixed(2)}) × (1 + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(2)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
                                                 </div>
                                             </div>
                                         </div>
@@ -578,10 +578,6 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
 
                                                 <div className="col-span-2 text-[8px] text-white/20 uppercase mt-2">Common Layer ({s.commonMulti.toFixed(2)}x)</div>
                                                 <div className="flex justify-between">
-                                                    <span className="text-white/40">Tech Tree (Dmg)</span>
-                                                    <span className="text-white/60">+{formatPercent(s.commonTech)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
                                                     <span className="text-white/40">Item Substats</span>
                                                     <span className="text-white/60">+{formatPercent(s.commonItems)}</span>
                                                 </div>
@@ -589,7 +585,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                                 <div className="col-span-2 mt-2 pt-2 border-t border-white/10">
                                                     <div className="text-[8px] text-white/20 uppercase mb-1 font-sans">Formula:</div>
                                                     <div className="text-[9px] text-white/40 leading-tight">
-                                                        (1 + {s.skillTech.toFixed(2)} + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(2)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
+                                                        (1 + {s.skillTech.toFixed(2)}) × (1 + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(2)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
                                                     </div>
                                                 </div>
                                             </div>

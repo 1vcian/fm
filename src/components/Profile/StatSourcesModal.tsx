@@ -9,6 +9,7 @@ import { AGES } from '../../utils/constants';
 import { getItemImage } from '../../utils/itemAssets';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { useGameData } from '../../hooks/useGameData';
+import { usePetNames } from '../../hooks/usePetNames';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { AggregatedStats } from '../../utils/statEngine';
 import { StatContribution, SourceKind, isTotalKey } from '../../types/statAttribution';
@@ -55,6 +56,7 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
     const { selectedVersion } = useGameDataContext();
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const petName = usePetNames();
 
     const entries: StatContribution[] = useMemo(() => {
         if (!statKey) return [];
@@ -119,7 +121,7 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                     item={pet}
                     slotKey={`pet-${ref.index}`}
                     slotLabel={`Pet ${ref.index + 1}`}
-                    itemName={pet.customName || spriteInfo?.name || `${pet.rarity} Pet`}
+                    itemName={pet.customName || petName(pet.rarity, pet.id)}
                     itemImage={null}
                     rarity={pet.rarity}
                     hideAgeStyles

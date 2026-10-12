@@ -1,4 +1,5 @@
 import { ItemSlot } from '../types/Profile';
+import { personalTechShare } from './clanTechStacking';
 
 export interface ItemStatsResult {
     damage: number;
@@ -172,7 +173,10 @@ export const getItemStats = (
     }
 
     const levelMulti = Math.pow(levelScaling, Math.max(0, item.level - 1));
+    // techBonus is personal and clan merged ((1+p)(1+c)-1, see clanTechStacking).
     const techMulti = (1 + techBonus);
+    // Tooltip convention (StatBreakdownTooltip): personal tree and clan tree as fractions.
+    const personalTechBonus = personalTechShare(techBonus, clanTechBonus);
     const ascMulti = (forgeAscensionMulti || 1);
     const meleeMulti = (slotKey === 'Weapon' && isMelee) ? meleeBaseMulti : 1;
     const skinDmgMulti = (1 + (item.skin?.stats?.['Damage'] || 0));
@@ -199,7 +203,7 @@ export const getItemStats = (
         damage: {
             base: baseDamage,
             levelMulti,
-            techMulti,
+            techMulti: personalTechBonus,
             clanTechMulti: clanTechBonus,
             ascMulti,
             skinMulti: 1,
@@ -208,7 +212,7 @@ export const getItemStats = (
         health: {
             base: baseHealth,
             levelMulti,
-            techMulti,
+            techMulti: personalTechBonus,
             clanTechMulti: clanTechBonus,
             ascMulti,
             skinMulti: 1,

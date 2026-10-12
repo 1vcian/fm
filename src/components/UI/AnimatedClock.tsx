@@ -27,6 +27,12 @@ export function AnimatedClock({ className }: AnimatedClockProps) {
     const hourRotation = (hours % 12) * 30 + (minutes / 60) * 30;
     const minuteRotation = minutes * 6 + (seconds / 60) * 6;
 
+    // Before versions.json resolves there is no texture folder yet: rendering now would request
+    // Texture2D//ProgressBarClockIcon*.png and log a 404.
+    if (!texVersion) {
+        return <div className={cn("relative flex items-center justify-center", className)} />;
+    }
+
     return (
         <div className={cn("relative flex items-center justify-center", className)}>
             <img

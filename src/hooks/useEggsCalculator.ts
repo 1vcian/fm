@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
-import { useTreeMode } from '../context/TreeModeContext';
-import { useTreeModifiers, useClanNodeMax } from './useCalculatedStats';
+import { useTreeModifiers } from './useCalculatedStats';
+import { useTreeLimits } from './useTreeLimits';
 import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
 
 
@@ -36,18 +36,9 @@ export function useEggsCalculator() {
     // Game Data
     const { data: eggLibrary } = useGameData<any>('EggLibrary.json');
     const { data: guildWarConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
-    const { data: techTreeMapping } = useGameData<any>('TechTreeMapping.json');
-    const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
     const { data: petConfig } = useGameData<any>('PetBaseConfig.json');
     const { profile, updateNestedProfile } = useProfile();
-    const { treeMode } = useTreeMode();
 
-    // Helper to get effective tech level based on Mode
-    const getTechLevel = (treeName: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number, maxLevel: number = 0) => {
-        if (treeMode === 'max') return maxLevel || 999;
-        if (treeMode === 'empty') return 0;
-        return profile?.techTree?.[treeName]?.[nodeId] || 0;
-    };
 
     // --- Optimization State ---
     // Load from Profile instead of LocalStorage
@@ -145,46 +136,20 @@ export function useEggsCalculator() {
 
 
     // --- Hatch Time Logic (Shared) ---
-    // 1. Profile-based Hatch Values (for Calculator & Info)
+    // HatchTime / (1 + <Rarity>EggTimer). The node is a TimerSpeed Divisor (TechNodesLibrary) and the
+    // clan tree carries the same six <Rarity>EggTimer nodes (GuildTechTreeUpgradeLibrary); they are not
+    // Damage/Health multipliers, so they share the personal layer and add (see clanTechStacking.ts).
+    // useTreeModifiers already sums personal + clan per tree mode.
+    const treeModifiers = useTreeModifiers();
     const hatchValuesProfile = useMemo(() => {
-        if (!eggLibrary || !profile?.techTree || !techTreeMapping) return null;
-
+        if (!eggLibrary) return null;
         const times: Record<string, number> = {};
-        const raritiesKeys = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
-
-
-
-        raritiesKeys.forEach(rarity => {
-            let baseTime = eggLibrary[rarity]?.HatchTime || 0;
-            let speedDivisor = 1.0;
-
-            // 1. Iterate ALL nodes in the tree to find ALL matches for this type
-            // (e.g. Node 8 is CommonEggTimer AND Node 25 is CommonEggTimer)
-            const nodeTypeName = `${rarity}EggTimer`; // e.g. CommonEggTimer
-            const treeNodes = techTreeMapping.trees?.SkillsPetTech?.nodes || [];
-
-            treeNodes.forEach((node: any) => {
-                if (node.type === nodeTypeName) {
-                    const nodeConfig = techTreeLibrary?.[nodeTypeName];
-                    if (nodeConfig) {
-                        const userLevel = getTechLevel('SkillsPetTech', node.id, nodeConfig.MaxLevel);
-                        if (userLevel > 0) {
-                            const stat = nodeConfig.Stats?.[0];
-                            if (stat) {
-                                const valIncrease = stat.ValueIncrease || 0;
-                                const baseVal = stat.Value || 0;
-                                // Match TechTreePanel Logic: Base + ((Level - 1) * Increase)
-                                const nodeVal = baseVal + ((userLevel - 1) * valIncrease);
-                                speedDivisor += nodeVal;
-                            }
-                        }
-                    }
-                }
-            });
-            times[rarity] = baseTime / speedDivisor;
-        });
+        for (const rarity of ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic']) {
+            const baseTime = eggLibrary[rarity]?.HatchTime || 0;
+            times[rarity] = baseTime / (1 + (treeModifiers[`${rarity}EggTimer`] || 0));
+        }
         return times;
-    }, [eggLibrary, profile, techTreeLibrary, techTreeMapping, treeMode]);
+    }, [eggLibrary, treeModifiers]);
 
     /*
      * Per-stage egg drop rates are gone, and not by omission.
@@ -206,8 +171,7 @@ export function useEggsCalculator() {
 
     // --- War Logic ---
     // Clan tech tree boosts to war points earned (already effective values, see useGameData).
-    const treeModifiers = useTreeModifiers();
-    const clanMax = useClanNodeMax();
+    const treeLimits = useTreeLimits();
     const profileHatchWarBonus = treeModifiers['WarPointsFromEggHatch'] || 0;
     const profilePetMergeWarBonus = treeModifiers['WarPointsFromPetMerge'] || 0;
 
@@ -222,9 +186,9 @@ export function useEggsCalculator() {
     const sandboxControls = {
         reset: () => setSandbox({}),
         fields: [
-            { key: 'warHatch', label: 'War points: egg hatch', value: hatchWarBonus, profileValue: profileHatchWarBonus, min: 0, max: clanMax['WarPointsFromEggHatch'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warHatch: v })) },
-            { key: 'warMerge', label: 'War points: pet merge', value: petMergeWarBonus, profileValue: profilePetMergeWarBonus, min: 0, max: clanMax['WarPointsFromPetMerge'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warMerge: v })) },
-            { key: 'dayBoost', label: 'Day war-points boost (today)', value: dayBoost, profileValue: profileDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
+            { key: 'warHatch', label: 'War points: egg hatch', value: hatchWarBonus, profileValue: profileHatchWarBonus, min: 0, ...treeLimits.clan('WarPointsFromEggHatch'), onChange: (v: number) => setSandbox(p => ({ ...p, warHatch: v })) },
+            { key: 'warMerge', label: 'War points: pet merge', value: petMergeWarBonus, profileValue: profilePetMergeWarBonus, min: 0, ...treeLimits.clan('WarPointsFromPetMerge'), onChange: (v: number) => setSandbox(p => ({ ...p, warMerge: v })) },
+            { key: 'dayBoost', label: 'Day war-points boost (today)', value: dayBoost, profileValue: profileDayBoost, min: 0, ...treeLimits.clan('WarPointsOnDay1'), onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
         ],
     };
 
@@ -333,7 +297,7 @@ export function useEggsCalculator() {
                     if (endTime > baseMinutesAvailable) {
                         const gemMinutes = Math.min(egg.time, endTime - Math.max(startTime, baseMinutesAvailable));
                         if (gemMinutes > 0) {
-                            potentialGemCost = Math.ceil((gemMinutes * 60) * gemCostPerSecond);
+                            potentialGemCost = Math.max(1, Math.round((gemMinutes * 60) * gemCostPerSecond));
                         }
                     }
 
@@ -358,7 +322,8 @@ export function useEggsCalculator() {
                 if (endTime > baseMinutesAvailable) {
                     const gemMinutes = Math.min(egg.time, endTime - Math.max(startTime, baseMinutesAvailable));
                     if (gemMinutes > 0) {
-                        gemCost = Math.ceil((gemMinutes * 60) * gemCostPerSecond);
+                        // TimerModel.CalculateGemSkipCost (RVA 0x7868754): Max(1, RoundToInt(seconds * costPerSecond)).
+                        gemCost = Math.max(1, Math.round((gemMinutes * 60) * gemCostPerSecond));
                     }
                 }
 
@@ -405,35 +370,6 @@ export function useEggsCalculator() {
 
     }, [ownedEggs, readyMerges, timeLimitHours, availableSlots, hatchValuesProfile, warPoints, forgeConfig, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
 
-    // --- Tech Tree Bonus (Additive Chance) ---
-    const eggDungeonBonus = useMemo(() => {
-        if (!profile || !techTreeMapping || !techTreeLibrary) return 0;
-
-        let bonus = 0;
-        // Check all trees for ExtraEggChance
-        ['Forge', 'Power', 'SkillsPetTech'].forEach((treeName) => {
-            const nodes = techTreeMapping.trees?.[treeName]?.nodes;
-            if (!nodes) return;
-
-            nodes.forEach((node: any) => {
-                if (node.type === 'ExtraEggChance') {
-                    // Check Mode
-                    const def = techTreeLibrary[node.type];
-                    const level = getTechLevel(treeName as any, node.id, def?.MaxLevel || 0);
-
-                    if (level > 0) {
-                        if (def && def.Stats && def.Stats[0]) {
-                            const stat = def.Stats[0];
-                            const val = stat.Value + ((level - 1) * stat.ValueIncrease);
-                            bonus += val;
-                        }
-                    }
-                }
-            });
-        });
-
-        return bonus;
-    }, [profile, techTreeMapping, techTreeLibrary, treeMode]);
 
     return {
         // Optimization
@@ -443,12 +379,10 @@ export function useEggsCalculator() {
         availableSlots, setAvailableSlots, maxSlots,
         hatchValues: hatchValuesProfile, // Default to profile values
         optimization,
-        eggDungeonBonus, // Export this instead of multiplier if needed, or just for debug
 
         // Info / Manual
         selectedStage, setSelectedStage,
         dungeonKeys, setDungeonKeys,
-        todayTotalDrops: dungeonKeys * (2 + eggDungeonBonus), // Corrected Formula: Base(2) + Bonus
         hatchingTimes: hatchValuesProfile, // Use real profile times now
         warPoints,
         warPointBonuses: { hatch: hatchWarBonus, merge: petMergeWarBonus },

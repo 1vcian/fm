@@ -50,6 +50,7 @@ export default function Arena() {
     // 'ArenaRewardLibrary.json' for rewards.
     const { data: rewardsData, loading } = useGameData<Record<string, LeagueReward>>('ArenaRewardLibrary.json');
     const { data: leagueData } = useGameData<Record<string, { LeagueId: number; PromotionEnd: number; DemotionStart: number }>>('ArenaLeagueLibrary.json');
+    const { data: pvpBase } = useGameData<{ DailyArenaTickets?: number; PvpMatchTimerSeconds?: number }>('PvpBaseConfig.json');
 
 
     return (
@@ -61,6 +62,11 @@ export default function Arena() {
                         Arena Leagues
                     </h1>
                     <p className="text-text-muted">Rankings, rewards, and promotion rules</p>
+                    {pvpBase && (
+                        <p className="text-xs text-text-muted mt-1">
+                            {pvpBase.DailyArenaTickets ?? '?'} arena tickets per day, {pvpBase.PvpMatchTimerSeconds ?? '?'} s per match (higher remaining HP % wins at the timer)
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -72,9 +78,10 @@ export default function Arena() {
                 ) }).map((_, idx) => {
                     const name = LEAGUE_NAMES[idx] ?? `League ${idx + 1}`;
                     const league = leagueData?.[String(idx)];
+                    // -1 in ArenaLeagueLibrary = no promotion (top league) / no demotion (bottom leagues).
                     const thresholds = league
                         ? { p: league.PromotionEnd, d: league.DemotionStart }
-                        : { p: 0, d: 0 };
+                        : { p: -1, d: -1 };
                     const rewardData = rewardsData ? (rewardsData[String(idx)] || rewardsData[idx]) : null;
                     const colorClass = LEAGUE_COLORS[idx] ?? LEAGUE_COLORS[LEAGUE_COLORS.length - 1];
                     const bgClass = LEAGUE_BG_GRADIENTS[idx] ?? LEAGUE_BG_GRADIENTS[LEAGUE_BG_GRADIENTS.length - 1];
@@ -117,7 +124,8 @@ export default function Arena() {
                                             <ArrowDown className="w-4 h-4 text-red-400" /> Demotion
                                         </span>
                                         <span className="font-bold text-sm">
-                                            {thresholds.d > 0 ? `Below ${thresholds.d}` : 'Safe'}
+                                            {/* DemotionStart is a 0-based rank index, like FromRank/ToRank. */}
+                                            {thresholds.d >= 0 ? `Rank ${thresholds.d + 1} and lower` : 'Safe'}
                                         </span>
                                     </div>
                                 </div>
@@ -140,7 +148,7 @@ export default function Arena() {
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     {r.Rewards.map((rew, rwIdx) => (
-                                                        <div key={rwIdx} className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded text-xs">
+                                                        <div key={rwIdx} title={rewardLabel(rew.Type)} className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded text-xs">
                                                             {/* Try to map Type to GameIcon */}
                                                             <GameIcon name={mapRewardType(rew.Type)} className="w-3 h-3" />
                                                             <span>{rew.Amount.toLocaleString()}</span>
@@ -158,6 +166,20 @@ export default function Arena() {
             </div>
         </div>
     );
+}
+
+// Readable names for the ArenaRewardLibrary currency types (hover text on the reward chips).
+function rewardLabel(type: string): string {
+    const map: Record<string, string> = {
+        Hammers: 'Hammers',
+        Coins: 'Coins',
+        SkillSummonTickets: 'Skill tickets',
+        TechPotions: 'Tech potions',
+        Eggshells: 'Eggshells',
+        ClockWinders: 'Clock winders',
+        GuildPotions: 'Clan potions',
+    };
+    return map[type] ?? type;
 }
 
 // Helper to map reward strings to icon names

@@ -87,6 +87,15 @@ export default function Offline() {
         return `${h}h${m > 0 ? ` ${m}m` : ''}`;
     };
 
+    // IdleConfig.MinIdleSeconds (2026_10_08_09_03 binary): it does NOT change the earnings. The
+    // reward model (TrySetIdleReward 0x7840D88, TickIdleSeconds 0x7840FF4, CollectRewards 0x78409D8,
+    // GetMaxIdleSeconds 0x7840EB8, TotalCoinsForTimeSpan 0x784108C) never reads it. It is only read
+    // client side: IdleCashRedDotLogic.ShouldShowRedDot (0x3EEA7D0) shows the red dot when
+    // OfflineSeconds >= MinIdleSeconds, and IdleCashInitSystem..ctor (0x3EEA944, at 0x3EEAAA4)
+    // opens the offline reward popup on startup only when OfflineSeconds >= MinIdleSeconds.
+    const minIdleSeconds: number = idleConfig?.MinIdleSeconds ?? 0;
+    const belowMinIdle = minIdleSeconds > 0 && totalOfflineHours * 3600 < minIdleSeconds;
+
     // Constrain total offline hours to max for ACTUAL earnings
     const effectiveHours = Math.min(totalOfflineHours, maxOfflineHours);
     const isOverCap = totalOfflineHours > maxOfflineHours;
@@ -177,6 +186,13 @@ export default function Offline() {
                         <p className="text-[10px] text-text-muted italic mt-6 px-1">
                             Calculated using base game rates from IdleConfig. Rewards are constant across all stages.
                         </p>
+                        {minIdleSeconds > 0 && (
+                            <p className={`text-[10px] mt-2 px-1 ${belowMinIdle ? 'text-amber-400' : 'text-text-muted italic'}`}>
+                                {belowMinIdle
+                                    ? `Under ${Math.round(minIdleSeconds / 60)} minutes offline the game shows no offline popup and no red dot. The coins and hammers still accrue.`
+                                    : `The offline popup and the red dot appear after ${Math.round(minIdleSeconds / 60)} minutes offline.`}
+                            </p>
+                        )}
                     </Card>
 
                     <Card className="bg-gradient-to-br from-bg-secondary to-bg-card border-none">

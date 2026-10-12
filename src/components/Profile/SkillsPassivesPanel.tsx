@@ -166,7 +166,8 @@ export function SkillsPassivesPanel() {
         const damage = Math.floor(baseDamage * (1 + skillPassiveDamageBonus) * (ascensionDmgMulti || 1));
         const health = Math.floor(baseHealth * (1 + skillPassiveHealthBonus) * (ascensionHpMulti || 1));
         const baseCooldown = skillData.Cooldown || 0;
-        const cooldown = baseCooldown * Math.max(0.1, 1 - skillCooldownReduction);
+        // Cooldown x (1 - CDR): no floor in the game (CalculateValueFromStats, 0x78605C4).
+        const cooldown = baseCooldown * (1 - skillCooldownReduction);
 
         return {
             baseDamage,

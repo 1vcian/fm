@@ -1,11 +1,23 @@
-import React from 'react';
 import { cn } from '../../lib/utils';
 
+/**
+ * One stat's breakdown for the hover tooltip. Every multiplier field uses ONE convention:
+ *
+ *   techMulti, clanTechMulti, itemMulti   bonus as a fraction (0.25 = +25%), shown as x(1 + v)
+ *   levelMulti, meleeMulti, ascMulti,     full factor (1.6 = x1.6), shown as is
+ *   skinMulti, commonMulti, skillMulti,
+ *   total
+ *
+ * techMulti is the PERSONAL tree only. Since 2026_10 the clan copy of a Damage/Health
+ * Multiplier node sits in its own StatLayer (ClanTechTree, ToClanLayer 0x78227C8), so the clan
+ * tree is a separate x(1 + clan) factor, never folded into techMulti. Use personalTechShare()
+ * from utils/clanTechStacking to split a merged modifier.
+ */
 export interface StatBreakdown {
     base: number;
     levelMulti?: number;
     techMulti?: number;
-    clanTechMulti?: number; // clan-tree portion already included in techMulti (shown for transparency)
+    clanTechMulti?: number;
     itemMulti?: number;
     ascMulti?: number;
     commonMulti?: number;
@@ -21,106 +33,65 @@ interface StatBreakdownTooltipProps {
     isMelee?: boolean;
 }
 
-const formatPercent = (val: number) => `+${(val * 100).toFixed(1)}%`;
+const formatBonusFactor = (bonus: number) => `×${(1 + bonus).toFixed(3)} (+${(bonus * 100).toFixed(1)}%)`;
 const formatMulti = (val: number) => `×${val.toFixed(2)}`;
 
+function Row({ label, value, className }: { label: string; value: string; className: string }) {
+    return (
+        <div className="flex justify-between gap-2">
+            <span className="text-text-muted">{label}</span>
+            <span className={className}>{value}</span>
+        </div>
+    );
+}
+
 function BreakdownSection({ data, label, color }: { data: StatBreakdown; label: string; color: string }) {
-    const hasSkillLayer = (data.techMulti && data.techMulti > 0) || (data.itemMulti && data.itemMulti > 0) || (data.ascMulti && data.ascMulti > 1) || (data.clanTechMulti && data.clanTechMulti > 0);
-    const hasCommon = data.commonMulti && data.commonMulti !== 1;
+    const tech = data.techMulti ?? 0;
+    const clan = data.clanTechMulti ?? 0;
+    const items = data.itemMulti ?? 0;
+    const asc = data.ascMulti ?? 1;
+    const level = data.levelMulti ?? 1;
+    const melee = data.meleeMulti ?? 1;
+    const skin = data.skinMulti ?? 1;
+    const common = data.commonMulti ?? 1;
+
+    // Product of every layer shown, so the total always matches the lines above it.
+    const total = data.total ?? (level * melee * (1 + tech) * (1 + clan) * (1 + items) * asc * skin * common);
 
     return (
         <div>
             <div className={cn("text-[10px] font-black uppercase tracking-tighter mb-1 border-b pb-0.5", `text-${color}-400 border-${color}-400/20`)}>{label} Breakdown</div>
             <div className="space-y-1 text-[10px] font-mono">
-                <div className="flex justify-between">
-                    <span className="text-text-muted">Base Value</span>
-                    <span className="text-white">{data.base.toFixed(1)}</span>
+                <Row label="Base Value" value={data.base.toFixed(1)} className="text-white" />
+                {level > 1 && <Row label="Level Scaling" value={formatMulti(level)} className="text-blue-400" />}
+                {melee > 1 && <Row label="Melee Weapon" value={formatMulti(melee)} className="text-blue-400" />}
+                {tech > 0 && <Row label="Tech Tree" value={formatBonusFactor(tech)} className="text-green-400" />}
+                {clan > 0 && <Row label="Clan Tree" value={formatBonusFactor(clan)} className="text-purple-300" />}
+                {items > 0 && <Row label="Skill Substats" value={formatBonusFactor(items)} className="text-green-400" />}
+                {asc > 1 && <Row label="Ascension" value={formatMulti(asc)} className="text-amber-400" />}
+                {skin > 1 && <Row label="Skin Bonus" value={formatMulti(skin)} className="text-pink-400" />}
+                {data.skillMulti !== undefined && (
+                    <Row label="= Skill Multi" value={data.skillMulti.toFixed(2)} className="text-blue-300 font-bold" />
+                )}
+                {common !== 1 && <Row label="Damage/Health %" value={formatMulti(common)} className="text-orange-400 font-bold" />}
+                <div className="flex justify-between border-t border-white/10 pt-1 mt-1">
+                    <span className="text-white/60 font-bold">Total</span>
+                    <span className="text-white font-bold">{formatMulti(total)}</span>
                 </div>
-
-                {hasSkillLayer && (
-                    <>
-                        <div className="text-[8px] text-white/30 uppercase mt-1">Skill Layer</div>
-                        <div className="flex justify-between">
-                            <span className="text-text-muted">Base</span>
-                            <span className="text-white/60">1.00</span>
-                        </div>
-                        {data.techMulti !== undefined && data.techMulti > 0 && (
-                            <div className="flex justify-between">
-                                <span className="text-text-muted">Skill Tech</span>
-                                <span className="text-green-400">{formatPercent(data.techMulti)}</span>
-                            </div>
-                        )}
-                        {data.clanTechMulti !== undefined && data.clanTechMulti > 0 && (
-                            <div className="flex justify-between pl-2">
-                                <span className="text-text-muted/70">↳ incl. Clan Tree</span>
-                                <span className="text-purple-300">{formatPercent(data.clanTechMulti)}</span>
-                            </div>
-                        )}
-                        {data.itemMulti !== undefined && data.itemMulti > 0 && (
-                            <div className="flex justify-between">
-                                <span className="text-text-muted">Skill Items</span>
-                                <span className="text-green-400">{formatPercent(data.itemMulti)}</span>
-                            </div>
-                        )}
-                        {data.ascMulti !== undefined && data.ascMulti > 1 && (
-                            <div className="flex justify-between">
-                                <span className="text-text-muted">× Ascension</span>
-                                <span className="text-amber-400">{formatMulti(data.ascMulti)}</span>
-                            </div>
-                        )}
-                        {data.skillMulti !== undefined && (
-                            <div className="flex justify-between border-t border-white/5 pt-0.5">
-                                <span className="text-text-muted">= Skill Multi</span>
-                                <span className="text-blue-300 font-bold">{data.skillMulti.toFixed(2)}</span>
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {hasCommon && (
-                    <>
-                        <div className="text-[8px] text-white/30 uppercase mt-1">Common Layer</div>
-                        <div className="flex justify-between">
-                            <span className="text-text-muted">× Common Multi</span>
-                            <span className="text-orange-400 font-bold">×{data.commonMulti!.toFixed(2)}</span>
-                        </div>
-                    </>
-                )}
-
-                {/* Legacy support for equipment tooltips */}
-                {data.levelMulti && data.levelMulti > 1 && (
-                    <div className="flex justify-between">
-                        <span className="text-text-muted">Level Scaling</span>
-                        <span className="text-blue-400">×{data.levelMulti.toFixed(2)}</span>
-                    </div>
-                )}
-                {data.skinMulti && data.skinMulti > 1 && (
-                    <div className="flex justify-between">
-                        <span className="text-text-muted">Skin Bonus</span>
-                        <span className="text-pink-400">×{data.skinMulti.toFixed(2)}</span>
-                    </div>
-                )}
-
-                {data.total && (
-                    <div className="flex justify-between border-t border-white/10 pt-1 mt-1">
-                        <span className="text-white/60 font-bold">Total</span>
-                        <span className="text-white font-bold">{data.total.toFixed(2)}x</span>
-                    </div>
-                )}
             </div>
         </div>
     );
 }
 
-export function StatBreakdownTooltip({ damage, health, isMelee }: StatBreakdownTooltipProps) {
+export function StatBreakdownTooltip({ damage, health }: StatBreakdownTooltipProps) {
     return (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-black/95 backdrop-blur-md border border-white/10 rounded-lg p-3 shadow-2xl z-[100] pointer-events-none animate-in fade-in zoom-in duration-200">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-black/95 backdrop-blur-md border border-white/10 rounded-lg p-3 shadow-2xl z-[100] pointer-events-none animate-in fade-in zoom-in duration-200">
             <div className="space-y-3">
                 {damage && <BreakdownSection data={damage} label="Damage" color="red" />}
                 {health && <BreakdownSection data={health} label="Health" color="green" />}
             </div>
             <div className="mt-2 pt-2 border-t border-white/10 text-[8px] text-text-muted italic text-center">
-                (1 + Tech + Items) × Asc × Common
+                Each line is its own game layer: they multiply.
             </div>
         </div>
     );

@@ -10,3 +10,4 @@ export * from './modes';
 export * from './skills';
 export * from './mapStats';
 export * from './enemies';
+export * from './visualSnapshot';

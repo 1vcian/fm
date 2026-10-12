@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useGameData } from '../hooks/useGameData';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
-import { expValues, tierNames } from '../constants/forgeData';
-import { AGES } from '../utils/constants';
+import { forgeTierCost } from '../hooks/useForgeCalculator';
 import { Card, CardHeader, CardTitle } from '../components/UI/Card';
-import { Hammer } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { Hammer, ArrowRight } from 'lucide-react';
 
 export default function ForgeWiki() {
     const { data: upgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
@@ -14,7 +13,6 @@ export default function ForgeWiki() {
     const techModifiers = useTreeModifiers();
     const forgeCostReduction = techModifiers['ForgeUpgradeCost'] || 0;
     const forgeTimerSpeed = techModifiers['ForgeTimerSpeed'] || 0;
-    const freeForgeChance = techModifiers['FreeForgeChance'] || 0;
 
     const data = useMemo(() => {
         if (!upgradeData || !dropData) return [];
@@ -22,36 +20,8 @@ export default function ForgeWiki() {
         // Build levels list from dropData (0..34 -> Level 1..35)
         const sortedKeys = Object.keys(dropData).map(Number).sort((a, b) => a - b);
         
-        const AGES_MAPPING: Record<string, string> = {
-            "Primitive": "primitive",
-            "Medieval": "medieval",
-            "Early-Modern": "earlyModern",
-            "Modern": "modern",
-            "Space": "space",
-            "Interstellar": "interstellar",
-            "Multiverse": "multiverse",
-            "Quantum": "quantum",
-            "Underworld": "underworld",
-            "Divine": "divine"
-        };
-
         return sortedKeys.map(id => {
             const level = id + 1;
-
-            // Probability Mapping (Age0..9 -> Descriptive Tiers)
-            const rawProbs = dropData[String(id)];
-            const probs: Record<string, number> = {};
-            if (rawProbs) {
-                AGES.forEach((ageName, index) => {
-                    const key = `Age${index}`;
-                    if (rawProbs[key] && rawProbs[key] > 0) {
-                        const tierKey = AGES_MAPPING[ageName];
-                        if (tierKey) {
-                            probs[tierKey] = rawProbs[key] * 100;
-                        }
-                    }
-                });
-            }
 
             // Upgrade Data for THIS level (Upgrade FROM level -> level+1)
             const nextLevelData = upgradeData[String(level)];
@@ -64,12 +34,7 @@ export default function ForgeWiki() {
                     baseCost: 0,
                     cost: 0,
                     costPerTier: 0,
-                    totalExp: 0,
-                    expPerTier: 0,
-                    hammersToUpgrade: 0,
-                    hammersPerTier: 0,
                     totalTimeSeconds: 0,
-                    probs, 
                     isMax: true,
                     ascensionCost: ascensionConfigs?.Forge?.AscensionConfigPerLevel?.[0]?.Cost?.Amount || 0
                 };
@@ -80,19 +45,9 @@ export default function ForgeWiki() {
             const tiers = nextLevelData.Tiers || 1;
             const baseDuration = nextLevelData.Duration || 0;
 
-            // Calculate EXP Per Hammer for THIS level
-            let expPerHammer = 0;
-            if (probs) {
-                for (const [tier, probability] of Object.entries(probs)) {
-                    // Normalize tier name back to key if needed for expValues
-                    const exp = expValues[tier] || 0;
-                    expPerHammer += (probability / 100) * exp;
-                }
-            }
-            if (expPerHammer === 0) expPerHammer = 1;
-
-            // Apply Modifiers
-            const cost = Math.floor(baseCost * (1 - forgeCostReduction));
+            // Each tier is priced and paid on its own (ForgeExtensions.GetForgeTierUpgradeCost 0x77B2C74).
+            const costPerTier = forgeTierCost(nextLevelData, forgeCostReduction);
+            const cost = costPerTier * tiers;
 
             // Duration is Total Seconds
             const baseDurationSeconds = baseDuration;
@@ -100,15 +55,6 @@ export default function ForgeWiki() {
             // Time
             const speedMultiplier = 1 + forgeTimerSpeed;
             const totalTimeSeconds = baseDurationSeconds / speedMultiplier;
-
-            // Hammers
-            const baseSecondsPerHammer = 0.25;
-            const rawHammersNeeded = Math.ceil(baseDurationSeconds / baseSecondsPerHammer);
-            const hammersToUpgrade = Math.ceil(rawHammersNeeded * (1 - freeForgeChance));
-            const hammersPerTier = Math.ceil(hammersToUpgrade / tiers);
-
-            const totalExp = baseDurationSeconds;
-            const expPerTier = totalExp / tiers;
 
             // Ascension cost if max level
             const ascensionCost = ascensionConfigs?.Forge?.AscensionConfigPerLevel?.[0]?.Cost?.Amount || 0;
@@ -118,19 +64,14 @@ export default function ForgeWiki() {
                 tiers,
                 baseCost,
                 cost,
-                costPerTier: Math.floor(cost / tiers),
-                totalExp,
-                expPerTier,
-                hammersToUpgrade,
-                hammersPerTier,
+                costPerTier,
                 totalTimeSeconds,
-                probs,
                 isMax: false,
                 ascensionCost: level === sortedKeys.length ? ascensionCost : 0
             };
         });
 
-    }, [upgradeData, dropData, ascensionConfigs, forgeCostReduction, forgeTimerSpeed, freeForgeChance]);
+    }, [upgradeData, dropData, ascensionConfigs, forgeCostReduction, forgeTimerSpeed]);
 
     const formatTime = (seconds: number) => {
         if (seconds < 60) return `${Math.ceil(seconds)}s`;
@@ -164,6 +105,17 @@ export default function ForgeWiki() {
                 </p>
             </div>
 
+            {/* The per level Age odds live on the Base Drops page (one table, with version compare). */}
+            <Link
+                to="/wiki/base-drops?tab=forge"
+                className="flex items-center justify-between gap-3 p-4 rounded-xl border border-accent-primary/30 bg-accent-primary/5 hover:bg-accent-primary/10 transition-colors"
+            >
+                <span className="text-sm text-text-secondary">
+                    The chance of forging each Age at every Forge level is on the <span className="font-bold text-accent-primary">Base Drops</span> page.
+                </span>
+                <ArrowRight className="w-4 h-4 text-accent-primary shrink-0" />
+            </Link>
+
             <Card className="overflow-hidden border-border/40 shadow-xl">
                 <CardHeader className="border-b border-border/50 bg-bg-secondary/20">
                     <CardTitle className="text-lg">Upgrade Table</CardTitle>
@@ -178,9 +130,7 @@ export default function ForgeWiki() {
                                 <th className="px-4 py-3 text-right">Cost (Total)</th>
                                 <th className="px-4 py-3 text-right">Cost (Step)</th>
                                 <th className="px-4 py-3 text-right">Steps</th>
-                                <th className="px-4 py-3 text-right text-text-muted">Hammers (Total)</th>
                                 <th className="px-4 py-3 text-right">Time</th>
-                                <th className="px-4 py-3 text-left">Probabilities</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/30">
@@ -225,27 +175,8 @@ export default function ForgeWiki() {
                                     <td className="px-4 py-3 text-right font-mono">
                                         {row.isMax ? '-' : row.tiers}
                                     </td>
-                                    <td className="px-4 py-3 text-right text-text-muted font-mono">
-                                        {row.isMax ? '-' : new Intl.NumberFormat('en-US', {
-                                            maximumFractionDigits: 0
-                                        }).format(row.hammersToUpgrade)}
-                                    </td>
                                     <td className="px-4 py-3 text-right text-text-secondary">
                                         {row.isMax ? '-' : formatTime(row.totalTimeSeconds)}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-1">
-                                            {row.probs && Object.entries(row.probs)
-                                                .sort((a, b) => b[1] - a[1])
-                                                .map(([tier, prob]) => (
-                                                    <span key={tier} className={cn(
-                                                        "text-[10px] px-1.5 py-0.5 rounded bg-bg-secondary border border-border",
-                                                        `text-age-${tier.toLowerCase()}`
-                                                    )}>
-                                                        {tierNames[tier]}: {prob.toFixed(2)}%
-                                                    </span>
-                                                ))}
-                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -277,21 +208,9 @@ export default function ForgeWiki() {
                                         </div>
                                     </div>
                                     <div className="bg-bg-input/50 p-2 rounded border border-border/50">
-                                        <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Total Hammers</div>
-                                        <div className="text-text-primary font-mono font-bold">
-                                            {new Intl.NumberFormat('en-US').format(row.hammersToUpgrade)}
-                                        </div>
-                                    </div>
-                                    <div className="bg-bg-input/50 p-2 rounded border border-border/50">
                                         <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Cost Per Step</div>
                                         <div className="text-yellow-500/80 font-mono text-sm capitalize">
                                             {new Intl.NumberFormat('en-US').format(row.costPerTier)} × {row.tiers}
-                                        </div>
-                                    </div>
-                                    <div className="bg-bg-input/50 p-2 rounded border border-border/50">
-                                        <div className="text-[10px] uppercase font-bold text-text-muted mb-1">Hammers/Step</div>
-                                        <div className="text-text-muted font-mono text-sm">
-                                            {new Intl.NumberFormat('en-US').format(row.hammersPerTier)}
                                         </div>
                                     </div>
                                 </div>
@@ -305,23 +224,6 @@ export default function ForgeWiki() {
                                     </div>
                                 </div>
                             )}
-
-                            <div className="pt-2">
-                                <div className="text-[10px] uppercase font-bold text-text-muted mb-2">Drop Probabilities</div>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {row.probs && Object.entries(row.probs)
-                                        .sort((a, b) => b[1] - a[1])
-                                        .map(([tier, prob]) => (
-                                            <div key={tier} className={cn(
-                                                "text-[9px] px-2 py-1 rounded bg-bg-secondary border border-border flex flex-col items-center min-w-[60px]",
-                                                `text-age-${tier.toLowerCase()}`
-                                            )}>
-                                                <span className="font-black">{prob.toFixed(1)}%</span>
-                                                <span className="opacity-70">{tierNames[tier]}</span>
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
                         </div>
                     ))}
                 </div>

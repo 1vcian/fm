@@ -88,6 +88,20 @@ happens at the end of a full cycle, never at the fire. That single fact is what 
 interval windup-independent: where `WindUpDuration` sits between 0 and `AttackDuration` cannot change
 how many ticks it takes to reach `AttackDuration` from zero.
 
+## Field check, 2026-09-30 (Underworld weapon, windup 0.82s)
+
+A player timed single hits at five attack-speed bonuses. All five match the model above:
+
+| Bonus % | 152 | 183 | 197 | 235 | 268 |
+|---|---|---|---|---|---|
+| Measured (s) | 0.7 | 0.7 | 0.7 | 0.6 | 0.6 |
+| Model (s) | 0.7 | 0.7 | 0.7 | 0.6 | 0.6 |
+
+The same player had read 0.6s / 0.5s for these speeds off the Items wiki breakpoint table. That table
+was wrong, not the game: `Items.tsx` passed a hard-coded `AttackDuration` of 1.1s (and `Skins.tsx`
+fell back to 1.1s) instead of the weapon's 1.5s, which shifted every row by roughly a third. Fixed
+2026-10-12; the profile's DPS breakdown always used the real 1.5s.
+
 ## A refuted alternative: quantising windup and recovery separately
 
 Worth recording so it does not get re-proposed. A user reported a 0.6s band starting just above
@@ -114,6 +128,7 @@ whole tick at +276% and +401%, so a single in-game measurement at either point s
 - Combat stats: `src/utils/statEngine.ts` sets `realCycleTime`, `realDoubleHitCycle`, `doubleHitDelay`, `realAps` from the helpers; these feed real DPS/HPS.
 - Breakpoint UI: `src/components/Profile/BreakpointTables.tsx` (+ `BreakpointExplanation`), shown via `DpsBreakdownModal` and `BreakpointWikiModal`.
 
-## Open item
+## Resolved: ClanWarDamage / ClanWarHealth
 
-`ClanWarDamage` / `ClanWarHealth` (war-only combat boosts) carry `ValuePerLevel = 1.0` at `MaxLevel 100`, anomalous vs every other clan multiplier. The Clan page assumes **+1%/level → +100% at max** and flags it for in-game verification.
+`ValuePerLevel = 1.0` at `MaxLevel 100` is real: +100% per level, +10000% at max, verified in game on
+2026-08-24 (`src/pages/Clan.tsx`). The stat engine feeds the full value into the clan-war context bonus.

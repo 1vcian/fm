@@ -1,3 +1,4 @@
+import { clanNodeValueAtLevel, clanNodeCaps } from '../../utils/clanTechStacking';
 import { useMemo, useState, useEffect } from 'react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
@@ -229,11 +230,10 @@ export function TechTreePanel() {
                         if (!effect?.Stats || !upgradeDef) return;
 
                         // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
-                        const valPerLevel = upgradeDef.ValuePerLevel || 0;
+                        const total = clanNodeValueAtLevel(upgradeDef, level);
 
                         effect.Stats.forEach((stat: any) => {
                             const sig = getStatSignature(stat);
-                            const total = valPerLevel * level;
                             stats[sig] = (stats[sig] || 0) + total;
                         });
                     });
@@ -335,6 +335,12 @@ export function TechTreePanel() {
     const currentTreeLevels = useMemo(() => {
         return profile.techTree[activeTab] || {};
     }, [profile.techTree, activeTab]);
+
+    // Clan node caps: MaxLevel, or open-ended for infinite nodes once every clan node is maxed.
+    const clanCaps = useMemo(
+        () => clanNodeCaps(guildPositionLibrary, guildUpgradeLibrary, profile.techTree.Clan || {}).caps,
+        [guildPositionLibrary, guildUpgradeLibrary, profile.techTree.Clan]
+    );
 
     // Get nodes for active tab grouped by layer
     const nodesByLayer = useMemo(() => {
@@ -699,6 +705,8 @@ export function TechTreePanel() {
                                         const nodeType = nObj.type;
                                         const upgradeDef = guildUpgradeLibrary?.[nodeType];
 const maxLevel = upgradeDef?.MaxLevel || 20;
+                                        // Infinite nodes open past MaxLevel once the whole clan tree is maxed.
+                                        const cap = clanCaps.get(globalId) ?? maxLevel;
                                         const currentLevel = currentTreeLevels[globalId] || 0;
                                         const completed = currentLevel >= maxLevel;
                                         const name = getTechNodeName(nodeType);
@@ -721,7 +729,11 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
 
                                         const effectDef = treeEffects?.[nodeType];
                                         // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
-                                        const valPerLevel = upgradeDef?.ValuePerLevel || 0;
+                                        // Average per level, so the linear description also reads right
+                                        // past MaxLevel, where a level is worth ValuePerInfiniteLevel.
+                                        const valPerLevel = currentLevel > maxLevel
+                                            ? clanNodeValueAtLevel(upgradeDef, currentLevel) / currentLevel
+                                            : upgradeDef?.ValuePerLevel || 0;
                                         
                                         const clanEffect = effectDef ? {
                                             ...effectDef,
@@ -773,7 +785,7 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
 
                                                 <div className="flex items-center justify-between gap-0.5 mt-2 bg-bg-input rounded p-1 border border-border/50">
                                                     <button
-                                                        onClick={() => handleLevelChange(globalId, Math.max(0, currentLevel - 10), maxLevel)}
+                                                        onClick={() => handleLevelChange(globalId, Math.max(0, currentLevel - 10), cap)}
                                                         disabled={currentLevel === 0}
                                                         title="-10"
                                                         className={cn(
@@ -784,7 +796,7 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                                         )}
                                                     >-10</button>
                                                     <button
-                                                        onClick={() => handleLevelChange(globalId, currentLevel - 1, maxLevel)}
+                                                        onClick={() => handleLevelChange(globalId, currentLevel - 1, cap)}
                                                         disabled={currentLevel === 0}
                                                         className={cn(
                                                             "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
@@ -798,25 +810,25 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                                             "font-mono font-bold text-sm",
                                                             completed ? "text-green-400" : currentLevel > 0 ? "text-accent-primary" : "text-text-muted"
                                                         )}>{currentLevel}</span>
-                                                        <span className="text-text-muted text-xs">/{maxLevel}</span>
+                                                        <span className="text-text-muted text-xs">/{maxLevel}{cap > maxLevel ? '+' : ''}</span>
                                                     </div>
                                                     <button
-                                                        onClick={() => handleLevelChange(globalId, currentLevel + 1, maxLevel)}
-                                                        disabled={currentLevel >= maxLevel}
+                                                        onClick={() => handleLevelChange(globalId, currentLevel + 1, cap)}
+                                                        disabled={currentLevel >= cap}
                                                         className={cn(
                                                             "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
-                                                            currentLevel < maxLevel
+                                                            currentLevel < cap
                                                                 ? "bg-bg-secondary hover:bg-white/10"
                                                                 : "text-text-muted cursor-not-allowed"
                                                         )}
                                                     >+</button>
                                                     <button
-                                                        onClick={() => handleLevelChange(globalId, Math.min(maxLevel, currentLevel + 10), maxLevel)}
-                                                        disabled={currentLevel >= maxLevel}
+                                                        onClick={() => handleLevelChange(globalId, Math.min(cap, currentLevel + 10), cap)}
+                                                        disabled={currentLevel >= cap}
                                                         title="+10"
                                                         className={cn(
                                                             "w-7 h-6 rounded flex items-center justify-center font-bold text-[10px] transition-colors",
-                                                            currentLevel < maxLevel
+                                                            currentLevel < cap
                                                                 ? "bg-bg-secondary hover:bg-white/10"
                                                                 : "text-text-muted cursor-not-allowed"
                                                         )}

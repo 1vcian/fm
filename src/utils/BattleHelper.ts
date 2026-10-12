@@ -1,4 +1,6 @@
 
+import { MainBattleConfigJson, mainBattleDifficultyMultipliers, realAgeScale } from '../engine/enemies';
+
 // --- Battle Types ---
 
 export interface DungeonLevelConfig {
@@ -119,6 +121,8 @@ export interface LibraryData {
     mainBattleLookup?: Record<string, BattleConfig>;
     missionBaseConfig?: any;
     missionBattleLibrary?: Record<string, any>;
+    /** MountLibrary: the equipped mount sets the player's collider (UpdateMount, 0x77E96EC). */
+    mountLibrary?: Record<string, any>;
 }
 
 export interface MissionBattleConfig {
@@ -162,33 +166,41 @@ export function getAvailableStages(libs: LibraryData): { ageIdx: number; battleI
     });
 }
 
+/**
+ * Main-battle enemy HP at its real magnitude (MainBattleBalancing.GetEnemyHp, 0x77EA22C):
+ * AgeScaling.Health x DifficultyScaling[difficultyIdx].HpMulti. Kept for old imports; the
+ * simulators use src/engine/enemies.ts (mainBattleWaveSpecs) directly.
+ */
 export function calculateEnemyHp(
-    _progressDifficultyIdx: number,
+    difficultyIdx: number,
     ageScaling: AgeScaling,
-    _mainBattleConfig: any,
-    _weaponInfo: WeaponInfo | null,
-    _libs: LibraryData
+    mainBattleConfig: MainBattleConfigJson | null | undefined,
+    _weaponInfo?: WeaponInfo | null,
+    _libs?: LibraryData
 ): number {
-    const baseHp = ageScale(ageScaling.Health);
-    return baseHp;
+    return realAgeScale(ageScaling.Health) * mainBattleDifficultyMultipliers(mainBattleConfig, difficultyIdx).hp;
 }
 
+/**
+ * Main-battle enemy damage (GetEnemyDmg, 0x77EA2D4): AgeScaling.Damage x DmgMulti, times
+ * EnemyRangedDamageMultiplier when the weapon IsRanged.
+ */
 export function calculateEnemyDmg(
-    _progressDifficultyIdx: number,
+    difficultyIdx: number,
     ageScaling: AgeScaling,
-    _mainBattleConfig: any,
+    mainBattleConfig: MainBattleConfigJson | null | undefined,
     weaponInfo: WeaponInfo | null,
     enemyRangedMulti: number,
-    _libs: LibraryData
+    _libs?: LibraryData
 ): number {
-    const baseDmg = ageScale(ageScaling.Damage);
-    const atkRange = weaponInfo?.AttackRange ?? 0;
-    if (weaponInfo && atkRange > 1.0) {
-        return baseDmg * enemyRangedMulti;
-    }
-    return baseDmg;
+    const base = realAgeScale(ageScaling.Damage) * mainBattleDifficultyMultipliers(mainBattleConfig, difficultyIdx).dmg;
+    return weaponInfo && weaponInfo.IsRanged ? base * enemyRangedMulti : base;
 }
 
+/**
+ * @deprecated The game has no global progress index: a battle is (difficulty, age, battle) and
+ * BattleIdx never scales stats. Kept only so old imports compile.
+ */
 export function calculateProgressDifficultyIdx(
     ageIdx: number,
     battleIdx: number,
@@ -196,17 +208,10 @@ export function calculateProgressDifficultyIdx(
     mainBattleLibrary: Record<string, BattleConfig>
 ): number {
     let totalBattles = 0;
-
     for (let age = 0; age < ageIdx; age++) {
         const ageKey = `{'AgeIdx': ${age}`;
-        const battlesInAge = Object.keys(mainBattleLibrary).filter(k => k.includes(ageKey)).length;
-        totalBattles += battlesInAge;
+        totalBattles += Object.keys(mainBattleLibrary).filter(k => k.includes(ageKey)).length;
     }
-
-    totalBattles += battleIdx;
-
-    const battlesPerMode = 300;
-    totalBattles += (difficultyMode * battlesPerMode);
-
-    return totalBattles;
+    const battlesPerDifficulty = Object.keys(mainBattleLibrary).length;
+    return totalBattles + battleIdx + difficultyMode * battlesPerDifficulty;
 }

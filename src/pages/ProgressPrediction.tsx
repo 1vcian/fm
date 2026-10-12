@@ -5,6 +5,10 @@ import { BattleResult } from '../utils/BattleSimulator';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
 import type { DebugConfig } from '../utils/VisualBattleEngine';
+import { difficultyName, difficultyStyle } from '../utils/difficulty';
+import { useGameDataContext } from '../context/GameDataContext';
+import { FEATURE_NAMES } from '../hooks/useFeatureUnlocks';
+import { resolveTextureVersion } from '../utils/ascensionUtils';
 
 // Format large numbers
 function formatNumber(num: number): string {
@@ -15,8 +19,11 @@ function formatNumber(num: number): string {
     return num.toFixed(1);
 }
 
-// Custom Icons Path
-const ICON_PATH = '/icons/game/';
+/** Texture folder of the build being shown (Texture2D/<version>/). */
+const texturePath = (version: string | undefined) => {
+    const v = resolveTextureVersion(version);
+    return `${import.meta.env.BASE_URL}Texture2D/${v ? `${v}/` : ''}`;
+};
 
 // Tabs configuration
 interface TabConfig {
@@ -28,10 +35,11 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
     { id: 'main', label: 'Main Battle', icon: 'MainGameProgressPassSwordIcon.png', type: 'image' },
-    { id: 'hammer', label: 'Hammer Dungeon', icon: 'HammerKey', type: 'sprite' },
-    { id: 'skill', label: 'Skill Dungeon', icon: 'SkillKey', type: 'sprite' },
-    { id: 'egg', label: 'Egg Dungeon', icon: 'PetKey', type: 'sprite' }, // Using PetKey for Eggs as requested
-    { id: 'potion', label: 'Potion Dungeon', icon: 'PotionKey', type: 'sprite' },
+    // The game's dungeon names (FEATURE_NAMES in useFeatureUnlocks).
+    { id: 'hammer', label: FEATURE_NAMES.HammerDungeon, icon: 'HammerKey', type: 'sprite' },
+    { id: 'skill', label: FEATURE_NAMES.SkillDungeon, icon: 'SkillKey', type: 'sprite' },
+    { id: 'egg', label: FEATURE_NAMES.PetDungeon, icon: 'PetKey', type: 'sprite' },
+    { id: 'potion', label: FEATURE_NAMES.PotionDungeon, icon: 'PotionKey', type: 'sprite' },
 ];
 
 // Helper to get color scale for 0-100% progress (10 steps)
@@ -160,6 +168,7 @@ function MainBattleView({
     debugConfig,
     recalcTrigger,
     maxAgeIdx,
+    difficultyCount,
     isSimulating,
     setIsSimulating,
     simProgress,
@@ -175,6 +184,7 @@ function MainBattleView({
     debugConfig?: DebugConfig;
     recalcTrigger?: number;
     maxAgeIdx: number;
+    difficultyCount: number;
     isSimulating: boolean;
     setIsSimulating: (s: boolean) => void;
     simProgress: { current: number; total: number };
@@ -183,7 +193,7 @@ function MainBattleView({
 }) {
     const [selectedAge, setSelectedAge] = useState(0);
     const [selectedLevel, setSelectedLevel] = useState(0);
-    const [difficulty, setDifficulty] = useState(0); // 0=Normal, 1=Hard
+    const [difficulty, setDifficulty] = useState(0); // 0=Normal, 1=Hard, 2=Extreme...
     const [result, setResult] = useState<BattleResult | null>(null);
     const [maxBeatable, setMaxBeatable] = useState<{ ageIdx: number; battleIdx: number; difficulty: number } | null>(null);
     const [autoScrollDone, setAutoScrollDone] = useState(false);
@@ -191,25 +201,18 @@ function MainBattleView({
     const [levelStatuses, setLevelStatuses] = useState<Map<string, number>>(new Map());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    // Calculate Global Max Beatable (Furthest Progress)
+    // Calculate Global Max Beatable (Furthest Progress).
+    // Any stage on a higher difficulty is further than every stage below it (Hard 1-1 > Normal
+    // 10-10), so walk the difficulties from the top and keep the first one with any progress.
     useEffect(() => {
-        // Check Normal Max
-        const maxNormal = findMaxBeatable(50, 0);
-        // Check Hard Max (only if Normal is fully cleared? Or just check both?)
-        // Let's check Hard.
-        const maxHard = findMaxBeatable(50, 1);
-
-        // If Hard has ANY progress (Age 0, Battle 0+), it might be the "Furthest".
-        // But user might be stuck on Hard 1-1 while beating Normal 10-10.
-        // Conceptually, Hard 1-1 > Normal 10-10.
-
-        if (maxHard && (maxHard.ageIdx > 0 || maxHard.battleIdx >= 0)) {
-            // If found valid Hard result
-            setMaxBeatable({ ...maxHard, difficulty: 1 });
-        } else if (maxNormal) {
-            setMaxBeatable({ ...maxNormal, difficulty: 0 });
+        for (let d = difficultyCount - 1; d >= 0; d--) {
+            const max = findMaxBeatable(50, d);
+            if (max) {
+                setMaxBeatable({ ...max, difficulty: d });
+                return;
+            }
         }
-    }, [findMaxBeatable]);
+    }, [findMaxBeatable, difficultyCount]);
 
     // Auto-Scroll to Max Progress on Load
     useEffect(() => {
@@ -266,11 +269,12 @@ function MainBattleView({
 
             for (let a = 0; a <= maxAgeIdx; a++) {
                 const count = getBattleCountForAge(a);
-                for (let l = 0; l < count; l++) tasks.push({ age: a, level: l, diff: 0 });
-                for (let l = 0; l < count; l++) tasks.push({ age: a, level: l, diff: 1 });
+                for (let d = 0; d < difficultyCount; d++) {
+                    for (let l = 0; l < count; l++) tasks.push({ age: a, level: l, diff: d });
+                }
             }
 
-            // Sort: Process Normal fully (Age 0..10), then Hard (Age 0..10)
+            // Sort: process each difficulty fully (Age 0..10) before the next one
             tasks.sort((a, b) => {
                 if (a.diff !== b.diff) return a.diff - b.diff; // Normal first
                 if (a.age !== b.age) return a.age - b.age;
@@ -302,7 +306,7 @@ function MainBattleView({
                 if (isCancelled) return;
                 setSimProgress({ current: tasks.indexOf(task) + 1, total: tasks.length });
 
-                // Reset failure count if difficulty changes (Treat Normal/Hard as separate runs)
+                // Reset failure count if difficulty changes (each difficulty is a separate run)
                 if (task.diff !== currentDiff) {
                     currentDiff = task.diff;
                     consecutiveFailures = 0;
@@ -385,7 +389,7 @@ function MainBattleView({
         runSimulations();
 
         return () => { isCancelled = true; setIsSimulating(false); };
-    }, [simulate, playerStats, getBattleCountForAge, debugConfig, recalcTrigger]);
+    }, [simulate, playerStats, getBattleCountForAge, debugConfig, recalcTrigger, difficultyCount]);
     // Clear cache when stats change
     // Merged into main effect
 
@@ -419,19 +423,19 @@ function MainBattleView({
     };
     // --- Render List of Ages ---
     const renderAgeBlock = (ageIdx: number, modeDiff: number) => {
-        const isHard = modeDiff === 1;
         // DYNAMIC LEVEL COUNT
         const levels = getBattleCountForAge(ageIdx);
 
-        const modeName = isHard ? 'Hard' : 'Normal';
-        const colorClass = isHard ? 'text-orange-400 border-orange-500/30' : 'text-blue-400 border-blue-500/30';
+        const modeName = difficultyName(modeDiff);
+        const style = difficultyStyle(modeDiff);
+        const colorClass = style.block;
         const ageNum = ageIdx + 1;
 
         return (
             <div key={`${modeDiff}-${ageIdx}`} className={`p-4 rounded-xl border bg-black/20 ${colorClass} mb-4`}>
                 <div className="flex items-center gap-3 mb-3">
-                    <div className={`p-2 rounded-lg ${isHard ? 'bg-orange-500/20' : 'bg-blue-500/20'}`}>
-                        {isHard ? <Flame className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
+                    <div className={`p-2 rounded-lg ${style.chip}`}>
+                        {modeDiff > 0 ? <Flame className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
                     </div>
                     <div>
                         <div className="font-bold text-lg">{modeName} - Age {ageNum}</div>
@@ -497,28 +501,27 @@ function MainBattleView({
                             </div>
                         )}
                         <div className="text-xs text-gray-400">
-                            {maxBeatable ? `Max: ${maxBeatable.difficulty === 1 ? 'Hard' : 'Normal'} ${maxBeatable.ageIdx + 1}-${maxBeatable.battleIdx + 1}` : 'Calculating'}
+                            {maxBeatable ? `Max: ${difficultyName(maxBeatable.difficulty)} ${maxBeatable.ageIdx + 1}-${maxBeatable.battleIdx + 1}` : 'Calculating'}
                         </div>
                     </div>
                 </div>
 
                 {/* Scrollable Content */}
                 <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2 relative">
-                    {/* Normal Mode Blocks */}
-                    <div className="sticky top-0 z-0 py-2 mb-2 flex items-center gap-4 opacity-50 pointer-events-none">
-                        <div className="h-[1px] bg-blue-500/50 flex-1"></div>
-                        <span className="text-blue-400 font-bold tracking-widest text-xs uppercase">Normal Timeline</span>
-                        <div className="h-[1px] bg-blue-500/50 flex-1"></div>
-                    </div>
-                    {Array.from({ length: maxAgeIdx + 1 }, (_, i) => renderAgeBlock(i, 0))}
-
-                    {/* Hard Mode Blocks */}
-                    <div className="sticky top-0 z-0 py-6 mb-2 flex items-center gap-4 opacity-50 pointer-events-none">
-                        <div className="h-[1px] bg-orange-500/50 flex-1"></div>
-                        <span className="text-orange-400 font-bold tracking-widest text-xs uppercase">Hard Timeline</span>
-                        <div className="h-[1px] bg-orange-500/50 flex-1"></div>
-                    </div>
-                    {Array.from({ length: maxAgeIdx + 1 }, (_, i) => renderAgeBlock(i, 1))}
+                    {/* One timeline per difficulty */}
+                    {Array.from({ length: difficultyCount }, (_, d) => {
+                        const style = difficultyStyle(d);
+                        return (
+                            <div key={`timeline-${d}`}>
+                                <div className={`sticky top-0 z-0 ${d === 0 ? 'py-2' : 'py-6'} mb-2 flex items-center gap-4 opacity-50 pointer-events-none`}>
+                                    <div className={`h-[1px] ${style.line} flex-1`}></div>
+                                    <span className={`${style.text} font-bold tracking-widest text-xs uppercase`}>{difficultyName(d)} Timeline</span>
+                                    <div className={`h-[1px] ${style.line} flex-1`}></div>
+                                </div>
+                                {Array.from({ length: maxAgeIdx + 1 }, (_, i) => renderAgeBlock(i, d))}
+                            </div>
+                        );
+                    })}
 
                     {/* End Padding */}
                     <div className="h-20 flex items-center justify-center text-gray-600 text-sm">
@@ -962,7 +965,8 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
 // import { Play } from 'lucide-react';
 
 export default function ProgressPrediction() {
-    const { simulate, simulateDungeon, findMaxBeatable, findMaxBeatableDungeon, playerStats, isLoading, libs, profile, getBattleCountForAge, maxDungeonLevel, maxAgeIdx } = useBattleSimulation();
+    const { selectedVersion } = useGameDataContext();
+    const { simulate, simulateDungeon, findMaxBeatable, findMaxBeatableDungeon, playerStats, isLoading, libs, profile, getBattleCountForAge, maxDungeonLevel, maxAgeIdx, difficultyCount } = useBattleSimulation();
     const [activeTab, setActiveTab] = useState('main');
     const [isDebugMode, setIsDebugMode] = useState(false);
     const [visualizerOpen, setVisualizerOpen] = useState(false);
@@ -1217,7 +1221,7 @@ export default function ProgressPrediction() {
                             <SpriteIcon name={tab.icon} size={20} />
                         ) : (
                             <img
-                                src={`${ICON_PATH}${tab.icon}`}
+                                src={`${texturePath(selectedVersion)}${tab.icon}`}
                                 alt={tab.label}
                                 className="w-5 h-5 object-contain"
                                 onError={(e) => {
@@ -1242,6 +1246,7 @@ export default function ProgressPrediction() {
                     debugConfig={debugConfig}
                     recalcTrigger={recalcVersion}
                     maxAgeIdx={maxAgeIdx}
+                    difficultyCount={difficultyCount}
                     isSimulating={isSimulating}
                     setIsSimulating={setIsSimulating}
                     simProgress={simProgress}

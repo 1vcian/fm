@@ -8,6 +8,7 @@ import { useGameData } from '../../hooks/useGameData';
 import { MountSelectorModal } from './MountSelectorModal';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
+import { personalTechShare } from '../../utils/clanTechStacking';
 import { InputModal } from '../UI/InputModal';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
@@ -116,8 +117,8 @@ export function MountPanel() {
             damageMulti: techDmgMulti * ascDmgMulti,
             healthMulti: techHpMulti * ascHpMulti,
             details: {
-                damage: { base: baseDamage, techMulti: techDmgMulti, clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgMulti },
-                health: { base: baseHealth, techMulti: techHpMulti, clanTechMulti: clanMountHealthBonus, ascMulti: ascHpMulti }
+                damage: { base: baseDamage, techMulti: personalTechShare(mountDamageBonus, clanMountDamageBonus), clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgMulti },
+                health: { base: baseHealth, techMulti: personalTechShare(mountHealthBonus, clanMountHealthBonus), clanTechMulti: clanMountHealthBonus, ascMulti: ascHpMulti }
             }
         };
     }, [activeMount, mountUpgradeLibrary, ascensionConfigsLibrary, mountAscensionLevel,

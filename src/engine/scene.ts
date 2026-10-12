@@ -20,6 +20,9 @@ import {
     defaultStats,
 } from './types';
 
+/** What produced a hit, for the event log and the visualizer. Never affects the combat. */
+export type HitOrigin = Pick<CombatEvent, 'source' | 'skillId'>;
+
 /** The real tick length: floor(2^32/10)/2^32 seconds. Used for all continuous integration. */
 export const DT = SIM_DT_RAW / 4294967296;
 
@@ -95,6 +98,7 @@ export class CombatScene {
             destroyed: false,
             tag: spec.tag,
             weaponSpriteKey: spec.weaponSpriteKey,
+            skillId: spec.skillId,
         };
         this.units.push(unit);
         return unit;
@@ -145,8 +149,9 @@ export class CombatScene {
         this.handleProjectileImpacts();
         this.handleAreaProjectiles();
         this.handleUnits();
-
-        this.sweepDestroyed();
+        // No sweep here: the game removes killed/destroyed entities only at the START of the next
+        // NextFrame (0x77EC06C), so a unit killed this tick is still in the table for the PvP skill
+        // activations that follow the tick (enemy center, Arrows/Shurikens target list).
     }
 
     // ------------------------------------------------------------------ physics
@@ -186,34 +191,42 @@ export class CombatScene {
         }
     }
 
+    /**
+     * HandleUnitPhysics (0x77F759C, build 2026_10_08_09_03). For each unit A in table order:
+     * integrate A (pos += vel*dt), then resolve A against EVERY other unit B (full inner loop,
+     * so each pair is visited from both sides, and B may or may not have moved yet this tick):
+     *   overlap when |(A.pos+A.com) - (B.pos+B.com)| < A.r + B.r, and only if both are solid;
+     *   push along the normal with weights 1000:1 for a unit whose target is in range
+     *   (A moves by wB/(wA+wB) of the overlap, B by wA/(wA+wB)), clamp both Y to [-4, 4],
+     *   and zero A's velocity when A is not attacking but B is.
+     * Integration and resolution are interleaved; that order is what produces the melee queue.
+     */
     private unitPhysics(): void {
-        for (const u of this.units) {
-            if (u.destroyed) continue;
-            u.pos.x += u.vel.x * DT;
-            u.pos.y += u.vel.y * DT;
-        }
-        // Pairwise separation (HandleUnitPhysics, 0x7742FAC): attackers anchored 1000:1,
-        // walkers pushed; queueing and lane-fanning emerge from this rule alone.
-        for (let i = 0; i < this.units.length; i++) {
-            const a = this.units[i];
-            if (a.destroyed || !a.solid) continue;
-            for (let j = i + 1; j < this.units.length; j++) {
-                const b = this.units[j];
-                if (b.destroyed || !b.solid) continue;
+        const units = this.units;
+        for (let i = 0; i < units.length; i++) {
+            const a = units[i];
+            if (a.destroyed) continue;
+            a.pos.x += a.vel.x * DT;
+            a.pos.y += a.vel.y * DT;
+            for (let j = 0; j < units.length; j++) {
+                const b = units[j];
+                if (j === i || b.destroyed) continue;
                 const dx = a.pos.x + a.com.x - (b.pos.x + b.com.x);
                 const dy = a.pos.y + a.com.y - (b.pos.y + b.com.y);
                 const d = len(dx, dy);
                 const rr = a.radius + b.radius;
-                if (d >= rr || d === 0) continue;
+                if (!(d < rr) || !a.solid || !b.solid || d === 0) continue;
                 const ux = dx / d;
                 const uy = dy / d;
                 const wa = a.targetInRange ? ANCHOR_WEIGHT : 1;
                 const wb = b.targetInRange ? ANCHOR_WEIGHT : 1;
                 const ov = rr - d;
-                a.pos.x += ux * ov * (wb / (wa + wb));
-                a.pos.y += uy * ov * (wb / (wa + wb));
-                b.pos.x -= ux * ov * (wa / (wa + wb));
-                b.pos.y -= uy * ov * (wa / (wa + wb));
+                const fa = (wb / (wa + wb)) * ov;
+                const fb = (wa / (wa + wb)) * ov;
+                a.pos.x += ux * fa;
+                a.pos.y += uy * fa;
+                b.pos.x -= ux * fb;
+                b.pos.y -= uy * fb;
                 a.pos.y = Math.max(-Y_BOUND, Math.min(Y_BOUND, a.pos.y));
                 b.pos.y = Math.max(-Y_BOUND, Math.min(Y_BOUND, b.pos.y));
                 if (!a.targetInRange && b.targetInRange) {
@@ -233,7 +246,7 @@ export class CombatScene {
             const target = this.getUnit(p.collidedWith);
             // The shooter may be dead by impact time: lifesteal/reflect-back silently skip.
             const attacker = this.getUnit(p.ownerId) ?? null;
-            if (target) this.applyDmg(target, attacker, p.srcStats);
+            if (target) this.applyDmg(target, attacker, p.srcStats, p.skillId ? { source: 'skill', skillId: p.skillId } : { source: 'ranged' });
         }
     }
 
@@ -259,11 +272,12 @@ export class CombatScene {
 
     private aoeDamage(a: AreaProjectile): void {
         const owner = this.getUnit(a.ownerId) ?? null;
+        a.lastPulseTick = this.tickCount;
         // Unit CENTER inside the radius; the unit's own radius is NOT added (0x77410DC).
         for (const u of [...this.units]) {
             if (u.destroyed || !u.targetable || u.isAlly === a.isAllied) continue;
             const d = len(u.pos.x + u.com.x - a.pos.x, u.pos.y + u.com.y - a.pos.y);
-            if (d < a.radius) this.applyDmg(u, owner, a.srcStats);
+            if (d < a.radius) this.applyDmg(u, owner, a.srcStats, { source: 'skill', skillId: a.skillId });
         }
     }
 
@@ -272,8 +286,9 @@ export class CombatScene {
             if (u.destroyed) continue;
 
             // Timed entities (skill summons) burn down and vanish before acting.
+            // DestroyTimer is FD6 and loses FD6(dt) = 0.099999 per tick (HandleUnits 0x77F3F50).
             if (u.destroyTimer !== undefined) {
-                u.destroyTimer -= DT;
+                u.destroyTimer = (Math.round(u.destroyTimer * 1e6) - 99999) / 1e6;
                 if (u.destroyTimer <= 0) {
                     u.destroyed = true;
                     continue;
@@ -351,8 +366,9 @@ export class CombatScene {
         const target = this.getUnit(u.targetId);
         if (!target) return;
         const snapshot = { ...u.stats };
+        const origin: HitOrigin = u.skillId ? { source: 'skill', skillId: u.skillId } : { source: u.projectile ? 'ranged' : 'melee' };
         if (!u.projectile) {
-            this.applyDmg(target, u, snapshot);
+            this.applyDmg(target, u, snapshot, origin);
             return;
         }
         // Ranged: spawn an unguided projectile at the attacker's center (see fidelity note 5).
@@ -363,7 +379,7 @@ export class CombatScene {
         const d = len(tx - px, ty - py);
         // Point-blank: already overlapping the target -> instant, no projectile (0x7741A58).
         if (d < u.projectile.collisionRadius + target.radius) {
-            this.applyDmg(target, u, snapshot);
+            this.applyDmg(target, u, snapshot, origin);
             return;
         }
         let dirX: number;
@@ -388,21 +404,23 @@ export class CombatScene {
             collidedWith: -1,
             srcStats: snapshot,
             destroyed: false,
+            skillId: u.skillId,
         });
     }
 
     /** GetDamage + ApplyDmg (0x7740C34 / 0x77405E4). Roll order: dodge, block, reflect, crit. */
-    applyDmg(target: Unit, attacker: Unit | null, stats: CombatStatsVec): void {
+    applyDmg(target: Unit, attacker: Unit | null, stats: CombatStatsVec, origin: HitOrigin = {}): void {
+        const at = (u: Unit) => ({ x: u.pos.x + u.com.x, y: u.pos.y + u.com.y });
         const dodged = this.rng.rollLE(target.stats.dodgeChance);
         if (dodged) {
-            this.emit({ targetId: target.id, attackerId: attacker?.id ?? -1, dmg: 0, dodged: true });
+            this.emit({ targetId: target.id, attackerId: attacker?.id ?? -1, dmg: 0, dodged: true, ...origin, ...at(target) });
             return;
         }
         const blocked = this.rng.rollLE(target.stats.blockChance);
         const reflected = this.rng.rollLE(target.stats.reflectChance);
         const critical = this.rng.rollLT(stats.criticalChance);
         const dmg = critical ? stats.dmg * stats.criticalMulti : stats.dmg;
-        this.emit({ targetId: target.id, attackerId: attacker?.id ?? -1, dmg, blocked, critical, reflected });
+        this.emit({ targetId: target.id, attackerId: attacker?.id ?? -1, dmg, blocked, critical, reflected, ...origin, ...at(target) });
 
         if (!blocked) {
             target.hp -= dmg;
@@ -410,7 +428,7 @@ export class CombatScene {
             if (attacker && stats.lifeSteal > 0) {
                 const heal = dmg * stats.lifeSteal;
                 attacker.hp = Math.min(attacker.hp + heal, attacker.stats.hpMax);
-                this.emit({ targetId: attacker.id, attackerId: attacker.id, dmg: heal, heal: true });
+                this.emit({ targetId: attacker.id, attackerId: attacker.id, dmg: heal, heal: true, source: 'lifesteal', ...at(attacker) });
             }
         }
         // Reflect: full rolled damage back, even on a blocked hit. Direct subtraction —
@@ -418,17 +436,22 @@ export class CombatScene {
         if (reflected && attacker) {
             attacker.hp -= dmg;
             if (attacker.hp <= 0) this.kill(attacker);
-            this.emit({ targetId: attacker.id, attackerId: target.id, dmg });
+            this.emit({ targetId: attacker.id, attackerId: target.id, dmg, source: 'reflect', ...at(attacker) });
         }
     }
 
+    /**
+     * ApplyDmg (0x77F4BD0) on Hp <= 0: IsKilled = true and the unit joins EntitiesToDestroy.
+     * IsTargetable is NOT cleared and nothing in the tick reads IsKilled, so for the rest of the
+     * tick the dead unit still acts, can still be targeted, hit by areas and reflect damage.
+     */
     private kill(u: Unit): void {
         if (u.killed) return;
         u.killed = true;
-        u.targetable = false;
     }
 
-    private emit(e: Partial<CombatEvent> & { targetId: number; attackerId: number; dmg: number }): void {
+    /** Display-only: tags the event with what produced the hit; never read by the combat. */
+    emit(e: Partial<CombatEvent> & { targetId: number; attackerId: number; dmg: number }): void {
         const ev: CombatEvent = {
             tick: this.tickCount,
             dodged: false,
@@ -443,8 +466,7 @@ export class CombatScene {
     }
 
     private sweepDestroyed(): void {
-        // Killed units survive until the next sweep (they were removed at the START of the
-        // next frame in the game too), which is why kill() only clears targetable.
+        // Killed units survive until this sweep at the START of the next frame, as in the game.
         for (const u of this.units) if (u.killed) u.destroyed = true;
         for (let i = this.units.length - 1; i >= 0; i--) if (this.units[i].destroyed) this.units.splice(i, 1);
         for (let i = this.projectiles.length - 1; i >= 0; i--) if (this.projectiles[i].destroyed) this.projectiles.splice(i, 1);
