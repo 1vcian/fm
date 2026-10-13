@@ -42,21 +42,6 @@ export interface SweepOptions {
     respectSavedLevels?: boolean;
 }
 
-/**
- * A combination with its full display stats. Needs a second engine run
- * (substats excluded) so this is computed on demand, never for the whole sweep.
- */
-export interface ExpandedLoadout extends SweepResult {
-    /** Substats included ("Substats On", not the in-game Power) in the header toggle. */
-    calcStats: AggregatedStats;
-    /** Substats excluded (the in-game Power) in the header toggle. */
-    shownStats: AggregatedStats;
-    shownDmg: number;
-    calcDmg: number;
-    shownHp: number;
-    calcHp: number;
-}
-
 export type SweepStatus = 'idle' | 'running' | 'done';
 
 const mountKey = (m: MountSlot) => `${m.id}|${m.rarity}|${m.level}|${JSON.stringify(m.secondaryStats)}`;
@@ -276,33 +261,6 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
             .sort((a, b) => b.score - a.score);
     }, [results, scoreOf]);
 
-    /**
-     * Adds the Shown/Calculated damage & HP columns to a combination.
-     * Costs two more engine runs, so only call it for rows actually rendered.
-     */
-    const expand = useCallback((combo: LoadoutCombo & Partial<SweepResult>): ExpandedLoadout | null => {
-        if (!isReady) return null;
-
-        const tempProfile = buildTempProfile(combo);
-        const calcStats: AggregatedStats = calculateStats(tempProfile, libs, false);
-        const shownStats: AggregatedStats = calculateStats(tempProfile, libs, true);
-
-        return {
-            petSet: combo.petSet,
-            mount: combo.mount,
-            dps: combo.dps ?? calcStats.realTotalDps,
-            power: combo.power ?? (excludeSubstats ? shownStats : calcStats).power,
-            lifestealPerSec: combo.lifestealPerSec ?? calcStats.realWeaponDps * calcStats.lifeSteal,
-            healPerSec: combo.healPerSec ?? calcStats.realTotalHps,
-            calcStats,
-            shownStats,
-            shownDmg: shownStats.totalDamage,
-            calcDmg: calcStats.totalDamage,
-            shownHp: shownStats.totalHealth,
-            calcHp: calcStats.totalHealth
-        };
-    }, [isReady, libs, buildTempProfile, excludeSubstats]);
-
     return {
         status,
         progress,
@@ -311,7 +269,6 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
         totalCombos: combos.length,
         rank,
         scoreOf,
-        expand,
         isReady
     };
 }
