@@ -166,8 +166,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Gallery', path: '/gallery', icon: Image, theme: 'interstellar' },
                 { name: 'FAQ', path: '/faq', icon: HelpCircle, theme: 'quantum' },
                 { name: 'Settings', path: '/settings', icon: SettingsIcon },
-                // Developer pages: listed (and routed) only with ?debug=true.
-                { name: 'Configs', path: '/configs', icon: FileJson, theme: 'multiverse', debugOnly: true },
+                { name: 'Configs', path: '/configs', icon: FileJson, theme: 'multiverse' },
+                // Verify is a developer page: listed (and routed) only with ?debug=true.
                 { name: 'Verify', path: '/verify', icon: ShieldCheck, debugOnly: true },
                 { name: 'GitHub', path: 'https://github.com/1vcian/fm', icon: Github, external: true, theme: 'underworld' },
             ]

@@ -72,7 +72,7 @@ function App() {
                                     <Route path="progress-prediction" element={<ProgressPrediction />} />
                                     {/* pages/Home.tsx was a legacy copy of the forge calculator: send its old URL there. */}
                                     <Route path="home" element={<Navigate to="/calculators/forge" replace />} />
-                                    <Route path="configs" element={<DebugOnly><Configs /></DebugOnly>} />
+                                    <Route path="configs" element={<Configs />} />
                                     <Route path="mounts" element={<Mounts />} />
                                     <Route path="skills" element={<Skills />} />
                                     <Route path="eggs" element={<Eggs />} />
