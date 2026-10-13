@@ -2,9 +2,9 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Zap as PowerIcon, Cat, Sword, RotateCcw, Heart, Scale } from 'lucide-react';
+import { Zap as PowerIcon, Cat, Sword, RotateCcw, Heart, Trophy } from 'lucide-react';
 import { Button } from '../UI/Button';
-import { PetSlot, MountSlot, UserProfile } from '../../types/Profile';
+import { PetSlot, MountSlot, UserProfile, SkillSlot } from '../../types/Profile';
 import { useState, useMemo, useCallback } from 'react';
 import { cn } from '../../lib/utils';
 import { MAX_ACTIVE_PETS } from '../../utils/constants';
@@ -25,6 +25,8 @@ import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
 import { LoadoutSweepPopover, AutoLoadoutMetric } from './LoadoutSweepPopover';
 import { LoadoutCombo } from '../../hooks/useLoadoutSweep';
+import { BuildOptimizerModal } from './BuildOptimizerModal';
+import type { Candidate } from '../../optimizer/buildOptimizer';
 
 interface PetPanelProps {
     variant?: 'default' | 'original' | 'test';
@@ -244,7 +246,20 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         updateNestedProfile('mount', { active: combo.mount });
     };
 
+    // AUTO BEST: the build optimizer over the profile; a loaded row also sets the skills.
+    const [showOptimizer, setShowOptimizer] = useState(false);
+    const [previousSkills, setPreviousSkills] = useState<SkillSlot[] | null>(null);
+    const handleLoadBuild = (c: Candidate) => {
+        if (!previousSkills) setPreviousSkills([...profile.skills.equipped]);
+        handleLoadLoadout({ petSet: c.petSet, mount: c.mount });
+        updateNestedProfile('skills', { equipped: c.skills });
+    };
+
     const handleRevert = () => {
+        if (previousSkills) {
+            updateNestedProfile('skills', { equipped: previousSkills });
+            setPreviousSkills(null);
+        }
         if (previousPets) {
             updatePets(previousPets);
             setPreviousPets(null);
@@ -399,16 +414,15 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit"
-                            onClick={() => handleAutoOptimize('balanced')}
-                            disabled={autoDisabled}
-                            data-auto-loadout-trigger
-                            title="Rank the best 3 pets + mount by the geometric mean of DPS and HPS (a heuristic, not a game number)"
+                            className="h-7 px-2 text-[10px] font-bold border-yellow-500/20 hover:bg-yellow-500/10 hover:border-yellow-500/40 text-yellow-400 gap-1 active:scale-95 transition-all w-fit"
+                            onClick={() => setShowOptimizer(true)}
+                            data-testid="auto-best-build"
+                            title="Find the best skills, pets and mount by simulated arena win rate"
                         >
-                            <Scale className="w-3 h-3" />
-                            AUTO BALANCED
+                            <Trophy className="w-3 h-3" />
+                            AUTO BEST
                         </Button>
-                        {(previousPets || previousMount !== undefined) && (
+                        {(previousPets || previousMount !== undefined || previousSkills) && (
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
@@ -418,6 +432,14 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 <RotateCcw className="w-3 h-3" />
                                 REVERT
                             </Button>
+                        )}
+                        {showOptimizer && (
+                            <BuildOptimizerModal
+                                base={profile}
+                                onLoad={handleLoadBuild}
+                                onClose={() => setShowOptimizer(false)}
+                                targetLabel="your profile"
+                            />
                         )}
                         {autoRequest && (
                             <LoadoutSweepPopover

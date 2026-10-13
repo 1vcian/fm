@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { X, Layers, Check, Loader2 } from 'lucide-react';
 import { useLoadoutSweep, SweepMetric, SweepResult, LoadoutCombo } from '../../hooks/useLoadoutSweep';
 import { usePetNames } from '../../hooks/usePetNames';
@@ -8,7 +8,7 @@ import { PetSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { cn } from '../../lib/utils';
 
 /** The metrics the AUTO buttons offer. */
-export type AutoLoadoutMetric = Extract<SweepMetric, 'dps' | 'power' | 'lifesteal' | 'balanced'>;
+export type AutoLoadoutMetric = Extract<SweepMetric, 'dps' | 'power' | 'lifesteal'>;
 
 const TOP_N = 5;
 
@@ -24,10 +24,6 @@ const METRIC_INFO: Record<AutoLoadoutMetric, { title: string; note: string }> = 
     lifesteal: {
         title: 'Best Lifesteal/sec',
         note: 'Real-time weapon DPS x lifesteal. An upper bound: in game each heal is capped at max HP.'
-    },
-    balanced: {
-        title: 'Best Balanced',
-        note: 'Geometric mean of DPS and HPS, each relative to the best combination found. A heuristic for ranking builds, not a game number.'
     }
 };
 
@@ -52,6 +48,22 @@ interface LoadoutSweepPopoverProps {
     targetLabel: string;
 }
 
+/** Display name of a mount slot: custom name, the game's English name, then the sprite mapping. */
+export function useMountName() {
+    const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: localization } = useGameData<any>('Localization.json');
+    return useCallback((m: MountSlot | null): string => {
+        if (!m) return 'No mount';
+        if (m.customName) return m.customName;
+        const localized = localization?.mounts?.[`${m.rarity}_${m.id}`]?.en;
+        if (localized) return localized;
+        const entry = Object.values(spriteMapping?.mounts?.mapping || {}).find(
+            (v: any) => v?.id === m.id && v?.rarity === m.rarity
+        ) as any;
+        return entry?.name || `${m.rarity} Mount`;
+    }, [spriteMapping, localization]);
+}
+
 /**
  * Top pets + mount combinations for one metric, from the time-sliced loadout sweep.
  * Desktop: a dropdown under the AUTO buttons. Phone: an inline panel under them.
@@ -62,8 +74,7 @@ export function LoadoutSweepPopover({
 }: LoadoutSweepPopoverProps) {
     const { status, progress, totalCombos, rank, isReady } = useLoadoutSweep({ base, respectSavedLevels });
     const petName = usePetNames();
-    const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
-    const { data: localization } = useGameData<any>('Localization.json');
+    const mountName = useMountName();
     const rootRef = useRef<HTMLDivElement>(null);
 
     const top = useMemo(() => (status === 'done' ? rank(metric).slice(0, TOP_N) : []), [status, rank, metric]);
@@ -90,24 +101,12 @@ export function LoadoutSweepPopover({
         };
     }, [onClose]);
 
-    const mountName = (m: MountSlot | null): string => {
-        if (!m) return 'No mount';
-        if (m.customName) return m.customName;
-        // The game's English name first (as usePetNames does for pets), then the sprite mapping.
-        const localized = localization?.mounts?.[`${m.rarity}_${m.id}`]?.en;
-        if (localized) return localized;
-        const entry = Object.values(spriteMapping?.mounts?.mapping || {}).find(
-            (v: any) => v?.id === m.id && v?.rarity === m.rarity
-        ) as any;
-        return entry?.name || `${m.rarity} Mount`;
-    };
 
     const valueOf = (r: SweepResult): string => {
         switch (metric) {
             case 'dps': return `${formatCompactNumber(r.dps)} DPS`;
             case 'power': return `${formatCompactNumber(r.power)} PWR`;
             case 'lifesteal': return `${formatCompactNumber(r.lifestealPerSec)}/s`;
-            case 'balanced': return `${formatCompactNumber(r.dps)} DPS, ${formatCompactNumber(r.healPerSec)} HPS`;
         }
     };
 

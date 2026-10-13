@@ -9,6 +9,8 @@ export const RELEASE_NOTES: Record<string, string[]> = {
         'Battle replays draw every skill, projectile, buff and hit.',
         'Simulators, stats and calculators checked against the game: missions, dungeons, waves, summons, forge and tech costs.',
         'One Summons calculator with Eggs, Mounts and Skills tabs; the Loadout search now lives in Compare Build.',
+        'DPS and HPS now match the combat engine within 1%, with an engine check in the DPS breakdown.',
+        'AUTO BEST finds the strongest build by simulated PvP battles, across all skills or only the ones you own.',
         'Tech planner delays can be any length and edited.',
         'The screenshot scanner handles tablets, short phones and status bars.',
     ],

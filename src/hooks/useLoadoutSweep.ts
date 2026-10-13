@@ -5,17 +5,14 @@ import { useTreeMode } from '../context/TreeModeContext';
 import { useComparison } from '../context/ComparisonContext';
 import { StatEngine, LibraryData, AggregatedStats, calculateStats } from '../utils/statEngine';
 import { PetSlot, MountSlot, UserProfile } from '../types/Profile';
-import { MAX_ACTIVE_PETS } from '../utils/constants';
+import { enumerateLoadouts, type LoadoutCombo } from '../optimizer/buildOptimizer';
 
 /** How many combinations to evaluate per animation frame. */
 const BATCH_SIZE = 200;
 
-export type SweepMetric = 'lifesteal' | 'dps' | 'power' | 'heal' | 'balanced';
+export type SweepMetric = 'lifesteal' | 'dps' | 'power' | 'heal';
 
-export interface LoadoutCombo {
-    petSet: PetSlot[];
-    mount: MountSlot | null;
-}
+export type { LoadoutCombo };
 
 /** One scored combination. Only the ranking metrics, cheap enough for the whole sweep. */
 export interface SweepResult extends LoadoutCombo {
@@ -84,55 +81,9 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
     }, [profile.pets.savedBuilds, profile.pets.active, profile.mount.active, profile.mount.savedBuilds]);
 
     const combos = useMemo((): LoadoutCombo[] => {
-        const p = profileRef.current;
-
-        // Every combination of up to MAX_ACTIVE_PETS from the saved roster.
-        const savedPets = p.pets.savedBuilds || [];
-        const petSets: PetSlot[][] = [];
-        const n = savedPets.length;
-        const slotsToFill = Math.min(n, MAX_ACTIVE_PETS);
-
-        for (let i = 0; i < n; i++) {
-            const set1 = [savedPets[i]];
-            if (slotsToFill === 1) {
-                petSets.push(set1);
-                continue;
-            }
-            for (let j = i + 1; j < n; j++) {
-                const set2 = [...set1, savedPets[j]];
-                if (slotsToFill === 2) {
-                    petSets.push(set2);
-                    continue;
-                }
-                for (let k = j + 1; k < n; k++) {
-                    petSets.push([...set2, savedPets[k]]);
-                }
-            }
-        }
-        // No saved pets: keep the current active pets rather than forcing a change.
-        if (petSets.length === 0) petSets.push(p.pets.active);
-
-        // Mount candidates: current active + saved builds, deduped.
-        const mountCandidates: (MountSlot | null)[] = [];
-        const seen = new Set<string>();
-        const addMount = (m: MountSlot | null) => {
-            if (!m) return;
-            const key = mountKey(m);
-            if (seen.has(key)) return;
-            seen.add(key);
-            mountCandidates.push(m);
-        };
-        addMount(p.mount.active);
-        (p.mount.savedBuilds || []).forEach(addMount);
-        if (mountCandidates.length === 0) mountCandidates.push(p.mount.active);
-
-        const out: LoadoutCombo[] = [];
-        for (const petSet of petSets) {
-            for (const mount of mountCandidates) {
-                out.push({ petSet, mount });
-            }
-        }
-        return out;
+        // Every combination of up to MAX_ACTIVE_PETS saved pets times the active + saved
+        // mounts (no saved pets: the active pets), shared with the build optimizer.
+        return enumerateLoadouts(profileRef.current);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [poolKey]);
 
@@ -220,8 +171,7 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
     }, [combos, libs, isReady, engineKey, buildTempProfile, enabled, excludeSubstats]);
 
     // --- Scoring ------------------------------------------------------------
-    // Each metric is normalised by its own max across the sweep so that combining
-    // DPS and HPS isn't dominated by whichever has the bigger raw scale.
+    // Each metric is normalised by its own max across the sweep, for the "% of best" column.
     const maxima = useMemo(() => {
         let dps = 0, power = 0, lifesteal = 0, heal = 0;
         for (const r of results) {
@@ -244,13 +194,6 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
             case 'power': return maxima.power > 0 ? r.power / maxima.power : 0;
             case 'lifesteal': return lsScore;
             case 'heal': return healScore;
-            // A heuristic, not a game number: the geometric mean of DPS and HPS, each
-            // normalised by its best in the sweep. The product rewards being strong on BOTH
-            // axes and collapses if either is weak. sqrt(dps/max * heal/max) ranks
-            // identically to the raw product dps*heal (the constants and sqrt are monotonic)
-            // and stays in 0..1 so a "% of best" can be shown. Matches the Substats
-            // Calculator's dps*hps objective.
-            case 'balanced': return Math.sqrt(dpsScore * healScore);
         }
     }, [maxima]);
 

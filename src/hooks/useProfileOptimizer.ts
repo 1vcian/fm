@@ -44,7 +44,8 @@ export function useProfileOptimizer() {
             const engine = new StatEngine(tempProfile, libs);
             const stats = engine.calculate();
             
-            const value = stats.averageTotalDps;
+            // Real-time DPS: the stepped attack timing the engine verifies (statEngine realTotalDps).
+            const value = stats.realTotalDps;
             
             if (value > bestValue) {
                 bestValue = value;

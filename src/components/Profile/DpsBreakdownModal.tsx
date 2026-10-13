@@ -12,6 +12,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 
 import { formatNumber } from '../../utils/format';
+import { EngineCheckSection } from './EngineCheckSection';
 
 interface DpsBreakdownModalProps {
     isOpen: boolean;
@@ -548,6 +549,13 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                             </div>
                         )}
                     </section>
+
+                    <EngineCheckSection
+                        stats={stats}
+                        equipped={profile.skills?.equipped || []}
+                        skillLibrary={skillLibrary}
+                        formatVal={v => formatVal(v)}
+                    />
                 </div>
 
                 {/* Footer */}

@@ -4,7 +4,7 @@ import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
     ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
-    ArrowLeftRight, Info, Sword, Scale, RotateCcw, Layers
+    ArrowLeftRight, Info, Sword, RotateCcw, Layers, Trophy
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -18,8 +18,10 @@ import { useComparison } from '../../context/ComparisonContext';
 import { useProfile } from '../../context/ProfileContext';
 import { calculateStats, AggregatedStats } from '../../utils/statEngine';
 import { useTreeMode } from '../../context/TreeModeContext';
-import { UserProfile, PetSlot, MountSlot } from '../../types/Profile';
+import { UserProfile, PetSlot, MountSlot, SkillSlot } from '../../types/Profile';
 import { LoadoutSweepPopover, AutoLoadoutMetric } from './LoadoutSweepPopover';
+import { BuildOptimizerModal } from './BuildOptimizerModal';
+import type { Candidate } from '../../optimizer/buildOptimizer';
 import { LoadoutCombo } from '../../hooks/useLoadoutSweep';
 import { getAveragePerfection } from '../../utils/itemCalculations';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
@@ -441,6 +443,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         testFairy,
         updateTestPet,
         updateTestMount,
+        updateTestSkill,
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
@@ -470,11 +473,11 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const autoOptimizeDisabled =
         (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
 
-    const handleAutoOptimizeTest = (metric: AutoLoadoutMetric) => {
+    const buildTestBase = (): UserProfile => {
         // Evaluate against the Test build's own items/mount/ascensions, keeping
         // everything the Test side doesn't override (tech tree, passives, saved builds).
         // The header's tree mode is applied inside the sweep.
-        const testBase: UserProfile = {
+        return {
             ...profile,
             items: testItems ?? profile.items,
             mount: { ...profile.mount, active: testMount ?? profile.mount.active },
@@ -490,6 +493,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 fairy: testFairy ?? profile.misc.fairy,
             },
         };
+    };
+
+    const handleAutoOptimizeTest = (metric: AutoLoadoutMetric) => {
+        const testBase = buildTestBase();
         // Same metric again closes the popover; another metric re-ranks a fresh search.
         setAutoRequest(prev => (prev?.metric === metric ? null : { metric, base: testBase }));
     };
@@ -506,11 +513,22 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
 
     const closeAutoPopover = useCallback(() => setAutoRequest(null), []);
 
+    // AUTO BEST: the build optimizer (BuildOptimizerModal) over a snapshot of the Test build.
+    const [optimizerBase, setOptimizerBase] = useState<UserProfile | null>(null);
+    const [previousTestSkills, setPreviousTestSkills] = useState<SkillSlot[] | null>(null);
+    const handleLoadBuildIntoTest = (c: Candidate) => {
+        if (!previousTestSkills) setPreviousTestSkills(testSkills ? [...testSkills] : [...profile.skills.equipped]);
+        handleLoadIntoTest({ petSet: c.petSet, mount: c.mount });
+        updateTestSkill(c.skills);
+    };
+
     const handleRevertTest = () => {
         if (previousTestPets) updateTestPet(previousTestPets);
         if (previousTestMount !== undefined) updateTestMount(previousTestMount);
+        if (previousTestSkills) updateTestSkill(previousTestSkills);
         setPreviousTestPets(null);
         setPreviousTestMount(undefined);
+        setPreviousTestSkills(null);
     };
 
     const { treeMode, setTreeMode } = useTreeMode();
@@ -1304,21 +1322,19 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        data-auto-loadout-trigger
-                        aria-expanded={autoRequest?.metric === 'balanced'}
+                        data-testid="auto-best-build"
                         className={cn(
-                            "h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
-                            autoRequest?.metric === 'balanced' && "bg-violet-500/15 border-violet-500/50"
+                            "h-7 px-2 text-[10px] font-bold border-yellow-500/20 hover:bg-yellow-500/10 hover:border-yellow-500/40 text-yellow-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
+                            optimizerBase && "bg-yellow-500/15 border-yellow-500/50"
                         )}
-                        onClick={() => handleAutoOptimizeTest('balanced')}
-                        disabled={autoOptimizeDisabled}
-                        title="Rank the best 3 pets + mount by the geometric mean of DPS and HPS on the Test build (a heuristic, not a game number)"
+                        onClick={() => setOptimizerBase(buildTestBase())}
+                        title="Find the best skills, pets and mount for the Test build by simulated arena win rate"
                     >
-                        <Scale className="w-3 h-3" />
-                        <span className="hidden sm:inline">AUTO BALANCED</span>
-                        <span className="sm:hidden">BAL</span>
+                        <Trophy className="w-3 h-3" />
+                        <span className="hidden sm:inline">AUTO BEST</span>
+                        <span className="sm:hidden">BEST</span>
                     </Button>
-                    {(previousTestPets || previousTestMount !== undefined) && (
+                    {(previousTestPets || previousTestMount !== undefined || previousTestSkills) && (
                         <Button
                             variant="ghost"
                             size="sm"
@@ -1328,6 +1344,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <RotateCcw className="w-3 h-3" />
                             REVERT
                         </Button>
+                    )}
+                    {optimizerBase && (
+                        <BuildOptimizerModal
+                            base={optimizerBase}
+                            onLoad={handleLoadBuildIntoTest}
+                            onClose={() => setOptimizerBase(null)}
+                            targetLabel="Test"
+                        />
                     )}
                     {autoRequest && (
                         <LoadoutSweepPopover
