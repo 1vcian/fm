@@ -74,6 +74,8 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     const [waveIndex, setWaveIndex] = useState(0);
     const [battleOutcome, setBattleOutcome] = useState<'playing' | 'victory' | 'defeat' | 'draw'>('playing');
     const [restartKey, setRestartKey] = useState(0); // Used to trigger re-initialization
+    // Phone only (below sm): the body is split into a Battle tab and a Log tab. The engine keeps running on both.
+    const [mobileTab, setMobileTab] = useState<'battle' | 'log'>('battle');
     const animationFrameRef = useRef<number>();
     const autoPlayRef = useRef(false);
 
@@ -489,12 +491,12 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
     return (
         <div style={{ margin: '0' }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-2 sm:p-4">
-            <div className="bg-[#0d0d11] w-full max-w-4xl max-h-[95vh] rounded-xl border border-gray-800 flex flex-col overflow-hidden shadow-2xl">
+            <div className="bg-[#0d0d11] w-full max-w-4xl h-[95dvh] sm:h-auto max-h-[95vh] rounded-xl border border-gray-800 flex flex-col overflow-hidden shadow-2xl">
 
                 {/* Compact Header */}
-                <div className="px-3 py-2 sm:px-4 sm:py-3 border-b border-gray-800 bg-[#12121a] flex justify-between items-center gap-2">
-                    <div className="flex-1 min-w-0">
-                        <h2 className="text-base sm:text-lg font-bold text-white whitespace-nowrap overflow-hidden text-clip">{getTitle()}</h2>
+                <div className="px-3 py-2 sm:px-4 sm:py-3 border-b border-gray-800 bg-[#12121a] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 sm:gap-2">
+                    <div className="w-full sm:w-auto sm:flex-1 min-w-0">
+                        <h2 className="text-base sm:text-lg font-bold text-white truncate sm:text-clip" title={getTitle()}>{getTitle()}</h2>
                         <div className="text-[10px] sm:text-xs text-gray-400 flex gap-2 sm:gap-3 flex-wrap">
                             <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
@@ -503,7 +505,9 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             {pvp ? (
                                 <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
-                                    Timer {pvp.cfg.PvpMatchTimerSeconds}s, shared HP x{Number((snapshot.player?.maxHealth / Math.max(1e-9, pvp.p1.loadout.health)).toFixed(2))}
+                                    <span className="hidden sm:inline">Timer {pvp.cfg.PvpMatchTimerSeconds}s, shared HP</span>
+                                    <span className="sm:hidden">{pvp.cfg.PvpMatchTimerSeconds}s, HP</span>
+                                    {' '}x{Number((snapshot.player?.maxHealth / Math.max(1e-9, pvp.p1.loadout.health)).toFixed(2))}
                                 </span>
                             ) : (
                             <span className="flex items-center gap-1">
@@ -518,7 +522,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0 w-full sm:w-auto">
                         {/* Speed buttons - hidden on very small screens */}
                         <div className="flex bg-gray-800/50 rounded-lg p-0.5">
                             {[0.25, 0.5, 1, 1.5, 2].map(s => (
@@ -532,6 +536,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             ))}
                         </div>
 
+                        <div className="flex-1 sm:hidden" />
                         <button
                             onClick={() => setIsPlaying(!isPlaying)}
                             disabled={battleOutcome !== 'playing'}
@@ -552,6 +557,21 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <X className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                     </div>
+                </div>
+
+                {/* Phone tabs: Battle and Log */}
+                <div className="sm:hidden flex border-b border-gray-800 bg-[#12121a]" role="tablist">
+                    {(['battle', 'log'] as const).map(t => (
+                        <button
+                            key={t}
+                            role="tab"
+                            aria-selected={mobileTab === t}
+                            onClick={() => setMobileTab(t)}
+                            className={`flex-1 py-1.5 text-xs font-bold border-b-2 transition-colors ${mobileTab === t ? 'border-blue-500 text-white' : 'border-transparent text-gray-500'}`}
+                        >
+                            {t === 'battle' ? 'Battle' : `Log${battleLogs.length ? ` (${battleLogs.length})` : ''}`}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Debug Inputs (Synced with Parent) */}
@@ -652,7 +672,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
                 {/* Combat Stats Panel */}
                 {combatStats && (
-                    <div className="px-3 py-2 border-b border-gray-800 bg-[#0a0a12]">
+                    <div className={`px-3 py-2 border-b border-gray-800 bg-[#0a0a12] ${mobileTab === 'log' ? 'hidden sm:block' : ''}`}>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs justify-center">
                             <div className="flex items-center gap-1">
                                 <Sword className="w-3 h-3 text-orange-400" />
@@ -733,7 +753,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                 )}
 
                 {/* Battlefield */}
-                <div className="flex-1 bg-[#080810] relative overflow-hidden min-h-[200px] sm:min-h-[280px]">
+                <div className={`flex-1 bg-[#080810] relative overflow-hidden min-h-[200px] sm:min-h-[280px] ${mobileTab === 'log' ? 'hidden sm:block' : ''}`}>
                     {/* Grid background - scrolls with world movement */}
                     <div className="absolute inset-0 opacity-10"
                         style={{
@@ -899,10 +919,10 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                 </div>
 
                 {/* Bottom Stats & Skills */}
-                <div className="border-t border-gray-800 bg-[#0a0a10]">
+                <div className={`border-t border-gray-800 bg-[#0a0a10] ${mobileTab === 'log' ? 'flex-1 min-h-0 flex flex-col sm:block sm:flex-none' : ''}`}>
                     {/* Stats Bar */}
                     {/* All Passive Stats */}
-                    <div className="px-3 py-2 border-b border-gray-800/50">
+                    <div className={`px-3 py-2 border-b border-gray-800/50 ${mobileTab === 'log' ? 'hidden sm:block' : ''}`}>
                         <div className="grid grid-cols-3 gap-2 text-center">
                             {/* Row 1: Offensive Basics */}
                             <div className="flex flex-col items-center">
@@ -948,27 +968,26 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
                     {/* Skills */}
                     {skills.length > 0 && ageIdx !== -2 && (
-                        <div className="px-3 py-2 flex gap-2 justify-center flex-wrap items-center">
+                        <div className={`px-3 py-2 flex gap-2 justify-center flex-wrap items-center ${mobileTab === 'log' ? 'hidden sm:flex' : ''}`}>
                             {pvp && <span className="text-[10px] font-bold text-blue-300 mr-1">{pvp.p1.name}</span>}
                             {renderSkillRow(skills)}
                         </div>
                     )}
                     {pvp && (snapshot.enemySkills || []).length > 0 && (
-                        <div className="px-3 pb-2 flex gap-2 justify-center flex-wrap items-center">
+                        <div className={`px-3 pb-2 flex gap-2 justify-center flex-wrap items-center ${mobileTab === 'log' ? 'hidden sm:flex' : ''}`}>
                             <span className="text-[10px] font-bold text-red-300 mr-1">{pvp.p2.name}</span>
                             {renderSkillRow(snapshot.enemySkills)}
                         </div>
                     )}
 
-                    {/* Compact Log */}
-                    {/* Compact Log */}
-                    <div className="max-h-32 sm:max-h-40 overflow-y-auto px-3 py-2 border-t border-gray-800/50 flex flex-col-reverse">
+                    {/* Compact Log: on phone it lives in the Log tab and fills the body */}
+                    <div className={`overflow-y-auto px-3 py-2 border-t border-gray-800/50 flex-col-reverse sm:flex sm:max-h-40 ${mobileTab === 'log' ? 'flex flex-1 min-h-0 sm:flex-none' : 'hidden'}`}>
                         {battleLogs.length === 0 ? (
                             <p className="text-[10px] text-gray-600 italic text-center">Press play to start battle</p>
                         ) : (
                             <div className="space-y-0.5">
                                 {battleLogs.map((log, i) => ( // Show ALL logs
-                                    <div key={i} className="text-[10px] text-gray-400 font-mono whitespace-nowrap overflow-hidden text-clip">{log}</div>
+                                    <div key={i} className={`text-[10px] text-gray-400 font-mono ${mobileTab === 'log' ? 'break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-clip' : 'whitespace-nowrap overflow-hidden text-clip'}`}>{log}</div>
                                 ))}
                             </div>
                         )}

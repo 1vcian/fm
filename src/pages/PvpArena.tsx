@@ -172,9 +172,9 @@ function FighterSlot({ index, slot, fighter, profiles, activeName, onChange, sol
     const value = slot.source.kind === 'saved' ? `saved:${slot.source.id}`
         : slot.source.kind === 'card' ? `card:${slot.source.mode}` : slot.source.kind;
     return (
-        <Card className={'p-4 space-y-3 border-2 ' + (index === 0 ? 'border-blue-500/30' : 'border-red-500/30')}>
-            <div className="flex items-center gap-2">
-                <span className={'text-xs font-black px-2 py-0.5 rounded ' + (index === 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300')}>
+        <Card className={'p-4 space-y-3 border-2 min-w-0 ' + (index === 0 ? 'border-blue-500/30' : 'border-red-500/30')}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+                <span className={'self-start sm:self-auto shrink-0 whitespace-nowrap text-xs font-black px-2 py-0.5 rounded ' + (index === 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300')}>
                     Player {index + 1}
                 </span>
                 <select value={value}
@@ -185,7 +185,7 @@ function FighterSlot({ index, slot, fighter, profiles, activeName, onChange, sol
                         else if (v === 'card:manual') onChange({ source: { kind: 'card', mode: 'manual' }, card: null });
                         else onChange({ source: { kind: 'saved', id: v.slice(6) } });
                     }}
-                    className="flex-1 bg-bg-input border border-border rounded-lg px-2 py-1.5 text-sm">
+                    className="w-full min-w-0 sm:flex-1 truncate bg-bg-input border border-border rounded-lg px-2 py-1.5 text-sm">
                     <option value="active">Active profile ({activeName})</option>
                     {profiles.map(p => <option key={p.id} value={`saved:${p.id}`}>Profile: {p.name}</option>)}
                     <option value="card:screenshot">From profile card screenshots</option>
@@ -224,15 +224,15 @@ function FighterSummary({ f }: { f: PvpFighter }) {
         ['Pets / skills / mount', `${f.loadout.petCount} / ${f.loadout.skillCount} / ${f.loadout.hasMount ? 'yes' : 'no'}`],
     ];
     return (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm min-w-0">
             {rows.map(([k, v]) => (
-                <div key={k} className="flex justify-between border-b border-border/40 py-0.5">
-                    <span className="text-text-muted">{k}</span>
-                    <span className="font-mono">{v}</span>
+                <div key={k} className="flex justify-between items-baseline gap-3 border-b border-border/40 py-0.5 min-w-0">
+                    <span className="text-text-muted whitespace-nowrap shrink-0">{k}</span>
+                    <span className="font-mono text-right min-w-0 break-words">{v}</span>
                 </div>
             ))}
             {f.source === 'card' && (
-                <p className="col-span-2 text-xs text-text-muted pt-1">
+                <p className="sm:col-span-2 text-xs text-text-muted pt-1">
                     Damage and health are the card totals, as the game uses them. Rebuilt profile:{' '}
                     {formatNumber(f.computed.damage)} / {formatNumber(f.computed.health)}.
                 </p>

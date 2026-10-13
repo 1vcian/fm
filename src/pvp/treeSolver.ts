@@ -56,7 +56,8 @@ export interface SolveResult {
 }
 
 function nodeMax(libs: LibraryData, type: string): number {
-    return Number((libs.techTreeLibrary as any)?.[type]?.MaxLevel) || 5;
+    // From TechTreeLibrary only: a node the config does not define gets no levels.
+    return Number((libs.techTreeLibrary as any)?.[type]?.MaxLevel) || 0;
 }
 
 function buildLadder(types: string[], s: SolverLibs): Step[] {
@@ -66,7 +67,7 @@ function buildLadder(types: string[], s: SolverLibs): Step[] {
     for (const tree of PERSONAL_TREES) {
         const nodes = (s.techTreePositionLibrary?.[tree]?.Nodes || []).filter((n: any) => order.has(n.Type));
         nodes.sort((a: any, b: any) => (a.Tier ?? 0) - (b.Tier ?? 0) || order.get(a.Type)! - order.get(b.Type)! || a.Id - b.Id);
-        const maxLevel = Math.max(1, ...nodes.map((n: any) => nodeMax(s.libs, n.Type)));
+        const maxLevel = Math.max(0, ...nodes.map((n: any) => nodeMax(s.libs, n.Type)));
         // Tier by tier: inside one tier raise every node one level at a time.
         const tiers = new Map<number, any[]>();
         for (const n of nodes) {
@@ -85,7 +86,7 @@ function buildLadder(types: string[], s: SolverLibs): Step[] {
     const clanNodes: { id: number; max: number }[] = [];
     for (const cat of Object.keys(s.guildPositionLibrary || {})) {
         for (const type of s.guildPositionLibrary[cat]?.Nodes || []) {
-            if (order.has(type)) clanNodes.push({ id: globalId, max: Number(s.guildUpgradeLibrary?.[type]?.MaxLevel) || 20 });
+            if (order.has(type)) clanNodes.push({ id: globalId, max: Number(s.guildUpgradeLibrary?.[type]?.MaxLevel) || 0 });
             globalId += 1;
         }
     }

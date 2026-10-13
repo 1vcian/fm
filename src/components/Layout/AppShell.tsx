@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Coffee, ExternalLink, Github, Sparkles, X } from 'lucide-react';
+import { FloatingCoffeeButton } from './FloatingCoffeeButton';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
@@ -455,7 +456,7 @@ export default function AppShell() {
                     whileTap={{ scale: 0.95 }}
                     layout
                     className={cn(
-                        "fixed bottom-8 z-[100] group flex items-center gap-3 py-3 md:py-4 rounded-full overflow-visible transition-all duration-300",
+                        "hidden md:flex fixed bottom-8 z-[100] group items-center gap-3 py-3 md:py-4 rounded-full overflow-visible transition-all duration-300",
                         maxAgeVisuals.bg,
                         isSidebarOpen ? "px-3 md:px-4" : "px-5 md:px-6",
                         // Slide clear of the Character-Stats drawer (450px) when it's open so it
@@ -506,6 +507,9 @@ export default function AppShell() {
                         </AnimatePresence>
                     </div>
                 </motion.a>
+
+                {/* Phone: small draggable icon instead of the labelled pill */}
+                <FloatingCoffeeButton href="https://www.buymeacoffee.com/1vcian" bgClass={maxAgeVisuals.bg} className="md:hidden" />
             </div>
 
             <AnimatePresence>
