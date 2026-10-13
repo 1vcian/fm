@@ -8,6 +8,7 @@ export { RandomPCG } from './rng';
 export * from './types';
 export * from './modes';
 export * from './skills';
+export * from './skillYield';
 export * from './mapStats';
 export * from './enemies';
 export * from './visualSnapshot';

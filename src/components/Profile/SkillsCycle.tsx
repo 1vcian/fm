@@ -5,48 +5,45 @@ import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { SkillSlot } from '../../types/Profile';
 import { Input } from '../UI/Input';
 import { cn } from '../../lib/utils';
+import { BUFF_SKILL_TYPES, buffActiveTicks, skillCastTimes, skillCycleTicks, skillFirstCastTick } from '../../engine/skills';
+import { CooldownBreakpoints } from './CooldownBreakpoints';
 
 /**
- * ==== Cast timing model (mirrors the app's battle engine — do not change independently) ====
- * - Every skill starts in 'Startup' with timer 3.2s, so the FIRST cast lands at t = 3.2s
- *   (BattleEngine.ts -> addSkill: state 'Startup', timer 3.2).
- * - After a cast the skill goes 'Active' for ActiveDuration (if > 0), THEN 'Cooldown' for
- *   the effective cooldown, then fires again (BattleEngine.ts update loop), so:
- *       cast_n = 3.2 + n * (ActiveDuration + cooldown_eff)
- * - cooldown_eff = max(0.5, Cooldown * (1 - reduction))
- *   (BattleVisualizerModal.tsx / BattleSimulator.ts).
+ * ==== Cast timing model: the engine's exact tick math (src/engine/skills.ts) ====
+ * - Every skill starts on a hardcoded 4.0 s charge. Skill timers lose FD6(dt) = 0.099999 s per
+ *   0.1 s tick, so the first cast lands after ceil(4.0 / 0.099999) = 41 ticks = 4.1 s.
+ * - After a cast the skill is Active for ActiveDuration, THEN on cooldown (CDR scales only the
+ *   cooldown); each phase costs max(1, ceil(seconds / 0.099999)) ticks, so
+ *       cast_n = 4.1 s + n * (activeTicks + cooldownTicks) * 0.1 s
+ *   There is no minimum cooldown in the game.
  */
-const START_TIME = 4.0; // hardcoded initial skill charge in the binary (AddOrUpdateSkill)
-const MIN_COOLDOWN = 0.5;
+const FIRST_CAST = skillFirstCastTick() / 10;
 const EPS = 1e-9;
 
-/** Same list BattleVisualizerModal / BattleSimulator use to separate buffs from damage casts */
-const BUFF_SKILLS = ['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale'];
+/** Same list the engine uses to separate buffs from damage casts */
+const isBuffType = (id: string) => BUFF_SKILL_TYPES.has(id);
 
 const SWEEP_STEP = 0.001; // 0.1%
-const SWEEP_MAX = 0.25;   // 25% (SkillCooldownMulti rolls are 1%–7% each, 3+ sources stack)
+const SWEEP_MAX = 0.25;   // 25% (SkillCooldownMulti rolls are 1%-7% each, 3+ sources stack)
 const GRID_N = Math.round(SWEEP_MAX / SWEEP_STEP);
 
 interface CastInfo { count: number; last: number; period: number; }
 interface CycleWindow { from: number; to: number; casts: number; }
 
 function castModel(T: number, baseCd: number, duration: number, r: number): CastInfo {
-    const period = Math.max(MIN_COOLDOWN, baseCd * (1 - r)) + duration;
-    if (T <= START_TIME || period <= 0) return { count: 0, last: -1, period };
-    const n = Math.floor((T - START_TIME - EPS) / period);
-    return { count: n + 1, last: START_TIME + n * period, period };
+    const cd = baseCd * (1 - r);
+    const period = skillCycleTicks(cd, duration) / 10;
+    const times = skillCastTimes(T, cd, duration);
+    return { count: times.length, last: times.length ? times[times.length - 1] : -1, period };
 }
 
 function landsInFinalSecond(T: number, info: CastInfo): boolean {
-    // last cast lands inside the final second: [T-1, T)
-    return info.count > 0 && info.last >= T - 1 - EPS && info.last < T;
+    // last cast lands inside the final second: [T-1, T]
+    return info.count > 0 && info.last >= T - 1 - EPS && info.last <= T + EPS;
 }
 
 function castTimes(T: number, baseCd: number, duration: number, r: number): number[] {
-    const { count, period } = castModel(T, baseCd, duration, r);
-    const times: number[] = [];
-    for (let n = 0; n < Math.min(count, 200); n++) times.push(START_TIME + n * period);
-    return times;
+    return skillCastTimes(T, baseCd * (1 - r), duration, 200);
 }
 
 function pct(r: number, decimals = 1): string {
@@ -90,7 +87,7 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
     const currentR = globalStats?.skillCooldownReduction ?? 0;
 
     const analysis = useMemo(() => {
-        if (!skillLibrary || skills.length === 0 || !isFinite(T) || T <= START_TIME + 1) return null;
+        if (!skillLibrary || skills.length === 0 || !isFinite(T) || T <= FIRST_CAST + 1) return null;
 
         const perSkill: SkillAdvice[] = [];
         for (const slot of skills) {
@@ -98,7 +95,7 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
             if (!cfg) continue;
             const baseCd = cfg.Cooldown || 0;
             const duration = cfg.ActiveDuration || 0;
-            const isBuff = BUFF_SKILLS.includes(cfg.Type || slot.id) && duration > 0;
+            const isBuff = isBuffType(cfg.Type || slot.id) && duration > 0;
 
             // Sweep 0 -> 25% at 0.1% steps, merge contiguous aligned steps (same cast count) into windows
             const windows: CycleWindow[] = [];
@@ -141,12 +138,12 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
 
             let coverage: SkillAdvice['coverage'] = null;
             if (isBuff) {
-                const { count, period } = castModel(T, baseCd, duration, currentR);
+                // The buff is on the units from the tick after the cast for activeTicks - 1 ticks.
+                const on = buffActiveTicks(duration) / 10;
                 let uptime = 0;
                 let lastSecCovered = false;
-                for (let n = 0; n < count; n++) {
-                    const t0 = START_TIME + n * period;
-                    uptime += Math.max(0, Math.min(duration, T - t0));
+                for (const t0 of castTimes(T, baseCd, duration, currentR)) {
+                    uptime += Math.max(0, Math.min(on, T - t0));
                     if (t0 < T && t0 + duration > T - 1) lastSecCovered = true;
                 }
                 coverage = { pct: uptime / T, lastSecCovered };
@@ -405,6 +402,9 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
                         ))}
                     </div>
 
+                    {/* Cooldown breakpoints (casts/min vs reduction, exact tick math) */}
+                    <CooldownBreakpoints skills={perSkill.map((p) => ({ id: p.id, baseCd: p.baseCd, duration: p.duration }))} currentR={currentR} />
+
                     {/* Timeline */}
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center justify-between gap-2">
@@ -495,9 +495,10 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
 
                     {/* Model footnote */}
                     <p className="text-[9px] text-text-muted leading-snug">
-                        Engine model: first cast at {START_TIME}s (skill startup), then every eff. CD + active duration;
-                        eff. CD = max({MIN_COOLDOWN}s, CD × (1 − reduction)). A skill is "aligned" when its final cast lands in
-                        the last second [{(T - 1).toFixed(0)}-{T}s). Sweep: 0-{pct(SWEEP_MAX, 0)} in {pct(SWEEP_STEP)} steps.
+                        Engine model (0.1s ticks): first cast at {FIRST_CAST.toFixed(1)}s (4.0s charge), then every
+                        active + cooldown phase, each rounded up to whole ticks of 0.099999s; cooldown = CD × (1 - reduction),
+                        no minimum. A skill is "aligned" when its final cast lands in the last second
+                        [{(T - 1).toFixed(0)}-{T}s]. Sweep: 0-{pct(SWEEP_MAX, 0)} in {pct(SWEEP_STEP)} steps.
                         {configDuration !== null && ` Battle length ${configDuration}s from PvpBaseConfig (PvpMatchTimerSeconds).`}
                     </p>
                 </div>

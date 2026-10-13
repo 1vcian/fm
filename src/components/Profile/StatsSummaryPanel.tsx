@@ -671,13 +671,16 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         const aps = 1 / (s.weaponAttackDuration / s.attackSpeedMultiplier);
         const weapon = s.totalDamage * aps * critMult * doubleMult;
         const realWeapon = s.realWeaponDps;
-        const skills = s.skillDps + (s.skillBuffDps || 0);
-        return { total: weapon + skills, weapon, skills, realTotal: realWeapon + skills, realWeapon };
+        // Buff damage rides on weapon hits, so it follows the weapon cadence of each mode.
+        const skills = s.skillDps + (s.theoreticalSkillBuffDps || 0);
+        const realSkills = s.skillDps + (s.skillBuffDps || 0);
+        return { total: weapon + skills, weapon, skills, realTotal: realWeapon + realSkills, realWeapon, realSkills };
     };
 
-    const calculateHpsDetails = (s: AggregatedStats, dps: number) => {
+    const calculateHpsDetails = (s: AggregatedStats, real: boolean) => {
         const regen = s.totalHealth * s.healthRegen;
-        const lifesteal = dps * s.lifeSteal;
+        // Lifesteal heals on weapon hits, buff damage included (statEngine lifestealHps).
+        const lifesteal = real ? s.lifestealHps : s.theoreticalLifestealHps;
         const skills = s.skillHps;
         // No block term: BattleSystem.ApplyDmg (RVA 0x77F4BD0) applies block only to incoming
         // damage and clamps every heal with FD6.Min(Hp + heal, HpMax). Block is shown on its
@@ -694,20 +697,20 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const currentDpsDetails = calculateDpsDetails(fullStats);
     const weaponDps = currentDpsDetails.weapon;
     const effectiveDps = currentDpsDetails.total;
-    const currentHpsDetails = calculateHpsDetails(fullStats, weaponDps);
-    const currentRealHpsDetails = calculateHpsDetails(fullStats, currentDpsDetails.realWeapon);
+    const currentHpsDetails = calculateHpsDetails(fullStats, false);
+    const currentRealHpsDetails = calculateHpsDetails(fullStats, true);
     
     const effectiveHps = currentHpsDetails.total;
     const realHps = currentRealHpsDetails.total;
     
     const treeBonusEntries = Object.entries(techModifiers).filter(([_, v]) => v > 0);
 
-    const originalDpsDetails = originalFullStats ? calculateDpsDetails(originalFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
-    const testDpsDetails = testFullStats ? calculateDpsDetails(testFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
-    const originalHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, originalDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const originalRealHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, originalDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const testHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, testDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const testRealHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, testDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const originalDpsDetails = originalFullStats ? calculateDpsDetails(originalFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0, realSkills: 0 };
+    const testDpsDetails = testFullStats ? calculateDpsDetails(testFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0, realSkills: 0 };
+    const originalHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, false) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const originalRealHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, true) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const testHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, false) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const testRealHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, true) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
 
     const originalDps = originalDpsDetails.total;
     const testDps = testDpsDetails.total;
@@ -878,11 +881,11 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 color="text-orange-500"
                                 originalDetails={[
                                     { label: 'Weapon', value: originalDpsDetails.realWeapon },
-                                    { label: 'Skills', value: originalDpsDetails.skills }
+                                    { label: 'Skills', value: originalDpsDetails.realSkills }
                                 ]}
                                 testDetails={[
                                     { label: 'Weapon', value: testDpsDetails.realWeapon },
-                                    { label: 'Skills', value: testDpsDetails.skills }
+                                    { label: 'Skills', value: testDpsDetails.realSkills }
                                 ]}
                                 onOriginalDetailsClick={() => {
                                     if (originalFullStats && originalProfile) {
@@ -1678,7 +1681,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         icon={<Zap className="w-4 h-4" />}
                                         label="Theoretical DPS"
                                         value={formatValue(effectiveDps)}
-                                        subValue={`Weapon: ${formatCompactNumber(weaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.skillBuffDps || 0))}`}
+                                        subValue={`Weapon: ${formatCompactNumber(weaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.theoreticalSkillBuffDps || 0))}`}
                                         color="text-orange-400"
                                         onInfoPointsClick={() => setShowDpsModal(true)}
                                     />

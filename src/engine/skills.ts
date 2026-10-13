@@ -31,7 +31,93 @@ const FD6_DT_MICRO = 99999;
 /** The hardcoded initial charge (AddOrUpdateSkill, F64 raw 0x400000000 = 4.0 s). */
 const INITIAL_CHARGE_MICRO = 4_000_000;
 
-const BUFF_SKILLS = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+// ------------------------------------------------------------------ closed-form skill timing
+// The exact tick math of SkillManager.execute + tryAutoActivate below, for the stat panels.
+// A phase with timer T (micro) ends on the tick where T - k*99999 <= 0; the transition is an
+// if/else-if, so a phase that starts at 0 (instant skill, zero cooldown) still costs one tick.
+
+/** Ticks a skill phase of `seconds` lasts: max(1, ceil(round(s*1e6) / 99999)). */
+export function skillPhaseTicks(seconds: number): number {
+    return Math.max(1, Math.ceil(Math.round(seconds * 1e6) / FD6_DT_MICRO));
+}
+
+/** Steady-state cast period in ticks: the active phase, then the cooldown (CDR applied). */
+export function skillCycleTicks(cooldownSeconds: number, activeDurationSeconds: number): number {
+    return skillPhaseTicks(activeDurationSeconds) + skillPhaseTicks(cooldownSeconds);
+}
+
+/** Tick (1-based, cast happens after that tick's scene step) of the first cast: the 4.0 s charge. */
+export function skillFirstCastTick(): number {
+    return Math.ceil(INITIAL_CHARGE_MICRO / FD6_DT_MICRO);
+}
+
+/**
+ * Ticks during which an activated buff's Damage/Health is on the units: the totals are written
+ * at the start of each tick (execute), so the activation tick itself is not buffed and the tick
+ * on which the active timer runs out is not either: phaseTicks - 1.
+ */
+export function buffActiveTicks(activeDurationSeconds: number): number {
+    return skillPhaseTicks(activeDurationSeconds) - 1;
+}
+
+/**
+ * Smallest cooldown reduction (fraction) at which the cooldown phase of `baseCooldown` costs at
+ * most `ticks` ticks: the inverse of skillPhaseTicks(baseCooldown * (1 - r)). NaN if unreachable.
+ */
+export function cooldownReductionForTicks(baseCooldown: number, ticks: number): number {
+    if (baseCooldown <= 0 || ticks < 1) return NaN;
+    const ok = (r: number) => skillPhaseTicks(baseCooldown * (1 - r)) <= ticks;
+    if (ok(0)) return 0;
+    if (!ok(1)) return NaN;
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 60; i++) {
+        const mid = (lo + hi) / 2;
+        if (ok(mid)) hi = mid;
+        else lo = mid;
+    }
+    return hi;
+}
+
+export interface CooldownBreakpoint {
+    /** Reduction (fraction) from which this row applies. */
+    reduction: number;
+    cooldownTicks: number;
+    cycleTicks: number;
+    castsPerMinute: number;
+}
+
+/**
+ * The current row plus the next `count` cooldown breakpoints above reduction `fromR`: every
+ * whole tick shaved off the cooldown phase is one step, nothing in between changes the timing.
+ */
+export function cooldownBreakpoints(baseCooldown: number, activeDuration: number, fromR: number, count = 5): CooldownBreakpoint[] {
+    const row = (reduction: number, cooldownTicks: number): CooldownBreakpoint => {
+        const cycleTicks = skillPhaseTicks(activeDuration) + cooldownTicks;
+        return { reduction, cooldownTicks, cycleTicks, castsPerMinute: 600 / cycleTicks };
+    };
+    const c0 = skillPhaseTicks(baseCooldown * (1 - fromR));
+    const out = [row(fromR, c0)];
+    for (let c = c0 - 1; c >= 1 && out.length <= count; c--) {
+        const r = cooldownReductionForTicks(baseCooldown, c);
+        if (!(r < 1)) break;
+        out.push(row(r, c));
+    }
+    return out;
+}
+
+/** Cast times (seconds) inside a battle of `seconds`, exact tick math, 0.1 s per tick. */
+export function skillCastTimes(battleSeconds: number, cooldownSeconds: number, activeDurationSeconds: number, max = 1000): number[] {
+    const out: number[] = [];
+    const end = Math.round(battleSeconds * 10);
+    const period = skillCycleTicks(cooldownSeconds, activeDurationSeconds);
+    for (let t = skillFirstCastTick(); t <= end && out.length < max; t += period) out.push(t / 10);
+    return out;
+}
+
+/** Skill types that spawn nothing and buff the caster's side instead (SkillBuilder has no builder). */
+export const BUFF_SKILL_TYPES: ReadonlySet<string> = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+const BUFF_SKILLS = BUFF_SKILL_TYPES;
 
 /** GetSkillDamageCount (0x77EDA78): how many pieces the skill's damage is split into. */
 const DAMAGE_COUNT: Record<string, number> = {

@@ -33,12 +33,13 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
     // (BattleSystem.ApplyDmg, RVA 0x77F4BD0). Block is applied only to incoming damage there, so
     // it never scales healing: it is shown separately as damage avoided.
     const { sourceWeaponDps, lifeStealPct, rawLifesteal, blockChance } = useMemo(() => {
-        const weaponDps = useRealTime ? stats.realWeaponDps : stats.weaponDps;
+        // Buff skill damage is part of the weapon hit's Dmg, so it heals too.
+        const weaponDps = useRealTime ? stats.realWeaponDps + (stats.skillBuffDps || 0) : stats.weaponDps + (stats.theoreticalSkillBuffDps || 0);
         const lsPct = stats.lifeSteal;
         return {
             sourceWeaponDps: weaponDps,
             lifeStealPct: lsPct,
-            rawLifesteal: weaponDps * lsPct,
+            rawLifesteal: useRealTime ? stats.lifestealHps : stats.theoreticalLifestealHps,
             blockChance: stats.blockChance || 0
         };
     }, [stats, useRealTime]);
@@ -123,11 +124,11 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                                 <div className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-3 min-w-0">
                                     <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Source Power</div>
                                     <div className="flex justify-between items-baseline gap-2">
-                                        <span className="text-[11px] text-white/60">{useRealTime ? 'Real-Time' : 'Theoretical'} Weapon DPS</span>
+                                        <span className="text-[11px] text-white/60">{useRealTime ? 'Real-Time' : 'Theoretical'} Weapon + Buff DPS</span>
                                         <span className="text-base md:text-lg font-mono font-bold text-white break-all">{formatVal(sourceWeaponDps)}</span>
                                     </div>
                                     <div className="pt-3 border-t border-white/5 text-[9px] md:text-[10px] text-white/30 italic leading-relaxed">
-                                        Lifesteal applies to weapon hits only. Skill damage does not lifesteal.
+                                        Lifesteal applies to weapon hits, including the damage buff skills add to them. Direct skill damage does not lifesteal.
                                     </div>
                                 </div>
 

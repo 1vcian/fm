@@ -5,7 +5,7 @@ import { X, TrendingUp, Zap, Hash, Swords, Sparkles, HelpCircle } from 'lucide-r
 import { AggregatedStats } from '../../utils/statEngine';
 import { UserProfile } from '../../types/Profile';
 import { formatPercent, formatCompactNumber } from '../../utils/statsCalculator';
-import { SKILL_MECHANICS } from '../../utils/constants';
+import { doubleSecondStrikeSeconds } from '../../utils/constants';
 import { BreakpointTables, BreakpointExplanation } from './BreakpointTables';
 import { cn } from '../../lib/utils';
 import { useProfile } from '../../context/ProfileContext';
@@ -85,95 +85,32 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
     const displayAps = useRealTime ? realAps : theoreticalAps;
     const displayWeaponDps = useRealTime ? realWeaponDps : weaponDps;
 
-    // --- SKILL DPS CALCULATIONS ---
+    // --- SKILL DPS (from statEngine.skillBreakdown: exact engine tick timing) ---
     const { damageSkills, buffSkills } = useMemo(() => {
-        const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale", "0", "1", "6", "12", "13"];
-
-        const processed = (profile.skills.equipped || []).map((skill: { id: string | number; level: number }) => {
-            const skillData = skillLibrary?.[skill.id];
-            if (!skillData) return null;
-
-            const levelIdx = Math.max(0, skill.level - 1);
-            const baseSkillValue = (skillData.DamagePerLevel?.[levelIdx] || 0) || (skillData.HealthPerLevel?.[levelIdx] || 0);
-            const baseCooldown = skillData.Cooldown || 1;
-            const duration = skillData.ActiveDuration || 0;
-
-            if (baseSkillValue <= 0) return null;
-
-            const cdr = stats.skillCooldownReduction;
-            // Cooldown x (1 - CDR): no floor in the game (same as statEngine).
-            const finalCd = baseCooldown * (1 - cdr);
-
-            // SKILL LAYER: (1 + tech) * (1 + items) * ascension, computed in statEngine
-            const skillMulti = stats.skillDamageMultiplier;
-            // DamageMulti substat layer, as statEngine applies it to active skills
-            const commonMulti = 1 + (stats.secondaryDamageMulti || 0);
-            
-            // BREAKDOWN COMPONENTS (for display only)
-            const skillTech = stats.skillDamageBreakdown.tree || 0;
-            const skillItems = stats.skillDamageBreakdown.substats || 0;
-            const skillAsc = stats.skillDamageBreakdown.ascension || 1;
-
-            // FORMULA: skillMulti * commonMulti
-            const effectiveMultiplier = skillMulti * commonMulti;
-
-            const isBuff = BUFF_SKILLS.includes(String(skill.id));
-            const mechanics = SKILL_MECHANICS[String(skill.id)] || { count: 1 };
-            const hitCount = mechanics.count || 1;
-
-            const baseInfo = {
-                name: skillData.Name || `Skill #${skill.id}`,
-                base: baseSkillValue,
-                multi: effectiveMultiplier,
-                commonMulti,
-                skillMulti,
-                skillTech,
-                skillItems,
-                skillAsc,
-                cooldown: finalCd,
-                // Common Multi breakdown
-                commonItems: stats.secondaryDamageMulti || 0,
-                commonSkins: stats.skinDamageMulti || 0,
-                commonSets: stats.setDamageMulti || 0,
-            };
-
-            if (isBuff) {
-                const cycle = finalCd + duration;
-                const uptime = cycle > 0 ? duration / cycle : 0;
-                const bonusPower = baseSkillValue * effectiveMultiplier;
-                const weaponSynergy = displayAps * critMult * doubleMult;
-                const dpsContrib = bonusPower * weaponSynergy * uptime;
-
-                return {
-                    ...baseInfo,
-                    isBuff: true,
-                    duration,
-                    uptime,
-                    weaponSynergy,
-                    dps: dpsContrib
-                };
-            } else {
-                // `count` is a divisor unless damageIsPerHit (see SKILL_MECHANICS / statEngine).
-                const buffedTotal = baseSkillValue * effectiveMultiplier;
-                const dmgPerHit = mechanics.damageIsPerHit ? buffedTotal : buffedTotal / hitCount;
-                const totalDmgPerActivation = dmgPerHit * hitCount;
-                const dps = totalDmgPerActivation / finalCd;
-
-                return {
-                    ...baseInfo,
-                    isBuff: false,
-                    hitCount,
-                    dps: dps
-                };
-            }
-        }).filter(Boolean);
-
-        const dSkills = processed.filter(s => s && !s.isBuff);
-        const bSkills = processed.filter(s => s && s.isBuff);
-        const tSkillDps = processed.reduce((acc: number, curr: any) => acc + curr.dps, 0);
-
-        return { damageSkills: dSkills, buffSkills: bSkills, totalSkillDps: tSkillDps };
-    }, [profile.skills.equipped, skillLibrary, stats, displayAps, critMult, doubleMult]);
+        const skillMulti = stats.skillDamageMultiplier;
+        const commonMulti = 1 + (stats.secondaryDamageMulti || 0);
+        const shared = {
+            multi: skillMulti * commonMulti,
+            commonMulti,
+            skillMulti,
+            skillTech: stats.skillDamageBreakdown.tree || 0,
+            skillItems: stats.skillDamageBreakdown.substats || 0,
+            skillAsc: stats.skillDamageBreakdown.ascension || 1,
+            commonItems: stats.secondaryDamageMulti || 0,
+        };
+        const rows = (stats.skillBreakdown || []).map((e) => ({
+            ...shared,
+            ...e,
+            name: skillLibrary?.[e.id]?.Name || e.id.replace(/([a-z])([A-Z])/g, '$1 $2'),
+            dps: useRealTime ? e.dps : e.theoreticalDps,
+            // Buff damage rides on weapon hits: hits/s x crit (doubles are extra hits).
+            weaponSynergy: (useRealTime ? realAps : theoreticalAps * doubleMult) * critMult,
+        }));
+        return {
+            damageSkills: rows.filter((r) => !r.isBuff && r.damage > 0),
+            buffSkills: rows.filter((r) => r.isBuff && r.damage > 0),
+        };
+    }, [stats, skillLibrary, useRealTime, realAps, theoreticalAps, doubleMult, critMult]);
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-[2px] p-2 md:p-4" onClick={onClose}>
@@ -370,8 +307,8 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                     {useRealTime && stats.doubleDamageChance > 0 && (
                                         <div className="pt-2 border-t border-white/5 space-y-1">
                                             <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                                <span className="text-white/40">Seq. Delay</span>
-                                                <span className="font-mono text-orange-400 font-bold">{(stats.doubleHitDelay / speedBonus).toFixed(2)}s → {(stats.realDoubleHitCycle - realCycleTime).toFixed(1)}s</span>
+                                                <span className="text-white/40">2nd Strike</span>
+                                                <span className="font-mono text-orange-400 font-bold">{(stats.doubleHitDelay / speedBonus).toFixed(2)}s → {doubleSecondStrikeSeconds(speedBonus, stats.weaponWindupTime).toFixed(1)}s</span>
                                             </div>
                                             <div className="flex justify-between items-baseline text-[11px] md:text-xs">
                                                 <span className="text-white/40">Full Cycle</span>
@@ -468,11 +405,19 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                         <div className="grid grid-cols-2 gap-y-3 text-[10px] font-mono p-3 bg-purple-500/10 rounded-xl">
                                             <div className="space-y-0.5">
                                                 <div className="text-purple-300/50 uppercase text-[8px] font-sans">Power</div>
-                                                <div className="text-white break-all">{formatVal(s.base * s.multi)}</div>
+                                                <div className="text-white break-all">{formatVal(s.damage)}</div>
                                             </div>
                                             <div className="space-y-0.5">
                                                 <div className="text-purple-300/50 uppercase text-[8px] font-sans">Uptime</div>
                                                 <div className="text-white">{(s.uptime * 100).toFixed(1)}%</div>
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <div className="text-purple-300/50 uppercase text-[8px] font-sans">Cycle</div>
+                                                <div className="text-white">{s.cycleSeconds.toFixed(1)}s</div>
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <div className="text-purple-300/50 uppercase text-[8px] font-sans">Hits/s x Crit</div>
+                                                <div className="text-white">{s.weaponSynergy.toFixed(2)}</div>
                                             </div>
                                             <div className="col-span-2 pt-2 border-t border-purple-300/10">
                                                 <div className="text-purple-300/50 uppercase text-[8px] mb-1 font-sans text-left">Formula:</div>
@@ -489,8 +434,8 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                 <div className="flex gap-4">
                                     <HelpCircle className="w-5 h-5 md:w-6 md:h-6 text-purple-400 shrink-0" />
                                     <div className="text-[10px] md:text-[11px] text-white/50 leading-relaxed font-sans">
-                                        <p className="mb-2"><strong className="text-purple-300">Weapon Synergy:</strong> Buffs add flat damage to your weapon. Because you hit multiple times per second and can deal Critical/Double hits, every point is scaled by weapon quality.</p>
-                                        <p className="italic text-[9px] md:text-[10px]">Factor = APS × Crit Multi × Double Multi</p>
+                                        <p className="mb-2"><strong className="text-purple-300">Weapon Synergy:</strong> Buffs add flat damage to your weapon. Because you hit multiple times per second and can deal Critical/Double hits, every point is scaled by weapon quality. The buff is on your hits for (active ticks - 1) of every (active + cooldown) ticks, and lifesteal heals on the buffed hits too.</p>
+                                        <p className="italic text-[9px] md:text-[10px]">DPS = Power × {useRealTime ? 'Real hits/s (doubles included)' : 'APS × Double Multi'} × Crit Multi × Uptime</p>
                                     </div>
                                 </div>
                             </div>
@@ -520,12 +465,12 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                             <div className="space-y-2">
                                                 <div className="text-[9px] md:text-[10px] text-blue-300/60 font-bold uppercase font-sans">Power</div>
                                                 <div className="flex justify-between items-baseline text-[10px] md:text-[11px] font-mono gap-2">
-                                                    <span className="text-white/40 whitespace-nowrap overflow-hidden text-clip">Hit</span>
-                                                    <span className="text-white font-bold">{formatVal(s.base * s.multi)}</span>
+                                                    <span className="text-white/40 whitespace-nowrap overflow-hidden text-clip">Damage</span>
+                                                    <span className="text-white font-bold">{formatVal(s.damage)}</span>
                                                 </div>
-                                                <div className="flex justify-between items-baseline text-[10px] md:text-[11px] pt-1 border-t border-white/5 font-mono gap-2">
-                                                    <span className="text-white/40">Hits</span>
-                                                    <span className="text-blue-300 font-bold">x{s.hitCount}</span>
+                                                <div className="flex justify-between items-baseline text-[10px] md:text-[11px] pt-1 border-t border-white/5 font-mono gap-2" title="Share of the skill's Damage one target really takes per cast, measured with the combat engine">
+                                                    <span className="text-white/40">Lands</span>
+                                                    <span className="text-blue-300 font-bold">x{s.yieldPerCast.toFixed(2)}</span>
                                                 </div>
                                             </div>
 
@@ -535,8 +480,12 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                                     <span className="text-white/40">CD</span>
                                                     <span className="text-white font-bold">{s.cooldown.toFixed(2)}s</span>
                                                 </div>
+                                                <div className="flex justify-between items-baseline text-[10px] md:text-[11px] font-mono gap-2" title="Active phase + cooldown, in 0.1s engine ticks">
+                                                    <span className="text-white/40">Cycle</span>
+                                                    <span className="text-white font-bold">{s.cycleSeconds.toFixed(1)}s</span>
+                                                </div>
                                                 <div className="mt-3 p-1.5 bg-blue-500/5 rounded border border-blue-500/10 text-[8px] md:text-[9px] text-white/20 italic font-mono text-center">
-                                                    (Hit×Mult×#) / CD
+                                                    (Damage × Lands) / Cycle
                                                 </div>
                                             </div>
                                         </div>
@@ -614,7 +563,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                         <div className="flex flex-col min-w-0">
                             <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Skills</span>
                             <span className="text-sm md:text-xl font-bold text-blue-400 leading-none whitespace-nowrap overflow-hidden text-clip">
-                                {formatVal(stats.skillDps + (stats.skillBuffDps || 0))}
+                                {formatVal(stats.skillDps + (useRealTime ? stats.skillBuffDps : stats.theoreticalSkillBuffDps) || 0)}
                             </span>
                         </div>
                         <div className="flex flex-col w-full md:w-auto md:ml-auto border-t md:border-t-0 border-white/5 pt-3 md:pt-0">

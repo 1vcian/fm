@@ -196,7 +196,7 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
                     // are real-time too, so all three headline metrics agree.
                     dps: stats.realTotalDps,
                     power: stats.power,
-                    lifestealPerSec: stats.realWeaponDps * stats.lifeSteal,
+                    lifestealPerSec: stats.lifestealHps,
                     healPerSec: stats.realTotalHps
                 });
             }

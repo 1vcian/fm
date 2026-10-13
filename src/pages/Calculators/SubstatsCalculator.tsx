@@ -303,13 +303,14 @@ export default function SubstatsCalculator() {
 
                     // Reflect thorns count as DPS against the engine's assumed mirror enemy,
                     // so Lora competes with the offensive fairies on equal ground.
-                    const theorDps = weaponTheor + (stats.reflectDps || 0) + (includeSkills ? stats.skillDps + (stats.skillBuffDps || 0) : 0);
+                    const theorDps = weaponTheor + (stats.reflectDps || 0) + (includeSkills ? stats.skillDps + (stats.theoreticalSkillBuffDps || 0) : 0);
                     const realDps = weaponReal + (stats.realReflectDps || 0) + (includeSkills ? stats.skillDps + (stats.skillBuffDps || 0) : 0);
 
                     // No block term: block only reduces incoming damage (BattleSystem.ApplyDmg,
                     // RVA 0x77F4BD0), it never scales healing.
-                    const theorHps = stats.totalHealth * stats.healthRegen + weaponTheor * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
-                    const realHps = stats.totalHealth * stats.healthRegen + weaponReal * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
+                    // Lifesteal also heals on buff damage (it rides on the weapon hit).
+                    const theorHps = stats.totalHealth * stats.healthRegen + (weaponTheor + (includeSkills ? stats.theoreticalSkillBuffDps || 0 : 0)) * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
+                    const realHps = stats.totalHealth * stats.healthRegen + (weaponReal + (includeSkills ? stats.skillBuffDps || 0 : 0)) * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
 
                     const dps = optimizeType === 'real' ? realDps : theorDps;
                     const hps = optimizeType === 'real' ? realHps : theorHps;

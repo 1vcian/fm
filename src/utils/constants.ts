@@ -33,6 +33,8 @@ export const MAX_ACTIVE_SKILLS = 3;
  * - `count` is a DIVISOR by default (Damage split into `count` projectiles/pulses -> total = Damage);
  *   it becomes a MULTIPLIER only when `damageIsPerHit` (each hit deals the full Damage).
  * - isSingleTarget: target nearest, re-target on kill. isAOE: hit every unit in radius.
+ * - `count` is the nominal split, NOT what lands: DPS and landed hit counts come from the engine
+ *   (src/engine/skillYield.ts), e.g. Rain of Arrows lands 10 of 15 pulses, the Drone 10-12 shots.
  */
 export const SKILL_MECHANICS: {
     [key: string]: {
@@ -93,7 +95,8 @@ export const SKILL_MECHANICS: {
     "Drone": { count: 10, isAOE: false, isSingleTarget: true, interval: 0.8, isDuration: true, damageIsPerHit: true, descriptionIsPerHit: true },
 };
 
-// === Attack timing (reverse-engineered from libil2cpp.so, Forge Master 2.8.2) ===
+// === Attack timing (reverse-engineered from libil2cpp.so; RVAs for build 2026_10_08_09_03 in
+// docs/attack-timing.md) ===
 // Combat runs at 10 sim-ticks/s. One continuous AttackTimer per unit: it counts 0 -> windup
 // (fires the hit) -> AttackDuration (resets), with NO reset at the windup fire. Per tick the
 // timer advances by dt*attackSpeedMultiplier, where dt = floor(2^32/10)/2^32 ~= 0.09999999976s.
@@ -105,18 +108,49 @@ export function attackIncRaw(mult: number): number {
     return Math.floor((SIM_DT_RAW * Math.round(mult * 1e6)) / 4294967296) || 1;
 }
 
-// Single-attack interval (seconds): ceil(AttackDuration / inc) ticks + 1 idle re-acquire tick,
-// each tick = 0.1s. WINDUP-INDEPENDENT (windup & recovery share one timer). AttackDuration is
-// 1.5s for every weapon. Reproduces the measured breakpoint table exactly.
-export function attackIntervalSeconds(mult: number, attackDuration = 1.5): number {
-    const inc = attackIncRaw(mult);
-    return (Math.ceil(Math.round(attackDuration * 1e6) / inc) + 1) * 0.1;
+/** Ticks to climb `micro` FD6 units at `inc` per tick; a phase always costs at least one tick. */
+const climbTicks = (micro: number, inc: number) => Math.max(1, Math.ceil(micro / inc));
+
+// Single-attack cycle in ticks: ceil(AttackDuration / inc) ticks + 1 idle re-acquire tick.
+// WINDUP-INDEPENDENT (windup & recovery share one timer). Reproduces the measured table exactly.
+export function attackCycleTicks(mult: number, attackDuration = 1.5): number {
+    return climbTicks(Math.round(attackDuration * 1e6), attackIncRaw(mult)) + 1;
 }
 
-// Double-attack second-strike delay (seconds): the timer is re-seeded to windup*0.75, so it must
-// climb the remaining 0.25*windup to re-fire: ceil(0.25*windup / inc) ticks, minimum 1 tick (0.1s).
-// WINDUP-DEPENDENT — this is the ONLY place the weapon's windup changes attack timing.
-export function doubleDelaySeconds(mult: number, windup: number): number {
+// Single-attack interval (seconds). Each tick = 0.1s.
+export function attackIntervalSeconds(mult: number, attackDuration = 1.5): number {
+    return attackCycleTicks(mult, attackDuration) * 0.1;
+}
+
+// Double-attack cycle in ticks (both strikes, idle tick included). On a proc the game does NOT
+// keep the timer: it re-seeds it to floor(0.75 * windup) from scratch (HandleUnits 0x77F3D34,
+// re-seed 0x77F482C..0x77F4874), so the overshoot past the windup at the first fire is lost:
+//   ceil(W / inc)                      first strike
+// + ceil((D - floor(0.75 * W)) / inc)  re-seeded climb: second strike at W, then on to D
+// + 1                                  idle re-acquire tick
+export function doubleCycleTicks(mult: number, windup: number, attackDuration = 1.5): number {
     const inc = attackIncRaw(mult);
-    return Math.max(1, Math.ceil((Math.round(windup * 1e6) * 0.25) / inc)) * 0.1;
+    const W = Math.round(windup * 1e6);
+    const D = Math.round(attackDuration * 1e6);
+    return climbTicks(W, inc) + climbTicks(D - Math.floor(W * 0.75), inc) + 1;
+}
+
+// Double-attack cycle (seconds), both strikes included.
+export function doubleCycleSeconds(mult: number, windup: number, attackDuration = 1.5): number {
+    return doubleCycleTicks(mult, windup, attackDuration) * 0.1;
+}
+
+// Gap between the two strikes of a double (seconds): the climb from floor(0.75*W) back to W.
+export function doubleSecondStrikeSeconds(mult: number, windup: number): number {
+    const W = Math.round(windup * 1e6);
+    return climbTicks(W - Math.floor(W * 0.75), attackIncRaw(mult)) * 0.1;
+}
+
+// Steady-state weapon hits per second for a double chance d (each roll is independent and a
+// double cannot chain): (1 + d) hits per ((1 - d) * single + d * double) seconds.
+export function weaponHitsPerSecond(mult: number, windup: number, attackDuration: number, doubleChance: number): number {
+    const d = Math.min(Math.max(doubleChance, 0), 1);
+    const single = attackIntervalSeconds(mult, attackDuration);
+    const dbl = doubleCycleSeconds(mult, windup, attackDuration);
+    return (1 + d) / ((1 - d) * single + d * dbl);
 }

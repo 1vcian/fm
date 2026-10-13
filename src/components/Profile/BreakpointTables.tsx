@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Heart } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
-import { attackIntervalSeconds, doubleDelaySeconds } from '../../utils/constants';
+import { attackIntervalSeconds, doubleCycleSeconds } from '../../utils/constants';
 import { cn } from '../../lib/utils';
 
 interface BreakpointTablesProps {
@@ -16,19 +16,19 @@ interface BreakpointTablesProps {
 interface Gain {
     reqBonus: number;      // attack-speed bonus % that unlocks this improvement
     single: number;        // single-attack interval (s)
-    delay: number;         // double 2nd-hit delay (s)
+    double: number;        // full double cycle, both strikes (s)
     effective: number;     // effective time-per-hit (s), weighted by double chance
     cause: 'single' | 'double' | 'both';
 }
 
 // Effective time PER HIT accounting for the double-attack chance:
-//   a double turns one cycle into two hits, so time/hit = (single + dc*delay) / (1 + dc).
+//   a double turns one cycle into two hits, so time/hit = ((1 - dc)*single + dc*double) / (1 + dc).
 // Lower = faster = more DPS. This is the number the player should actually optimise.
-const timePerHit = (single: number, delay: number, dc: number) => (single + dc * delay) / (1 + dc);
+const timePerHit = (single: number, double: number, dc: number) => ((1 - dc) * single + dc * double) / (1 + dc);
 
 // Attack timing is reverse-engineered from the game binary (see docs/attack-timing.md):
-// 10 sim-ticks/s. The SINGLE interval is weapon/skin-INDEPENDENT; only the DOUBLE second-strike
-// delay depends on this weapon's windup.
+// 10 sim-ticks/s. The SINGLE interval is weapon/skin-INDEPENDENT; only the DOUBLE cycle depends
+// on this weapon's windup (the proc re-seeds the timer to floor(0.75 x windup).
 export const BreakpointTables = memo(({
     weaponAttackDuration,
     weaponWindupTime,
@@ -44,8 +44,8 @@ export const BreakpointTables = memo(({
 
     const cur = useMemo(() => {
         const single = attackIntervalSeconds(currentAttackSpeedMultiplier, weaponAttackDuration);
-        const delay = doubleDelaySeconds(currentAttackSpeedMultiplier, weaponWindupTime);
-        return { single, delay, effective: timePerHit(single, delay, dc) };
+        const double = doubleCycleSeconds(currentAttackSpeedMultiplier, weaponWindupTime, weaponAttackDuration);
+        return { single, double, effective: timePerHit(single, double, dc) };
     }, [currentAttackSpeedMultiplier, weaponAttackDuration, weaponWindupTime, dc]);
 
     // Scan attack speed; record every point where the EFFECTIVE time-per-hit actually drops.
@@ -53,25 +53,27 @@ export const BreakpointTables = memo(({
     const gains = useMemo(() => {
         const out: Gain[] = [];
         let prevSingle = attackIntervalSeconds(1, weaponAttackDuration);
-        let prevDelay = doubleDelaySeconds(1, weaponWindupTime);
-        let prevEff = timePerHit(prevSingle, prevDelay, dc);
+        let prevDouble = doubleCycleSeconds(1, weaponWindupTime, weaponAttackDuration);
+        let prevEff = timePerHit(prevSingle, prevDouble, dc);
         for (let b = 0.1; b <= maxPossibleSpeedBonus; b = Math.round((b + 0.1) * 10) / 10) {
             const mult = 1 + b / 100;
             const single = attackIntervalSeconds(mult, weaponAttackDuration);
-            const delay = doubleDelaySeconds(mult, weaponWindupTime);
-            const eff = timePerHit(single, delay, dc);
+            const double = doubleCycleSeconds(mult, weaponWindupTime, weaponAttackDuration);
+            const eff = timePerHit(single, double, dc);
             if (eff < prevEff - 1e-9) {
                 const singleDropped = single < prevSingle - 1e-9;
-                const delayDropped = delay < prevDelay - 1e-9;
+                // The double cycle contains the single climb, so it drops with the single too:
+                // count it as its own cause only when it gains more than the single did.
+                const doubleDropped = prevDouble - double > prevSingle - single + 1e-9;
                 out.push({
                     reqBonus: b,
                     single,
-                    delay,
+                    double,
                     effective: eff,
-                    cause: singleDropped && delayDropped ? 'both' : delayDropped ? 'double' : 'single',
+                    cause: singleDropped && doubleDropped ? 'both' : doubleDropped ? 'double' : 'single',
                 });
             }
-            prevSingle = single; prevDelay = delay; prevEff = eff;
+            prevSingle = single; prevDouble = double; prevEff = eff;
         }
         return out;
     }, [weaponAttackDuration, weaponWindupTime, maxPossibleSpeedBonus, dc]);
@@ -95,7 +97,7 @@ export const BreakpointTables = memo(({
                     threshold, so speed between breakpoints is wasted. The list below shows only the attack-speed values
                     that <strong>actually lower your time&nbsp;per&nbsp;hit</strong> (weighted by your{' '}
                     <strong>{Math.round(dc * 100)}% double chance</strong>). The single-attack interval is the same for
-                    every weapon/skin; the double 2nd-hit delay depends on this weapon&apos;s windup ({weaponWindupTime.toFixed(2)}s),
+                    every weapon/skin; the double cycle depends on this weapon&apos;s windup ({weaponWindupTime.toFixed(2)}s),
                     so with double chance a faster-windup weapon reaches better time/hit sooner.
                 </p>
             </div>
@@ -105,7 +107,7 @@ export const BreakpointTables = memo(({
                 <div className="bg-black/25 border border-white/5 rounded-lg p-3">
                     <div className="text-[9px] uppercase tracking-wider text-white/40">Now (+{currentBonus.toFixed(0)}%)</div>
                     <div className="text-lg font-black text-white">{cur.effective.toFixed(2)}s<span className="text-[10px] text-white/40 font-normal"> /hit</span></div>
-                    <div className="text-[9px] text-white/40 font-mono">single {cur.single.toFixed(1)}s · double {(cur.single + cur.delay).toFixed(1)}s</div>
+                    <div className="text-[9px] text-white/40 font-mono">single {cur.single.toFixed(1)}s · double {cur.double.toFixed(1)}s</div>
                 </div>
                 <div className={cn('rounded-lg p-3 border', nextGain ? 'bg-purple-500/10 border-purple-500/30' : 'bg-black/25 border-white/5')}>
                     <div className="text-[9px] uppercase tracking-wider text-purple-300/70">Next worthwhile target</div>
@@ -144,7 +146,7 @@ export const BreakpointTables = memo(({
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {gains.map((g, i) => {
-                                const prevEff = i === 0 ? timePerHit(attackIntervalSeconds(1, weaponAttackDuration), doubleDelaySeconds(1, weaponWindupTime), dc) : gains[i - 1].effective;
+                                const prevEff = i === 0 ? timePerHit(attackIntervalSeconds(1, weaponAttackDuration), doubleCycleSeconds(1, weaponWindupTime, weaponAttackDuration), dc) : gains[i - 1].effective;
                                 const dpsGain = (dps(g.effective) / dps(prevEff) - 1) * 100;
                                 const isReached = currentBonus >= g.reqBonus - 0.01;
                                 const isNext = nextGain && g.reqBonus === nextGain.reqBonus;
@@ -165,7 +167,7 @@ export const BreakpointTables = memo(({
                                         <td className="p-2.5 font-bold whitespace-nowrap">+{g.reqBonus.toFixed(1)}%</td>
                                         <td className="p-2.5 font-bold">{g.effective.toFixed(2)}s</td>
                                         <td className={cn('p-2.5 font-bold', (g.cause === 'single' || g.cause === 'both') ? 'text-orange-400' : 'text-white/45')}>{g.single.toFixed(1)}s</td>
-                                        <td className={cn('p-2.5 font-bold', (g.cause === 'double' || g.cause === 'both') ? 'text-purple-300' : 'text-white/45')}>{(g.single + g.delay).toFixed(1)}s</td>
+                                        <td className={cn('p-2.5 font-bold', (g.cause === 'double' || g.cause === 'both') ? 'text-purple-300' : 'text-white/45')}>{g.double.toFixed(1)}s</td>
                                         <td className="p-2.5 text-green-400/90">+{dpsGain.toFixed(1)}%</td>
                                         <td className="p-2.5 text-right font-sans font-bold text-[9px] uppercase">
                                             {isReached ? <span className="text-green-400">Reached</span>
@@ -196,7 +198,7 @@ export const BreakpointTables = memo(({
     );
 });
 
-// Formula reference — reverse-engineered from the game binary (libil2cpp.so, 2.8.2).
+// Formula reference, reverse-engineered from the game binary (libil2cpp.so, build 2026_10_08_09_03).
 export const BreakpointExplanation = memo(() => (
     <div className="mt-8 space-y-4 text-[11px] text-white/50 leading-relaxed border-t border-white/10 pt-6 font-sans">
         <h4 className="text-xs font-bold text-white uppercase tracking-wider">How attack timing works (from the game binary)</h4>
@@ -218,20 +220,21 @@ export const BreakpointExplanation = memo(() => (
                     re-acquire tick.
                 </div>
                 <div>
-                    <span className="text-purple-400 font-bold uppercase block mb-0.5 text-[10px]">Double 2nd-hit delay</span>
+                    <span className="text-purple-400 font-bold uppercase block mb-0.5 text-[10px]">Double cycle</span>
                     <span className="font-mono text-[9px] bg-white/5 px-1 py-0.5 rounded text-purple-300 block w-fit mb-1 font-bold">
-                        delay = ceil(0.25 × Windup / inc) × 0.1s  (min 0.1s)
+                        double = (ceil(W / inc) + ceil((AttackDuration - floor(0.75 × W)) / inc) + 1) × 0.1s
                     </span>
-                    The gap before the second strike when Double Damage procs. When a double triggers, the timer is
-                    re-seeded to <code>Windup × 0.75</code>, so it must climb the remaining <code>0.25 × Windup</code>.
-                    This is the <strong>only</strong> place the weapon&apos;s windup changes attack timing.
+                    Both strikes of a Double Damage proc, W = windup. After the first strike the game re-seeds the
+                    timer to <code>floor(0.75 × W)</code> from scratch, so the overshoot past the windup is lost; the timer
+                    then climbs to W again (second strike) and on to AttackDuration. This is the <strong>only</strong> place
+                    the weapon&apos;s windup changes attack timing.
                 </div>
             </div>
             <div className="space-y-4">
                 <div>
                     <span className="text-fuchsia-400 font-bold uppercase block mb-0.5 text-[10px]">Effective time / hit</span>
                     <span className="font-mono text-[9px] bg-white/5 px-1 py-0.5 rounded text-fuchsia-300 block w-fit mb-1 font-bold">
-                        timePerHit = (interval + doubleChance × delay) / (1 + doubleChance)
+                        timePerHit = ((1 - doubleChance) × interval + doubleChance × double) / (1 + doubleChance)
                     </span>
                     What the breakpoint table optimises. A double turns one cycle into two hits, so higher double chance
                     makes the windup-driven double breakpoints matter more.

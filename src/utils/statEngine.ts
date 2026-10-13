@@ -6,7 +6,9 @@
 import { mergeClanModifiers, clanNodeValueAtLevel } from './clanTechStacking';
 import { UserProfile } from '../types/Profile';
 import { SEASON_STATS as FAIRY_SEASON_STATS, applyFairyBonus } from './fairies';
-import { SKILL_MECHANICS, attackIntervalSeconds, doubleDelaySeconds } from './constants';
+import { attackIntervalSeconds, doubleCycleSeconds, weaponHitsPerSecond } from './constants';
+import { BUFF_SKILL_TYPES, buffActiveTicks, skillCycleTicks } from '../engine/skills';
+import { skillYieldPerCast } from '../engine/skillYield';
 import { getNormalizedTarget } from './ascensionUtils';
 import {
     StatAttribution, StatContribution, SourceRef, canonicalStatKey,
@@ -50,6 +52,30 @@ export const DEFAULT_BASE_STATS: BasePlayerStats = {
     levelScalingBase: 1.01,
     itemBaseMaxLevel: 99,
 };
+
+/** One equipped skill's contribution, exact engine timing (steady state, no initial charge). */
+export interface SkillDpsEntry {
+    id: string;
+    isBuff: boolean;
+    /** Damage per cast (or per buffed weapon hit, for buffs), all layers applied. */
+    damage: number;
+    /** Health granted per activation (buffs only carry it in the engine). */
+    health: number;
+    /** Cooldown after CDR (s). */
+    cooldown: number;
+    activeDuration: number;
+    /** Cast period: (active phase + cooldown phase) ticks x 0.1 s. */
+    cycleSeconds: number;
+    castsPerMinute: number;
+    /** Buffs: share of ticks the buff is on the units. */
+    uptime: number;
+    /** Damage skills: multiple of `damage` one static target receives per cast. */
+    yieldPerCast: number;
+    /** Real (stepped weapon cadence for buffs) and theoretical damage per second. */
+    dps: number;
+    theoreticalDps: number;
+    hps: number;
+}
 
 export interface AggregatedStats {
     basePlayerDamage: number;
@@ -152,6 +178,13 @@ export interface AggregatedStats {
 
     skillDps: number;
     skillBuffDps: number;
+    /** Buff damage at the theoretical (continuous) weapon cadence; feeds averageTotalDps. */
+    theoreticalSkillBuffDps: number;
+    /** Per equipped skill: exact cast timing, damage and healing (see SkillDpsEntry). */
+    skillBreakdown: SkillDpsEntry[];
+    /** Lifesteal healing per second (weapon + buff damage), stepped and theoretical cadence. */
+    lifestealHps: number;
+    theoreticalLifestealHps: number;
     /**
      * Thorns damage per second against an assumed mirror enemy: same per-hit attack and
      * cadence as the player (10b per hit when the profile has no damage at all). Reflect
@@ -286,6 +319,10 @@ export const DEFAULT_STATS: AggregatedStats = {
     projectileAffectedByGravity: false,
     skillDps: 0,
     skillBuffDps: 0,
+    theoreticalSkillBuffDps: 0,
+    skillBreakdown: [],
+    lifestealHps: 0,
+    theoreticalLifestealHps: 0,
     reflectDps: 0,
     realReflectDps: 0,
     skillHps: 0,
@@ -2055,146 +2092,115 @@ export class StatEngine {
 
         this.debugLogs.push(`FINAL: Damage=${this.stats.totalDamage.toFixed(0)}, Health=${this.stats.totalHealth.toFixed(0)}, Power=${this.stats.power.toFixed(0)}`);
 
-        // Skill DPS Calculation
-        if (this.libs.skillLibrary) {
-            for (const skill of this.profile.skills.equipped) {
-                const skillData = this.libs.skillLibrary[skill.id];
-                if (!skillData) continue;
-
-                const levelIdx = Math.max(0, skill.level - 1);
-                const baseSkillDmg = skillData.DamagePerLevel?.[levelIdx] || 0;
-                const baseSkillHeal = skillData.HealthPerLevel?.[levelIdx] || 0;
-                const cooldown = skillData.Cooldown || 1;
-
-                // Cooldown x (1 - CDR): no floor in the game.
-                const finalCd = cooldown * (1 - this.stats.skillCooldownReduction);
-
-                if (baseSkillDmg > 0 || baseSkillHeal > 0) {
-                    // SKILL DPS FORMULA (mirrors Forge Ascension for equipment)
-                    // 
-                    // For Equipment:  equipMulti = commonDamageMulti * forgeAscension
-                    // For Skills:     skillMulti = (1 + skillTech + skillItems) * skillAscension
-                    //
-                    // Then: effectiveMultiplier = skillMulti * commonDamageMulti
-                    //
-                    // This ensures:
-                    // 1. Skill Ascension scales ALL skill-specific bonuses (tech + items)
-                    // 2. Common/Global bonuses (tech tree dmg, item dmg%) apply on top
-                    // 3. The ratio between two builds stays constant across ascension levels
-                    
-                    const skillMulti = this.stats.skillDamageMultiplier; // Already = (1 + tech + items) * ascension
-                    const commonMulti = 1 + (this.stats.secondaryDamageMulti || 0); // DamageMulti substat layer (binary)
-                    const effectiveMultiplier = skillMulti * commonMulti;
-
-                    // Technical Debug Log
-                    const ascensionMulti = this.stats.skillDamageBreakdown.ascension || 1;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale", "0", "1", "6", "12", "13"];
-                    const isBuffSkill = BUFF_SKILLS.includes(String(skill.id));
-
-                    if (isBuffSkill) {
-                        const finalBonus = baseSkillDmg > 0
-                            ? baseSkillDmg * effectiveMultiplier
-                            : baseSkillHeal * this.stats.skillHealthMultiplier * (1 + (this.stats.secondaryHealthMulti || 0));
-
-                        // Uptime calculation (average contribution)
-                        const duration = skillData.ActiveDuration || 0;
-                        const cycle = finalCd + duration;
-                        const uptime = cycle > 0 ? duration / cycle : 0;
-
-                        // Buff damage benefits from weapon stats (Power x APS x Crit x Double)
-                        const aps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
-                        const critMult = 1 + Math.min(this.stats.criticalChance, 1) * (this.stats.criticalDamage - 1);
-                        const doubleMult = 1 + Math.min(this.stats.doubleDamageChance, 1);
-
-                        const averageBonusDps = finalBonus * aps * critMult * doubleMult * uptime;
-                        this.stats.skillBuffDps += averageBonusDps;
-                    } else {
-                        // Regular damage skill
-                        if (baseSkillDmg > 0) {
-                            const mechanics = SKILL_MECHANICS[String(skill.id)] || { count: 1 };
-                            const hitCount = mechanics.count || 1;
-                            // Library damage is the TOTAL per activation. `count` is a DIVISOR for
-                            // multi-projectile / multi-pulse skills (total stays = Damage) and is a
-                            // MULTIPLIER only when damageIsPerHit (each hit deals the full Damage).
-                            // Mirrors BattleSimulator; RE'd from libil2cpp.so (GetSkillDamageCount).
-                            const buffedTotal = baseSkillDmg * effectiveMultiplier;
-                            const perHit = mechanics.damageIsPerHit ? buffedTotal : buffedTotal / hitCount;
-                            const totalDmgPerActivation = perHit * hitCount;
-                            this.stats.skillDps += totalDmgPerActivation / finalCd;
-                        }
-                    }
-
-                    if (baseSkillHeal > 0) {
-                        // SKILL HEALING (Same pattern as damage)
-                        // Health chain of the binary: HealthMulti substat layer, not the damage one.
-                        const hSkillMulti = this.stats.skillHealthMultiplier; // (1 + tech + items) * ascension
-                        const hCommonMulti = 1 + (this.stats.secondaryHealthMulti || 0);
-                        const hEffectiveMultiplier = hSkillMulti * hCommonMulti;
-
-
-
-                        const healPerHit = baseSkillHeal * hEffectiveMultiplier;
-                        this.stats.skillHps += healPerHit / finalCd;
-                    }
-                } // Final closing of (baseSkillDmg > 0 || baseSkillHeal > 0)
-            } // end for
-        } // end if library
-
-        // Final DPS Synchronization (Weapon + Damage Skills + Buff Skills)
+        // ---------------------------------------------------------------- weapon cadence
         const critMult = 1 + Math.min(this.stats.criticalChance, 1) * (this.stats.criticalDamage - 1);
         const doubleMult = 1 + Math.min(this.stats.doubleDamageChance, 1);
-
-        // AVERAGE WEAPON DPS (Theoretical - used for simple summary)
+        // Theoretical (continuous) attack rate: AttackDuration / speed, doubles as extra hits.
         const simpleAps = 1 / (this.stats.weaponAttackDuration / this.stats.attackSpeedMultiplier);
-        this.stats.weaponDps = this.stats.totalDamage * simpleAps * critMult * doubleMult;
-        // Mirror-enemy assumption for reflect: their hit is your hit, their pace is yours.
-        const reflectEnemyDph = this.stats.totalDamage > 0 ? this.stats.totalDamage : 1e10;
-        this.stats.reflectDps = (this.stats.reflectChance || 0) * reflectEnemyDph * simpleAps;
-        this.stats.averageTotalDps = this.stats.weaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0) + this.stats.reflectDps;
+        const theoHitsPerSecond = simpleAps * doubleMult;
 
-        // REAL-TIME STEPPED CALCULATION (Breakpoints)
-        // Formula: cycle = floor(base / speed * 10) / 10 + 0.2
+        // REAL-TIME STEPPED CADENCE. Reverse-engineered from libil2cpp.so (AttacksSystem.HandleUnits
+        // 0x77F3D34, build 2026_10_08_09_03): 10 sim-ticks/s, one continuous AttackTimer. The single
+        // cycle is WINDUP-INDEPENDENT (ceil(AttackDuration/inc)+1 ticks); a double re-seeds the timer
+        // to floor(0.75*windup) from scratch, so the double cycle is
+        // ceil(W/inc) + ceil((D - floor(0.75W))/inc) + 1 ticks. See constants.ts / docs/attack-timing.md.
+        // Projectiles do not change the steady state: one impact per shot, the travel is a constant lag.
         const speedMult = this.stats.attackSpeedMultiplier;
         const baseDuration = this.stats.weaponAttackDuration || 1.5;
         const baseWindup = this.stats.weaponWindupTime || 0.5;
-
-        // Reverse-engineered from libil2cpp.so (2.8.2): combat runs at 10 sim-ticks/s with one
-        // continuous AttackTimer. The single-attack interval is WINDUP-INDEPENDENT
-        // (= ceil(AttackDuration/inc)+1 ticks); only the double second-strike delay depends on windup
-        // (the timer is re-seeded to windup*0.75). See constants.ts attackIntervalSeconds / doubleDelaySeconds.
         const steppedCycle = attackIntervalSeconds(speedMult, baseDuration);
-        const steppedDoubleDelay = doubleDelaySeconds(speedMult, baseWindup);
-        this.stats.doubleHitDelay = baseWindup * 0.25;
-        const doubleHitCycle = steppedCycle + steppedDoubleDelay;
-
-        // WEIGHTED AVERAGE REAL DPS (The "Second Table" logic)
-        // Correct Real APS = (1 + Chance) / ((1 - Chance) * NormalCycle + Chance * DoubleCycle)
+        const doubleHitCycle = doubleCycleSeconds(speedMult, baseWindup, baseDuration);
+        this.stats.doubleHitDelay = baseWindup * 0.25; // theoretical (unstepped) re-climb, display only
+        // Steady-state hit rate: (1 + d) hits per ((1 - d) * single + d * double) seconds.
         const dChance = Math.min(this.stats.doubleDamageChance, 1);
-        const averageRealCycle = (1 - dChance) * steppedCycle + dChance * doubleHitCycle;
-        const weightedAps = (1 + dChance) / averageRealCycle;
-
+        const weightedAps = weaponHitsPerSecond(speedMult, baseWindup, baseDuration, dChance);
         this.stats.realCycleTime = steppedCycle;
         this.stats.realDoubleHitCycle = doubleHitCycle;
         this.stats.realAps = weightedAps;
-        this.stats.realDoubleHitAps = 2 / doubleHitCycle; // Stats only for pure double hit phase 
+        this.stats.realDoubleHitAps = 2 / doubleHitCycle; // Stats only for pure double hit phase
 
+        // ---------------------------------------------------------------- skills
+        // Timing is the engine's exact tick math (src/engine/skills.ts): every phase costs
+        // max(1, ceil(micro / 99999)) ticks, the cast period is active + cooldown (CDR scales only
+        // the cooldown), steady state (the 4.0 s initial charge is left out).
+        // Damage per cast is what one static target really receives (skillYieldPerCast runs the
+        // engine's own builders: Rain of Arrows 10 of 15 pulses, the Drone's flight and shots...).
+        // Buffs add their Damage to every weapon hit while active (crit applies, so does lifesteal)
+        // and grant their Health ONCE per activation.
+        this.stats.skillDps = 0;
+        this.stats.skillBuffDps = 0;
+        this.stats.theoreticalSkillBuffDps = 0;
+        this.stats.skillHps = 0;
+        this.stats.skillBreakdown = [];
+        const engagementRange = (this.stats.weaponAttackRange || 0.3) + (this.stats.attackRangeBonus || 0);
+        if (this.libs.skillLibrary) {
+            this.profile.skills.equipped.forEach((skill) => {
+                const skillData = this.libs.skillLibrary![skill.id];
+                if (!skillData) return;
+
+                // Level is 0-based in the game; each array is indexed on its own (as skillSpecs).
+                const levelIdx = skill.level - 1;
+                const at = (arr?: number[]) => (arr && levelIdx >= 0 && levelIdx < arr.length ? arr[levelIdx] : 0);
+                const baseSkillDmg = at(skillData.DamagePerLevel);
+                const baseSkillHeal = at(skillData.HealthPerLevel);
+                if (baseSkillDmg <= 0 && baseSkillHeal <= 0) return;
+
+                // Cooldown x (1 - CDR): no floor in the game.
+                const finalCd = (skillData.Cooldown || 0) * (1 - this.stats.skillCooldownReduction);
+                const activeDuration = skillData.ActiveDuration || 0;
+                const cycleTicks = skillCycleTicks(finalCd, activeDuration);
+                const cycleSeconds = cycleTicks * 0.1;
+
+                // Skill layer (1 + tech + items) * ascension times the DamageMulti/HealthMulti
+                // substat layer, as the binary applies them to active skills (see skillSpecs).
+                const damage = baseSkillDmg * this.stats.skillDamageMultiplier * (1 + (this.stats.secondaryDamageMulti || 0));
+                const health = baseSkillHeal * this.stats.skillHealthMultiplier * (1 + (this.stats.secondaryHealthMulti || 0));
+                const engineId = String(skillData.Type ?? skill.id);
+                const isBuff = BUFF_SKILL_TYPES.has(engineId);
+
+                const entry: SkillDpsEntry = {
+                    id: String(skill.id), isBuff, damage, health, cooldown: finalCd, activeDuration,
+                    cycleSeconds, castsPerMinute: 600 / cycleTicks, uptime: 0, yieldPerCast: 0,
+                    dps: 0, theoreticalDps: 0, hps: 0,
+                };
+                if (isBuff) {
+                    entry.uptime = buffActiveTicks(activeDuration) / cycleTicks;
+                    // Damage part filled in below, once the weapon's real hit rate is known.
+                    // Health: the activation grant (an upper bound: it clamps to max HP), plus regen on
+                    // the raised HpMaxNoMulti while the buff is up.
+                    entry.hps = health / cycleSeconds + health * this.stats.healthRegen * entry.uptime;
+                } else if (damage > 0) {
+                    entry.yieldPerCast = skillYieldPerCast(engineId, activeDuration, engagementRange);
+                    entry.dps = (damage * entry.yieldPerCast) / cycleSeconds;
+                    entry.theoreticalDps = entry.dps;
+                }
+                this.stats.skillBreakdown.push(entry);
+            });
+        }
+
+        // AVERAGE WEAPON DPS (Theoretical - used for simple summary)
+        this.stats.weaponDps = this.stats.totalDamage * theoHitsPerSecond * critMult;
         this.stats.realWeaponDps = this.stats.totalDamage * weightedAps * critMult;
+
+        for (const e of this.stats.skillBreakdown) {
+            if (e.isBuff) {
+                e.dps = e.damage * weightedAps * critMult * e.uptime;
+                e.theoreticalDps = e.damage * theoHitsPerSecond * critMult * e.uptime;
+                this.stats.skillBuffDps += e.dps;
+                this.stats.theoreticalSkillBuffDps += e.theoreticalDps;
+            } else {
+                this.stats.skillDps += e.dps;
+            }
+            this.stats.skillHps += e.hps;
+        }
+
+        // Mirror-enemy assumption for reflect: their hit is your hit, their pace is yours.
+        const reflectEnemyDph = this.stats.totalDamage > 0 ? this.stats.totalDamage : 1e10;
+        this.stats.reflectDps = (this.stats.reflectChance || 0) * reflectEnemyDph * simpleAps;
+        this.stats.averageTotalDps = this.stats.weaponDps + this.stats.skillDps + this.stats.theoreticalSkillBuffDps + this.stats.reflectDps;
+
         this.stats.realReflectDps = (this.stats.reflectChance || 0) * reflectEnemyDph * weightedAps;
-        this.stats.realTotalDps = this.stats.realWeaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0) + this.stats.realReflectDps;
+        this.stats.realTotalDps = this.stats.realWeaponDps + this.stats.skillDps + this.stats.skillBuffDps + this.stats.realReflectDps;
 
         // --- HPS CALCULATION (Theoretical vs Real-Time) ---
         const regen = this.stats.totalHealth * this.stats.healthRegen;
@@ -2202,13 +2208,17 @@ export class StatEngine {
         // No block term: BattleSystem.ApplyDmg (RVA 0x77F4BD0) applies block only to incoming
         // damage and heals lifesteal with FD6.Min(Hp + heal, HpMax), so block never scales
         // healing. These are upper bounds: healing past max HP is lost in the game.
+        // Lifesteal heals on every weapon hit, buff damage included (the buff is part of the
+        // hit's Dmg); skill damage carries no lifesteal (its snapshot is Dmg only).
 
         // Theoretical HPS (based on Theoretical Weapon DPS)
-        const lifestealTheo = this.stats.weaponDps * this.stats.lifeSteal;
+        const lifestealTheo = (this.stats.weaponDps + this.stats.theoreticalSkillBuffDps) * this.stats.lifeSteal;
         this.stats.theoreticalTotalHps = regen + lifestealTheo + skills;
 
         // Real-Time HPS (based on Real Weapon DPS)
-        const lifestealReal = this.stats.realWeaponDps * this.stats.lifeSteal;
+        const lifestealReal = (this.stats.realWeaponDps + this.stats.skillBuffDps) * this.stats.lifeSteal;
+        this.stats.lifestealHps = lifestealReal;
+        this.stats.theoreticalLifestealHps = lifestealTheo;
         this.stats.realTotalHps = regen + lifestealReal + skills;
 
         this.debugLogs.push(`FINAL DPS: Weapon=${this.stats.weaponDps.toFixed(0)}, RealWeapon=${this.stats.realWeaponDps.toFixed(0)}, Total=${this.stats.averageTotalDps.toFixed(0)}`);

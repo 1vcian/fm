@@ -16,6 +16,8 @@ import { MAX_ACTIVE_SKILLS, SKILL_MECHANICS } from '../../utils/constants';
 const SLOT_ART = 'w-12 h-12 sm:w-20 sm:h-20 xl:w-24 xl:h-24';
 import { SkillSelectorModal } from './SkillSelectorModal';
 import { SkillsCycle } from './SkillsCycle';
+import { BUFF_SKILL_TYPES, cooldownReductionForTicks, skillCastTimes, skillFirstCastTick, skillPhaseTicks } from '../../engine/skills';
+import { skillYieldPerCast } from '../../engine/skillYield';
 import { SectionSyncButton } from './SectionSyncButton';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { AscensionStars } from '../UI/AscensionStars';
@@ -230,17 +232,24 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
         const health = baseHp * totalHealthMulti;
 
         const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
-        const totalDamageDisplay = mechanics.damageIsPerHit ? damage * mechanics.count : damage;
         const damagePerHit = mechanics.damageIsPerHit
             ? damage
             : (mechanics.count > 1 ? damage / mechanics.count : damage);
+        // What one target really takes per cast, measured with the engine's own skill builders
+        // (Rain of Arrows lands 10 of its 15 pulses, the Drone's shot count depends on its
+        // flight and lifetime, ...), at the distance where this weapon engages.
+        const isBuff = BUFF_SKILL_TYPES.has(skillData.Type || skill.id);
+        const range = (globalStats?.weaponAttackRange || 0.3) + (globalStats?.attackRangeBonus || 0);
+        const landed = !isBuff && baseDmg > 0 ? skillYieldPerCast(skillData.Type || skill.id, duration, range) : 1;
+        const totalDamageDisplay = damage * landed;
+        const hitsLanded = damagePerHit > 0 ? Math.round((totalDamageDisplay / damagePerHit) * 10) / 10 : 1;
 
         return {
             baseDamage: baseDmg,
             baseHealth: baseHp,
             damage: damagePerHit,
             totalDamage: totalDamageDisplay,
-            count: mechanics.count,
+            count: hitsLanded,
             health,
             duration,
             cooldown,
@@ -414,7 +423,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                                     {stats.damage > 0 && (
                                         <div className="relative group/dmg flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5 rounded-md border border-red-400/25 bg-red-400/10 px-1.5 py-1">
                                             <span className="text-[9px] font-black uppercase tracking-wide text-red-400">Damage</span>
-                                            {stats.count > 1 && <span className="text-[9px] font-bold text-red-400/80">(x{stats.count})</span>}
+                                            {stats.count !== 1 && <span className="text-[9px] font-bold text-red-400/80" title="Hits one target takes per cast">(x{stats.count})</span>}
                                             {(() => {
                                                 const mech = SKILL_MECHANICS[skill.id];
                                                 if (mech?.count === 0) {
@@ -429,7 +438,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                                             <span className="font-mono font-bold text-[13px] text-red-400 leading-none">
                                                 {formatNumber(stats.totalDamage)}
                                             </span>
-                                            {stats.count > 1 && (
+                                            {stats.count !== 1 && (
                                                 <span className="text-[8px] font-mono italic text-red-400/70">({formatNumber(stats.damage)} / hit)</span>
                                             )}
                                             <span className="font-mono text-[9px] font-bold text-text-muted/90 ml-auto whitespace-nowrap">
@@ -456,30 +465,26 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                                     )}
 
                                     {(() => {
-                                        // Hit Frequence: same cast-timing model as the Skills Cycle panel
-                                        // advisor (BattleEngine): first cast at 3.2s, then every
-                                        // max(0.5, CD x (1-reduction)) + active duration.
+                                        // Hit Frequence: the engine's exact skill tick math (src/engine/skills.ts), the
+                                        // same model as the Skills Cycle panel: first cast after the 4.0 s charge
+                                        // (4.1 s), then every active + cooldown phase in whole 0.099999 s ticks.
                                         const reduction = globalStats?.skillCooldownReduction || 0;
                                         const activeDuration = stats.duration || 0;
-                                        const cdComponent = stats.cooldown * Math.max(0.1, 1 - reduction);
-                                        const period = Math.max(0.5, cdComponent) + activeDuration;
-                                        const START_TIME = 3.2;
+                                        const cdComponent = stats.cooldown * (1 - reduction);
                                         const T = typeof pvpBaseConfig?.PvpMatchTimerSeconds === 'number'
                                             ? pvpBaseConfig.PvpMatchTimerSeconds : 60;
 
-                                        let activations = 0;
-                                        let lastHit = 0;
-                                        let targetCd = 0;
-
-                                        if (T > START_TIME) {
-                                            activations = Math.floor((T - START_TIME) / period) + 1;
-                                            lastHit = START_TIME + (activations - 1) * period;
-                                            // effective CD needed to fit one more cast inside the window
-                                            const need = (T - START_TIME) / activations - activeDuration;
-                                            targetCd = Math.max(0, need);
-                                        }
-
-                                        const diff = Math.max(0.5, cdComponent) - targetCd;
+                                        const casts = skillCastTimes(T, cdComponent, activeDuration);
+                                        const activations = casts.length;
+                                        const lastHit = activations ? casts[activations - 1] : 0;
+                                        // One more cast in T: the period may be at most floor((T - first) / activations)
+                                        // ticks; the reduction that buys that cooldown is the next useful breakpoint.
+                                        const maxPeriod = activations ? Math.floor((Math.round(T * 10) - skillFirstCastTick()) / activations) : 0;
+                                        const needTicks = maxPeriod - skillPhaseTicks(activeDuration);
+                                        const needR = cooldownReductionForTicks(stats.cooldown, needTicks);
+                                        const reachable = Number.isFinite(needR) && needR < 1;
+                                        const diff = reachable ? cdComponent - stats.cooldown * (1 - needR) : 0;
+                                        const needPct = reachable ? Math.max(0, needR - reduction) : 0;
                                         const cell = "rounded flex flex-col items-center justify-center py-1 bg-bg-input/40 min-w-0";
                                         const cap = "text-[7px] text-text-muted uppercase font-bold tracking-wide";
 
@@ -490,7 +495,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                                             <div className="grid grid-cols-5 gap-1 text-[10px]">
                                                 <div className={cell} title="Cooldown after cooldown reduction">
                                                     <span className={cap}>CD</span>
-                                                    <span className="font-mono font-bold tabular-nums">{cdComponent.toFixed(1)}s</span>
+                                                    <span className="font-mono font-bold tabular-nums">{cdComponent.toFixed(2)}s</span>
                                                 </div>
                                                 <div className={cell} title="Active duration">
                                                     <span className={cap}>Dur</span>
@@ -507,13 +512,13 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                                                 <div
                                                     className={cn(
                                                         "rounded flex flex-col items-center justify-center py-1 min-w-0",
-                                                        diff < 0 ? "bg-red-400/15 text-red-400" : "bg-accent-primary/15 text-accent-primary"
+                                                        !reachable ? "bg-red-400/15 text-red-400" : "bg-accent-primary/15 text-accent-primary"
                                                     )}
-                                                    title={`Hit Frequence: needed CDR change for one more cast: ${((Math.abs(diff) / stats.cooldown) * 100).toFixed(2)}%`}
+                                                    title={reachable ? `Hit Frequence: cooldown reduction needed for one more cast: +${(needPct * 100).toFixed(3)}% (to ${(needR * 100).toFixed(3)}%)` : 'No cooldown reduction adds another cast'}
                                                 >
                                                     <span className={cn(cap, "text-current opacity-90")}>To+1</span>
-                                                    <span className="font-mono font-bold tabular-nums leading-none">{Math.abs(diff).toFixed(2)}s</span>
-                                                    <span className="text-[7px] opacity-80 tabular-nums">({((Math.abs(diff) / stats.cooldown) * 100).toFixed(1)}%)</span>
+                                                    <span className="font-mono font-bold tabular-nums leading-none">{reachable ? `${Math.abs(diff).toFixed(2)}s` : '-'}</span>
+                                                    <span className="text-[7px] opacity-80 tabular-nums">{reachable ? (needPct < 0.0005 ? '(<0.05%)' : `(+${(needPct * 100).toFixed(1)}%)`) : ''}</span>
                                                 </div>
                                             </div>
                                         );
