@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { Coffee, ExternalLink, Github, Sparkles } from 'lucide-react';
+import { Coffee, ExternalLink, Github, Sparkles, X } from 'lucide-react';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
@@ -510,14 +510,25 @@ export default function AppShell() {
 
             <AnimatePresence>
                 {showVersionPopup && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4" onClick={handleClosePopup}>
                         <motion.div
+                            onClick={e => e.stopPropagation()}
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             transition={{ type: "spring", duration: 0.5 }}
-                            className="bg-bg-secondary/90 border border-accent-primary/20 p-6 md:p-8 rounded-3xl max-w-md w-full shadow-2xl relative overflow-hidden backdrop-blur-xl ring-1 ring-white/10 text-center"
+                            className="bg-bg-secondary/90 border border-accent-primary/20 p-6 md:p-8 rounded-3xl max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain shadow-2xl relative backdrop-blur-xl ring-1 ring-white/10 text-center"
                         >
+                            {/* Always reachable: on a short screen the popup scrolls, the close button stays on top. */}
+                            <div className="sticky top-0 z-20 flex justify-end -mb-10 -mr-2 pointer-events-none">
+                                <button
+                                    onClick={handleClosePopup}
+                                    aria-label="Close"
+                                    className="pointer-events-auto p-2 rounded-full bg-black/60 border border-white/10 text-text-secondary hover:text-white"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                             {/* Decorative background glow */}
                             <div className="absolute -right-16 -top-16 w-36 h-36 bg-accent-primary/20 rounded-full blur-2xl pointer-events-none" />
                             <div className="absolute -left-16 -bottom-16 w-36 h-36 bg-yellow-500/10 rounded-full blur-2xl pointer-events-none" />
