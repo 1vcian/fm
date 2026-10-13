@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useGameData } from '../hooks/useGameData';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
-import { forgeTierCost } from '../hooks/useForgeCalculator';
+import { forgeTierCost, forgeUpgradeDurationSeconds } from '../hooks/useForgeCalculator';
 import { Card, CardHeader, CardTitle } from '../components/UI/Card';
 import { Hammer, ArrowRight } from 'lucide-react';
 
@@ -43,18 +43,13 @@ export default function ForgeWiki() {
             // Normal calculation for upgrade TO nextLevel
             const baseCost = nextLevelData.Cost || 0;
             const tiers = nextLevelData.Tiers || 1;
-            const baseDuration = nextLevelData.Duration || 0;
 
             // Each tier is priced and paid on its own (ForgeExtensions.GetForgeTierUpgradeCost 0x77B2C74).
             const costPerTier = forgeTierCost(nextLevelData, forgeCostReduction);
             const cost = costPerTier * tiers;
 
-            // Duration is Total Seconds
-            const baseDurationSeconds = baseDuration;
-
-            // Time
-            const speedMultiplier = 1 + forgeTimerSpeed;
-            const totalTimeSeconds = baseDurationSeconds / speedMultiplier;
+            // One timer per level, started after the last tier (ForgeUpgradeStartAction 0x783A3C8).
+            const totalTimeSeconds = forgeUpgradeDurationSeconds(nextLevelData, forgeTimerSpeed);
 
             // Ascension cost if max level
             const ascensionCost = ascensionConfigs?.Forge?.AscensionConfigPerLevel?.[0]?.Cost?.Amount || 0;

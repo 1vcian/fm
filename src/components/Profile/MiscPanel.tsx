@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
-import { useForgeUpgradeStats } from '../../hooks/useForgeCalculator';
+import { useForgeUpgradeStats, forgeGemSkipCost } from '../../hooks/useForgeCalculator';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { SpriteIcon } from '../UI/SpriteIcon';
@@ -78,6 +78,7 @@ export function MiscPanel() {
         return { nodes, levels, per, pct, staleDays };
     }, [profile.techTree, profile.techTreeUpdatedAt, techTreeLibrary, techTreePositionLibrary, guildPositionLibrary, guildUpgradeLibrary]);
     const upgradeStats = useForgeUpgradeStats(profile.misc.forgeLevel + (isNextLevelStarted ? 1 : 0));
+    const forgeSkipGems = upgradeStats ? forgeGemSkipCost(upgradeStats.totalTimeSeconds, forgeConfig?.ForgeGemSkipCostPerSecond) : null;
 
 
     const updateMisc = (key: keyof typeof profile.misc, value: number) => {
@@ -205,10 +206,10 @@ export function MiscPanel() {
                                     <span className="font-bold text-text-primary">
                                         {formatTime(upgradeStats.totalTimeSeconds)}
                                     </span>
-                                    {forgeConfig && upgradeStats.totalTimeSeconds > 0 && (
+                                    {forgeSkipGems !== null && upgradeStats.totalTimeSeconds > 0 && (
                                         <div className="flex items-center gap-1 mt-0.5 text-accent-primary font-bold">
                                             <SpriteIcon name="GemSquare" size={12} />
-                                            {Math.ceil(upgradeStats.totalTimeSeconds * (forgeConfig.ForgeGemSkipCostPerSecond || 0.013))}
+                                            {forgeSkipGems}
                                         </div>
                                     )}
                                 </div>

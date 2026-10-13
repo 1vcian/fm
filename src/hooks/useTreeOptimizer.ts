@@ -35,7 +35,7 @@ export function useTreeOptimizer(warBonusOverride?: number, dayBoostOverride?: n
     const treeModifiers = useTreeModifiers();
     const techUpgradeWarBonus = warBonusOverride ?? (treeModifiers['WarPointsFromTechUpgrade'] || 0);
 
-    const gemSkipCostPerSecond = forgeConfig?.TechTreeGemSkipCostPerSecond || 0.0023;
+    const gemSkipCostPerSecond = forgeConfig?.TechTreeGemSkipCostPerSecond ?? 0; // 0 until ForgeConfig loads: no gem skips
 
     // 2. State
     const [timeLimitHours, setTimeLimitHours] = useState(() => {

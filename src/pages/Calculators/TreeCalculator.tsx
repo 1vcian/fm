@@ -710,7 +710,7 @@ export default function TreeCalculator() {
                 const overlap = Math.min(action.duration, currentEndTime - Math.max(currentStartTime, baseTimeLimitSeconds));
                 if (overlap > 0) {
                     // TimerModel.CalculateGemSkipCost (RVA 0x7868754): Max(1, RoundToInt(remainingSeconds * costPerSecond)).
-                    recalculatedGemCost = Math.max(1, Math.round(overlap * gemSkipCostPerSecond));
+                    recalculatedGemCost = Math.max(1, Math.round(Math.floor(overlap) * gemSkipCostPerSecond));
                     skipSeconds = overlap;
                 }
             }
@@ -1001,7 +1001,7 @@ export default function TreeCalculator() {
         let text = "🚀 Tech Tree Upgrade Schedule\n\n";
         let currentAccumulated = 0;
         optimization.actions.forEach((action, idx) => {
-            const skipSeconds = action.gemCost ? action.gemCost / gemSkipCostPerSecond : 0;
+            const skipSeconds = action.gemCost && gemSkipCostPerSecond > 0 ? action.gemCost / gemSkipCostPerSecond : 0;
             const startObj = new Date(new Date(startTime).getTime() + currentAccumulated * 1000);
             text += `#${idx + 1} ${action.nodeName} (Lv.${action.fromLevel} -> ${action.toLevel})\n`;
             text += `   🔔 TRIGGER AT: ${formatScheduleTime(startObj)}\n\n`;
@@ -1399,7 +1399,7 @@ export default function TreeCalculator() {
                                                                 const overlap = Math.min(action.duration, currentEndTime - Math.max(currentStartTimeSec, baseTimeLimitSeconds));
                                                                 if (overlap > 0) {
                                                                     // Same rule as actionsWithGemCosts (CalculateGemSkipCost, RVA 0x7868754).
-                                                                    recalculatedGemCost = Math.max(1, Math.round(overlap * gemSkipCostPerSecond));
+                                                                    recalculatedGemCost = Math.max(1, Math.round(Math.floor(overlap) * gemSkipCostPerSecond));
                                                                     skipSeconds = overlap;
                                                                 }
                                                             }

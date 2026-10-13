@@ -323,7 +323,10 @@ export default function Colors() {
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
                         Text Gradient Generator
                     </h1>
-                    <p className="text-text-muted">Create beautiful colored text for in-game chat</p>
+                    <p className="text-text-muted">Create colored text with rich text color tags</p>
+                    <p className="text-xs text-yellow-400/80 mt-1">
+                        The game client renders these tags, but whether chat and names keep them is not verified: test a short message first.
+                    </p>
                 </div>
             </div>
 

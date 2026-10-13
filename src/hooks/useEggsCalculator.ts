@@ -273,7 +273,7 @@ export function useEggsCalculator() {
 
         let totalGemCost = 0;
         const gemLimit = profile.misc.useGemsInCalculators ? profile.misc.gemCount : 0;
-        const gemCostPerSecond = forgeConfig.PetGemSkipCostPerSecond || 0.003;
+        const gemCostPerSecond = forgeConfig.PetGemSkipCostPerSecond ?? 0;
 
         // 3. Greedy Assignment (Least Loaded / Earliest Finish)
         // User wants to balance slots ("non tutto sul primo") and minimize makespan.
@@ -297,7 +297,7 @@ export function useEggsCalculator() {
                     if (endTime > baseMinutesAvailable) {
                         const gemMinutes = Math.min(egg.time, endTime - Math.max(startTime, baseMinutesAvailable));
                         if (gemMinutes > 0) {
-                            potentialGemCost = Math.max(1, Math.round((gemMinutes * 60) * gemCostPerSecond));
+                            potentialGemCost = gemCostPerSecond > 0 ? Math.max(1, Math.round(Math.floor(gemMinutes * 60) * gemCostPerSecond)) : Infinity;
                         }
                     }
 
@@ -323,7 +323,7 @@ export function useEggsCalculator() {
                     const gemMinutes = Math.min(egg.time, endTime - Math.max(startTime, baseMinutesAvailable));
                     if (gemMinutes > 0) {
                         // TimerModel.CalculateGemSkipCost (RVA 0x7868754): Max(1, RoundToInt(seconds * costPerSecond)).
-                        gemCost = Math.max(1, Math.round((gemMinutes * 60) * gemCostPerSecond));
+                        gemCost = Math.max(1, Math.round(Math.floor(gemMinutes * 60) * gemCostPerSecond));
                     }
                 }
 

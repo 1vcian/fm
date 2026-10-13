@@ -118,7 +118,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Clan', path: '/clan', icon: Users },
                 { name: 'Progress Prediction', path: '/progress-prediction', icon: TrendingUp },
                 { name: 'Mission Calculator', path: '/solo-mission', icon: Target },
-                { name: 'PVP Simulator', path: '/pvp-arena', icon: Swords },
+                { name: 'PVP Simulator (Beta)', path: '/pvp-arena', icon: Swords },
                 { name: 'Colors', path: '/colors', icon: Palette },
                 { name: 'Emblems', path: '/emblems', icon: Shield },
             ]

@@ -12,6 +12,7 @@ import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
 import { cn } from '../../lib/utils';
 import { formatVersion } from '../../lib/formatVersion';
 import { getAnvilTexturePath, resolveTextureVersion } from '../../utils/ascensionUtils';
+import { RELEASE_NOTES } from '../../data/releaseNotes';
 
 const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
     const baseMessages = [
@@ -116,6 +117,9 @@ function prettyDeltaLine(line: string): string {
         inner.split(',').map(part => part.split(':').slice(1).join(':').trim().replace(/^'|'$/g, '')).join(' #'));
 }
 
+/** Identifies the app notes shown for a version, so adding a note shows the popup once more. */
+const releaseNotesKey = (version: string) => `${version}:${(RELEASE_NOTES[version] || []).join('|').length}`;
+
 export default function AppShell() {
     const { selectedVersion, versions, isLoadingVersions } = useGameDataContext();
     const { profile } = useProfile();
@@ -137,7 +141,9 @@ export default function AppShell() {
         if (!isLoadingVersions && versions && versions.length > 0) {
             const latest = versions[0];
             const lastSeen = localStorage.getItem('fm_last_seen_config_version');
-            if (lastSeen !== latest) {
+            // New app notes for an already seen game version open the popup again.
+            const notesSeen = localStorage.getItem('fm_last_seen_release_notes');
+            if (lastSeen !== latest || notesSeen !== releaseNotesKey(latest)) {
                 setPopupVersion(latest);
                 setShowVersionPopup(true);
             }
@@ -164,6 +170,7 @@ export default function AppShell() {
 
     const handleClosePopup = () => {
         localStorage.setItem('fm_last_seen_config_version', popupVersion);
+        localStorage.setItem('fm_last_seen_release_notes', releaseNotesKey(popupVersion));
         setShowVersionPopup(false);
     };
 
@@ -540,6 +547,22 @@ export default function AppShell() {
                                         {formatVersionDate(popupVersion)}
                                     </span>
                                 </p>
+
+                                {(RELEASE_NOTES[popupVersion]?.length ?? 0) > 0 && (
+                                    <div className="w-full text-left">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1.5">
+                                            New in the app
+                                        </div>
+                                        <ul className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-white/5">
+                                            {RELEASE_NOTES[popupVersion].map(note => (
+                                                <li key={note} className="text-xs text-text-secondary flex gap-1.5">
+                                                    <span className="text-accent-primary shrink-0">•</span>
+                                                    <span>{note}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
 
                                 {/* What moved, not just when. A date alone is nothing a reader can act on. */}
                                 {delta && delta.version === popupVersion && (

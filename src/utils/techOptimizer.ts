@@ -273,14 +273,25 @@ export function techLevelCostAndDuration(
     const costRem = costRaw - costInt * 1_000_000;
     const cost = costInt + (costRem * 2 >= 1_000_000 ? 1 : 0);
 
-    // Duration: FD6 division (truncating), FD6 -> F64 (truncating), F64 -> milliseconds (floor).
-    const durationRaw = BigInt(Math.round(levelData.Duration * 1_000_000));
-    const divisorRaw = FD6_ONE + BigInt(Math.round(bonuses.speedBonus * 1_000_000));
+    return { cost, duration: timerSpeedDurationSeconds(levelData.Duration, bonuses.speedBonus) };
+}
+
+/**
+ * Timer seconds of a `Duration` row sped up by a TimerSpeed Divisor bonus, exactly as the game starts
+ * the timer: StatHelper.CalculateValueFromStats (0x78605C4) divides by (DefaultValue 1 + summed Divisor
+ * contributions, LayerBucket.Add 0x7860320) in FD6 (division 0x71977A8 truncates), FD6.get_F64
+ * (0x71964F8) truncates to Q32.32, and TimerModel..ctor(PlayerModel, F64) (0x78692EC) floors to whole
+ * milliseconds via MetaDuration.FromSeconds(F64, RoundingMode.Floor) (0x72B4690).
+ * Shared by tech research and forge upgrades (ForgeUpgradeStartAction 0x783A3C8).
+ */
+export function timerSpeedDurationSeconds(durationSeconds: number, speedBonus: number): number {
+    const durationRaw = BigInt(Math.round(durationSeconds * 1_000_000));
+    const divisorRaw = FD6_ONE + BigInt(Math.round(speedBonus * 1_000_000));
+    if (divisorRaw <= 0n) return durationSeconds;
     const quotientRaw = (durationRaw * FD6_ONE) / divisorRaw;
     const f64Raw = (quotientRaw << 32n) / FD6_ONE;
     const durationMs = (f64Raw * 1000n) >> 32n;
-
-    return { cost, duration: Number(durationMs) / 1000 };
+    return Number(durationMs) / 1000;
 }
 
 /**
@@ -336,7 +347,7 @@ export function optimizeTechTree(input: TechOptimizerInput): TechOptimizerResult
     let potionsRemaining = potions;
 
     const actions: TechUpgrade[] = [];
-    const gemCostPerSecond = forgeConfig.TechTreeGemSkipCostPerSecond || 0.003;
+    const gemCostPerSecond = forgeConfig.TechTreeGemSkipCostPerSecond ?? 0;
 
     const align = input.alignCompletionsToWarDays === true;
 
@@ -390,7 +401,7 @@ export function optimizeTechTree(input: TechOptimizerInput): TechOptimizerResult
             // Past the time budget the only way to finish is to buy the remaining seconds.
             if (gemLimit <= 0) return null;
             const overlap = Math.min(upg.duration, earliestEnd - Math.max(startSec, baseTimeLimitSeconds));
-            if (overlap > 0) gemCost = Math.max(1, Math.round(overlap * gemCostPerSecond)); // CalculateGemSkipCost RVA 0x7868754
+            if (overlap > 0 && gemCostPerSecond > 0) gemCost = Math.max(1, Math.round(Math.floor(overlap) * gemCostPerSecond)); // CalculateGemSkipCost RVA 0x7868754: whole seconds
         }
         if (gemCost > (gemLimit - accumulatedGemCost)) return null;
 
