@@ -628,7 +628,7 @@ export class StatEngine {
             if (baseData) {
                 // Determine base weapon characteristics
                 const attackRange = baseData.AttackRange || 0;
-                this.stats.isRangedWeapon = attackRange >= 1;
+                this.stats.isRangedWeapon = typeof baseData.IsRanged === 'boolean' ? baseData.IsRanged : attackRange >= 1; // WeaponLibrary.IsRanged
                 this.stats.weaponAttackRange = attackRange;
                 this.stats.isAiming = !!baseData.IsAiming;
 
@@ -852,12 +852,12 @@ export class StatEngine {
                 this.stats.weaponDamage = dmg;
 
                 // Check if weapon is ranged using AttackRange
-                // Melee = AttackRange < 1, Ranged = AttackRange >= 1
+                // Melee or ranged: WeaponLibrary.IsRanged
                 const weaponKey = `{'Age': ${item.age}, 'Type': 'Weapon', 'Idx': ${item.idx}}`;
                 const weaponData = this.libs.weaponLibrary?.[weaponKey];
                 if (weaponData) {
                     const attackRange = weaponData.AttackRange || 0;
-                    this.stats.isRangedWeapon = attackRange >= 1;
+                    this.stats.isRangedWeapon = typeof weaponData.IsRanged === 'boolean' ? weaponData.IsRanged : attackRange >= 1; // WeaponLibrary.IsRanged
                     this.stats.weaponAttackRange = attackRange;
                     this.stats.weaponWindupTime = weaponData.WindupTime || 0.5;
                     this.stats.weaponAttackDuration = weaponData.AttackDuration || 1.0;

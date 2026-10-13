@@ -20,6 +20,12 @@
  *                  (min(Hp + heal, HpMax)) and reflect at once. The game is sequential, not
  *                  simultaneous: the side acting first wastes lifesteal/regen clamped at full HP
  *                  that the second side banks, a small structural Player 2 edge with lifesteal.
+ *   sides          the local player is Player 1: UiContextExtensions.StartLocalPvpBattle (0x3EB4A10)
+ *                  calls RunToCompletion (0x78526A4) with player1 = GetPvpProfile(own PlayerModel)
+ *                  (0x77F9914) and player2 = the opponent, seed = ToUInt64(Guid.NewGuid()).
+ *   RNG            one RandomPCG per battle for all combat rolls, both sides in call order
+ *                  (AttacksSystem ctor 0x77F32D0 -> CreateFromSeed 0x72CB9CC, built once in
+ *                  CombatScene ctor 0x77EAE68); skill jitter is the unseeded shared PseudoRandom.
  *
  * dt is F64.Ratio(1, 10) = floor(2^32/10) / 2^32, a hair under 0.1 s, so a 60 s timer reaches 0 on
  * Update 601: frames 1..600 run, Update 601 decides.

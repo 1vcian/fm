@@ -219,7 +219,7 @@ function FighterSummary({ f }: { f: PvpFighter }) {
         ['Lifesteal', pct(st.lifeSteal)],
         ['Block', pct(st.blockChance)],
         ['Regen', pct(st.healthRegen)],
-        ['Weapon', `${f.loadout.projectile ? 'Ranged' : 'Melee'}, range ${f.loadout.attackRange.toFixed(1)}`],
+        ['Weapon', `${f.stats.isRangedWeapon ? (f.loadout.projectile ? 'Ranged' : 'Ranged, no projectile') : 'Melee'}, range ${f.loadout.attackRange.toFixed(1)}`],
         ['Windup', `${f.loadout.windupTime.toFixed(2)}s from the ${f.profile.items?.Weapon?.skin ? 'skin' : 'weapon'}`],
         ['Pets / skills / mount', `${f.loadout.petCount} / ${f.loadout.skillCount} / ${f.loadout.hasMount ? 'yes' : 'no'}`],
     ];
@@ -255,7 +255,7 @@ function FormulaCard({ cfg, f1, f2 }: { cfg: PvpHpConfig; f1: PvpFighter | null;
                 <div>shared multiplier = max(m(Player 1), m(Player 2)), applied to BOTH players</div>
                 <div>Max HP = Total Health x shared multiplier;  damage is not multiplied</div>
                 <div>regen heals on Total Health (not multiplied); regen and lifesteal stop at Max HP</div>
-                <div>each step Player 1 acts before Player 2, as in the game: heals Player 1 gets at full HP are lost, a small edge for Player 2 when lifesteal is high</div>
+                <div>each step Player 1 (you, in the game) acts before Player 2: heals Player 1 gets at full HP are lost, an edge for Player 2 when lifesteal is high</div>
                 <div>timer {cfg.PvpMatchTimerSeconds}s ({timerSteps(cfg.PvpMatchTimerSeconds) - 1} steps of 0.1s); at the end the higher HP % wins, equal is a draw</div>
             </div>
             {shared !== null && (
@@ -275,6 +275,9 @@ function FormulaCard({ cfg, f1, f2 }: { cfg: PvpHpConfig; f1: PvpFighter | null;
 function BatchResult({ result, f1, f2 }: { result: PvpBatchResult; f1: PvpFighter; f2: PvpFighter }) {
     const pct = (v: number) => `${((v / result.runs) * 100).toFixed(1)}%`;
     const bar = (v: number, color: string) => <div className={`h-full ${color}`} style={{ width: `${(v / result.runs) * 100}%` }} />;
+    // Sides are always named by slot, so a profile fought against itself stays readable.
+    const side1 = `Player 1 (${f1.name || 'unnamed'})`;
+    const side2 = `Player 2 (${f2.name || 'unnamed'})`;
     return (
         <div className="space-y-2">
             <div className="flex h-4 rounded-full overflow-hidden bg-bg-input">
@@ -283,15 +286,19 @@ function BatchResult({ result, f1, f2 }: { result: PvpBatchResult; f1: PvpFighte
                 {bar(result.p2Wins, 'bg-red-500')}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <Stat label={`${f1.name} wins`} value={pct(result.p1Wins)} cls="text-blue-300" />
-                <Stat label={`${f2.name} wins`} value={pct(result.p2Wins)} cls="text-red-300" />
+                <Stat label={`${side1} wins`} value={pct(result.p1Wins)} cls="text-blue-300" />
+                <Stat label={`${side2} wins`} value={pct(result.p2Wins)} cls="text-red-300" />
                 <Stat label="Draws" value={pct(result.draws)} />
                 <Stat label="Decided on time" value={pct(result.timeouts)} />
                 <Stat label="Average length" value={`${result.avgSeconds.toFixed(1)}s`} />
-                <Stat label={`${f1.name} HP left`} value={`${(result.avgP1HpFrac * 100).toFixed(1)}%`} />
-                <Stat label={`${f2.name} HP left`} value={`${(result.avgP2HpFrac * 100).toFixed(1)}%`} />
+                <Stat label={`${side1} HP left`} value={`${(result.avgP1HpFrac * 100).toFixed(1)}%`} />
+                <Stat label={`${side2} HP left`} value={`${(result.avgP2HpFrac * 100).toFixed(1)}%`} />
                 <Stat label="Shared HP multiplier" value={`x${Number(result.hpMultiplier.toFixed(4))}`} />
             </div>
+            {/* StartLocalPvpBattle (0x3EB4A10) passes the local player's own profile as player1. */}
+            <p className="text-xs text-text-muted">
+                In the game you are Player 1, the side that acts first in each step. Lifesteal you gain at full HP is lost, so even against an identical copy Player 2 wins a little more often.
+            </p>
         </div>
     );
 }
@@ -299,7 +306,7 @@ function BatchResult({ result, f1, f2 }: { result: PvpBatchResult; f1: PvpFighte
 function Stat({ label, value, cls = '' }: { label: string; value: string; cls?: string }) {
     return (
         <div className="bg-bg-input/50 border border-border rounded-lg p-2">
-            <div className="text-[10px] uppercase tracking-wider text-text-muted truncate">{label}</div>
+            <div className="text-[10px] uppercase tracking-wider text-text-muted truncate" title={label}>{label}</div>
             <div className={`text-lg font-black font-mono ${cls}`}>{value}</div>
         </div>
     );
