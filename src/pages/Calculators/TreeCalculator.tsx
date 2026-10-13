@@ -11,7 +11,8 @@ import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { DndContext, closestCenter, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles, Lock, Unlock, Users } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, Pencil, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles, Lock, Unlock, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
 import { InputModal } from '../../components/UI/InputModal';
@@ -55,6 +56,7 @@ interface ScheduleItemProps {
     listeners?: any;
     onMarkDone: (idx: number) => void;
     onAddDelay: (idx: number) => void;
+    onEditDelay?: (idx: number) => void;
     onRemove: (idx: number) => void;
     formatScheduleTime: (date: Date) => string;
     formatTime: (seconds: number) => string;
@@ -65,7 +67,7 @@ interface ScheduleItemProps {
 
 const ScheduleItem = React.memo(({
     entry, idx, now, treeMapping, isDragging, listeners,
-    onMarkDone, onAddDelay, onRemove, formatScheduleTime, formatTime, getSpriteStyle,
+    onMarkDone, onAddDelay, onEditDelay, onRemove, formatScheduleTime, formatTime, getSpriteStyle,
     onShiftPlan, isEditMode
 }: ScheduleItemProps) => {
     const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
@@ -174,6 +176,11 @@ const ScheduleItem = React.memo(({
                         <button onClick={() => onMarkDone(idx)} className="p-1 hover:bg-green-500/20 rounded-md transition-colors" title="Mark done up to here">
                             <Play size={14} className="text-green-400" />
                         </button>
+                        {entry.step.type === 'delay' && onEditDelay && (
+                            <button onClick={() => onEditDelay(idx)} className="p-1 hover:bg-yellow-500/20 rounded-md transition-colors" title="Change this delay">
+                                <Pencil size={14} className="text-yellow-400" />
+                            </button>
+                        )}
                         <button onClick={() => onAddDelay(idx)} className="p-1 hover:bg-yellow-500/20 rounded-md transition-colors" title="Add delay after">
                             <Pause size={14} className="text-yellow-400" />
                         </button>
@@ -511,6 +518,39 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
 
 import { usePersistentState } from '../../hooks/usePersistentState';
 
+/** "90", "1h30", "1h 30m", "2h", "1d 4h", "1:30" (h:mm) -> minutes; null when unreadable or not positive. */
+export function parseDelayMinutes(input: string): number | null {
+    const text = input.trim().toLowerCase();
+    if (!text) return null;
+    const clock = text.match(/^(\d+):(\d{1,2})$/);
+    if (clock) {
+        const total = Number(clock[1]) * 60 + Number(clock[2]);
+        return total > 0 ? total : null;
+    }
+    if (/^\d+(\.\d+)?$/.test(text)) {
+        const total = Math.round(Number(text));
+        return total > 0 ? total : null;
+    }
+    const units: Record<string, number> = { d: 1440, h: 60, m: 1 };
+    let total = 0;
+    let rest = text.replace(/\s+/g, '');
+    const re = /^(\d+(?:\.\d+)?)([dhm])/;
+    let lastUnit = '';
+    while (rest) {
+        const m = rest.match(re);
+        if (!m) {
+            // "1h30": a trailing bare number counts as minutes after hours.
+            if (/^\d+$/.test(rest) && lastUnit === 'h') { total += Number(rest); break; }
+            return null;
+        }
+        total += Number(m[1]) * units[m[2]];
+        lastUnit = m[2];
+        rest = rest.slice(m[0].length);
+    }
+    total = Math.round(total);
+    return total > 0 ? total : null;
+}
+
 export default function TreeCalculator() {
     // Sandbox: local override of the clan tech tree war-point boost (see SandboxPanel).
     const clanModifiers = useTreeModifiers();
@@ -553,8 +593,13 @@ export default function TreeCalculator() {
     const [plannerTreeFilter, setPlannerTreeFilter] = useState<string>('all');
     const [plannerSearch, setPlannerSearch] = useState('');
     const [plannerConfirmDone, setPlannerConfirmDone] = useState<number | null>(null);
-    const [delayModalIdx, setDelayModalIdx] = useState<number | null>(null);
-    const [delayModalValue, setDelayModalValue] = useState<string>('60');
+    // Delay dialog: add after a step, append at the end, or change an existing delay.
+    const [delayModal, setDelayModal] = useState<{ mode: 'after' | 'append' | 'edit'; idx: number; value: string } | null>(null);
+    const openEditDelay = useCallback((idx: number) => {
+        const minutes = planner.planQueue[idx]?.delayMinutes ?? 60;
+        const h = Math.floor(minutes / 60), m = minutes % 60;
+        setDelayModal({ mode: 'edit', idx, value: h ? `${h}h${m ? m : ''}` : `${m}m` });
+    }, [planner.planQueue]);
 
     // Auto-planner state - REMOVED (moved to AutoPlannerControls)
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -1670,9 +1715,9 @@ export default function TreeCalculator() {
                                         ))}
                                     </div>
                                     <button
-                                        onClick={() => planner.appendDelay(60)}
+                                        onClick={() => setDelayModal({ mode: 'append', idx: -1, value: '1h' })}
                                         className="px-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/20 transition-all flex items-center gap-1.5 text-[10px] font-bold group"
-                                        title="Add manual 1h delay"
+                                        title="Add a delay at the end of the plan"
                                     >
                                         <Pause size={12} className="group-hover:scale-110 transition-transform" />
                                         Delay
@@ -1817,10 +1862,8 @@ export default function TreeCalculator() {
                                                                             treeMapping={treeMapping}
                                                                             {...props}
                                                                             onMarkDone={setPlannerConfirmDone}
-                                                                            onAddDelay={(idx) => {
-                                                                                setDelayModalIdx(idx);
-                                                                                setDelayModalValue('60');
-                                                                            }}
+                                                                            onAddDelay={(idx) => setDelayModal({ mode: 'after', idx, value: '1h' })}
+                                                                            onEditDelay={openEditDelay}
                                                                             onRemove={planner.removeStep}
                                                                             formatScheduleTime={formatScheduleTime}
                                                                             formatTime={formatTime}
@@ -1913,10 +1956,8 @@ export default function TreeCalculator() {
                                                             now={now}
                                                             treeMapping={treeMapping}
                                                             onMarkDone={setPlannerConfirmDone}
-                                                            onAddDelay={(idx) => {
-                                                                setDelayModalIdx(idx);
-                                                                setDelayModalValue('60');
-                                                            }}
+                                                            onAddDelay={(idx) => setDelayModal({ mode: 'after', idx, value: '1h' })}
+                                                            onEditDelay={openEditDelay}
                                                             onRemove={planner.removeStep}
                                                             formatScheduleTime={formatScheduleTime}
                                                             formatTime={formatTime}
@@ -1978,20 +2019,24 @@ export default function TreeCalculator() {
             />
 
             <InputModal
-                isOpen={delayModalIdx !== null}
-                title="Add Delay After Step"
-                label="Minutes of delay"
-                initialValue={delayModalValue}
-                placeholder="60"
+                isOpen={delayModal !== null}
+                title={delayModal?.mode === 'edit' ? 'Change Delay' : delayModal?.mode === 'append' ? 'Add Delay At The End' : 'Add Delay After Step'}
+                label="Delay: minutes (90) or 1h30, 2h, 1d 4h, 1:30"
+                initialValue={delayModal?.value ?? ''}
+                placeholder="1h30"
                 onConfirm={(val) => {
-                    const mins = Number(val);
-                    if (!isNaN(mins) && delayModalIdx !== null) {
-                        planner.addDelay(delayModalIdx, mins);
+                    const mins = parseDelayMinutes(val);
+                    if (mins === null || !delayModal) {
+                        toast.error('Enter a delay like 90, 1h30, 2h or 1d 4h');
+                        return;
                     }
-                    setDelayModalIdx(null);
+                    if (delayModal.mode === 'edit') planner.updateDelay(delayModal.idx, mins);
+                    else if (delayModal.mode === 'append') planner.appendDelay(mins);
+                    else planner.addDelay(delayModal.idx, mins);
+                    setDelayModal(null);
                 }}
-                onCancel={() => setDelayModalIdx(null)}
-                confirmText="Add Delay"
+                onCancel={() => setDelayModal(null)}
+                confirmText={delayModal?.mode === 'edit' ? 'Save' : 'Add Delay'}
             />
         </div>
     );

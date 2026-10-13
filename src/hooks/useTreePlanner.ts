@@ -785,6 +785,11 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
         setPlanMetadata({ isAuto: false });
     }, []);
 
+    const updateDelay = useCallback((index: number, minutes: number) => {
+        setPlanQueue(prev => prev.map((step, i) => (i === index && step.type === 'delay' ? { ...step, delayMinutes: minutes } : step)));
+        setPlanMetadata({ isAuto: false });
+    }, []);
+
     const appendDelay = useCallback((minutes: number) => {
         const step: PlanStep = { id: generateId(), type: 'delay', delayMinutes: minutes };
         setPlanQueue(prev => [...prev, step]);
@@ -864,6 +869,7 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
         markDone,
         autoPlan,
         appendDelay,
+        updateDelay,
         planMetadata,
         warPointDays,
         tierPoints,
