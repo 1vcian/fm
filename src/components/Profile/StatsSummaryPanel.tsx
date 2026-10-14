@@ -269,6 +269,8 @@ export function ComparisonStatRow({
                             else if (onOriginalDetailsClick) onOriginalDetailsClick();
                         }}
                         className="ml-auto p-1 bg-accent-primary/5 hover:bg-accent-primary/10 border border-accent-primary/20 rounded transition-all text-accent-primary active:scale-95"
+                        title={`${label}: detailed breakdown (${onTestDetailsClick ? 'Test build' : 'Equipped'})`}
+                        aria-label={`${label} breakdown`}
                     >
                         <Sparkles className="w-2.5 h-2.5" />
                     </button>
@@ -681,19 +683,25 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         );
     }
 
+    // The stat engine's own totals and parts, so every DPS figure here (cards, compare rows,
+    // breakdown modal) is the same number: total = weapon + skills + reflect.
     const calculateDpsDetails = (s: AggregatedStats) => {
-        const cappedCrit = Math.min(s.criticalChance, 1);
-        const cappedDouble = Math.min(s.doubleDamageChance, 1);
-        const critMult = 1 + cappedCrit * (s.criticalDamage - 1);
-        const doubleMult = 1 + cappedDouble;
-        const aps = 1 / (s.weaponAttackDuration / s.attackSpeedMultiplier);
-        const weapon = s.totalDamage * aps * critMult * doubleMult;
-        const realWeapon = s.realWeaponDps;
         // Buff damage rides on weapon hits, so it follows the weapon cadence of each mode.
         const skills = s.skillDps + (s.theoreticalSkillBuffDps || 0);
         const realSkills = s.skillDps + (s.skillBuffDps || 0);
-        return { total: weapon + skills, weapon, skills, realTotal: realWeapon + realSkills, realWeapon, realSkills };
+        return {
+            total: s.averageTotalDps, weapon: s.weaponDps, skills, reflect: s.reflectDps || 0,
+            realTotal: s.realTotalDps, realWeapon: s.realWeaponDps, realSkills, realReflect: s.realReflectDps || 0,
+        };
     };
+    /** Breakdown rows of one DPS figure; reflect only when the build has any. */
+    const dpsRows = (d: ReturnType<typeof calculateDpsDetails>, real: boolean) => [
+        { label: 'Weapon', value: real ? d.realWeapon : d.weapon },
+        { label: 'Skills', value: real ? d.realSkills : d.skills },
+        ...((real ? d.realReflect : d.reflect) > 0 ? [{ label: 'Reflect', value: real ? d.realReflect : d.reflect }] : []),
+    ];
+    const dpsSub = (d: ReturnType<typeof calculateDpsDetails>, real: boolean) =>
+        dpsRows(d, real).map(r => `${r.label}: ${formatCompactNumber(r.value)}`).join(', ');
 
     const calculateHpsDetails = (s: AggregatedStats, real: boolean) => {
         const regen = s.totalHealth * s.healthRegen;
@@ -713,7 +721,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     };
 
     const currentDpsDetails = calculateDpsDetails(fullStats);
-    const weaponDps = currentDpsDetails.weapon;
     const effectiveDps = currentDpsDetails.total;
     const currentHpsDetails = calculateHpsDetails(fullStats, false);
     const currentRealHpsDetails = calculateHpsDetails(fullStats, true);
@@ -723,8 +730,9 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     
     const treeBonusEntries = Object.entries(techModifiers).filter(([_, v]) => v > 0);
 
-    const originalDpsDetails = originalFullStats ? calculateDpsDetails(originalFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0, realSkills: 0 };
-    const testDpsDetails = testFullStats ? calculateDpsDetails(testFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0, realSkills: 0 };
+    const NO_DPS = { total: 0, weapon: 0, skills: 0, reflect: 0, realTotal: 0, realWeapon: 0, realSkills: 0, realReflect: 0 };
+    const originalDpsDetails = originalFullStats ? calculateDpsDetails(originalFullStats) : NO_DPS;
+    const testDpsDetails = testFullStats ? calculateDpsDetails(testFullStats) : NO_DPS;
     const originalHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, false) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
     const originalRealHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, true) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
     const testHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, false) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
@@ -825,14 +833,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 originalValue={originalDps}
                                 testValue={testDps}
                                 color="text-orange-400"
-                                originalDetails={[
-                                    { label: 'Weapon', value: originalDpsDetails.weapon },
-                                    { label: 'Skills', value: originalDpsDetails.skills }
-                                ]}
-                                testDetails={[
-                                    { label: 'Weapon', value: testDpsDetails.weapon },
-                                    { label: 'Skills', value: testDpsDetails.skills }
-                                ]}
+                                originalDetails={dpsRows(originalDpsDetails, false)}
+                                testDetails={dpsRows(testDpsDetails, false)}
                                 onOriginalDetailsClick={() => {
                                     if (originalFullStats && originalProfile) {
                                         openDpsModal(originalFullStats, originalProfile, 'original');
@@ -897,14 +899,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 originalValue={originalDpsDetails.realTotal}
                                 testValue={testDpsDetails.realTotal}
                                 color="text-orange-500"
-                                originalDetails={[
-                                    { label: 'Weapon', value: originalDpsDetails.realWeapon },
-                                    { label: 'Skills', value: originalDpsDetails.realSkills }
-                                ]}
-                                testDetails={[
-                                    { label: 'Weapon', value: testDpsDetails.realWeapon },
-                                    { label: 'Skills', value: testDpsDetails.realSkills }
-                                ]}
+                                originalDetails={dpsRows(originalDpsDetails, true)}
+                                testDetails={dpsRows(testDpsDetails, true)}
                                 onOriginalDetailsClick={() => {
                                     if (originalFullStats && originalProfile) {
                                         openDpsModal(originalFullStats, originalProfile, 'original');
@@ -1130,7 +1126,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         <>
                             {/* Grouped Theoretical */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theo DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theo DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-white/10" />
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Theo HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
                                 <div className="w-px h-6 bg-white/10" />
@@ -1139,7 +1135,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
 
                             {/* Grouped Real-Time */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-orange-500/5 rounded-xl border border-orange-500/10 ring-1 ring-orange-500/10">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-orange-500/10" />
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Real HPS" originalValue={originalRealHps} testValue={testRealHps} color="text-emerald-500" />
                                 <div className="w-px h-6 bg-orange-500/10" />
@@ -1705,7 +1701,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         icon={<Zap className="w-4 h-4" />}
                                         label="Theoretical DPS"
                                         value={formatValue(effectiveDps)}
-                                        subValue={`Weapon: ${formatCompactNumber(weaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.theoreticalSkillBuffDps || 0))}`}
+                                        subValue={dpsSub(currentDpsDetails, false)}
                                         color="text-orange-400"
                                         onInfoPointsClick={() => setShowDpsModal(true)}
                                     />
@@ -1720,7 +1716,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         icon={<Heart className="w-4 h-4" />}
                                         label="Lifesteal/sec (upper bound)"
                                         value={formatValue(currentHpsDetails.lifesteal)}
-                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                        subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                         color="text-purple-400"
                                         onInfoPointsClick={() => setShowLifestealModal(true)}
                                     />
@@ -1737,8 +1733,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     <StatRow
                                         icon={<Zap className="w-4 h-4" />}
                                         label="Real-Time DPS"
-                                        value={formatValue(fullStats.realTotalDps)}
-                                        subValue={`Weapon: ${formatCompactNumber(fullStats.realWeaponDps)}, Skills: ${formatCompactNumber(fullStats.skillDps + (fullStats.skillBuffDps || 0))}`}
+                                        value={formatValue(currentDpsDetails.realTotal)}
+                                        subValue={dpsSub(currentDpsDetails, true)}
                                         color="text-orange-500"
                                         onInfoPointsClick={() => setShowDpsModal(true)}
                                     />
@@ -1753,7 +1749,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         icon={<Heart className="w-4 h-4" />}
                                         label="Lifesteal/sec (upper bound)"
                                         value={formatValue(currentRealHpsDetails.lifesteal)}
-                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                        subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                         color="text-purple-500"
                                         onInfoPointsClick={() => setShowLifestealModal(true)}
                                     />
@@ -2015,7 +2011,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     icon={<Heart className="w-4 h-4 text-purple-400" />}
                                     label="Theo Lifesteal/sec"
                                     value={formatCompactNumber(currentHpsDetails.lifesteal)}
-                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                    subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                     color="text-purple-400"
                                     onInfoPointsClick={() => setShowLifestealModal(true)}
                                 />
@@ -2023,7 +2019,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     icon={<Heart className="w-4 h-4 text-purple-500" />}
                                     label="Real Lifesteal/sec"
                                     value={formatCompactNumber(currentRealHpsDetails.lifesteal)}
-                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                    subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
                                     color="text-purple-500"
                                     onInfoPointsClick={() => setShowLifestealModal(true)}
                                 />

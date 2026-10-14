@@ -85,6 +85,8 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
     // Used for display throughout the modal
     const displayAps = useRealTime ? realAps : theoreticalAps;
     const displayWeaponDps = useRealTime ? realWeaponDps : weaponDps;
+    // Part of the total (statEngine realTotalDps / averageTotalDps), so the footer sums to it.
+    const displayReflectDps = (useRealTime ? stats.realReflectDps : stats.reflectDps) || 0;
 
     // --- SKILL DPS (from statEngine.skillBreakdown: exact engine tick timing) ---
     const { damageSkills, buffSkills } = useMemo(() => {
@@ -271,7 +273,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-baseline text-[11px] md:text-xs">
                                         <span className="text-white/40 whitespace-nowrap">Chance</span>
-                                        <span className="font-mono text-white font-bold">{formatPercent(cappedCritChance)}</span>
+                                        <span className="font-mono text-white font-bold">{formatPercent(stats.criticalChance)}</span>
                                     </div>
                                     <div className="flex flex-wrap justify-between gap-x-2 text-[9px] text-white/30 pl-2 font-mono">
                                         <span>Tree: {formatPercent(stats.critChanceBreakdown.tree)}</span>
@@ -288,6 +290,11 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                     <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-1 font-mono">
                                         Avg: {critMult.toFixed(2)}x
                                     </div>
+                                    {stats.criticalChance > 1 && (
+                                        <div className="text-[8px] md:text-[9px] text-white/30 italic text-center font-mono">
+                                            Every hit crits; the {formatPercent(stats.criticalChance - cappedCritChance)} past 100% does nothing
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -299,7 +306,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-baseline text-[11px] md:text-xs">
                                         <span className="text-white/40 whitespace-nowrap">Proc Chance</span>
-                                        <span className="font-mono text-white font-bold">{formatPercent(cappedDoubleChance)}</span>
+                                        <span className="font-mono text-white font-bold">{formatPercent(stats.doubleDamageChance)}</span>
                                     </div>
                                     <div className="flex flex-wrap justify-between gap-x-2 text-[9px] text-white/30 pl-2 font-mono">
                                         <span>Tree: {formatPercent(stats.doubleDamageBreakdown.tree)}</span>
@@ -317,10 +324,20 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                             </div>
                                         </div>
                                     )}
-                                    <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-2 font-mono">
-                                        Multi: {doubleMult.toFixed(2)}x
-                                    </div>
-                                    <div className="text-[8px] md:text-[9px] text-white/20 italic mt-1 text-center font-mono">Capped at 100% (x2.0 dmg)</div>
+                                    {useRealTime ? (
+                                        <div className="text-[8px] md:text-[9px] text-white/30 italic pt-2 text-center font-mono">
+                                            Doubles are already in the weighted attack rate below
+                                        </div>
+                                    ) : (
+                                        <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-2 font-mono">
+                                            Multi: {doubleMult.toFixed(2)}x
+                                        </div>
+                                    )}
+                                    {stats.doubleDamageChance > 1 && (
+                                        <div className="text-[8px] md:text-[9px] text-white/30 italic mt-1 text-center font-mono">
+                                            Every attack doubles; the {formatPercent(stats.doubleDamageChance - cappedDoubleChance)} past 100% does nothing
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -574,6 +591,17 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                 {formatVal(stats.skillDps + (useRealTime ? stats.skillBuffDps : stats.theoreticalSkillBuffDps) || 0)}
                             </span>
                         </div>
+                        {displayReflectDps > 0 && (
+                            <>
+                                <div className="text-white/10 font-bold text-sm md:text-base">+</div>
+                                <div className="flex flex-col min-w-0" title="Reflected damage, assuming an opponent who hits like you at your pace">
+                                    <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Reflect</span>
+                                    <span className="text-sm md:text-xl font-bold text-teal-400 leading-none whitespace-nowrap overflow-hidden text-clip" data-testid="dps-footer-reflect">
+                                        {formatVal(displayReflectDps)}
+                                    </span>
+                                </div>
+                            </>
+                        )}
                         <div className="flex flex-col w-full md:w-auto md:ml-auto border-t md:border-t-0 border-white/5 pt-3 md:pt-0">
                             <span className="text-[8px] md:text-[9px] uppercase text-orange-400 font-bold tracking-widest bg-orange-500/10 px-2 py-1 rounded-md mb-1 leading-none font-sans w-fit">
                                 Total {useRealTime ? 'Real-Time' : 'Theoretical'} DPS

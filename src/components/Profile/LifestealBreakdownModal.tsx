@@ -32,12 +32,15 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
     // Lifesteal heals the attacker by Dmg * LifeSteal, clamped with FD6.Min(Hp + heal, HpMax)
     // (BattleSystem.ApplyDmg, RVA 0x77F4BD0). Block is applied only to incoming damage there, so
     // it never scales healing: it is shown separately as damage avoided.
-    const { sourceWeaponDps, lifeStealPct, rawLifesteal, blockChance } = useMemo(() => {
+    const { sourceWeaponDps, weaponOnlyDps, buffDps, lifeStealPct, rawLifesteal, blockChance } = useMemo(() => {
         // Buff skill damage is part of the weapon hit's Dmg, so it heals too.
-        const weaponDps = useRealTime ? stats.realWeaponDps + (stats.skillBuffDps || 0) : stats.weaponDps + (stats.theoreticalSkillBuffDps || 0);
+        const weapon = useRealTime ? stats.realWeaponDps : stats.weaponDps;
+        const buff = (useRealTime ? stats.skillBuffDps : stats.theoreticalSkillBuffDps) || 0;
         const lsPct = stats.lifeSteal;
         return {
-            sourceWeaponDps: weaponDps,
+            sourceWeaponDps: weapon + buff,
+            weaponOnlyDps: weapon,
+            buffDps: buff,
             lifeStealPct: lsPct,
             rawLifesteal: useRealTime ? stats.lifestealHps : stats.theoreticalLifestealHps,
             blockChance: stats.blockChance || 0
@@ -127,6 +130,10 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                                         <span className="text-[11px] text-white/60">{useRealTime ? 'Real-Time' : 'Theoretical'} Weapon + Buff DPS</span>
                                         <span className="text-base md:text-lg font-mono font-bold text-white break-all">{formatVal(sourceWeaponDps)}</span>
                                     </div>
+                                    <div className="space-y-1 text-[10px] font-mono text-white/50">
+                                        <div className="flex justify-between gap-2"><span>Weapon</span><span data-testid="ls-weapon">{formatVal(weaponOnlyDps)}</span></div>
+                                        <div className="flex justify-between gap-2"><span>Buff skills</span><span data-testid="ls-buff">{formatVal(buffDps)}</span></div>
+                                    </div>
                                     <div className="pt-3 border-t border-white/5 text-[9px] md:text-[10px] text-white/30 italic leading-relaxed">
                                         Lifesteal applies to weapon hits, including the damage buff skills add to them. Direct skill damage does not lifesteal.
                                     </div>
@@ -154,7 +161,7 @@ const ModalContent = memo(({ stats, onClose, variant = 'default' }: Omit<Lifeste
                                         </div>
                                         <div className="text-left md:text-right text-[10px] md:text-[11px] text-white/30 font-mono leading-relaxed max-w-sm flex flex-wrap md:flex-col gap-x-2">
                                             <div className="text-purple-300/40 font-bold uppercase text-[8px] md:text-[9px] w-full mb-1">Calculation:</div>
-                                            <span className="whitespace-nowrap">WeaponDPS({formatVal(sourceWeaponDps)}) ×</span>
+                                            <span className="whitespace-nowrap">(Weapon + Buff DPS)({formatVal(sourceWeaponDps)}) ×</span>
                                             <span className="whitespace-nowrap">LifeSteal({formatPercent(lifeStealPct)})</span>
                                         </div>
                                     </div>

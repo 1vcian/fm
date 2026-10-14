@@ -118,9 +118,6 @@ function prettyDeltaLine(line: string): string {
         inner.split(',').map(part => part.split(':').slice(1).join(':').trim().replace(/^'|'$/g, '')).join(' #'));
 }
 
-/** Identifies the app notes shown for a version, so adding a note shows the popup once more. */
-const releaseNotesKey = (version: string) => `${version}:${(RELEASE_NOTES[version] || []).join('|').length}`;
-
 export default function AppShell() {
     const { selectedVersion, versions, isLoadingVersions } = useGameDataContext();
     const { profile } = useProfile();
@@ -138,40 +135,42 @@ export default function AppShell() {
      */
     const [delta, setDelta] = useState<VersionDelta | null>(null);
 
+    // The popup opens only when the game data changed since the version this browser last saw.
+    // A newer build whose data is identical to that version (empty delta) is recorded silently.
     useEffect(() => {
-        if (!isLoadingVersions && versions && versions.length > 0) {
-            const latest = versions[0];
-            const lastSeen = localStorage.getItem('fm_last_seen_config_version');
-            // New app notes for an already seen game version open the popup again.
-            const notesSeen = localStorage.getItem('fm_last_seen_release_notes');
-            if (lastSeen !== latest || notesSeen !== releaseNotesKey(latest)) {
-                setPopupVersion(latest);
-                setShowVersionPopup(true);
-            }
-        }
-    }, [isLoadingVersions, versions]);
-
-    useEffect(() => {
-        if (!showVersionPopup) return;
+        if (isLoadingVersions || !versions || versions.length === 0) return;
+        const latest = versions[0];
+        const lastSeen = localStorage.getItem('fm_last_seen_config_version');
+        if (lastSeen === latest) return;
         let alive = true;
         (async () => {
+            let json: VersionDelta | null = null;
             try {
                 const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/version_delta.json`);
                 // A host that falls back to index.html answers a missing file with a 200 and HTML,
                 // which would land in JSON.parse as an unhelpful syntax error. See useGameData.
-                if (!res.ok || (res.headers.get('content-type') || '').includes('html')) return;
-                const json = (await res.json()) as VersionDelta;
-                if (alive) setDelta(json);
+                if (res.ok && !(res.headers.get('content-type') || '').includes('html')) {
+                    json = (await res.json()) as VersionDelta;
+                }
             } catch {
                 // No delta to show. The popup still states the version and its date.
             }
+            if (!alive) return;
+            const unchangedSinceSeen = !!json && json.version === latest && !!lastSeen
+                && json.previous === lastSeen && json.changes.length === 0;
+            if (unchangedSinceSeen) {
+                localStorage.setItem('fm_last_seen_config_version', latest);
+                return;
+            }
+            setDelta(json);
+            setPopupVersion(latest);
+            setShowVersionPopup(true);
         })();
         return () => { alive = false; };
-    }, [showVersionPopup]);
+    }, [isLoadingVersions, versions]);
 
     const handleClosePopup = () => {
         localStorage.setItem('fm_last_seen_config_version', popupVersion);
-        localStorage.setItem('fm_last_seen_release_notes', releaseNotesKey(popupVersion));
         setShowVersionPopup(false);
     };
 

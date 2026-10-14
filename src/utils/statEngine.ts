@@ -401,9 +401,30 @@ export interface LibraryData {
 }
 
 /** 'CriticalChanceBoost' -> 'Critical Chance Boost' (tech node types are PascalCase ids) */
+const nodeTypeLabels = new Map<string, string>();
 function formatNodeType(nodeType: string): string {
     if (!nodeType) return 'Unknown Node';
-    return nodeType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+    let label = nodeTypeLabels.get(nodeType);
+    if (label === undefined) {
+        label = nodeType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        nodeTypeLabels.set(nodeType, label);
+    }
+    return label;
+}
+
+/**
+ * Tree node by Id. The position library is immutable config, so its Id index is built once per
+ * library object (a plain Nodes.find per lookup made every calculateStats quadratic in the tree).
+ */
+const nodeIndexes = new WeakMap<object, Map<number, any>>();
+function treeNodeById(treeData: any, nodeId: number): any {
+    let index = nodeIndexes.get(treeData);
+    if (!index) {
+        index = new Map();
+        for (const n of treeData.Nodes || []) if (!index.has(n.Id)) index.set(n.Id, n);
+        nodeIndexes.set(treeData, index);
+    }
+    return index.get(nodeId);
 }
 
 export class StatEngine {
@@ -556,7 +577,7 @@ export class StatEngine {
         }
 
         // Check requirements
-        const node = treeData.Nodes.find((n: any) => n.Id === nodeId);
+        const node = treeNodeById(treeData, nodeId);
         if (!node) {
             this.nodeValidityCache.set(cacheKey, false);
             return false;
@@ -758,7 +779,7 @@ export class StatEngine {
             }
 
             for (const nodeId of validNodes) {
-                const node = treeData.Nodes.find((n: any) => n.Id === nodeId);
+                const node = treeNodeById(treeData, nodeId);
                 if (!node) continue;
 
                 const nodeData = this.libs.techTreeLibrary[node.Type];
@@ -1449,7 +1470,7 @@ export class StatEngine {
             }
 
             for (const nodeId of validNodes) {
-                const node = treeData.Nodes.find((n: any) => n.Id === nodeId);
+                const node = treeNodeById(treeData, nodeId);
                 if (!node) continue;
 
                 const nodeData = this.libs.techTreeLibrary[node.Type];

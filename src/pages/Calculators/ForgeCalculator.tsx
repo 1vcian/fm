@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useProfile } from '../../context/ProfileContext';
-import { useTreeMode } from '../../context/TreeModeContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { useTreeLimits } from '../../hooks/useTreeLimits';
@@ -11,6 +10,7 @@ import { isWarPointDay, getDayBoostNodeType, getWarPointsForTask } from '../../u
 import { cn, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { ITEM_TYPE_NAMES, computeForgeModel, hammersForCoins, sortBrackets, type ForgeModelInput, type ForgeSlot } from '../../utils/forgeItemLevels';
 
 // Helper types matching JSON structure
 interface ItemAgeDropChances {
@@ -35,6 +35,10 @@ interface ItemBalancingConfig {
     // ... other fields
 }
 
+interface ItemBalancingEntry {
+    ItemId: { Age: number; Type: string; Idx: number };
+}
+
 interface TechTreeNode {
     Type: string;
     MaxLevel?: number;
@@ -44,13 +48,42 @@ interface TechTreeNode {
                 StatType: string;
                 StatNature: string;
             };
+            Target?: {
+                Kind?: string;
+                Qualifiers?: { Type: string; Value: number }[];
+            };
             StatTarget?: {
                 ItemType?: number;
+                $type?: string;
             };
         };
         Value: number;
         ValueIncrease: number;
     }[];
+}
+
+/**
+ * Which forge input a tech node feeds, from its stat node (config driven):
+ * SellPrice on Equipment (GetSellValue), FreebieChance on Forge (free forge roll) and
+ * MaxLevel on Equipment with an ItemType qualifier (RollItemLevel). Older builds carry a
+ * StatTarget object instead of Target, handled as a fallback.
+ */
+function classifyForgeNode(def: TechTreeNode | undefined): { key: string; itemType?: number } | null {
+    const node = def?.Stats?.[0]?.StatNode;
+    if (!def || !node) return null;
+    const statType = node.UniqueStat?.StatType;
+    const kind = node.Target?.Kind
+        ?? (node.StatTarget?.$type ? node.StatTarget.$type.replace('StatTarget', '') : undefined);
+    if (statType === 'SellPrice' && kind === 'Equipment') return { key: 'SellPrice' };
+    if (statType === 'FreebieChance' && kind === 'Forge') return { key: 'FreeForgeChance' };
+    if (statType === 'MaxLevel' && (kind === 'Equipment' || kind === 'Weapon')) {
+        const q = node.Target?.Qualifiers?.find(x => x.Type === 'ItemType');
+        const itemType = q?.Value ?? node.StatTarget?.ItemType
+            ?? (kind === 'Weapon' ? ITEM_TYPE_NAMES.indexOf('Weapon') : undefined);
+        if (itemType === undefined) return null;
+        return { key: def.Type.replace(/LevelUp$/, ''), itemType };
+    }
+    return null;
 }
 
 interface TechTreeLibrary {
@@ -98,7 +131,6 @@ type CalculationMode = 'hammers' | 'gold';
 export default function ForgeCalculator() {
     const { selectedVersion } = useGameDataContext();
     const { profile, updateNestedProfile } = useProfile();
-    const { treeMode } = useTreeMode();
 
     // Refs for persistence debounce
     const saveTimeout = useRef<NodeJS.Timeout>();
@@ -172,6 +204,7 @@ export default function ForgeCalculator() {
     const { data: guildWarConfig } = useGameData<GuildWarDayConfig>('GuildWarDayConfigLibrary.json');
     const { data: guildWarBaseConfig } = useGameData<any>('GuildWarConfig.json');
     const { data: forgeUpgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
+    const { data: itemsLibrary } = useGameData<Record<string, ItemBalancingEntry>>('ItemBalancingLibrary.json');
 
     const maxForgeLevel = useMemo(() => {
         if (!forgeUpgradeData) return 100;
@@ -287,10 +320,7 @@ export default function ForgeCalculator() {
                 // Max possible value for this node instance
                 const maxVal = stat.Value + ((nodeDef.MaxLevel || 1) - 1) * stat.ValueIncrease;
 
-                let key = '';
-                if (nodeDef.Type === 'EquipmentSellPrice') key = 'SellPrice';
-                else if (nodeDef.Type === 'FreeForgeChance') key = 'FreeForgeChance';
-                else if (nodeDef.Type.endsWith('LevelUp')) key = nodeDef.Type.replace('LevelUp', '');
+                const key = classifyForgeNode(nodeDef)?.key || '';
 
                 if (key) {
                     limits[key] = (limits[key] || 0) + maxVal;
@@ -337,100 +367,34 @@ export default function ForgeCalculator() {
         };
     };
 
-    // 1. Calculate Player Bonuses from Tree (Actual Profile)
+    // 1. Forge-related tree bonuses. Values come from useTreeModifiers (tier aware, requirement
+    // checked, follows the tree mode); the nodes are picked by what they target in the config.
+    const forgeNodes = useMemo(() => {
+        const out: { type: string; key: string; itemType?: number }[] = [];
+        if (!techTreeLib) return out;
+        Object.values(techTreeLib).forEach(def => {
+            const c = classifyForgeNode(def);
+            if (c) out.push({ type: def.Type, ...c });
+        });
+        return out;
+    }, [techTreeLib]);
+
     const bonuses = useMemo(() => {
         let sellPriceBonus = 0;
         let freeForgeChance = 0;
-
-        // Track per-slot bonuses 
-        const slotLevelBonuses: Record<string, number> = {};
-
-        if (!techTreeLib || !techTreeMap) return { sellPriceBonus, freeForgeChance, averageLevelBonus: 0, latentLevelBonus: 0, actualMaxItemLevel: 0, slotLimits: {}, slotBonuses: {} };
-
-        // Iterate through all trees in Mapping to find relevant nodes
-        ['Forge', 'Power', 'SkillsPetTech'].forEach((treeName) => {
-            const treeRoot = techTreeMap.trees?.[treeName];
-            if (!treeRoot || !Array.isArray(treeRoot.nodes)) return;
-
-            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-            treeRoot.nodes.forEach((nodeMap: any) => {
-                const nodeDef = techTreeLib[nodeMap.type];
-                if (!nodeDef) return;
-
-                let level = 0;
-                if (treeMode === 'empty') {
-                    level = 0;
-                } else if (treeMode === 'max') {
-                    level = nodeDef.MaxLevel || 0;
-                } else {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const tree = profile.techTree[treeName as keyof typeof profile.techTree] as Record<number, number>;
-                    level = tree?.[nodeMap.id] || 0;
-                }
-
-                if (level === 0) return;
-
-                const stat = nodeDef.Stats?.[0];
-                if (!stat) return;
-
-                // Value is usually for Level 1, then +ValueIncrease per level
-                const nodeVal = stat.Value + (level - 1) * stat.ValueIncrease;
-
-                switch (nodeDef.Type) {
-                    case 'EquipmentSellPrice':
-                        sellPriceBonus += nodeVal;
-                        break;
-                    case 'FreeForgeChance':
-                        freeForgeChance += nodeVal;
-                        break;
-                    default:
-                        if (nodeDef.Type.endsWith('LevelUp')) {
-                            // "WeaponLevelUp" -> "Weapon"
-                            const slot = nodeDef.Type.replace('LevelUp', '');
-                            slotLevelBonuses[slot] = (slotLevelBonuses[slot] || 0) + nodeVal;
-                        }
-                        break;
-                }
-            });
-        });
-
-        // Sum all slot bonuses and divide by 8 (Total Slots)
-        const totalBonus = Object.values(slotLevelBonuses).reduce((sum, val) => sum + val, 0);
-        const averageLevelBonus = totalBonus / 8;
-
-        // Calculate Limits per slot (for display purposes)
-        const base = (balancingConfig?.ItemBaseMaxLevel || 98) + 1;
-        const slotLimits: Record<string, number> = {};
-        const allSlots = ['Weapon', 'Helmet', 'Body', 'Glove', 'Ring', 'Necklace', 'Belt', 'Shoe'];
-
-        allSlots.forEach(slot => {
-            const bonus = slotLevelBonuses[slot] || 0;
-            slotLimits[slot] = base + bonus;
-        });
-
-        // Capture actual inventory strength to find "latent" Forge/Research levels
-        let actualMaxItemLevel = 0;
-        Object.values(profile.items).forEach(item => {
-            if (item && item.level > actualMaxItemLevel) {
-                actualMaxItemLevel = item.level;
+        const slotBonuses: Record<string, number> = {};
+        const slotTypes: Record<string, number> = {};
+        forgeNodes.forEach(n => {
+            const v = treeModifiers[n.type] || 0;
+            if (n.key === 'SellPrice') sellPriceBonus += v;
+            else if (n.key === 'FreeForgeChance') freeForgeChance += v;
+            else if (n.itemType !== undefined) {
+                slotBonuses[n.key] = (slotBonuses[n.key] || 0) + v;
+                slotTypes[n.key] = n.itemType;
             }
         });
-
-        // The "Latent Bonus" is the difference between your equipment levels and your tech tree potential.
-        // This accounts for Forge Level, Research, and other hidden scaling factors.
-        const techPotential = base + averageLevelBonus;
-        const latentLevelBonus = actualMaxItemLevel > 0 ? Math.max(0, actualMaxItemLevel - techPotential) : 0;
-
-        return {
-            sellPriceBonus,
-            freeForgeChance,
-            averageLevelBonus,
-            latentLevelBonus,
-            actualMaxItemLevel,
-            slotLimits,
-            slotBonuses: slotLevelBonuses
-        };
-    }, [profile, treeMode, techTreeLib, techTreeMap, balancingConfig]);
+        return { sellPriceBonus, freeForgeChance, slotBonuses, slotTypes };
+    }, [forgeNodes, treeModifiers]);
 
     // Sync manual bonuses when toggling off Player Items
     useEffect(() => {
@@ -445,298 +409,130 @@ export default function ForgeCalculator() {
         }
     }, [usePlayerItems, bonuses, manualBonuses]);
 
-    // 2. Calculate Effective Forge Stats
-    const forgeStats = useMemo(() => {
-        if (!brackets || !dropChances || !profile || !balancingConfig) return null;
+    // Effective bonus: the simulated value when the custom tree is on, the profile value otherwise.
+    const effBonus = (key: string, profileValue: number) =>
+        (!usePlayerItems && manualBonuses[key] !== undefined) ? manualBonuses[key] : profileValue;
+    const effectiveSellPriceBonus = effBonus('SellPrice', bonuses.sellPriceBonus);
+    const effectiveFreeChance = effBonus('FreeForgeChance', bonuses.freeForgeChance);
 
-        const currentForgeLevel = simulatedForgeLevel;
-        let referenceLevel = 0;
-        let referenceSource = "Unknown";
-
-        // Effective Bonuses (Manual or Actual)
-        const isManual = !usePlayerItems && Object.keys(manualBonuses).length > 0;
-        const effectiveSellPriceBonus = isManual ? (manualBonuses['SellPrice'] ?? bonuses.sellPriceBonus) : bonuses.sellPriceBonus;
-
-        // Calculate Effective Max Level (Avg)
-        // This is the "Reference level" used to determine which Forge Age isDropped and its base price.
-        const base = (balancingConfig.ItemBaseMaxLevel || 98) + 1;
-
-        if (usePlayerItems) {
-            // Priority 1: Actual items in inventory (captures enhancement + tech + latent)
-            Object.values(profile.items).forEach(item => {
-                if (item && item.level > referenceLevel) {
-                    referenceLevel = item.level;
-                    referenceSource = "Inventory Items";
-                }
-            });
-            // Fallback if no items: Use Tech + Latent
-            if (referenceLevel === 0) {
-                referenceLevel = base + bonuses.averageLevelBonus + (bonuses.latentLevelBonus || 0);
-                referenceSource = "Tech Tree + Latent";
-            }
-        } else {
-            // Simulation Mode: Base + Simulated Tech + Latent Forge contribution
-            let totalSimulatedStats = 0;
-            const slots = ['Weapon', 'Helmet', 'Body', 'Glove', 'Ring', 'Necklace', 'Belt', 'Shoe'];
-            const profileSlotBonuses = (bonuses.slotBonuses || {}) as Record<string, number>;
-
-            slots.forEach(slot => {
-                const val = manualBonuses[slot] ?? profileSlotBonuses[slot] ?? 0;
-                totalSimulatedStats += val;
-            });
-
-            const avgSimulatedBonus = totalSimulatedStats / 8;
-            referenceLevel = base + avgSimulatedBonus + (bonuses.latentLevelBonus || 0);
-            referenceSource = "Simulated Tech Tree";
-        }
-
-        // Find brackets
-        // 1. Current Age Bracket (based on Reference Level)
-        const sortedKeys = Object.keys(brackets).sort((a, b) => Number(a) - Number(b));
-        let currentBracket = brackets[sortedKeys[0]];
-
-        // Find the bracket that contains the reference level
-        // Use loop to find:
-        for (const key of sortedKeys) {
-            const b = brackets[key];
-            if (referenceLevel >= b.LowerRange && referenceLevel <= b.UpperRange) {
-                currentBracket = b;
-                break;
-            }
-        }
-        // If Ref Level > Highest Bracket Max, use highest bracket (or extrapolate?)
-        // Currently we clamp to the highest known bracket for "Bracket" display info, 
-        // but Price Calculation uses exponential formula so it scales indefinitely.
-
-        // Fix off-by-one: ItemAgeDropChancesLibrary uses 0-based indexing (or shifted by 1 relative to Level)
-        // Level 1 corresponds to Key "0", Level 5 to Key "4".
-        // Fallback to direct access if shifted key doesn't exist.
-        const dropChanceData = dropChances[(currentForgeLevel - 1).toString()] || dropChances[currentForgeLevel.toString()];
-
+    // 2. Model input: everything the game reads when it forges (see utils/forgeItemLevels.ts).
+    const modelInput = useMemo((): ForgeModelInput | null => {
+        if (!brackets || !dropChances || !balancingConfig || !itemsLibrary) return null;
+        const row = dropChances[(simulatedForgeLevel - 1).toString()];
+        if (!row) return null;
+        const ageChances: Record<number, number> = {};
+        Object.entries(row).forEach(([k, v]) => {
+            if (k.startsWith('Age') && typeof v === 'number') ageChances[parseInt(k.slice(3))] = v;
+        });
+        const typesByAge: Record<number, number[]> = {};
+        Object.values(itemsLibrary).forEach(it => {
+            const t = (ITEM_TYPE_NAMES as readonly string[]).indexOf(it?.ItemId?.Type);
+            const age = it?.ItemId?.Age;
+            if (t < 0 || typeof age !== 'number') return;
+            const list = (typesByAge[age] ||= []);
+            if (!list.includes(t)) list.push(t);
+        });
+        const slots: Record<number, ForgeSlot> = {};
+        Object.entries(bonuses.slotTypes).forEach(([key, itemType]) => {
+            slots[itemType] = {
+                itemType,
+                key,
+                maxLevel: balancingConfig.ItemBaseMaxLevel + effBonus(key, bonuses.slotBonuses[key] || 0),
+                sellBonus: effectiveSellPriceBonus,
+            };
+        });
         return {
-            dropChanceData,
-            forgeLevel: currentForgeLevel,
-            referenceLevel,
-            referenceSource,
-            effectiveSellPriceBonus,
-            currentBracket
+            brackets: sortBrackets(brackets),
+            ageChances,
+            typesByAge,
+            slots,
+            sell: { sellBasePrice: balancingConfig.SellBasePrice, levelScalingBase: balancingConfig.LevelScalingBase },
+            freeChance: effectiveFreeChance,
+            // Players cannot see their hidden counters, so the page bounds them instead: the fresh
+            // case (right after a forge ascension) is overridden per run below.
+            state: { kind: 'atCap' },
         };
-
-    }, [profile, brackets, balancingConfig, dropChances, bonuses, usePlayerItems, manualBonuses, simulatedForgeLevel]);
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [brackets, dropChances, balancingConfig, itemsLibrary, simulatedForgeLevel, bonuses, usePlayerItems, manualBonuses, effectiveSellPriceBonus, effectiveFreeChance]);
 
     // 3. Perform Final Calculation (Bidirectional)
     const results = useMemo(() => {
-        if (!forgeStats || !forgeStats.dropChanceData || !balancingConfig || !brackets) return null;
+        if (!modelInput) return null;
 
         const inputVal = parseFloat(inputValue) || 0;
         if (inputVal <= 0) return null;
 
-        const freeForgeBase = (!usePlayerItems && manualBonuses['FreeForgeChance'] !== undefined)
-            ? manualBonuses['FreeForgeChance']
-            : bonuses.freeForgeChance;
-        const chance = Math.min(freeForgeBase || 0, 0.999);
-        const forgesPerHammer = 1 / (1 - chance);
+        // Hidden counters are unknowable, so two bounding cases:
+        // fresh = every counter at 0 (right after a forge ascension), advancing per forged item;
+        // cap = every counter already at its cap. MIN uses fresh with every roll at the window's
+        // LowerRange, MAX uses cap with every roll at Min(UpperRange, maxLevel).
+        const freshInput: ForgeModelInput = { ...modelInput, state: { kind: 'sinceAscension', forges: 0 } };
+        const capInput: ForgeModelInput = { ...modelInput, state: { kind: 'atCap' } };
 
-        let avgCoinsPerForge = 0;
-        let avgItemsPerForge = 0;
+        // Gold mode: hammers needed range (fewest = cap + high rolls, most = fresh + low rolls).
+        const hammersLow = mode === 'gold' ? hammersForCoins(capInput, inputVal, r => r.coinsMax) : Math.floor(inputVal);
+        const hammersHigh = mode === 'gold' ? hammersForCoins(freshInput, inputVal, r => r.coinsMin) : Math.floor(inputVal);
+        // The rest of the page (forges, items, war points) uses the hammer count that reaches the
+        // target in every case.
+        const finalHammers = hammersHigh;
+        const fresh = computeForgeModel(freshInput, finalHammers);
+        const cap = computeForgeModel(capInput, finalHammers);
+        const model = cap;
+        const capByAge = new Map(cap.ages.map(a => [a.age, a]));
 
-        // Identify the highest age index dropped at this forge level
         let maxAgeIdx = -1;
-        Object.entries(forgeStats.dropChanceData).forEach(([key, val]) => {
-            if (key.startsWith('Age') && typeof val === 'number' && val > 0) {
-                const idx = parseInt(key.replace('Age', ''));
-                if (idx > maxAgeIdx) maxAgeIdx = idx;
-            }
-        });
+        model.ages.forEach(a => { if (a.age > maxAgeIdx) maxAgeIdx = a.age; });
 
-        // Calculate Average Stats per Forge
-        Object.entries(forgeStats.dropChanceData).forEach(([key, val]) => {
-            const chanceVal = val as number;
-            if (!key.startsWith('Age') || typeof chanceVal !== 'number' || chanceVal <= 0) return;
-            // const ageIdx = parseInt(key.replace('Age', '')); // Removed
-
-            // Granular Price Calculation for this specific age
-            // Formula: The highest age corresponds to referenceLevel. 
-            // We removed the 'Age Offset' logic (-5 levels per tier) as per user request/verification.
-            // Items from previous ages now drop at full Slot Level.
-            // const ageOffset = maxAgeIdx - ageIdx;
-
-            let ageTotalCoins = 0;
-            const slots = ['Weapon', 'Helmet', 'Body', 'Glove', 'Ring', 'Necklace', 'Belt', 'Shoe'];
-            const profileSlotBonuses = (bonuses.slotBonuses || {}) as Record<string, number>;
-
-            slots.forEach(slot => {
-                // Determine level for this specific slot
-                let slotTechBonus = 0;
-                if (!usePlayerItems && manualBonuses[slot] !== undefined) {
-                    slotTechBonus = manualBonuses[slot];
-                } else {
-                    slotTechBonus = profileSlotBonuses[slot] || 0;
-                }
-
-                // Base Level + Slot Tech + Latent Bonus
-                // Note: Latent Bonus is global (Forge Level), Slot Tech is specific.
-                const slotLevel = balancingConfig.ItemBaseMaxLevel + slotTechBonus + (bonuses.latentLevelBonus || 0);
-
-                const baseScaling = 1.0100000000093132;
-                const basePrice = balancingConfig.SellBasePrice * Math.pow(baseScaling, slotLevel);
-                ageTotalCoins += basePrice;
-            });
-
-            const avgPriceForAge = ageTotalCoins / 8;
-            const finalPrice = avgPriceForAge * (1 + forgeStats.effectiveSellPriceBonus);
-
-            avgItemsPerForge += chanceVal;
-            avgCoinsPerForge += (chanceVal * finalPrice);
-        });
-
-        let finalHammers = 0;
-        let totalForges = 0;
-
-        if (mode === 'hammers') {
-            finalHammers = inputVal;
-            totalForges = finalHammers * forgesPerHammer;
-        } else {
-            if (avgCoinsPerForge > 0) {
-                totalForges = inputVal / avgCoinsPerForge;
-                finalHammers = totalForges / forgesPerHammer;
-            }
-        }
-
-        const freeForges = totalForges - finalHammers;
-        const totalCoins = totalForges * avgCoinsPerForge;
-
-        // Per-slot bracket Min/Max calculation
-        // Each slot finds its own bracket to avoid artificial ~5% jumps when the
-        // global average reference level crosses a bracket boundary.
-        let totalCoinsMin = 0;
-        let totalCoinsMax = 0;
-
-        const sortedBracketKeys = Object.keys(brackets).sort((a, b) => Number(a) - Number(b));
-        const findBracketForLevel = (level: number) => {
-            for (const key of sortedBracketKeys) {
-                const b = brackets[key];
-                if (level >= b.LowerRange && level <= b.UpperRange) {
-                    return b;
-                }
-            }
-            // Fallback to highest bracket if level exceeds all ranges
-            return brackets[sortedBracketKeys[sortedBracketKeys.length - 1]];
-        };
-
-        Object.entries(forgeStats.dropChanceData).forEach(([key, val]) => {
-            const chanceVal = val as number;
-            if (!key.startsWith('Age') || typeof chanceVal !== 'number' || chanceVal <= 0) return;
-
-            let ageTotalCoinsMin = 0;
-            let ageTotalCoinsMax = 0;
-
-            const slots = ['Weapon', 'Helmet', 'Body', 'Glove', 'Ring', 'Necklace', 'Belt', 'Shoe'];
-            const profileSlotBonuses = (bonuses.slotBonuses || {}) as Record<string, number>;
-
-            slots.forEach(slot => {
-                let slotTechBonus = 0;
-                if (!usePlayerItems && manualBonuses[slot] !== undefined) {
-                    slotTechBonus = manualBonuses[slot];
-                } else {
-                    slotTechBonus = profileSlotBonuses[slot] || 0;
-                }
-                const baseLevel = balancingConfig.ItemBaseMaxLevel + slotTechBonus + (bonuses.latentLevelBonus || 0);
-                const baseScaling = 1.0100000000093132;
-
-                // Find bracket specific to this slot's level
-                // Cap to the slot's actual level: item can't drop higher than baseLevel
-                const slotBracket = findBracketForLevel(baseLevel);
-                const effectiveMin = Math.min(slotBracket.LowerRange, baseLevel);
-                const effectiveMax = Math.min(slotBracket.UpperRange, baseLevel);
-                ageTotalCoinsMin += balancingConfig.SellBasePrice * Math.pow(baseScaling, effectiveMin);
-                ageTotalCoinsMax += balancingConfig.SellBasePrice * Math.pow(baseScaling, effectiveMax);
-            });
-
-            const priceMin = (ageTotalCoinsMin / 8) * (1 + forgeStats.effectiveSellPriceBonus);
-            const priceMax = (ageTotalCoinsMax / 8) * (1 + forgeStats.effectiveSellPriceBonus);
-
-            totalCoinsMin += (totalForges * chanceVal * priceMin);
-            totalCoinsMax += (totalForges * chanceVal * priceMax);
-        });
-
-        const totalItems = totalForges * avgItemsPerForge;
         let totalWarPoints = 0;
-
-        const ages: { name: string, chance: number, items: number, coins: number, warPoints: number, isMax: boolean, idx: number }[] = [];
-        const sortedAges = Object.entries(forgeStats.dropChanceData)
-            .sort((a, b) => parseInt(a[0].replace('Age', '')) - parseInt(b[0].replace('Age', '')));
-
-        sortedAges.forEach(([key, val]) => {
-            const chanceVal = val as number;
-            if (!key.startsWith('Age') || typeof chanceVal !== 'number' || chanceVal <= 0) return;
-
-            const ageIdx = parseInt(key.replace('Age', ''));
-            const itemsFound = totalForges * chanceVal;
-
-            // Use the same slot-specific logic for per-age breakdown
-            // const ageOffset = maxAgeIdx - ageIdx; // Removed offset logic
-
-            let ageTotalCoins = 0;
-            const slots = ['Weapon', 'Helmet', 'Body', 'Glove', 'Ring', 'Necklace', 'Belt', 'Shoe'];
-            const profileSlotBonuses = (bonuses.slotBonuses || {}) as Record<string, number>;
-
-            slots.forEach(slot => {
-                let slotTechBonus = 0;
-                if (!usePlayerItems && manualBonuses[slot] !== undefined) {
-                    slotTechBonus = manualBonuses[slot];
-                } else {
-                    slotTechBonus = profileSlotBonuses[slot] || 0;
-                }
-
-                const slotLevel = (balancingConfig.ItemBaseMaxLevel + 1) + slotTechBonus + (bonuses.latentLevelBonus || 0);
-                const baseScaling = 1.0100000000093132;
-                const basePrice = balancingConfig.SellBasePrice * Math.pow(baseScaling, slotLevel);
-                ageTotalCoins += basePrice;
+        const ages = fresh.ages
+            .slice()
+            .sort((a, b) => b.age - a.age)
+            .map(f => {
+                const a = capByAge.get(f.age)!;
+                const warPoints = a.items * (warPointsPerAge[a.age] || 0);
+                totalWarPoints += warPoints;
+                return {
+                    idx: a.age,
+                    name: AGES[a.age] || `Age ${a.age + 1}`,
+                    chance: a.chance * 100,
+                    items: a.items,
+                    coinsMin: f.coinsMin,
+                    coinsMax: a.coinsMax,
+                    levelMin: f.avgLevelLow + 1,
+                    levelMax: a.avgLevelHigh + 1,
+                    warPoints,
+                    windows: a.windows,
+                    isMax: a.age === maxAgeIdx
+                };
             });
-
-            const avgPriceForAge = ageTotalCoins / 8;
-            const pricePerItem = avgPriceForAge * (1 + forgeStats.effectiveSellPriceBonus);
-
-            const coinsFound = itemsFound * pricePerItem;
-            const warPointsFound = itemsFound * (warPointsPerAge[ageIdx] || 0);
-
-            totalWarPoints += warPointsFound;
-
-            // Map index to Name from Constants
-            const ageName = AGES[ageIdx] || `Age ${ageIdx + 1}`;
-
-            ages.push({
-                idx: ageIdx,
-                name: ageName,
-                chance: chanceVal * 100,
-                items: itemsFound,
-                coins: coinsFound,
-                warPoints: warPointsFound,
-                isMax: ageIdx === maxAgeIdx
-            });
-        });
-        ages.reverse();
 
         // AutoForge Time Estimation
         const interval = parseFloat(autoForgeInterval) || 2.43;
-        const cycles = totalForges / autoForgeSummons;
+        const cycles = model.forges / autoForgeSummons;
         const autoForgeSeconds = cycles * interval;
 
         return {
             finalHammers,
-            totalForges,
-            freeForges,
-            totalCoins,
-            totalCoinsMin,
-            totalCoinsMax,
-            totalItems,
+            hammersLow,
+            hammersHigh,
+            totalForges: model.forges,
+            freeForges: model.freeForges,
+            totalCoinsMin: fresh.coinsMin,
+            totalCoinsMax: cap.coinsMax,
+            expectedFresh: fresh.coins,
+            expectedCap: cap.coins,
+            totalItems: model.items,
             totalWarPoints,
             ages,
             autoForgeSeconds
         };
-    }, [inputValue, mode, forgeStats, bonuses, warPointsPerAge, brackets, balancingConfig, usePlayerItems, manualBonuses, autoForgeSummons, autoForgeInterval]);
+    }, [inputValue, mode, modelInput, warPointsPerAge, autoForgeSummons, autoForgeInterval]);
+
+    // Age whose per-slot windows are listed (defaults to the most likely age).
+    const [windowAge, setWindowAge] = useState<number | null>(null);
+    const windowAges = results?.ages ?? [];
+    const shownWindowAge = windowAges.find(a => a.idx === windowAge)
+        ?? windowAges.slice().sort((a, b) => b.chance - a.chance)[0];
 
     /* getSlotIconIndex removed */
 
@@ -853,7 +649,7 @@ export default function ForgeCalculator() {
     );
 
     // Helper for Range Display
-    const renderPriceRange = (min: number, max: number) => (
+    const renderPriceRange = (min: number, max: number, expFresh: number, expCap: number) => (
         <div className="flex flex-col text-stroke-sm">
             <div className="text-xl lg:text-2xl font-black text-white flex items-center gap-1 text-stroke-sm">
                 <span className="text-stroke-sm">{formatNumber(min)}</span>
@@ -861,12 +657,12 @@ export default function ForgeCalculator() {
                 <span className="text-stroke-sm">{formatNumber(max)}</span>
             </div>
             <div className="text-[10px] text-white/50 font-mono text-stroke-sm">
-                {formatNumber((min + max) / 2)} (Avg)
+                Expected: {formatNumber(expFresh)} if fresh, {formatNumber(expCap)} at cap
             </div>
         </div>
     );
 
-    if (!dropChances || !techTreeLib || !techTreeMap || !balancingConfig || !brackets) return <div className="p-10 text-center text-text-muted">Loading Configuration</div>;
+    if (!dropChances || !techTreeLib || !techTreeMap || !balancingConfig || !brackets || !itemsLibrary) return <div className="p-10 text-center text-text-muted">Loading Configuration</div>;
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -1109,23 +905,16 @@ export default function ForgeCalculator() {
                                     </p>
                                 </div>
 
-                                {/* Info Box about Level */}
-                                {forgeStats && (
-                                    <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-text-secondary space-y-1">
-                                        <div className="flex justify-between items-center">
-                                            <span>Reference Level Used:</span>
-                                            <span className="font-bold text-white">{Math.floor(forgeStats.referenceLevel)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-text-muted">
-                                            <span>Source:</span>
-                                            <span className="italic">{forgeStats.referenceSource}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-text-muted">
-                                            <span>Values Bracket:</span>
-                                            <span className="italic">{forgeStats.currentBracket ? `Level ${forgeStats.currentBracket.LowerRange}-${forgeStats.currentBracket.UpperRange}` : 'Unknown'}</span>
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Hidden item level counters */}
+                                <div className="bg-bg-primary/40 border border-white/5 rounded-xl p-4 space-y-2">
+                                    <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Item Level Range</div>
+                                    <p className="text-[10px] text-text-muted leading-snug">
+                                        Each item type and age keeps a hidden counter that picks the level bracket. A forge ascension resets it, every forged item of that type and age raises it up to a cap. Since it cannot be seen, gold is shown as a range: minimum = counters fresh from an ascension and every roll at the bottom of its window; maximum = counters at cap and every roll at the top.
+                                    </p>
+                                    <p className="text-[9px] text-text-muted leading-tight opacity-70">
+                                        Sell value = round({balancingConfig.SellBasePrice} x {balancingConfig.LevelScalingBase.toFixed(4)}^(level - 1) x (1 + sell bonus)).
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Render Virtual Nodes (if !usePlayerItems) */}
@@ -1138,8 +927,8 @@ export default function ForgeCalculator() {
                             <div className="bg-accent-primary/10 border border-accent-primary/20 rounded-xl p-4 flex items-center justify-between">
                                 <span className="text-sm font-bold text-accent-primary uppercase text-stroke-sm">Required Hammers</span>
                                 <div className="text-right text-stroke-sm">
-                                    <span className="text-2xl font-black text-white block">{formatNumber(results.finalHammers)}</span>
-                                    <span className="text-xs text-white/50 block">({Math.floor(results.finalHammers).toLocaleString()})</span>
+                                    <span className="text-2xl font-black text-white block">{formatNumber(results.hammersLow)} to {formatNumber(results.hammersHigh)}</span>
+                                    <span className="text-xs text-white/50 block">({results.hammersLow.toLocaleString()} to {results.hammersHigh.toLocaleString()}; results below use {results.hammersHigh.toLocaleString()})</span>
                                 </div>
                             </div>
                         )}
@@ -1165,7 +954,7 @@ export default function ForgeCalculator() {
                                 </div>
                                 <span className="font-medium text-text-secondary">Sell Bonus</span>
                             </div>
-                            <span className="text-xl font-bold text-green-400 text-stroke-sm">+{((forgeStats?.effectiveSellPriceBonus || 0) * 100).toFixed(1)}%</span>
+                            <span className="text-xl font-bold text-green-400 text-stroke-sm">+{(effectiveSellPriceBonus * 100).toFixed(1)}%</span>
                         </div>
                         {/* Free Forges */}
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
@@ -1176,7 +965,7 @@ export default function ForgeCalculator() {
                                 <span className="font-medium text-text-secondary">Free Forges</span>
                             </div>
                             <span className="text-xl font-bold text-blue-400 text-stroke-sm">
-                                +{((!usePlayerItems && manualBonuses['FreeForgeChance'] !== undefined) ? (manualBonuses['FreeForgeChance'] * 100) : (bonuses.freeForgeChance * 100)).toFixed(1)}%
+                                +{(effectiveFreeChance * 100).toFixed(1)}%
                             </span>
                         </div>
                     </div>
@@ -1194,7 +983,7 @@ export default function ForgeCalculator() {
                                 <div className="text-sm font-bold text-yellow-500 uppercase tracking-wider mb-1 text-stroke-sm">Total Gold Value</div>
                                 {/* Show Range instead of Single Value */}
                                 <div className="text-stroke-sm">
-                                    {renderPriceRange(results.totalCoinsMin, results.totalCoinsMax)}
+                                    {renderPriceRange(results.totalCoinsMin, results.totalCoinsMax, results.expectedFresh, results.expectedCap)}
                                 </div>
                             </div>
                             <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}CoinIcon.png`} alt="Gold" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
@@ -1318,7 +1107,7 @@ export default function ForgeCalculator() {
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 w-full grid grid-cols-3 gap-4 relative z-10 text-stroke-sm">
+                                    <div className="flex-1 w-full grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 relative z-10 text-stroke-sm">
                                         <div className={cn(
                                             "p-2 rounded-lg text-center md:text-right border text-stroke-sm",
                                             age.idx === 9 ? "bg-black/40 border-white/20" : "bg-black/20 border-white/5"
@@ -1330,8 +1119,15 @@ export default function ForgeCalculator() {
                                             "p-2 rounded-lg text-center md:text-right border text-stroke-sm",
                                             age.idx === 9 ? "bg-black/40 border-white/20" : "bg-black/20 border-white/5"
                                         )}>
+                                            <div className={cn("text-[10px] uppercase font-bold mb-1 text-stroke-sm", age.idx === 9 ? "text-white/70" : "text-text-muted text-stroke-sm")}>Avg Level</div>
+                                            <div className="text-white font-mono font-bold text-stroke-sm">{age.levelMin.toFixed(1)} to {age.levelMax.toFixed(1)}</div>
+                                        </div>
+                                        <div className={cn(
+                                            "p-2 rounded-lg text-center md:text-right border text-stroke-sm",
+                                            age.idx === 9 ? "bg-black/40 border-white/20" : "bg-black/20 border-white/5"
+                                        )}>
                                             <div className={cn("text-[10px] uppercase font-bold mb-1 text-stroke-sm", age.idx === 9 ? "text-white/70" : "text-text-muted text-stroke-sm")}>Gold Value</div>
-                                            <div className={cn("font-mono font-bold text-stroke-sm", age.idx === 9 ? "text-white" : "text-yellow-400 text-stroke-sm")}>{formatNumber(age.coins)}</div>
+                                            <div className={cn("font-mono font-bold text-stroke-sm", age.idx === 9 ? "text-white" : "text-yellow-400 text-stroke-sm")}>{formatNumber(age.coinsMin)} to {formatNumber(age.coinsMax)}</div>
                                         </div>
                                         <div className={cn(
                                             "p-2 rounded-lg text-center md:text-right border text-stroke-sm",
@@ -1345,6 +1141,59 @@ export default function ForgeCalculator() {
                             ))}
                         </div>
                     </div>
+
+                    {/* Per-slot level windows */}
+                    {shownWindowAge && (
+                        <div className="card overflow-hidden">
+                            <div className="p-4 bg-black/40 border-b border-white/5 font-bold flex flex-wrap items-center gap-2 text-stroke-sm">
+                                <div className="w-1 h-4 bg-accent-primary rounded-full" />
+                                <span>Item Level Windows</span>
+                                <div className="flex flex-wrap gap-1 ml-auto">
+                                    {results.ages.map(a => (
+                                        <button
+                                            key={a.idx}
+                                            onClick={() => setWindowAge(a.idx)}
+                                            className={cn(
+                                                "px-2 py-1 rounded text-[10px] font-bold uppercase border transition-colors",
+                                                a.idx === shownWindowAge.idx
+                                                    ? "bg-accent-primary/20 border-accent-primary text-accent-primary"
+                                                    : "bg-white/5 border-white/10 text-text-muted hover:text-white"
+                                            )}
+                                        >
+                                            {a.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead>
+                                        <tr className="text-[10px] uppercase text-text-muted">
+                                            <th className="text-left p-2 md:p-3">Slot</th>
+                                            <th className="text-right p-2 md:p-3">Max Lv</th>
+                                            <th className="text-right p-2 md:p-3">Fresh</th>
+                                            <th className="text-right p-2 md:p-3">At Cap</th>
+                                            <th className="text-right p-2 md:p-3">Items To Cap</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {shownWindowAge.windows.map(w => (
+                                            <tr key={w.itemType}>
+                                                <td className="p-2 md:p-3 font-bold text-white">{w.key}</td>
+                                                <td className="p-2 md:p-3 text-right font-mono text-text-secondary">{Math.floor(w.maxLevel) + 1}</td>
+                                                <td className="p-2 md:p-3 text-right font-mono text-text-secondary">{w.freshWindow[0] + 1} to {w.freshWindow[1] + 1}</td>
+                                                <td className="p-2 md:p-3 text-right font-mono text-white">{w.capWindow[0] + 1} to {w.capWindow[1] + 1}</td>
+                                                <td className="p-2 md:p-3 text-right font-mono text-text-secondary">{w.cap}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p className="px-4 py-3 text-[10px] text-text-muted border-t border-white/5">
+                                {shownWindowAge.name} items roll uniformly inside the window. Fresh is the window right after a forge ascension; each item of that slot and age moves it up one bracket until the cap.
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 

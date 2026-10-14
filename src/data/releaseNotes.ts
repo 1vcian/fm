@@ -11,6 +11,8 @@ export const RELEASE_NOTES: Record<string, string[]> = {
         'One Summons calculator with Eggs, Mounts and Skills tabs; the Loadout search now lives in Compare Build.',
         'DPS and HPS now match the combat engine within 1%, with an engine check in the DPS breakdown.',
         'AUTO BEST finds the strongest build by simulated PvP battles, across all skills or only the ones you own.',
+        'Substats Calculator: "Best build (simulated)" ranks substat sets by PvP battles, with or without skills; DPS and HPS totals now include reflect everywhere.',
+        'Forge Calculator follows the game\'s hidden item level counters: gold and hammers are shown as a min to max range.',
         'Tech planner delays can be any length and edited.',
         'The screenshot scanner handles tablets, short phones and status bars.',
     ],

@@ -5,12 +5,20 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison, FairySelection } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
 import { StatsSummaryPanel } from '../../components/Profile/StatsSummaryPanel';
-import { RefreshCw, Sliders, Hash, Zap, TrendingUp, Sparkles, Wand2, Swords, Crosshair, User } from 'lucide-react';
+import { RefreshCw, Sliders, Hash, Zap, TrendingUp, Wand2, Swords, Crosshair, User, Trophy, Heart, Square, Check } from 'lucide-react';
 import { getStatName } from '../../utils/statNames';
 import { cn } from '../../lib/utils';
 import { UserProfile } from '../../types/Profile';
-import { calculateStats, LibraryData } from '../../utils/statEngine';
-import { FAIRIES, FAIRY_MAX_LEVEL, FairyName, SEASON_STATS, fairyRawBonus } from '../../utils/fairies';
+import { FAIRIES, FAIRY_MAX_LEVEL, SEASON_STATS, fairyRawBonus } from '../../utils/fairies';
+import { applyTreeMode, useStatLibraries } from '../../hooks/useGlobalStats';
+import { useTreeMode } from '../../context/TreeModeContext';
+import { useSubstatOptimizer } from '../../hooks/useBuildOptimizer';
+import { pvpConfigFromJson } from '../../pvp/simulate';
+import { formatCompactNumber } from '../../utils/statsCalculator';
+import {
+    allocKey, distribute,
+    type SubstatBody, type SubstatCandidate, type SubstatObjective, type SubstatOptimizerInput,
+} from '../../optimizer/substatOptimizer';
 
 /**
  * Substats Calculator: finds the best gear substat combination for the profile.
@@ -26,10 +34,13 @@ import { FAIRIES, FAIRY_MAX_LEVEL, FairyName, SEASON_STATS, fairyRawBonus } from
  *   mount  -> same rarity rule (mounts share the Rarity enum; no separate library ships)
  * A body can hold each substat once, so a stat's cap is the number of bodies with a slot.
  *
- * The optimizer also DECIDES the fairy: every run evaluates no fairy plus each of the
- * season's three at max level (the conversion math, steps + cap, is the binary-verified
- * one), optimizes the substats under each, and keeps the winning pair. The melee/ranged
- * weapon choice stays a manual scenario input.
+ * The optimizer (src/optimizer/substatOptimizer.ts, in a worker) also DECIDES the fairy: no
+ * fairy plus each of the season's three at max level. Objectives are numbers the game runs on:
+ * real-time DPS and HPS (the stat engine, within 1% of the combat engine), Damage, Health, and
+ * "Best build (simulated)", which fights a shortlist of allocations against a reference in
+ * simulated arena battles. Power is not an objective: in game it is computed with every
+ * substat removed (CalculatePower 0x785E258 -> Stats.WithoutSecondaryStats 0x785E500).
+ * The melee/ranged weapon choice stays a manual scenario input.
  */
 
 const ITEM_SLOTS: (keyof UserProfile['items'])[] = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
@@ -43,40 +54,22 @@ const POOL_TO_SUBSTAT: Record<string, string> = {
     blockChance: 'BlockChance',
 };
 
-interface Body {
-    key: string;
-    label: string;
-    slots: number;
-}
+type Body = SubstatBody;
 
-/**
- * Spread the allocation over the bodies, one instance of a stat per body: highest remaining
- * count first, always into the body with the most free slots that does not hold it yet.
- */
-function distribute(allocs: Record<string, number>, bodies: Body[]): Map<string, string[]> {
-    const free = new Map(bodies.map((b) => [b.key, b.slots]));
-    const out = new Map(bodies.map((b) => [b.key, [] as string[]]));
-    const stats = Object.entries(allocs)
-        .filter(([, c]) => c > 0)
-        .map(([s, c]) => ({ s, c }))
-        .sort((a, b) => b.c - a.c);
-    for (const { s, c } of stats) {
-        // All copies of one stat at once, onto the c bodies with the most free slots: batch
-        // placement cannot strand a later copy on a body that already holds the stat, which
-        // the per-copy interleaving this replaces could (and did, leaving slots empty).
-        const targets = bodies
-            .filter((b) => (free.get(b.key) || 0) > 0)
-            .sort((a, b) => free.get(b.key)! - free.get(a.key)!)
-            .slice(0, c);
-        for (const b of targets) {
-            free.set(b.key, free.get(b.key)! - 1);
-            out.get(b.key)!.push(s);
-        }
-        // Copies beyond the eligible bodies are stranded and dropped here; the optimizer
-        // repairs its allocation against this same function so they never reach the UI.
-    }
-    return out;
-}
+/** Battles per side for "Best build (simulated)": each candidate fights twice this many. */
+const BATTLES_PER_SIDE = 100;
+
+const candidateKey = (c: SubstatCandidate) => `${c.isCurrent ? 'current' : c.fairy}|${allocKey(c.alloc)}`;
+
+const OBJECTIVES: { id: Exclude<SubstatObjective, 'simulated'>; label: string; icon: JSX.Element; tone: string }[] = [
+    { id: 'dps', label: 'DPS', icon: <Zap className="w-4 h-4" />, tone: 'border-orange-500/30 hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-400' },
+    { id: 'hps', label: 'HPS', icon: <TrendingUp className="w-4 h-4" />, tone: 'border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-400' },
+    { id: 'damage', label: 'Damage', icon: <Swords className="w-4 h-4" />, tone: 'border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400' },
+    { id: 'health', label: 'Health', icon: <Heart className="w-4 h-4" />, tone: 'border-green-500/30 hover:bg-green-500/10 hover:border-green-500/50 hover:text-green-400' },
+];
+const OBJECTIVE_LABEL: Record<SubstatObjective, string> = {
+    dps: 'DPS', hps: 'HPS', damage: 'Damage', health: 'Health', simulated: 'Best build (simulated)',
+};
 
 export default function SubstatsCalculator() {
     const { profile } = useProfile();
@@ -90,41 +83,17 @@ export default function SubstatsCalculator() {
         updateTestFairy,
     } = useComparison();
 
-    const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
-    const { data: petBalancingLibrary } = useGameData<any>('PetBalancingLibrary.json');
-    const { data: petLibrary } = useGameData<any>('PetLibrary.json');
-    const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
-    const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
-    const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
-    const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
-    const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');
-    const { data: guildPositionLibrary } = useGameData<any>('GuildTechTreePositionLibrary.json');
-    const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
-    const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
-    const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
-    const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
-    const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
-    const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
-    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
-    const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
-    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+    // Same libraries and tree mode as the header and the comparison strip (useGlobalStats).
+    const { libs: statLibs, ready: statsReady } = useStatLibraries();
+    const { treeMode } = useTreeMode();
+    const { profiles, activeProfileId } = useProfile();
+    const secondaryStatLibrary = (statLibs as any).secondaryStatLibrary;
+    const weaponLibrary = (statLibs as any).weaponLibrary;
     const { data: itemUnlockLibrary } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');
     const { data: petUnlockLibrary } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: fairyUpgrades } = useGameData<any>('FairyUpgradesLibrary.json');
-
-    const libs: LibraryData = useMemo(() => ({
-        petUpgradeLibrary, petBalancingLibrary, petLibrary, skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
-        techTreeLibrary, techTreePositionLibrary,
-        guildTechTreePositionLibrary: guildPositionLibrary || undefined,
-        guildTechTreeUpgradeLibrary: guildUpgradeLibrary || undefined,
-        itemBalancingLibrary, itemBalancingConfig, weaponLibrary,
-        projectilesLibrary, secondaryStatLibrary, skinsLibrary, setsLibrary, ascensionConfigsLibrary
-    }), [
-        petUpgradeLibrary, petBalancingLibrary, petLibrary, skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
-        techTreeLibrary, techTreePositionLibrary, guildPositionLibrary, guildUpgradeLibrary,
-        itemBalancingLibrary, itemBalancingConfig, weaponLibrary,
-        projectilesLibrary, secondaryStatLibrary, skinsLibrary, setsLibrary, ascensionConfigsLibrary
-    ]);
+    const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
+    const pvpConfig = useMemo(() => pvpConfigFromJson(pvpBaseConfig), [pvpBaseConfig]);
 
     const [slotMode, setSlotMode] = useState<'profile' | 'max'>('profile');
     const [weaponType, setWeaponType] = useState<'profile' | 'melee' | 'ranged'>('profile');
@@ -133,10 +102,9 @@ export default function SubstatsCalculator() {
         () => ({ name: profile.misc.fairy?.name ?? null, level: FAIRY_MAX_LEVEL })
     );
     const [statAllocations, setStatAllocations] = useState<Record<string, number>>({});
-    const [optimizeType, setOptimizeType] = useState<'real' | 'theor'>('real');
-    const [isOptimizing, setIsOptimizing] = useState(false);
-    const [includeSkills, setIncludeSkills] = useState(false);
+    const [includeSkills, setIncludeSkills] = useState(true);
     const [perfectionPercentage, setPerfectionPercentage] = useState(100);
+    const [referenceId, setReferenceId] = useState<string>('mirror');
 
     useEffect(() => {
         enterCompareMode();
@@ -264,255 +232,68 @@ export default function SubstatsCalculator() {
         if (isComparing) updateTestFairy({ ...bestFairy });
     }, [isComparing, bestFairy, updateTestFairy]);
 
-    const optimizeSubstats = useCallback((objective: 'dps' | 'hps' | 'hybrid' | 'power' | 'damage' | 'health') => {
-        if (!secondaryStatLibrary || !itemBalancingConfig || !itemBalancingLibrary) return;
-        setIsOptimizing(true);
+    // ------------------------------------------------------------------ optimizer (worker)
+    const runOpt = useSubstatOptimizer();
+    const [lastObjective, setLastObjective] = useState<SubstatObjective | null>(null);
+    const [lastRunWithSkills, setLastRunWithSkills] = useState(true);
+    const [appliedKey, setAppliedKey] = useState<string | null>(null);
+    const otherProfiles = profiles.filter((p) => p.id !== activeProfileId);
+    const canOptimize = statsReady && !!pvpConfig && !!fairyUpgrades && rollableStats.length > 0 && totalAvailablePool > 0;
 
-        setTimeout(() => {
-            const statList = rollableStats;
+    /** The scenario build: header tree mode + the weapon type. The current build has no weapon swap. */
+    const scenarioProfiles = useCallback(() => {
+        const current = applyTreeMode(profile, treeMode, statLibs);
+        const base = JSON.parse(JSON.stringify(current));
+        applyWeapon(base);
+        return { current, base };
+    }, [profile, treeMode, statLibs, applyWeapon]);
 
-            /** A scorer bound to one fairy candidate (max level) on its own scenario clone. */
-            const makeScorer = (fairyName: FairyName | null) => {
-                const base = JSON.parse(JSON.stringify(profile));
-                if (!base.items.Weapon) {
-                    base.items.Weapon = { age: 1, idx: 0, level: 1, rarity: "Legendary", secondaryStats: [] };
-                }
-                applyWeapon(base);
-                base.misc.fairy = { name: fairyName, level: maxFairyLevel };
-                const slots: (keyof UserProfile['items'])[] = ['Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
-                slots.forEach(slot => { if (base.items[slot]) base.items[slot].secondaryStats = []; });
-                base.pets.active.forEach((pet: any) => { pet.secondaryStats = []; });
-                if (base.mount.active) base.mount.active.secondaryStats = [];
+    const optimize = useCallback((objective: SubstatObjective) => {
+        if (!canOptimize || !pvpConfig) return;
+        const { current, base } = scenarioProfiles();
+        const ref = referenceId === 'mirror' ? null : profiles.find((p) => p.id === referenceId) ?? null;
+        const input: SubstatOptimizerInput = {
+            base,
+            current,
+            reference: ref ?? current,
+            referenceName: ref ? (ref.name || 'Saved profile') : 'Mirror of your build',
+            objective,
+            withSkills: includeSkills,
+            stats: rollableStats.map((id) => ({ id, upper: secondaryStatLibrary[id]?.UpperRange || 0 })),
+            bodies,
+            perfection: perfectionPercentage,
+            fairies: [null, ...FAIRIES.map((f) => f.name)],
+            fairyLevel: maxFairyLevel,
+            extra: currentAllocated > 0 ? { alloc: { ...statAllocations }, fairy: bestFairy.name } : null,
+            pvpConfig,
+            battlesPerSide: BATTLES_PER_SIDE,
+            keep: 12,
+        };
+        setLastObjective(objective);
+        setLastRunWithSkills(includeSkills);
+        setAppliedKey(null);
+        runOpt.run(input, statLibs);
+    }, [canOptimize, pvpConfig, scenarioProfiles, referenceId, profiles, includeSkills, rollableStats, secondaryStatLibrary, bodies,
+        perfectionPercentage, maxFairyLevel, currentAllocated, statAllocations, bestFairy.name, runOpt, statLibs]);
 
-                return (allocs: Record<string, number>) => {
-                    // Where a substat sits does not change the totals, so scoring can stack
-                    // the whole allocation on the weapon and skip re-distributing.
-                    base.items.Weapon.secondaryStats = Object.entries(allocs)
-                        .filter(([_, count]) => count > 0)
-                        .map(([statId, count]) => ({ statId, value: count * (secondaryStatLibrary[statId]?.UpperRange || 0) * perfectionPercentage }));
+    const applyCandidate = useCallback((c: SubstatCandidate) => {
+        if (c.isCurrent) {
+            handleResetToProfile();
+            setBestFairy({ name: profile.misc.fairy?.name ?? null, level: profile.misc.fairy?.level ?? maxFairyLevel });
+        } else {
+            setStatAllocations({ ...c.alloc });
+            setBestFairy({ name: c.fairy, level: maxFairyLevel });
+        }
+        setAppliedKey(candidateKey(c));
+    }, [handleResetToProfile, profile.misc.fairy, maxFairyLevel]);
 
-                    const stats = calculateStats(base, libs);
-
-                    const cappedCrit = Math.min(stats.criticalChance, 1);
-                    const cappedDouble = Math.min(stats.doubleDamageChance, 1);
-                    const critMult = 1 + cappedCrit * (stats.criticalDamage - 1);
-                    const doubleMult = 1 + cappedDouble;
-                    const aps = 1 / (stats.weaponAttackDuration / stats.attackSpeedMultiplier);
-                    const weaponTheor = stats.totalDamage * aps * critMult * doubleMult;
-                    const weaponReal = stats.realWeaponDps;
-
-                    // Reflect thorns count as DPS against the engine's assumed mirror enemy,
-                    // so Lora competes with the offensive fairies on equal ground.
-                    const theorDps = weaponTheor + (stats.reflectDps || 0) + (includeSkills ? stats.skillDps + (stats.theoreticalSkillBuffDps || 0) : 0);
-                    const realDps = weaponReal + (stats.realReflectDps || 0) + (includeSkills ? stats.skillDps + (stats.skillBuffDps || 0) : 0);
-
-                    // No block term: block only reduces incoming damage (BattleSystem.ApplyDmg,
-                    // RVA 0x77F4BD0), it never scales healing.
-                    // Lifesteal also heals on buff damage (it rides on the weapon hit).
-                    const theorHps = stats.totalHealth * stats.healthRegen + (weaponTheor + (includeSkills ? stats.theoreticalSkillBuffDps || 0 : 0)) * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
-                    const realHps = stats.totalHealth * stats.healthRegen + (weaponReal + (includeSkills ? stats.skillBuffDps || 0 : 0)) * stats.lifeSteal + (includeSkills ? stats.skillHps : 0);
-
-                    const dps = optimizeType === 'real' ? realDps : theorDps;
-                    const hps = optimizeType === 'real' ? realHps : theorHps;
-
-                    if (objective === 'dps') return dps;
-                    if (objective === 'hps') return hps;
-                    if (objective === 'power') {
-                        const powerDmgMulti = stats.powerDamageMultiplier || 8.0;
-                        return ((stats.totalDamage - 10) * powerDmgMulti + (stats.totalHealth - 80)) * 3;
-                    }
-                    if (objective === 'damage') return stats.totalDamage;
-                    if (objective === 'health') return stats.totalHealth;
-                    return dps * hps; // hybrid
-                };
-            };
-
-            // Lookahead greedy ascent: per stat, probe every add-count for breakpoint jumps
-            // (fairy steps, crit cap, block cap), then take the best return per point.
-            const greedy = (getScore: (a: Record<string, number>) => number) => {
-                const allocs: Record<string, number> = {};
-                let remainingPoints = totalAvailablePool;
-                while (remainingPoints > 0) {
-                    let bestStat = '';
-                    let bestPointsToADD = 0;
-                    let bestScoreIncreasePerPoint = -1;
-                    const baseScore = getScore(allocs);
-
-                    for (const stat of statList) {
-                        const currentPoints = allocs[stat] || 0;
-                        const maxToAdd = Math.min(remainingPoints, perStatCap - currentPoints);
-                        if (maxToAdd <= 0) continue;
-
-                        let localBestIncreasePerPoint = -1;
-                        let localBestPoints = 0;
-                        for (let k = 1; k <= maxToAdd; k++) {
-                            const tempAllocs = { ...allocs, [stat]: currentPoints + k };
-                            const score = getScore(tempAllocs);
-                            const increasePerPoint = (score - baseScore) / k;
-                            if (increasePerPoint > localBestIncreasePerPoint) {
-                                localBestIncreasePerPoint = increasePerPoint;
-                                localBestPoints = k;
-                            }
-                        }
-
-                        if (localBestIncreasePerPoint > bestScoreIncreasePerPoint) {
-                            bestScoreIncreasePerPoint = localBestIncreasePerPoint;
-                            bestStat = stat;
-                            bestPointsToADD = localBestPoints;
-                        }
-                    }
-
-                    if (bestStat && bestScoreIncreasePerPoint > 0) {
-                        allocs[bestStat] = (allocs[bestStat] || 0) + bestPointsToADD;
-                        remainingPoints -= bestPointsToADD;
-                    } else {
-                        const fallbackStat = statList.find(s => (allocs[s] || 0) < perStatCap);
-                        if (fallbackStat) {
-                            allocs[fallbackStat] = (allocs[fallbackStat] || 0) + 1;
-                            remainingPoints -= 1;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                return allocs;
-            };
-
-            // Shared restart seeds: every candidate hill-climbs from the SAME random
-            // starts, so two equally good candidates score identically instead of one
-            // winning on restart luck (that is how a 0-grant fairy used to "win").
-            const sharedSeeds: Record<string, number>[] = [];
-            for (let i = 0; i < 10; i++) {
-                let randomAlloc: Record<string, number> = {};
-                let pointsLeft = totalAvailablePool;
-                let availableStats = [...statList];
-                while (pointsLeft > 0 && availableStats.length > 0) {
-                    const idx = Math.floor(Math.random() * availableStats.length);
-                    const st = availableStats[idx];
-                    const maxCanAdd = Math.min(pointsLeft, perStatCap - (randomAlloc[st] || 0));
-                    if (maxCanAdd <= 0) {
-                        availableStats.splice(idx, 1);
-                        continue;
-                    }
-                    const add = Math.floor(Math.random() * maxCanAdd) + 1;
-                    randomAlloc[st] = (randomAlloc[st] || 0) + add;
-                    pointsLeft -= add;
-                    if (randomAlloc[st] === perStatCap) availableStats.splice(idx, 1);
-                }
-                sharedSeeds.push(randomAlloc);
-            }
-
-            // Random-restart local search: swaps of 1-2 points jump the local optima that
-            // breakpoint synergies create. Deterministic given its starting points.
-            const refine = (getScore: (a: Record<string, number>) => number, greedySeed: Record<string, number>) => {
-                let globalBestAllocs = { ...greedySeed };
-                let globalBestScore = getScore(globalBestAllocs);
-                const startingPoints: Record<string, number>[] = [greedySeed, ...sharedSeeds];
-
-                for (const startAlloc of startingPoints) {
-                    let localAllocs = { ...startAlloc };
-                    let improved = true;
-                    while (improved) {
-                        improved = false;
-                        let bestSwapScore = getScore(localAllocs);
-                        let bestSwap: { remove: string, add: string, count: number } | null = null;
-
-                        const currentStats = Object.keys(localAllocs).filter(st => localAllocs[st] > 0);
-                        for (const removeStat of currentStats) {
-                            const removeAvailable = localAllocs[removeStat];
-                            for (const addStat of statList) {
-                                if (removeStat === addStat) continue;
-                                const addAvailable = perStatCap - (localAllocs[addStat] || 0);
-                                if (addAvailable <= 0) continue;
-                                const maxSwap = Math.min(removeAvailable, addAvailable, 2);
-                                for (let k = 1; k <= maxSwap; k++) {
-                                    const tempAllocs = { ...localAllocs };
-                                    tempAllocs[removeStat] -= k;
-                                    tempAllocs[addStat] = (tempAllocs[addStat] || 0) + k;
-                                    const score = getScore(tempAllocs);
-                                    if (score > bestSwapScore) {
-                                        bestSwapScore = score;
-                                        bestSwap = { remove: removeStat, add: addStat, count: k };
-                                    }
-                                }
-                            }
-                        }
-
-                        if (bestSwap) {
-                            localAllocs[bestSwap.remove] -= bestSwap.count;
-                            localAllocs[bestSwap.add] = (localAllocs[bestSwap.add] || 0) + bestSwap.count;
-                            improved = true;
-                        }
-                    }
-
-                    const finalLocalScore = getScore(localAllocs);
-                    if (finalLocalScore > globalBestScore) {
-                        globalBestScore = finalLocalScore;
-                        globalBestAllocs = { ...localAllocs };
-                    }
-                }
-                return { allocs: globalBestAllocs, value: globalBestScore };
-            };
-
-            // Phase A: greedy under no fairy and under each fairy at max level.
-            const candidates: (FairyName | null)[] = [null, ...FAIRIES.map((f) => f.name)];
-            const phaseA = candidates.map((name) => {
-                const score = makeScorer(name);
-                const allocs = greedy(score);
-                return { name, score, allocs, value: score(allocs) };
-            });
-
-            // Phase B: refine no-fairy always, plus the two most promising fairies. A fairy
-            // wins only by STRICTLY beating no-fairy; a tie means it granted nothing.
-            const nullCand = phaseA[0];
-            const nonNull = phaseA.slice(1).sort((a, b) => b.value - a.value).slice(0, 2);
-            const refinedNull = refine(nullCand.score, nullCand.allocs);
-            let best: { name: FairyName | null; allocs: Record<string, number>; value: number; score: (a: Record<string, number>) => number } =
-                { name: null, allocs: refinedNull.allocs, value: refinedNull.value, score: nullCand.score };
-            for (const cand of nonNull) {
-                const refined = refine(cand.score, cand.allocs);
-                if (refined.value > best.value * (1 + 1e-6)) {
-                    best = { name: cand.name, allocs: refined.allocs, value: refined.value, score: cand.score };
-                }
-            }
-
-            // Feasibility repair against the real per-body layout: drop copies distribute()
-            // cannot place, then refill the freed slots with the best placeable stats.
-            const placedCounts = (allocs: Record<string, number>) => {
-                const layout = distribute(allocs, bodies);
-                const counts: Record<string, number> = {};
-                for (const assigned of layout.values()) {
-                    for (const st of assigned) counts[st] = (counts[st] || 0) + 1;
-                }
-                return counts;
-            };
-            const repaired = placedCounts(best.allocs);
-            let placedTotal = Object.values(repaired).reduce((a, b) => a + b, 0);
-            let guard = 0;
-            while (placedTotal < totalAvailablePool && guard++ < totalAvailablePool * 2) {
-                let bestAdd: string | null = null;
-                let bestAddScore = -Infinity;
-                for (const st of statList) {
-                    if ((repaired[st] || 0) >= perStatCap) continue;
-                    const tryAllocs = { ...repaired, [st]: (repaired[st] || 0) + 1 };
-                    const placedAfter = Object.values(placedCounts(tryAllocs)).reduce((a, b) => a + b, 0);
-                    if (placedAfter <= placedTotal) continue; // this copy would strand too
-                    const sc = best.score(tryAllocs);
-                    if (sc > bestAddScore) {
-                        bestAddScore = sc;
-                        bestAdd = st;
-                    }
-                }
-                if (!bestAdd) break;
-                repaired[bestAdd] = (repaired[bestAdd] || 0) + 1;
-                placedTotal += 1;
-            }
-
-            setStatAllocations(repaired);
-            setBestFairy({ name: best.name, level: maxFairyLevel });
-            setIsOptimizing(false);
-        }, 50);
-    }, [secondaryStatLibrary, rollableStats, profile, libs, optimizeType, includeSkills, itemBalancingConfig, itemBalancingLibrary, totalAvailablePool, perStatCap, perfectionPercentage, applyWeapon, maxFairyLevel, bodies]);
+    // A single-objective run applies its answer straight away, like before.
+    const result = runOpt.result;
+    useEffect(() => {
+        if (runOpt.status !== 'done' || !result || result.objective === 'simulated') return;
+        applyCandidate(result.best);
+        // Only when a new result lands (applyCandidate is stable enough not to re-fire it).
+    }, [result]); // eslint-disable-line
 
     /** The per-body layout of the current allocation: what to roll where. */
     const layout = useMemo(() => distribute(statAllocations, bodies), [statAllocations, bodies]);
@@ -575,6 +356,35 @@ export default function SubstatsCalculator() {
         const granted = raw > 0 ? Math.max(0, Math.min(targetBefore + raw, cfg.targetStatTotalCap) - targetBefore) : 0;
         return { cfg, required, granted };
     }, [bestFairy, statAllocations, secondaryStatLibrary, perfectionPercentage]);
+
+    const running = runOpt.status === 'running';
+    const ranked = result?.objective === 'simulated' ? result.ranked : [];
+    const includeSkillsOfResult = lastRunWithSkills;
+    const topTied = ranked.length > 1 && ranked[0].winRate >= 0.99 && ranked[1].winRate >= 0.99;
+    const pct = running && runOpt.total > 0
+        ? (lastObjective === 'simulated' ? (runOpt.stage === 1 ? 0 : 60) + (runOpt.done / runOpt.total) * (runOpt.stage === 1 ? 60 : 40) : (runOpt.done / runOpt.total) * 100)
+        : runOpt.status === 'done' ? 100 : 0;
+    const statusText = (() => {
+        if (!canOptimize) return totalAvailablePool === 0 ? 'No substat slots on this build' : 'Loading game data';
+        if (running) {
+            if (runOpt.stage === 2) return `Stage 2: arena battles (${runOpt.done} / ${runOpt.total} builds)`;
+            return lastObjective === 'simulated'
+                ? `Stage 1: searching allocations${runOpt.total ? ` (${runOpt.done} / ${runOpt.total})` : ''}`
+                : `Searching the best ${OBJECTIVE_LABEL[lastObjective ?? 'dps']} allocation`;
+        }
+        if (runOpt.status === 'cancelled') return 'Cancelled';
+        if (runOpt.status === 'error') return `Failed: ${runOpt.error}`;
+        if (runOpt.status === 'done' && result && runOpt.wallMs !== null) {
+            const secs = `${(runOpt.wallMs / 1000).toFixed(1)} s`;
+            if (result.objective === 'simulated') {
+                return `${result.scored.toLocaleString()} allocations scored, ${result.battles.toLocaleString()} battles vs ${result.referenceName}, ${secs}`;
+            }
+            const b = result.best;
+            const value = { dps: b.dps, hps: b.hps, damage: b.damage, health: b.health }[result.objective as Exclude<SubstatObjective, 'simulated'>];
+            return `Best ${OBJECTIVE_LABEL[result.objective]}: ${formatCompactNumber(value)} (${b.fairy ?? 'no fairy'}), applied. ${result.scored.toLocaleString()} allocations scored, ${secs}`;
+        }
+        return 'Ready';
+    })();
 
     if (!secondaryStatLibrary || !itemUnlockLibrary || !petUnlockLibrary) {
         return (
@@ -652,37 +462,38 @@ export default function SubstatsCalculator() {
                     </Card>
 
                     {/* Auto-Optimizer */}
-                    <Card className="p-4 border-orange-500/30 bg-orange-500/5 relative overflow-hidden">
-                        {isOptimizing && (
-                            <div className="absolute inset-0 bg-bg-primary/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
-                                <RefreshCw className="w-6 h-6 text-orange-400 animate-spin mb-2" />
-                                <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">Optimizing</span>
-                            </div>
-                        )}
+                    <Card className="p-4 border-orange-500/30 bg-orange-500/5" data-testid="substats-optimizer">
                         <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-orange-400">
                             <Wand2 className="w-5 h-5" /> Auto-Optimizer
                         </h3>
 
-                        <div className="flex bg-bg-secondary border border-border/50 rounded-lg p-1 mb-4">
-                            <button
-                                onClick={() => setOptimizeType('theor')}
-                                className={cn(
-                                    "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all",
-                                    optimizeType === 'theor' ? "bg-orange-500 text-white shadow" : "text-text-muted hover:text-text-primary"
-                                )}
-                            >
-                                Theoretical
-                            </button>
-                            <button
-                                onClick={() => setOptimizeType('real')}
-                                className={cn(
-                                    "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all",
-                                    optimizeType === 'real' ? "bg-orange-500 text-white shadow" : "text-text-muted hover:text-text-primary"
-                                )}
-                            >
-                                Real-Time
-                            </button>
+                        <div className="mb-1 text-xs font-bold uppercase tracking-wider text-text-muted">Skills</div>
+                        <div className="flex bg-bg-secondary border border-border/50 rounded-lg p-1 mb-1" role="radiogroup" aria-label="Skills">
+                            {([
+                                { on: true, label: 'With skills' },
+                                { on: false, label: 'Without skills' },
+                            ] as const).map((opt) => (
+                                <button
+                                    key={opt.label}
+                                    role="radio"
+                                    aria-checked={includeSkills === opt.on}
+                                    data-testid={opt.on ? 'substats-with-skills' : 'substats-without-skills'}
+                                    disabled={running}
+                                    onClick={() => setIncludeSkills(opt.on)}
+                                    className={cn(
+                                        "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all",
+                                        includeSkills === opt.on ? "bg-orange-500 text-white shadow" : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
                         </div>
+                        <p className="text-[10px] text-text-muted leading-snug mb-4">
+                            {includeSkills
+                                ? 'Your equipped skills count in DPS and HPS, and they fight in the simulated battles.'
+                                : 'Weapon only. In the simulated battles both you and the opponent fight without skills (skills also raise arena HP, so both sides drop them).'}
+                        </p>
 
                         <div className="bg-bg-input/30 p-3 rounded-lg border border-border/30 mb-4">
                             <div className="flex justify-between items-center mb-2">
@@ -694,74 +505,140 @@ export default function SubstatsCalculator() {
                                 min="1"
                                 max="100"
                                 value={perfectionPercentage}
+                                disabled={running}
                                 onChange={(e) => setPerfectionPercentage(Number(e.target.value))}
                                 className="w-full accent-accent-primary"
                             />
                         </div>
 
-                        <div className="flex items-center justify-between bg-bg-input/30 p-2 rounded-lg border border-border/30 mb-4 cursor-pointer" onClick={() => setIncludeSkills(!includeSkills)}>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-medium">Include Skills</span>
-                                <span className="text-[9px] text-orange-400 font-bold uppercase tracking-wider">Experimental. Recommend disabled.</span>
-                            </div>
-                            <div className={cn("w-10 h-5 rounded-full relative transition-colors", includeSkills ? "bg-emerald-500" : "bg-bg-card")}>
-                                <div className={cn("w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all", includeSkills ? "left-5" : "left-1")}></div>
+                        <div className="mb-1 text-xs font-bold uppercase tracking-wider text-text-muted">Maximize</div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {OBJECTIVES.map((o) => (
+                                <Button
+                                    key={o.id}
+                                    variant="outline"
+                                    data-testid={`substats-opt-${o.id}`}
+                                    aria-label={`Maximize ${o.label}`}
+                                    disabled={!canOptimize || running}
+                                    className={cn("w-full flex justify-start items-center gap-2 bg-bg-input/50 text-xs px-2", o.tone)}
+                                    onClick={() => optimize(o.id)}
+                                >
+                                    {o.icon} <span>{o.label}</span>
+                                </Button>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
+                            <Button
+                                variant="outline"
+                                data-testid="substats-opt-simulated"
+                                disabled={!canOptimize || running}
+                                className="w-full flex justify-start items-center gap-2 bg-bg-input/50 border-yellow-500/40 hover:bg-yellow-500/10 hover:text-yellow-300"
+                                onClick={() => optimize('simulated')}
+                            >
+                                <Trophy className="w-4 h-4 text-yellow-400" /> Best build (simulated)
+                            </Button>
+                            <label className="flex items-center justify-between gap-2 text-[11px] text-text-secondary">
+                                <span>Opponent</span>
+                                <select
+                                    value={referenceId}
+                                    onChange={(e) => setReferenceId(e.target.value)}
+                                    disabled={running}
+                                    data-testid="substats-opponent"
+                                    className="max-w-[65%] min-w-0 px-2 py-0.5 rounded bg-bg-input border border-border text-text-primary"
+                                >
+                                    <option value="mirror">Mirror of your build</option>
+                                    {otherProfiles.map((p) => <option key={p.id} value={p.id}>{p.name || 'Saved profile'}</option>)}
+                                </select>
+                            </label>
+                            <p className="text-[10px] text-text-muted leading-snug">
+                                Shortlists the best DPS, HPS, Damage and Health allocations and blends between DPS and HPS, for no
+                                fairy and each fairy, then each one fights {BATTLES_PER_SIDE * 2} arena battles (the same {BATTLES_PER_SIDE} seeds
+                                as Player 1 and as Player 2). Ranked by win rate, then HP margin.
+                            </p>
+                        </div>
+
+                        <div className="mt-4 flex items-center gap-2">
+                            {running && (
+                                <button
+                                    onClick={runOpt.cancel}
+                                    data-testid="substats-cancel"
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md border border-red-500/50 text-red-400 text-[11px] font-bold hover:bg-red-500/10 shrink-0"
+                                >
+                                    <Square className="w-3 h-3" /> Cancel
+                                </button>
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <div className="h-1.5 rounded-full bg-bg-input overflow-hidden">
+                                    <div className="h-full bg-orange-500 transition-all" style={{ width: `${pct}%` }} />
+                                </div>
+                                <div className="text-[10px] text-text-muted mt-0.5 break-words" data-testid="substats-status">{statusText}</div>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Button
-                                variant="outline"
-                                className="w-full flex justify-between items-center bg-bg-input/50 border-orange-500/30 hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-400"
-                                onClick={() => optimizeSubstats('dps')}
-                            >
-                                <span className="flex items-center gap-2"><Zap className="w-4 h-4" /> Maximize DPS</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="w-full flex justify-between items-center bg-bg-input/50 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-400"
-                                onClick={() => optimizeSubstats('hps')}
-                            >
-                                <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Maximize HPS</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="w-full flex justify-between items-center bg-bg-input/50 border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50 hover:text-purple-400"
-                                onClick={() => optimizeSubstats('hybrid')}
-                            >
-                                <span className="flex items-center gap-2"><Sparkles className="w-4 h-4" /> Maximize DPS & HPS</span>
-                            </Button>
-                        </div>
-                        <div className="flex items-center justify-center gap-2 mt-4 text-text-muted">
-                            <span className="text-[10px] font-bold uppercase tracking-widest border-t border-border/50 flex-1 ml-2"></span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Base Stats</span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest border-t border-border/50 flex-1 mr-2"></span>
-                        </div>
-                        <div className="space-y-2 mt-2">
-                            <Button
-                                variant="outline"
-                                className="w-full flex justify-between items-center bg-bg-input/50 border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:text-cyan-400"
-                                onClick={() => optimizeSubstats('power')}
-                            >
-                                <span className="flex items-center gap-2"><Hash className="w-4 h-4" /> Maximize Power</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="w-full flex justify-between items-center bg-bg-input/50 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
-                                onClick={() => optimizeSubstats('damage')}
-                            >
-                                <span className="flex items-center gap-2"><Zap className="w-4 h-4" /> Maximize Damage</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="w-full flex justify-between items-center bg-bg-input/50 border-green-500/30 hover:bg-green-500/10 hover:border-green-500/50 hover:text-green-400"
-                                onClick={() => optimizeSubstats('health')}
-                            >
-                                <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Maximize Health</span>
-                            </Button>
-                        </div>
-                        <p className="text-[10px] text-text-muted mt-3 text-center uppercase tracking-wide">Calculates using {optimizeType === 'real' ? 'Real-Time' : 'Theoretical'} Metrics {includeSkills ? '(With Skills)' : '(Weapon Attacks Only)'}</p>
+                        <p className="text-[10px] text-text-muted mt-3 leading-snug">
+                            Scores are the profile's real-time DPS and HPS, the same numbers as the header (within 1% of the combat
+                            engine). Power is not an option: the game computes Power with every substat removed, so no allocation
+                            changes it.
+                        </p>
                     </Card>
+
+                    {lastObjective === 'simulated' && ranked.length > 0 && (
+                        <Card className="p-0 border-yellow-500/30 overflow-hidden" data-testid="substats-ranking">
+                            <div className="px-4 py-3 border-b border-border bg-bg-secondary/40">
+                                <div className="text-sm font-bold flex items-center gap-2"><Trophy className="w-4 h-4 text-yellow-400" /> Best builds vs {result?.referenceName}</div>
+                                <div className="text-[10px] text-text-muted">
+                                    {includeSkillsOfResult ? 'With skills' : 'Without skills, on both sides'}. Apply a row to load it into the sliders and the Test side.
+                                </div>
+                            </div>
+                            <ol className="divide-y divide-border/60">
+                                {ranked.map((c, i) => {
+                                    const applied = appliedKey === candidateKey(c);
+                                    return (
+                                        <li key={candidateKey(c)} className={cn('px-4 py-2.5 space-y-1', applied && 'bg-accent-primary/10')} data-testid="substats-row">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex items-start gap-2 min-w-0">
+                                                    <span className="w-5 shrink-0 text-[11px] font-bold text-text-muted">{i + 1}</span>
+                                                    <span className="text-[11px] font-bold text-text-primary break-words">
+                                                        {c.tags.join(' | ')}
+                                                    </span>
+                                                </div>
+                                                <span className={cn('shrink-0 text-[12px] font-mono font-bold', i === 0 ? 'text-green-400' : 'text-text-primary')} data-testid="substats-winrate">
+                                                    {(c.winRate * 100).toFixed(1)}% <span className="text-[10px] text-text-muted font-normal">± {(c.winRateSe * 100).toFixed(1)}</span>
+                                                </span>
+                                            </div>
+                                            <div className="pl-7 text-[10px] text-text-secondary break-words">
+                                                {Object.entries(c.alloc).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])
+                                                    .map(([id, n]) => `${getStatName(id)} x${n}`).join(', ') || 'No substats'}
+                                            </div>
+                                            <div className="pl-7 flex items-center justify-between gap-2">
+                                                <span className="text-[10px] font-mono text-text-muted min-w-0 break-words">
+                                                    {c.fairy ? `${c.fairy}` : 'No fairy'}, {formatCompactNumber(c.dps)} DPS, {formatCompactNumber(c.hps)} HPS,
+                                                    HP margin {c.hpMargin >= 0 ? '+' : ''}{(c.hpMargin * 100).toFixed(1)}%
+                                                </span>
+                                                <button
+                                                    onClick={() => applyCandidate(c)}
+                                                    data-testid="substats-apply"
+                                                    className={cn(
+                                                        'shrink-0 px-2 py-0.5 rounded text-[10px] font-bold border',
+                                                        applied ? 'border-accent-primary/60 text-accent-primary' : 'border-border text-text-secondary hover:bg-white/5'
+                                                    )}
+                                                >
+                                                    {applied ? <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Applied</span> : 'Apply'}
+                                                </button>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                            {topTied && (
+                                <div className="px-4 py-2 border-t border-border text-[10px] text-text-muted leading-snug">
+                                    Several builds win almost every battle against this opponent, so HP margin orders them. A stronger
+                                    opponent (a saved profile) separates them better.
+                                </div>
+                            )}
+                        </Card>
+                    )}
 
                     {/* Slot budget from the game's unlock rules */}
                     <Card className="p-4 border-accent-primary/20 bg-accent-primary/5">
