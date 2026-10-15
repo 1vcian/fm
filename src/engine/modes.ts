@@ -234,6 +234,8 @@ export interface WaveResultLite {
     wavesCleared: number;
     playerHp: number;
     waveLog: WaveLogEntry[];
+    /** Fraction (0-1) of the fight's total enemy HP (all waves) removed when the run ended. */
+    enemyProgress: number;
 }
 
 /**
@@ -290,6 +292,7 @@ export class WaveRunner {
             wavesCleared: victory ? this.waves.length : Math.max(0, this.waveIdx - (waveActive ? 1 : 0)),
             playerHp: victory ? this.player.hp : Math.max(0, this.player.hp),
             waveLog: log,
+            enemyProgress: victory ? 1 : this.enemyProgress(),
         });
         if (this.waves.length === 0) return result(true);
         for (let t = 0; t < this.maxTicks; t++) {
@@ -320,6 +323,22 @@ export class WaveRunner {
         }
         closeWave(false);
         return result(false);
+    }
+
+    /** Enemy HP removed so far over the whole fight's HP, counting unspawned waves as untouched. */
+    private enemyProgress(): number {
+        let total = 0;
+        let spawned = 0;
+        this.waves.forEach((wave, i) => {
+            for (const e of wave) {
+                const hp = e.stats?.hpMax ?? 0;
+                total += hp;
+                if (i < this.waveIdx) spawned += hp;
+            }
+        });
+        let remaining = 0;
+        for (const u of this.scene.alive(false)) remaining += Math.max(0, u.hp);
+        return total > 0 ? Math.min(1, Math.max(0, (spawned - remaining) / total)) : 0;
     }
 
     private spawnWave(wave: WaveEnemySpec[]): void {
