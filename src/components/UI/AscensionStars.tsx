@@ -1,19 +1,44 @@
 import { cn } from '../../lib/utils';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { useGameData } from '../../hooks/useGameData';
+
+/** AscensionConfigsLibrary keys. */
+export type AscensionType = 'Forge' | 'Pets' | 'Mounts' | 'Skills';
+
+/** The ascension track of an ItemSelectionCard slot key ('ActiveSkill', 'Mount', 'pet-0', 'Weapon', ...). */
+export function ascensionTypeForSlot(slotKey: string | undefined): AscensionType {
+    const k = (slotKey || '').toLowerCase();
+    if (k === 'activeskill' || k.startsWith('skill')) return 'Skills';
+    if (k === 'mount') return 'Mounts';
+    if (k.startsWith('pet')) return 'Pets';
+    return 'Forge';
+}
+
+/**
+ * Star count of one ascension track: the length of AscensionConfigsLibrary[type].
+ * AscensionConfigPerLevel, 0 until the config loads (no stars drawn rather than a guessed count).
+ */
+export function useAscensionMax(type: AscensionType): number {
+    const { data } = useGameData<any>('AscensionConfigsLibrary.json');
+    const n = data?.[type]?.AscensionConfigPerLevel?.length;
+    return typeof n === 'number' ? n : 0;
+}
 
 interface AscensionStarsProps {
     value: number;
     onChange: (newValue: number) => void;
-    maxLevel?: number;
+    /** Which AscensionConfigsLibrary track sets the number of stars. */
+    type: AscensionType;
     className?: string;
     size?: 'xs' | 'sm' | 'md';
 }
 
-export function AscensionStars({ value, onChange, maxLevel = 3, className, size = 'md' }: AscensionStarsProps) {
+export function AscensionStars({ value, onChange, type, className, size = 'md' }: AscensionStarsProps) {
     const isXS = size === 'xs';
     const isSM = size === 'sm';
     const { selectedVersion } = useGameDataContext();
+    const maxLevel = useAscensionMax(type);
 
     return (
         <div className={cn("flex flex-col items-center", isXS ? "gap-0" : "gap-1", className)}>

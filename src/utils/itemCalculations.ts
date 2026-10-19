@@ -154,8 +154,8 @@ export const getItemStats = (
         }
     }
 
-    const levelScaling = itemBalancingConfig.LevelScalingBase || 1.01;
-    const meleeBaseMulti = itemBalancingConfig.PlayerMeleeDamageMultiplier || 1.6;
+    const levelScaling = itemBalancingConfig.LevelScalingBase;
+    const meleeBaseMulti = itemBalancingConfig.PlayerMeleeDamageMultiplier;
     const bonusKey = SLOT_TO_TECH_BONUS[slotKey];
     const techBonus = techModifiers[bonusKey] || 0;
     const clanTechBonus = (clanModifiers && clanModifiers[bonusKey]) || 0;

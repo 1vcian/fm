@@ -194,6 +194,11 @@ export class PvpVisualEngine {
         this.p2Name = p2.name || 'P2';
     }
 
+    /** Engine ticks run so far: the visualizer takes a new snapshot only when this moves. */
+    ticks(): number {
+        return this.battle.scene.tickCount;
+    }
+
     tick(dt: number): void {
         this.acc += dt;
         while (this.acc >= 0.1 - 1e-9 && !this.battle.done) {

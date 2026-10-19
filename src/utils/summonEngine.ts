@@ -132,7 +132,7 @@ export function simulateSummons(params: SummonSimulationParams): SummonSimulatio
     } = params;
     const maxAscension = params.maxAscension;
     const maxIterations = params.maxIterations ?? Infinity;
-    const maxLevel = levels.length || 100;
+    const maxLevel = levels.length; // SummonConfig.Levels: the top level is its length
 
     const s: SummonState = { level: params.startLevel, progress: startProgress, ascension: startAscension };
     let summonsToMax: number | null = null;
@@ -231,10 +231,14 @@ export function simulateSummons(params: SummonSimulationParams): SummonSimulatio
     };
 }
 
-/** Units one paid summon yields: PossibleSummonCount[0] (SummonConfig.BaseSummonCount, RVA 0x7865E88). */
-export function baseSummonCount(config: any, fallback: number): number {
+/**
+ * Units one paid summon yields: PossibleSummonCount[0] (SummonConfig.BaseSummonCount, RVA 0x7865E88).
+ * NaN while the config is missing or has no such entry: callers show a loading / unavailable state
+ * instead of a guessed count.
+ */
+export function baseSummonCount(config: any): number {
     const first = Number(config?.PossibleSummonCount?.[0]);
-    return Number.isFinite(first) && first > 0 ? first : fallback;
+    return Number.isFinite(first) && first > 0 ? first : NaN;
 }
 
 /**

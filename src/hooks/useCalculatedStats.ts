@@ -44,7 +44,7 @@ export function useTreeModifiers() {
                 if (treeMode === 'max') {
                     const maxLevels: Record<string, number> = {};
                     nodesList.forEach((type, idx) => {
-                        maxLevels[idx] = guildUpgradeLibrary[type]?.MaxLevel || 20;
+                        maxLevels[idx] = guildUpgradeLibrary[type]?.MaxLevel ?? 0;
                     });
                     return maxLevels;
                 }
@@ -58,7 +58,7 @@ export function useTreeModifiers() {
                 const maxLevels: Record<string, number> = {};
                 for (const node of treeData.Nodes) {
                     const nodeData = techTreeLibrary[node.Type];
-                    maxLevels[node.Id] = nodeData?.MaxLevel || 5;
+                    maxLevels[node.Id] = nodeData?.MaxLevel ?? 0;
                 }
                 return maxLevels;
             }
@@ -214,7 +214,7 @@ export function useClanTreeModifiers() {
         let levels: Record<string, number>;
         if (treeMode === 'max') {
             levels = {};
-            nodesList.forEach((type, idx) => { levels[idx] = guildUpgradeLibrary[type]?.MaxLevel || 20; });
+            nodesList.forEach((type, idx) => { levels[idx] = guildUpgradeLibrary[type]?.MaxLevel ?? 0; });
         } else {
             levels = profile.techTree?.Clan || {};
         }

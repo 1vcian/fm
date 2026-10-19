@@ -8,7 +8,7 @@
  * adapters, not here.
  */
 import { RandomPCG } from './rng';
-import { SIM_DT_RAW, attackIncRaw } from '../utils/constants';
+import { SIM_DT_RAW, attackIncRaw, fd6MicroFromF64 } from '../utils/constants';
 import {
     AreaProjectile,
     CombatEvent,
@@ -33,6 +33,8 @@ const ANCHOR_WEIGHT = 1000;
 
 const len = (x: number, y: number) => Math.sqrt(x * x + y * y);
 
+export { fd6MicroFromF64 };
+
 export interface SceneConfig {
     seed: bigint | number;
     /** BaseConfig.SecondsToFullyRegenerate; 1.0 in every shipped config. */
@@ -53,7 +55,14 @@ export class CombatScene {
     readonly events: CombatEvent[] = [];
     tickCount = 0;
 
-    private nextId = 1;
+    /**
+     * Entities._entityId (+0x10): one counter shared by AddUnit, AddProjectile and
+     * AddSkillMetaEntity, never initialised by the Entities ctor (0x77ECD00), so the first
+     * entity of a scene is id 0. Every mode adds its player first (MainBattleModel.SetupBattle,
+     * the dungeon SetupBattles, MissionCombatScene.SetupPlayers before SetupEnemies,
+     * PvpCombatScene.Init with the ally first), so id 0 is the ally player.
+     */
+    private nextId = 0;
     private readonly regenDivisor: number;
     private readonly skillSystem?: (scene: CombatScene) => void;
     private readonly keepEvents: boolean;
@@ -72,11 +81,12 @@ export class CombatScene {
             isPlayer: spec.isPlayer ?? false,
             pos: { ...spec.pos },
             com: spec.centerOfMass ? { ...spec.centerOfMass } : { x: 0, y: 0.45 },
+            unitOffset: spec.unitOffset ? { ...spec.unitOffset } : { x: 0, y: 0 },
             vel: { x: 0, y: 0 },
             radius: spec.radius ?? 0.35,
             attackRange: spec.attackRange,
-            windupMicro: Math.round(spec.windupTime * 1e6),
-            durationMicro: Math.round(spec.attackDuration * 1e6),
+            windupMicro: fd6MicroFromF64(spec.windupTime),
+            durationMicro: fd6MicroFromF64(spec.attackDuration),
             timerMicro: 0,
             state: 'idle',
             doubleAttack: false,
@@ -91,13 +101,16 @@ export class CombatScene {
             projectile: spec.projectile,
             targetId: -1,
             targetInRange: false,
-            lookDir: { x: spec.isAlly ? 1 : -1, y: 0 },
+            // CreateUnit (0x77EA044) never writes LookDirection: it is (0, 0) until the unit's first
+            // targeting pass, so a unit stands still on the frame it spawns (MoveToTarget runs first).
+            lookDir: { x: 0, y: 0 },
             solid: spec.solid ?? true,
             targetable: spec.targetable ?? true,
             killed: false,
             destroyed: false,
             tag: spec.tag,
             weaponSpriteKey: spec.weaponSpriteKey,
+            cosmeticKeys: spec.cosmeticKeys,
             skillId: spec.skillId,
         };
         this.units.push(unit);
@@ -322,13 +335,14 @@ export class CombatScene {
                 u.targetInRange = false;
             }
 
-            // Regen: every living unit, every tick, combat state irrelevant (0x773FF48).
-            if (u.stats.healthRegen > 0 && u.hp > 0) {
-                u.hp = Math.min(
-                    u.hp + (u.stats.healthRegen * u.stats.hpMaxNoMulti * DT) / this.regenDivisor,
-                    u.stats.hpMax
-                );
-            }
+            // Regen (HandleUnits 0x77F4534, build 2026_10_08_09_03): unconditional, for every unit
+            // not Destroyed, killed ones included and with no regen check:
+            // Hp = Min(Hp + HealthRegen * HpMaxNoMulti * (dt / SecondsToFullyRegenerate), HpMax).
+            // A unit killed earlier in this tick therefore still regenerates on its own turn.
+            u.hp = Math.min(
+                u.hp + (u.stats.healthRegen * u.stats.hpMaxNoMulti * DT) / this.regenDivisor,
+                u.stats.hpMax
+            );
 
             // The single-timer state machine (0x773FFCC).
             const inc = attackIncRaw(u.stats.attackSpeedMulti);
@@ -371,27 +385,54 @@ export class CombatScene {
             this.applyDmg(target, u, snapshot, origin);
             return;
         }
-        // Ranged: spawn an unguided projectile at the attacker's center (see fidelity note 5).
-        const px = u.pos.x + u.com.x;
-        const py = u.pos.y + u.com.y;
+        // Ranged (ExecuteAttack 0x77F58C8, build 2026_10_08_09_03). The muzzle, with s = Sign and
+        // H = HandOffset + UnitOffSet, W = WeaponOffset, both scaled component-wise by (s, 1):
+        //   not aiming: start = Position + (H + W) * (s, 1)
+        //   aiming:     d0 = Normalize(myCenter - targetCenter)          (sic: from the target)
+        //               start1 = Position + H' + s * Rotate(W', d0)
+        //               d1 = aim direction from start1 (ballistic or straight)
+        //               start = Position + H' + s * Rotate(W', d1)
+        // with Rotate(w, d) = (w.x*d.x - w.y*d.y, w.x*d.y + w.y*d.x). The shot then leaves `start`
+        // aimed at the target's center. If start is closer to the target's center than to the
+        // shooter's own center (squared lengths, strict <), the hit is applied at once instead.
+        const cfg = u.projectile;
+        const s = u.sign;
+        const mcx = u.pos.x + u.com.x;
+        const mcy = u.pos.y + u.com.y;
         const tx = target.pos.x + target.com.x;
         const ty = target.pos.y + target.com.y;
-        const d = len(tx - px, ty - py);
-        // Point-blank: already overlapping the target -> instant, no projectile (0x7741A58).
-        if (d < u.projectile.collisionRadius + target.radius) {
+        const hx = ((cfg.handOffset?.x ?? 0) + u.unitOffset.x) * s;
+        const hy = (cfg.handOffset?.y ?? 0) + u.unitOffset.y;
+        const wx = (cfg.weaponOffset?.x ?? 0) * s;
+        const wy = cfg.weaponOffset?.y ?? 0;
+        const aimFrom = (ox: number, oy: number): Vec2 => {
+            if (cfg.affectedByGravity) return ballisticDirection(tx - ox, ty - oy, cfg.speed);
+            const dl = len(tx - ox, ty - oy);
+            return dl > 0 ? { x: (tx - ox) / dl, y: (ty - oy) / dl } : { x: 0, y: 0 };
+        };
+        let px: number;
+        let py: number;
+        if (cfg.isAiming) {
+            const d0l = len(mcx - tx, mcy - ty);
+            const d0 = d0l > 0 ? { x: (mcx - tx) / d0l, y: (mcy - ty) / d0l } : { x: 0, y: 0 };
+            const p1x = u.pos.x + hx + s * (wx * d0.x - wy * d0.y);
+            const p1y = u.pos.y + hy + s * (wx * d0.y + wy * d0.x);
+            const d1 = aimFrom(p1x, p1y);
+            px = u.pos.x + hx + s * (wx * d1.x - wy * d1.y);
+            py = u.pos.y + hy + s * (wx * d1.y + wy * d1.x);
+        } else {
+            px = u.pos.x + hx + wx;
+            py = u.pos.y + hy + wy;
+        }
+        const toTarget2 = (px - tx) * (px - tx) + (py - ty) * (py - ty);
+        const toSelf2 = (px - mcx) * (px - mcx) + (py - mcy) * (py - mcy);
+        if (toTarget2 < toSelf2) {
             this.applyDmg(target, u, snapshot, origin);
             return;
         }
-        let dirX: number;
-        let dirY: number;
-        if (u.projectile.affectedByGravity) {
-            const aim = ballisticDirection(tx - px, ty - py, u.projectile.speed);
-            dirX = aim.x;
-            dirY = aim.y;
-        } else {
-            dirX = (tx - px) / d;
-            dirY = (ty - py) / d;
-        }
+        const dir = aimFrom(px, py);
+        const dirX = dir.x;
+        const dirY = dir.y;
         this.projectiles.push({
             id: this.nextId++,
             pos: { x: px, y: py },
@@ -408,7 +449,11 @@ export class CombatScene {
         });
     }
 
-    /** GetDamage + ApplyDmg (0x7740C34 / 0x77405E4). Roll order: dodge, block, reflect, crit. */
+    /**
+     * GetDamage + ApplyDmg (0x77F5220 / 0x77F4BD0, build 2026_10_08_09_03). Rolls, in order:
+     * dodge (a dodge stops here), block, reflect, crit. The reflect roll is ALWAYS consumed but
+     * only counts on a hit that was not blocked (`tbz w22` skips the compare and stores false).
+     */
     applyDmg(target: Unit, attacker: Unit | null, stats: CombatStatsVec, origin: HitOrigin = {}): void {
         const at = (u: Unit) => ({ x: u.pos.x + u.com.x, y: u.pos.y + u.com.y });
         const dodged = this.rng.rollLE(target.stats.dodgeChance);
@@ -417,10 +462,16 @@ export class CombatScene {
             return;
         }
         const blocked = this.rng.rollLE(target.stats.blockChance);
-        const reflected = this.rng.rollLE(target.stats.reflectChance);
+        const reflectRoll = this.rng.rollLE(target.stats.reflectChance);
+        const reflected = !blocked && reflectRoll;
         const critical = this.rng.rollLT(stats.criticalChance);
         const dmg = critical ? stats.dmg * stats.criticalMulti : stats.dmg;
-        this.emit({ targetId: target.id, attackerId: attacker?.id ?? -1, dmg, blocked, critical, reflected, ...origin, ...at(target) });
+        let buffDmg: Record<string, number> | undefined;
+        if (stats.buffParts) {
+            buffDmg = {};
+            for (const k in stats.buffParts) buffDmg[k] = critical ? stats.buffParts[k] * stats.criticalMulti : stats.buffParts[k];
+        }
+        this.emit({ targetId: target.id, attackerId: attacker?.id ?? -1, dmg, blocked, critical, reflected, buffDmg, ...origin, ...at(target) });
 
         if (!blocked) {
             target.hp -= dmg;
@@ -431,8 +482,8 @@ export class CombatScene {
                 this.emit({ targetId: attacker.id, attackerId: attacker.id, dmg: heal, heal: true, source: 'lifesteal', ...at(attacker) });
             }
         }
-        // Reflect: full rolled damage back, even on a blocked hit. Direct subtraction —
-        // no re-roll, no chain, no lifesteal — but it can kill the attacker.
+        // Reflect: the full rolled damage back (never on a blocked hit, see above). Direct
+        // subtraction: no re-roll, no chain, no lifesteal, but it can kill the attacker.
         if (reflected && attacker) {
             attacker.hp -= dmg;
             if (attacker.hp <= 0) this.kill(attacker);
@@ -475,14 +526,19 @@ export class CombatScene {
 }
 
 /**
- * Ballistic launch direction (GetBallisticAngle, 0x7742030) for gravity projectiles:
- * the low-arc solution; unreachable targets fall back to straight-line aim.
+ * Ballistic launch direction for gravity projectiles: ExecuteAttack calls the same
+ * GetBallisticStartDirection (0x77EE220 -> GetBallisticAngle 0x77F665C) as the Arrows and
+ * Shuriken skills, the low-arc solution with no special case, so dx = 0 aims straight up or
+ * down. A negative discriminant makes the game's Fixed64.Sqrt throw, and no handler on the
+ * combat path catches it (see SkillManager.fireBallistic); weapon ranges in the config
+ * (AttackRange <= 7 vs v^2/g >= 22.9) never get there, the straight aim only keeps a debug
+ * spawn override running.
  */
 function ballisticDirection(dx: number, dy: number, speed: number): Vec2 {
     const g = -GRAVITY_Y; // 9.81, positive
     const v2 = speed * speed;
     const disc = v2 * v2 - g * (g * dx * dx + 2 * dy * v2);
-    if (disc < 0 || dx === 0) {
+    if (disc < 0) {
         const d = len(dx, dy) || 1;
         return { x: dx / d, y: dy / d };
     }

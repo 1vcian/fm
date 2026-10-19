@@ -47,8 +47,10 @@ function iconsPerRow(count: number): number {
 /** Icon count and grid pitch for the selected version's atlas. */
 function useProfileIconAtlas() {
     const { data } = useGameData<{ IconsCount: number }>('ProfileBaseConfig.json');
-    // IconsCount is the highest valid index, so the number of icons is one more.
-    const count = (data?.IconsCount ?? 63) + 1;
+    // IconsCount is the highest valid index, so the number of icons is one more. Until the
+    // config loads there is no count (no icons listed) and no pitch (tiles draw without art).
+    if (typeof data?.IconsCount !== 'number') return { count: 0, perRow: null };
+    const count = data.IconsCount + 1;
     return { count, perRow: iconsPerRow(count) };
 }
 
@@ -76,6 +78,16 @@ export function ProfileIcon({ iconIndex, size = 48, className, onClick }: Profil
             >
                 <Coffee size={size * 0.6} className="fill-current" />
             </div>
+        );
+    }
+
+    if (perRow === null) {
+        return (
+            <div
+                onClick={onClick}
+                className={cn("rounded-lg overflow-hidden bg-bg-secondary border-2 border-border shrink-0 animate-pulse", className)}
+                style={{ width: size, height: size }}
+            />
         );
     }
 

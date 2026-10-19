@@ -18,12 +18,13 @@
 // Null means NOT READ. Every field that cannot be read with confidence stays null and says why in
 // `warnings`; nothing is filled in from defaults.
 
-import { loadImage, imageToCanvas, screenshotCanvas, cropCanvas, evidenceCropUrl, tileLevelRect, binarize, type Rect } from './imagePrep';
+import { gameScreen } from './uiLayout';
+import { loadImage, imageToCanvas, cropCanvas, evidenceCropUrl, tileLevelRect, binarize, type Rect } from './imagePrep';
 import { readNumber, upscaleCanvas } from './numberReader';
 import { countStars } from './starCounter';
 import { readItemTileStars, classifyColor } from './templateReaders';
 import { ocr, PSM } from './ocrEngine';
-import { normalizeName, parseCompactNumber } from './parse';
+import { normalizeName, foldText, parseCompactNumber } from './parse';
 import { matchSubstat, TYPE_NAME_TO_SLOT } from './gameDictionary';
 import { AGE_COLORS, RARITY_COLORS, RARITY_NAMES, LEVEL_MAX, STAR, type RGB } from './templateParams';
 import { locateCard, prepareSurface, occludedFrac, refRect, REF, type CardAnchor, type CardSurface } from './cardLayout';
@@ -32,7 +33,7 @@ import {
     type CardAssets, type Template, type Patch, type MatchHit,
 } from './cardSprites';
 import { CARD_ITEM_SLOTS, type CardRead, type CardItem, type CardUnit, type CardSkill } from './cardTypes';
-import type { GameDictionaries } from './gameLocalization';
+import type { GameDictionaries, UiWords } from './gameLocalization';
 import { FAIRY_MAX_LEVEL } from '../fairies';
 
 export { buildCardAssets, type CardAssets } from './cardSprites';
@@ -66,7 +67,7 @@ function emptyRead(warnings: string[]): CardRead {
 }
 
 async function toCanvas(src: Blob | File | HTMLCanvasElement): Promise<HTMLCanvasElement> {
-    return screenshotCanvas(src instanceof HTMLCanvasElement ? src : await loadImage(src));
+    return gameScreen(src instanceof HTMLCanvasElement ? src : await loadImage(src));
 }
 
 const clampRect = (r: Rect, W: number, H: number): Rect => {
@@ -213,7 +214,8 @@ function levelGlyphCanvas(crop: HTMLCanvasElement): HTMLCanvasElement {
 /** Level from one glyph read: "Lv. N" with its "v", 1..3 digits, no leading zero. The read must
  *  contain the "v": without it a broken glyph was taken for a digit ("Lv. 4" -> "L174"). */
 function levelFromRaw(raw: string): number | null {
-    const m = raw.match(/v\.?(\d{1,4})$/);
+    // "v" (Lv. / Niv. / Nv. / Sv.) or the prefix's closing dot ("Poz.", "Ур."): General.Lv is localized
+    const m = raw.match(/(?:v\.?|\.)(\d{1,4})$/);
     if (!m || m[1].length > 3 || m[1][0] === '0') return null;
     return parseInt(m[1], 10);
 }
@@ -361,7 +363,7 @@ function headerGoldStars(c: HTMLCanvasElement, a: CardAnchor, dbg: Dbg): number 
     return n >= 1 && n <= 3 ? n : null;
 }
 
-async function readHeader(c: HTMLCanvasElement, a: CardAnchor, warnings: string[], dbg: Dbg): Promise<HeaderRead> {
+async function readHeader(c: HTMLCanvasElement, a: CardAnchor, warnings: string[], dbg: Dbg, words?: UiWords): Promise<HeaderRead> {
     const out: HeaderRead = { forgeLevel: null, totalDamage: null, totalHealth: null, goldStars: null };
     const texts: string[] = [];
     for (let i = 0; i < 3; i++) {
@@ -372,7 +374,17 @@ async function readHeader(c: HTMLCanvasElement, a: CardAnchor, warnings: string[
         texts.push(text);
     }
     dbg.headerText = texts;
-    const lv = texts[0].match(/l\s*v\s*\.?\s*(\d{1,3})/i) ?? texts[0].match(/(\d{1,3})\s*f\s*o\s*r/i);
+    // "Lv. N Forge": the prefix is localized (General.Lv, "Niv." / "Ур." / "等级"), so after the
+    // English forms the number right after any active language's prefix is taken
+    const lvAfterPrefix = (t: string): RegExpMatchArray | null => {
+        const f = foldText(t);
+        for (const p of words?.lv ?? []) {
+            const m = f.match(new RegExp(`(?:^|\\s)${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d{1,3})(?:\\s|$)`, 'u'));
+            if (m) return m;
+        }
+        return null;
+    };
+    const lv = texts[0].match(/l\s*v\s*\.?\s*(\d{1,3})/i) ?? texts[0].match(/(\d{1,3})\s*f\s*o\s*r/i) ?? lvAfterPrefix(texts[0]);
     if (lv) out.forgeLevel = parseInt(lv[1], 10);
     else warnings.push('Could not read the forge level in the card header.');
     // each number is confirmed by a second pass over its token alone (binarised, 4x, digits and
@@ -398,8 +410,16 @@ async function readHeader(c: HTMLCanvasElement, a: CardAnchor, warnings: string[
         }
         return pr.value;
     };
-    out.totalDamage = await confirm(1, /dam/i.test(texts[1]) ? parseHeaderNumber(texts[1]) : null, 'Total Damage');
-    out.totalHealth = await confirm(2, /heal|hea|alth/i.test(texts[2]) ? parseHeaderNumber(texts[2]) : null, 'Total Health');
+    // the row ORDER is fixed by the layout; the word is a sanity check, in the active languages
+    const hasWord = (t: string, ws: string[] | undefined): boolean => {
+        const f = foldText(t);
+        return (ws ?? []).some(w => {
+            const first = w.split(' ').filter(x => x.length >= 2).pop();   // the "Damage"/"Health" word
+            return !!first && f.includes(first);
+        });
+    };
+    out.totalDamage = await confirm(1, (/dam/i.test(texts[1]) || hasWord(texts[1], words?.totalDamage)) ? parseHeaderNumber(texts[1]) : null, 'Total Damage');
+    out.totalHealth = await confirm(2, (/heal|hea|alth/i.test(texts[2]) || hasWord(texts[2], words?.totalHealth)) ? parseHeaderNumber(texts[2]) : null, 'Total Health');
     out.goldStars = headerGoldStars(c, a, dbg);
     return out;
 }
@@ -865,7 +885,7 @@ export async function readProfileCard(src: Blob | File | HTMLCanvasElement, dict
     // header (the header is never under a popup in practice, but check anyway)
     const hdrRect = refRect(a, REF.header);
     if (occludedFrac(sf, hdrRect) <= OCCLUDED_MAX) {
-        const h = await readHeader(c, a, warnings, dbg);
+        const h = await readHeader(c, a, warnings, dbg, dicts.words);
         out.forgeLevel = gate(h.forgeLevel, 1, limits?.forgeLevel ?? 99, 'Forge level', warnings);
         out.totalDamage = h.totalDamage;
         out.totalHealth = h.totalHealth;

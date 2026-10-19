@@ -38,7 +38,7 @@ export default function Offline() {
                 if (treeDef.nodes) {
                     treeDef.nodes.forEach((node: any) => {
                         const nodeConfig = techLibrary[node.type];
-                        maxTree[treeName][node.id] = nodeConfig?.MaxLevel || 5;
+                        maxTree[treeName][node.id] = nodeConfig?.MaxLevel ?? 0;
                     });
                 }
             });
@@ -76,7 +76,8 @@ export default function Offline() {
         return { coinMultiplier, hammerMultiplier, maxTimeMultiplier };
     }, [profile, techLibrary, techMapping, treeMode]);
 
-    const baseMaxTimeHours = idleConfig?.MaxIdleSeconds ? idleConfig.MaxIdleSeconds / 3600 : 2;
+    // IdleConfig.MaxIdleSeconds; the page waits for the config (see the loading state below).
+    const baseMaxTimeHours: number = (idleConfig?.MaxIdleSeconds ?? NaN) / 3600;
     const maxOfflineHours = baseMaxTimeHours * bonuses.maxTimeMultiplier;
 
     // Formatting Helpers
@@ -104,8 +105,8 @@ export default function Offline() {
     const rates = useMemo(() => {
         if (!idleConfig) return { coinsPerSec: 0, hammersPerMin: 0 };
 
-        const baseCoinsPerSec = idleConfig.CoinsPerSecond || 1;
-        const baseHammersPerMin = idleConfig.HammersPerMinute || 1;
+        const baseCoinsPerSec = idleConfig.CoinsPerSecond;
+        const baseHammersPerMin = idleConfig.HammersPerMinute;
 
         return {
             coinsPerSec: baseCoinsPerSec * bonuses.coinMultiplier,
@@ -120,6 +121,10 @@ export default function Offline() {
     // Projected Earnings (If uncapped)
     const projectedCoins = Math.floor(rates.coinsPerSec * totalOfflineHours * 3600);
     const projectedHammers = Math.floor((rates.hammersPerMin / 60) * totalOfflineHours * 3600);
+
+    if (!idleConfig) {
+        return <div className="p-8 text-center text-text-muted">Loading game data</div>;
+    }
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in relative">

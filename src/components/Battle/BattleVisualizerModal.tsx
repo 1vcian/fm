@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import type { EntityState, VisualProjectile as Projectile, DebugConfig } from '../../utils/VisualBattleEngine';
 import { VisualBattleEngine } from '../../utils/VisualBattleEngine';
@@ -16,6 +16,11 @@ import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { SkillLayer, BuffAura, type SkillIconSource } from './SkillLayer';
+import { BattleCanvas } from './gameView/BattleCanvas';
+import { holdFullscreenModal } from '../Layout/donationToast';
+import { BattleHud } from './gameView/BattleHud';
+import { lookFromProfile, type SceneMode } from './gameView/scene';
+import type { BattleVisualData } from './gameView/visualData';
 import type { SceneVisuals } from '../../engine/visualSnapshot';
 import { Play, Pause, X, Zap, Heart, Sword, Shield, Clock, Users } from 'lucide-react';
 
@@ -67,7 +72,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     pvp
 }) => {
     const { selectedVersion } = useGameDataContext();
-    const [engine, setEngine] = useState<{ tick(dt: number): void; getSnapshot(): any } | null>(null);
+    const [engine, setEngine] = useState<{ tick(dt: number): void; getSnapshot(): any; ticks?(): number } | null>(null);
     const [snapshot, setSnapshot] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [speed, setSpeed] = useState(1);
@@ -76,6 +81,10 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     const [restartKey, setRestartKey] = useState(0); // Used to trigger re-initialization
     // Phone only (below sm): the body is split into a Battle tab and a Log tab. The engine keeps running on both.
     const [mobileTab, setMobileTab] = useState<'battle' | 'log'>('battle');
+    // The game-asset battlefield; false once its data failed to load (schematic fallback).
+    const [canvasOk, setCanvasOk] = useState(true);
+    // Bumped for every new engine, so the canvas scene (camera, pets, labels) starts over.
+    const [engineGen, setEngineGen] = useState(0);
     const animationFrameRef = useRef<number>();
     const autoPlayRef = useRef(false);
 
@@ -102,10 +111,18 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     const { data: autoItemMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: skillsConfig } = useGameData<any>('SkillLibrary.json');
+    const skillRarities = useMemo(() => {
+        const out: Record<string, string> = {};
+        for (const [type, cfg] of Object.entries((skillsConfig ?? {}) as Record<string, { Rarity?: string }>)) if (cfg?.Rarity) out[type] = cfg.Rarity;
+        return out;
+    }, [skillsConfig]);
 
     // Debug State
     const [isDebugMode, setIsDebugMode] = useState(false);
     // Local debugConfig REMOVED - using prop instead
+
+    // Fullscreen: hide the donation toast while the viewer is open and keep it from popping up.
+    useEffect(() => (isOpen ? holdFullscreenModal() : undefined), [isOpen]);
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -122,7 +139,9 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
         if (pvp) {
             const pvpEngine = new PvpVisualEngine(pvp.p1, pvp.p2, pvp.cfg, pvp.seed, playerStats);
+            lastTickRef.current = NaN;
             setEngine(pvpEngine);
+            setEngineGen(g => g + 1);
             setSnapshot(pvpEngine.getSnapshot());
             setIsPlaying(autoPlayRef.current);
             autoPlayRef.current = false;
@@ -161,7 +180,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
         // resolved exactly like the batch simulator (mountCollider); setPlayerCollider is a no-op in
         // missions, where SetupPlayerGroup keeps radius 0.5.
         const collider = mountCollider(profile, libs);
-        if (collider) newEngine.setPlayerCollider(collider.radius, collider.centerOfMass);
+        if (collider) newEngine.setPlayerCollider(collider.radius, collider.centerOfMass, collider.unitOffset);
 
         // Skills through the shared resolver (verified layers; the engine owns per-skill
         // mechanics, hit counts and buff behaviour). Not in missions: mission participants carry
@@ -194,8 +213,9 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             if (row) wavesList = dungeonWaveSpecs(row, enemyLibs);
         } else if (ageIdx === -2) {
             const mission = (libs as any).missionBattleLibrary?.[String(battleIdx)];
-            if (mission) {
-                const levelMulti = (libs as any).missionBaseConfig?.HealthAndDamageLevelMultiplier ?? 1.524;
+            // MissionBaseConfig.HealthAndDamageLevelMultiplier: no waves until it loads.
+            const levelMulti = (libs as any).missionBaseConfig?.HealthAndDamageLevelMultiplier;
+            if (mission && typeof levelMulti === 'number') {
                 wavesList = [missionWaveSpecs(mission, difficultyMode, levelMulti, enemyLibs, newEngine.rng)];
                 // MissionBattleMatchTimerSeconds: lost when it runs out, as in simulateMissionBattleMulti.
                 const timer = (libs as any).missionBaseConfig?.MissionBattleMatchTimerSeconds;
@@ -219,7 +239,9 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
         // before the first wave exactly like the batch simulator (WaveRunner).
         if (wavesList.length > 0) newEngine.setNextWaves(wavesList);
 
+        lastTickRef.current = NaN;
         setEngine(newEngine);
+        setEngineGen(g => g + 1);
         setSnapshot(newEngine.getSnapshot());
 
         // Handle Auto-Play on Restart
@@ -274,6 +296,8 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
     // Main Loop
     const accumulatorRef = useRef(0);
+    const logSigRef = useRef('');
+    const lastTickRef = useRef(NaN);
 
     useEffect(() => {
         if (!isPlaying || !engine) return;
@@ -311,14 +335,27 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                 accumulatorRef.current = 0;
             }
 
+            // The battle logic runs at the game's 10 ticks per second: take a snapshot (and re-render
+            // the modal) only when a tick has run. The canvas interpolates between them on its own.
+            const tickNow = engine.ticks ? engine.ticks() : NaN;
+            if (tickNow === lastTickRef.current) {
+                if (!loopCancelled) animationFrameRef.current = requestAnimationFrame(loop);
+                return;
+            }
+            lastTickRef.current = tickNow;
             const state = engine.getSnapshot();
             setSnapshot(state);
 
             // Update logs (throttled/every frame is fine for < 100 items)
             const logs = state.logs || [];
             if (logs.length > 0) {
-                const formattedLogs = logs.map((l: any) => `[${l.time.toFixed(1)}s] ${l.event}: ${l.details}`);
-                setBattleLogs(formattedLogs);
+                // Only when a new line arrived: re-rendering 100 log rows every frame costs frames.
+                const last = logs[logs.length - 1];
+                const sig = `${logs.length}|${last.time}|${last.details}`;
+                if (sig !== logSigRef.current) {
+                    logSigRef.current = sig;
+                    setBattleLogs(logs.map((l: any) => `[${l.time.toFixed(1)}s] ${l.event}: ${l.details}`));
+                }
             }
 
             // Check End Conditions
@@ -398,6 +435,17 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     const yPx = (y: number) => -y * Y_PX;
     const unitsToPct = (u: number) => (u / VIEWPORT_WIDTH) * 90;
     const visuals: SceneVisuals | null = snapshot.visuals ?? null;
+    const sceneMode: SceneMode = pvp ? { kind: 'pvp' }
+        : dungeonType ? { kind: 'dungeon', dungeon: (dungeonType as 'hammer' | 'skill' | 'egg' | 'potion') }
+        : ageIdx === -2 ? { kind: 'mission', mapAge: Number((libs as any).missionBattleLibrary?.[String(battleIdx)]?.MapAge ?? 0) }
+        : { kind: 'main', ageIdx };
+    const sceneLooks = (data: BattleVisualData) => pvp
+        ? {
+            ally: lookFromProfile(data, pvp.p1.profile, { weaponRanged: !!(pvp.p1.stats as any)?.isRangedWeapon }),
+            enemy: lookFromProfile(data, pvp.p2.profile, { weaponRanged: !!(pvp.p2.stats as any)?.isRangedWeapon }),
+        }
+        : { ally: lookFromProfile(data, profile, { weaponRanged: !!(playerStats as any)?.isRangedWeapon, noCompanions: false }) };
+    const sceneSeed = (pvp?.seed ?? 0) + ageIdx * 1000 + battleIdx * 7 + (dungeonLevel ?? 0) * 13 + engineGen;
     const skillSheet = spriteMapping?.skills;
     const skillIcons: SkillIconSource | null = skillSheet?.mapping ? {
         textureSrc: `${basePath}Texture2D/${resolveTextureVersion(selectedVersion) ?? selectedVersion}/SkillIcons.png`,
@@ -490,7 +538,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     );
 
     return (
-        <div style={{ margin: '0' }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-2 sm:p-4">
+        <div style={{ margin: '0' }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-2 sm:p-4">
             <div className="bg-[#0d0d11] w-full max-w-4xl h-[95dvh] sm:h-auto max-h-[95vh] rounded-xl border border-gray-800 flex flex-col overflow-hidden shadow-2xl">
 
                 {/* Compact Header */}
@@ -752,8 +800,34 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     </div>
                 )}
 
-                {/* Battlefield */}
-                <div className={`flex-1 bg-[#080810] relative overflow-hidden min-h-[200px] sm:min-h-[280px] ${mobileTab === 'log' ? 'hidden sm:block' : ''}`}>
+                {/* Battlefield: the game's own sprites, prefabs and VFX on a canvas (gameView/), with the
+                    old schematic view as the fallback when the extracted game data is unavailable. */}
+                <div className={`flex-1 relative overflow-hidden min-h-[220px] ${canvasOk ? 'sm:min-h-[min(52vh,520px)]' : 'sm:min-h-[300px]'} ${canvasOk ? '' : 'bg-[#080810]'} ${mobileTab === 'log' ? 'hidden sm:block' : ''}`}>
+                    {canvasOk ? (
+                        <BattleCanvas
+                            visuals={visuals}
+                            playing={isPlaying}
+                            speed={speed}
+                            mode={sceneMode}
+                            looks={sceneLooks}
+                            enemyLibrary={libs.enemyLibrary as any}
+                            skillAscension={{ ally: pvp ? (pvp.p1.profile.misc?.skillAscensionLevel ?? 0) : (profile?.misc?.skillAscensionLevel ?? 0), enemy: pvp ? (pvp.p2.profile.misc?.skillAscensionLevel ?? 0) : 0 }}
+                            seed={sceneSeed}
+                            battleKey={engineGen}
+                            onUnavailable={() => setCanvasOk(false)}
+                        >
+                            <BattleHud
+                                title={pvp ? null : getTitle()}
+                                waveIndex={Math.max(0, snapshot?.waveIndex ?? 0)}
+                                waveCount={pvp ? 0 : Math.max(1, Math.max(0, snapshot?.waveIndex ?? 0) + 1 + (snapshot?.remainingWaves ?? 0))}
+                                skills={(visuals?.skills ?? []).filter(k => k.isAlly)}
+                                icons={skillIcons}
+                                rarities={skillRarities}
+                                ascension={pvp ? (pvp.p1.profile.misc?.skillAscensionLevel ?? 0) : (profile?.misc?.skillAscensionLevel ?? 0)}
+                                pvp={pvp ? { p1: pvp.p1.name, p2: pvp.p2.name, total: pvp.cfg.PvpMatchTimerSeconds, elapsed: time || 0 } : null}
+                            />
+                        </BattleCanvas>
+                    ) : (<>
                     {/* Grid background - scrolls with world movement */}
                     <div className="absolute inset-0 opacity-10"
                         style={{
@@ -916,6 +990,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
                     {/* Skills, shots, Drones and hits, straight from the engine */}
                     {visuals && <SkillLayer visuals={visuals} worldToScreen={worldToScreen} unitsToPct={unitsToPct} yPx={yPx} icons={skillIcons} />}
+                                    </>)}
                 </div>
 
                 {/* Bottom Stats & Skills */}
@@ -967,7 +1042,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     </div>
 
                     {/* Skills */}
-                    {skills.length > 0 && ageIdx !== -2 && (
+                    {skills.length > 0 && ageIdx !== -2 && !canvasOk && (
                         <div className={`px-3 py-2 flex gap-2 justify-center flex-wrap items-center ${mobileTab === 'log' ? 'hidden sm:flex' : ''}`}>
                             {pvp && <span className="text-[10px] font-bold text-blue-300 mr-1">{pvp.p1.name}</span>}
                             {renderSkillRow(skills)}

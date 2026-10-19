@@ -31,7 +31,7 @@ export function useTreeLimits() {
                     if (!def) continue;
                     const stat = def.StatsByTier?.[node.Tier ?? 0]?.[0] ?? def.Stats?.[0];
                     if (!stat) continue;
-                    const maxLevel = def.MaxLevel || 1;
+                    const maxLevel = def.MaxLevel;
                     const atMax = (stat.Value || 0) + (maxLevel - 1) * (stat.ValueIncrease || 0);
                     const perLevel = Math.min(...[stat.Value, stat.ValueIncrease].filter((v: number) => v > 0));
                     const cur = personal[node.Type] ?? { max: 0, step: Infinity };

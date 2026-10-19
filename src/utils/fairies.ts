@@ -2,16 +2,21 @@
  * Fairies: the seasonal LiveOps feature added in 2.9.0. Mechanics verified from
  * libil2cpp.so build 2026_09_02_09_08:
  *
- *   FairyHelpers.CalculateRawBonus (RVA 0x775203C):
- *     steps   = FloorToInt(requiredStatTotal / RequiredStatValueDivider), then |steps|
- *     perStep = TargetStatBonus + TargetStatBonusPerLevel * (level - 1)
- *     raw     = |steps| * perStep
+ *   FairyHelpers.CalculateRawBonus (RVA 0x775203C; 0x7804B9C in build 2026_10_08_09_03):
+ *     required = Stats.GetDisplayedSecondaryTotal (0x7864100): the sum of each line rounded by
+ *                SecondaryStatHelper.RoundToDisplayResolution, i.e. the values the game shows
+ *     steps    = FloorToInt(required / RequiredStatValueDivider + MultipleTolerance), then |steps|
+ *                (MultipleTolerance = Ratio1000(1) = 0.001, FairyHelpers .cctor 0x7804D80)
+ *     perStep  = TargetStatBonus + TargetStatBonusPerLevel * (level - 1)
+ *     raw      = |steps| * perStep
  *
- *   FairyHelpers.ApplyFairyStat (RVA 0x7751CA0):
- *     when raw > 0 the target's secondary-stat pool becomes
+ *   FairyHelpers.ApplyFairyStat (RVA 0x7751CA0; 0x7804818 in build 2026_10_08_09_03):
+ *     when raw != 0 the target's secondary-stat pool becomes
  *     min(poolTotal + raw, TargetStatTotalCap) -- the cap clamps the POOL TOTAL, not the
- *     grant, and both required and target totals live in the game's SecondaryStatType
- *     aggregate (item/pet substats), which maps to statEngine's secondaryStats pools.
+ *     grant (so a pool already above the cap is pulled down to it), and both required and
+ *     target totals live in the game's SecondaryStatType aggregate (item/pet substats), which
+ *     maps to statEngine's secondaryStats pools. Called from CalculateTotalStats (0x77B3AF0),
+ *     so it applies in every mode, PvP snapshots included.
  *
  * The per-fairy rows (FairyStatLibrary) are NOT in the client config archive: they arrive
  * inside FairiesEventConfig.Stats with the live event (ServerGameConfig LiveOps template).
@@ -31,7 +36,7 @@ export const FAIRIES: { name: FairyName; texture: string }[] = [
     { name: 'Tira', texture: 'FairyIconTira.png' },
 ];
 
-/** Fallback when FairyUpgradesLibrary.json is unavailable; the library ships levels 2..20. */
+/** Only for the screenshot card reader (ocr/cardReader.ts), which gets no configs: the top level of FairyUpgradesLibrary (levels 2..20 in 2026_10_08_09_03). UI code reads the library. */
 export const FAIRY_MAX_LEVEL = 20;
 
 export interface SeasonFairyStat {
@@ -88,18 +93,17 @@ export function fairyPerStep(cfg: SeasonFairyStat, level: number): number {
     return cfg.targetStatBonus + cfg.targetStatBonusPerLevel * (Math.max(1, level) - 1);
 }
 
-/**
- * CalculateRawBonus. The pools here are plain doubles while the game runs Q32.32, so a hair
- * of tolerance keeps a nominal 0.07 / 0.01 from flooring to 6 on representation error.
- */
+/** FairyHelpers.MultipleTolerance: Ratio1000(1), added before the floor. */
+export const FAIRY_MULTIPLE_TOLERANCE = 0.001;
+
+/** CalculateRawBonus: whole steps of the displayed required total, with the game's tolerance. */
 export function fairyRawBonus(cfg: SeasonFairyStat, level: number, requiredTotal: number): number {
-    if (!cfg.requiredStatValueDivider) return 0;
-    const ratio = Math.abs(requiredTotal) / Math.abs(cfg.requiredStatValueDivider);
-    const steps = Math.floor(ratio + 1e-9);
+    if (!cfg.requiredStatValueDivider || requiredTotal === 0) return 0;
+    const steps = Math.abs(Math.floor(requiredTotal / cfg.requiredStatValueDivider + FAIRY_MULTIPLE_TOLERANCE));
     return steps * fairyPerStep(cfg, level);
 }
 
-/** ApplyFairyStat: a positive raw grant lands in the pool, whose total is clamped to the cap. */
+/** ApplyFairyStat: a non-zero raw grant lands in the pool, whose total is clamped to the cap. */
 export function applyFairyBonus(
     cfg: SeasonFairyStat,
     level: number,
@@ -107,6 +111,6 @@ export function applyFairyBonus(
     currentTargetTotal: number
 ): number {
     const raw = fairyRawBonus(cfg, level, requiredTotal);
-    if (raw <= 0) return currentTargetTotal;
+    if (raw === 0) return currentTargetTotal;
     return Math.min(currentTargetTotal + raw, cfg.targetStatTotalCap);
 }

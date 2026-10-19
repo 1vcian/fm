@@ -460,7 +460,7 @@ function simulateSummonPool(params: {
     unitsPerSummon: number;
     maxIterations?: number;
 }): SummonPool {
-    const maxLevel = params.levels.length || 100;
+    const maxLevel = params.levels.length; // SummonConfig.Levels: the top level is its length
     const sim = simulateSummons({
         levels: params.levels,
         startLevel: Math.max(1, Math.min(params.startLevel || 1, maxLevel)),
@@ -834,8 +834,11 @@ export function computeWarPoints(
         } else if (unitCost <= 0) {
             emit('skills', 0, 'WarPointsFromSkillSummon', 'unavailable',
                 'This game data version does not say what one skill summon costs, so tickets cannot be converted.');
+        } else if (!(unitsPerSummon(configs.skillSummonConfig) > 0)) {
+            emit('skills', 0, 'WarPointsFromSkillSummon', 'unavailable',
+                'This game data version does not say how many skills one summon gives.');
         } else {
-            const perSummon = unitsPerSummon(configs.skillSummonConfig, 5);
+            const perSummon = unitsPerSummon(configs.skillSummonConfig);
             const costReduction = sumPlayerNode(configs, profile, 'SkillSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
             // The two `ExtraSkillChance` / `ExtraSummonChance` node types do not appear in
             // TechTreeMapping for this config, so this term is 0 today — it is read anyway, because
@@ -891,8 +894,11 @@ export function computeWarPoints(
         } else if (unitCost <= 0) {
             emit('mounts', 0, 'WarPointsFromMountSummon', 'unavailable',
                 'This game data version does not say what one mount summon costs, so winders cannot be converted.');
+        } else if (!(unitsPerSummon(configs.mountSummonConfig) > 0)) {
+            emit('mounts', 0, 'WarPointsFromMountSummon', 'unavailable',
+                'This game data version does not say how many mounts one summon gives.');
         } else {
-            const perSummon = unitsPerSummon(configs.mountSummonConfig, 1);
+            const perSummon = unitsPerSummon(configs.mountSummonConfig);
             const costReduction = sumPlayerNode(configs, profile, 'MountSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
             const extraChance = sumPlayerNode(configs, profile, 'ExtraMountChance');
             const costPerSummon = Math.max(1, summonCost(unitCost, perSummon, costReduction));
@@ -998,12 +1004,12 @@ export function computeWarPoints(
             /** Eggs the eggshells convert into, per rarity — the feasibility note needs them too. */
             const shellEggs: Record<string, number> = {};
             const shellCost = singleSummonCost(configs.eggSummonConfig);
-            if (shells > 0 && shellCost > 0 && Array.isArray(configs.eggSummonConfig?.Levels)) {
+            if (shells > 0 && shellCost > 0 && unitsPerSummon(configs.eggSummonConfig) > 0 && Array.isArray(configs.eggSummonConfig?.Levels)) {
                 // `EggsSummonCost` is absent from TechTreeMapping in this config version, so the
                 // reduction is 0 today; read anyway, for the same reason as the skill one.
                 const costReduction = sumPlayerNode(configs, profile, 'EggsSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
                 const extraChance = sumPlayerNode(configs, profile, 'ExtraEggChance');
-                const perSummon = unitsPerSummon(configs.eggSummonConfig, 1);
+                const perSummon = unitsPerSummon(configs.eggSummonConfig);
                 const costPerSummon = Math.max(1, summonCost(shellCost, perSummon, costReduction));
                 shellSummons = Math.floor(shells / costPerSummon);
 
@@ -1304,7 +1310,9 @@ export function computeWarPoints(
     if (dayless.length) {
         notes.push(`This game data version gives ${dayless.join(', ')} no war day, so those points are in the total but on no day.`);
     }
-    const emptyDays = [0, 1, 2, 3, 4, 5].filter(d => !Object.values(daysMap).some(list => list?.includes(d)));
+    // Day indices are the keys of GuildWarDayConfigLibrary (the war length is the config's).
+    const dayIndices = Object.keys(dayConfig || {}).map(Number).filter(Number.isFinite).sort((x, y) => x - y);
+    const emptyDays = dayIndices.filter(d => !Object.values(daysMap).some(list => list?.includes(d)));
     if (emptyDays.length) {
         notes.push(`${emptyDays.map(getWarDayName).join(', ')} carries no tasks in this game data version, so nothing can be scored then (today is ${getWarDayName(getWarDayIndex(now))}).`);
     }

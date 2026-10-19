@@ -121,7 +121,7 @@ export default function TechTree() {
                         tier: catIdx, // map category to tier for compatibility
                         category: category,
                         requirements: [],
-                        maxLevel: upgradeDef?.MaxLevel || 20
+                        maxLevel: upgradeDef?.MaxLevel ?? 0
                     };
                     all.push(nodeObj);
                     byId[globalId] = nodeObj;
@@ -165,7 +165,7 @@ export default function TechTree() {
             treeNodes.forEach((n: any) => {
                 if (treeMode === 'max') {
                     const effect = treeEffects?.[n.type];
-                    treeRanks[n.id] = effect?.MaxLevel || 5;
+                    treeRanks[n.id] = effect?.MaxLevel ?? 0;
                 } else if (treeMode === 'empty') {
                     treeRanks[n.id] = 0;
                 } else {
@@ -184,7 +184,7 @@ export default function TechTree() {
                 const nodesList = guildPositionLibrary[category].Nodes || [];
                 for (const nodeType of nodesList) {
                     const upgradeDef = guildUpgradeLibrary[nodeType];
-                    const maxLevel = upgradeDef?.MaxLevel || 20;
+                    const maxLevel = upgradeDef?.MaxLevel ?? 0;
 
                     if (treeMode === 'max') {
                         clanRanks[globalId] = maxLevel;
@@ -305,12 +305,12 @@ export default function TechTree() {
             const newTreeRanks = { ...(prev[activeTab] || {}) };
             const currentRank = newTreeRanks[nodeId] || 0;
 
-            let max = 5;
+            let max: number;
             if (activeTab === 'Clan') {
-                max = node.maxLevel || 20;
+                max = node.maxLevel ?? 0;
             } else {
                 const effect = treeEffects?.[node.type];
-                max = effect?.MaxLevel || 1;
+                max = effect?.MaxLevel ?? 0;
             }
             const newVal = Math.max(0, Math.min(max, currentRank + delta));
 
@@ -364,7 +364,7 @@ export default function TechTree() {
             const tree = allTrees[key];
             const treeRanks: Record<number, number> = {};
             (tree.nodes || []).forEach((n: any) => {
-                const max = treeEffects?.[n.type]?.MaxLevel || 1;
+                const max = treeEffects?.[n.type]?.MaxLevel ?? 0;
                 treeRanks[n.id] = max;
             });
             newGlobalState[key] = treeRanks;
@@ -378,7 +378,7 @@ export default function TechTree() {
                 const nodesList = guildPositionLibrary[category].Nodes || [];
                 for (const nodeType of nodesList) {
                     const upgradeDef = guildUpgradeLibrary[nodeType];
-                    clanRanks[globalId] = upgradeDef?.MaxLevel || 20;
+                    clanRanks[globalId] = upgradeDef?.MaxLevel ?? 0;
                     globalId++;
                 }
             }
@@ -393,7 +393,7 @@ export default function TechTree() {
             setLocalRanks(prev => {
                 const treeRanks: Record<number, number> = {};
                 nodes.forEach(n => {
-                    treeRanks[n.id] = n.maxLevel || 20;
+                    treeRanks[n.id] = n.maxLevel ?? 0;
                 });
                 return { ...prev, Clan: treeRanks };
             });
@@ -404,7 +404,7 @@ export default function TechTree() {
             const tree = treeMapping.trees[activeTab];
             const treeRanks: Record<number, number> = {};
             (tree.nodes || []).forEach((n: any) => {
-                const max = treeEffects?.[n.type]?.MaxLevel || 1;
+                const max = treeEffects?.[n.type]?.MaxLevel ?? 0;
                 treeRanks[n.id] = max;
             });
             return { ...prev, [activeTab]: treeRanks };
@@ -550,7 +550,7 @@ export default function TechTree() {
             const upgradeDef = guildUpgradeLibrary[node.type];
             if (!upgradeDef) return { totalTime: 0, remainingTime: 0, totalCost: 0, remainingCost: 0 };
             
-            const maxLevel = upgradeDef.MaxLevel || 20;
+            const maxLevel = upgradeDef.MaxLevel ?? 0;
             const pointsPerLevel = upgradeDef.PointsPerLevel || 0;
             const totalCost = pointsPerLevel * maxLevel;
             const remainingCost = pointsPerLevel * Math.max(0, maxLevel - currentRank);
@@ -562,7 +562,7 @@ export default function TechTree() {
 
         const tier = node.tier;
         const effect = treeEffects[node.type];
-        const maxLevel = effect?.MaxLevel || 1;
+        const maxLevel = effect?.MaxLevel ?? 0;
         const tierData = upgradeLibrary[tier];
 
         let totalTime = 0;
@@ -673,7 +673,7 @@ export default function TechTree() {
 
             return {
                 Type: selectedNode.type,
-                MaxLevel: upgradeDef.MaxLevel || 20,
+                MaxLevel: upgradeDef.MaxLevel ?? 0,
                 Stats: (nodeDef.Stats || []).map((stat: any) => ({
                     ...stat,
                     Value: valPerLevel,
@@ -995,7 +995,7 @@ export default function TechTree() {
                                         const currentTreeRanks = localRanks[activeTab] || {};
                                         const currentRank = currentTreeRanks[node.id] || 0;
                                         const effect = treeEffects?.[node.type];
-                                        const maxLevel = effect?.MaxLevel || 1;
+                                        const maxLevel = effect?.MaxLevel ?? 0;
                                         const spriteStyle = getSpriteStyle(node);
                                         const isSelected = selectedNodeId === node.id;
                                         const isMaxed = currentRank >= maxLevel;
@@ -1233,7 +1233,7 @@ export default function TechTree() {
                                             <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 block">Bonus Analytics</label>
                                             {selectedEffect?.Stats?.map((stat: any, i: number) => {
                                                 const currentVal = (localRanks[activeTab] || {})[selectedNode.id] || 0;
-                                                const maxLevel = selectedEffect.MaxLevel || 1;
+                                                const maxLevel = selectedEffect.MaxLevel ?? 0;
 
                                                 return (
                                                     <div key={i} className="bg-bg-input/50 rounded-xl border border-border p-4 space-y-3">

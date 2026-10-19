@@ -114,9 +114,10 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     }, [petUnlockLib, selectedRarity, profile.misc.mountAscensionLevel, mountAscensionLevel]);
 
     const maxMountLevel = useMemo(() => {
-        if (!mountUpgradeLib || !selectedRarity) return 100;
-        return mountUpgradeLib[selectedRarity]?.LevelInfo?.length || 100;
-    }, [mountUpgradeLib, selectedRarity]);
+        // MountUpgradeLibrary[rarity].LevelInfo length; until it loads the level cannot move up.
+        const len = selectedRarity ? mountUpgradeLib?.[selectedRarity]?.LevelInfo?.length : undefined;
+        return typeof len === 'number' ? len : mountLevel;
+    }, [mountUpgradeLib, selectedRarity, mountLevel]);
 
     useEffect(() => {
         if (manualStats.length > maxSlots) {

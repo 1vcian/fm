@@ -215,7 +215,7 @@ export default function Skills() {
                     <div className="h-6 w-px bg-border/50 hidden sm:block" />
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
-                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                        <AscensionStars type="Skills" value={ascensionLevel} onChange={setAscensionLevel} />
                         {ascensionLevel > 0 && (
                             <span className="text-xs text-amber-400 font-mono">+{((ascensionMulti.activeDmg) * 100).toFixed(0)}%</span>
                         )}

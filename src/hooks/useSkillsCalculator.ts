@@ -148,16 +148,18 @@ export function useSkillsCalculator() {
     };
 
     // 7. Constants from unified config
-    const unitCost = skillSummonConfig?.SingleSummonCost?.Amount || 40;
+    // NaN until SkillSummonConfig loads; `ready` stays false meanwhile and the page shows a loading state.
+    const unitCost: number = skillSummonConfig?.SingleSummonCost?.Amount ?? NaN;
     // SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0]; SkillBaseConfig has no SummonCount.
-    const SKILLS_PER_SUMMON = baseSummonCount(skillSummonConfig, 5);
+    const SKILLS_PER_SUMMON = baseSummonCount(skillSummonConfig);
     const BASE_SUMMON_COST = unitCost * SKILLS_PER_SUMMON;
     const levels: any[] = skillSummonConfig?.Levels || [];
-    const currency = skillSummonConfig?.SingleSummonCost?.Currency || 'SkillSummonTickets';
+    const currency: string = skillSummonConfig?.SingleSummonCost?.Currency ?? '';
     // SummonConfig.CanAffordSummon (RVA 0x7865EDC): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(unitCost, SKILLS_PER_SUMMON, costReduction);
-    const maxPossibleLevel = levels.length || 100;
+    const maxPossibleLevel = levels.length;
+    const ready = levels.length > 0 && Number.isFinite(unitCost) && Number.isFinite(SKILLS_PER_SUMMON);
 
     // 8. War Points
     const warPointsPerSummonSkill = useMemo(() => {
@@ -218,6 +220,7 @@ export function useSkillsCalculator() {
     });
 
     return {
+        ready,
         level, setLevel,
         progress, setProgress,
         ticketCount, setTicketCount,

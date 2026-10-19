@@ -200,7 +200,8 @@ export default function Mounts() {
                     <input
                         type="range"
                         min={1}
-                        max={mountUpgrades?.Common?.LevelInfo?.length || 100}
+                        max={mountUpgrades?.Common?.LevelInfo?.length}
+                        disabled={!mountUpgrades?.Common?.LevelInfo?.length}
                         value={globalLevel}
                         onChange={(e) => setGlobalLevel(parseInt(e.target.value))}
                         className="flex-1 accent-accent-primary"
@@ -209,7 +210,7 @@ export default function Mounts() {
                     <div className="h-6 w-px bg-border/50 hidden sm:block" />
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
-                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                        <AscensionStars type="Mounts" value={ascensionLevel} onChange={setAscensionLevel} />
                         {ascensionLevel > 0 && (
                             <span className="text-xs text-amber-400 font-mono">+{((ascensionMulti.dmg) * 100).toFixed(0)}%</span>
                         )}

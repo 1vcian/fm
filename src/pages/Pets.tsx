@@ -240,7 +240,8 @@ export default function Pets() {
                     <input
                         type="range"
                         min={1}
-                        max={petUpgrades?.Common?.LevelInfo?.length || 100}
+                        max={petUpgrades?.Common?.LevelInfo?.length}
+                        disabled={!petUpgrades?.Common?.LevelInfo?.length}
                         value={globalLevel}
                         onChange={(e) => setGlobalLevel(parseInt(e.target.value))}
                         className="flex-1 accent-accent-primary"
@@ -249,7 +250,7 @@ export default function Pets() {
                     <div className="h-6 w-px bg-border/50 hidden sm:block" />
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
-                        <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                        <AscensionStars type="Pets" value={ascensionLevel} onChange={setAscensionLevel} />
                         {/* Ascensions-layer Multiplier: x(1 + Value) of AscensionConfigPerLevel[Level - 1] only (AscensionModel.GetLevelStats 0x77E7364; layer math in docs/skill-verification-2026_10.md section 2). */}
                         {ascensionLevel > 0 && (
                             <span className="text-xs text-amber-400 font-mono">x{formatNumber(ascensionMulti.dmg)}</span>

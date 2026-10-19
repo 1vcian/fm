@@ -15,7 +15,6 @@
  */
 import type { MountSlot, PetSlot, SkillSlot, UserProfile } from '../types/Profile';
 import { calculateStats, type LibraryData } from '../utils/statEngine';
-import { MAX_ACTIVE_PETS, MAX_ACTIVE_SKILLS } from '../utils/constants';
 import type { PvpHpConfig } from '../engine';
 import { fighterFromProfile, type PvpFighter } from '../pvp/fighter';
 import { PvpBattle } from '../pvp/simulate';
@@ -46,12 +45,12 @@ function subsets<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Every pets + mount combination over the saved builds: up to MAX_ACTIVE_PETS of the saved pets
- * (the active pets when none are saved) times the active + saved mounts, deduplicated.
+ * Every pets + mount combination over the saved builds: up to `petSlots` (PetBaseConfig.PetSlotsCount)
+ * of the saved pets (the active pets when none are saved) times the active + saved mounts, deduplicated.
  */
-export function enumerateLoadouts(p: UserProfile): LoadoutCombo[] {
+export function enumerateLoadouts(p: UserProfile, petSlots: number): LoadoutCombo[] {
     const savedPets = p.pets.savedBuilds || [];
-    const petSets = subsets(savedPets, MAX_ACTIVE_PETS);
+    const petSets = subsets(savedPets, petSlots);
     if (petSets.length === 0) petSets.push(p.pets.active);
 
     const mounts: (MountSlot | null)[] = [];
@@ -206,6 +205,12 @@ const now = () => (typeof performance !== 'undefined' ? performance.now() : Date
 export function runOptimizer(input: OptimizerInput, onProgress: OptimizerProgress = () => {}): OptimizerResult {
     const { base, libs, pvpConfig, options: o } = input;
     const t0 = now();
+    // Slot counts from the config (PetBaseConfig.PetSlotsCount, SkillBaseConfig.SkillSlotsCount).
+    const petSlots = libs.petBaseConfig?.PetSlotsCount;
+    const skillSlots = libs.skillBaseConfig?.SkillSlotsCount;
+    if (typeof petSlots !== 'number' || typeof skillSlots !== 'number') {
+        throw new Error('PetBaseConfig.json / SkillBaseConfig.json are not loaded');
+    }
 
     const withBuild = (skills: SkillSlot[], c: LoadoutCombo): UserProfile => ({
         ...base,
@@ -223,8 +228,8 @@ export function runOptimizer(input: OptimizerInput, onProgress: OptimizerProgres
     const currentSkills = (base.skills.equipped || []).filter(s => s && s.id);
     const currentLoadout: LoadoutCombo = { petSet: base.pets.active, mount: base.mount.active };
 
-    const skillSets = o.scope === 'loadout' ? [currentSkills] : subsets(skillPool(base, libs, o), MAX_ACTIVE_SKILLS);
-    const loadouts = o.scope === 'skills' ? [currentLoadout] : enumerateLoadouts(base);
+    const skillSets = o.scope === 'loadout' ? [currentSkills] : subsets(skillPool(base, libs, o), skillSlots);
+    const loadouts = o.scope === 'skills' ? [currentLoadout] : enumerateLoadouts(base, petSlots);
     if (skillSets.length === 0) skillSets.push(currentSkills);
 
     // Stage 1: each half on its own, then the best of each crossed.

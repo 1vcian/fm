@@ -16,10 +16,11 @@
 // arg (item/pet/mount use it for stat/identity lookups); the skills + currency readers are purely
 // geometric and take no dictionary. readScreenshots simply maps readScreenshot over a batch.
 
-import { loadImage, imageToCanvas, screenshotCanvas } from './imagePrep';
+import { loadImage } from './imagePrep';
+import { gameScreen } from './uiLayout';
 import { classifyScreen } from './templateClassifier';
 import { readItem, readUnit, readForgeAscension } from './templateReaders';
-import { readSkills } from './skillsReader';
+import { readSkillsGrid } from './skillsReader';
 import { readClanTree } from './clanTreeReader';
 import { readSkin, emptySkinDict, type SkinDict } from './skinReader';
 import { readForgeLevel, readSkillAscension } from './screenExtras';
@@ -38,7 +39,7 @@ import type { DetectedUnit, ScreenReadResult, CurrencyCrops } from './readerType
  * actually resolved to an id, and refuse when neither did (readUnit leaves `id` undefined, and
  * buildChangesFromReads skips a unit with no id — an absent row beats a coin-flip).
  */
-async function readUnitEitherWay(
+export async function readUnitEitherWay(
     canvas: HTMLCanvasElement, dicts: GameDictionaries, warnings: string[],
 ): Promise<DetectedUnit | undefined> {
     const asPet = await readUnit(canvas, 'pet', dicts);
@@ -56,8 +57,8 @@ async function readUnitEitherWay(
     }
     if (petOk) return asPet;
     if (mountOk) return asMount;
-    warnings.push('Read a detail popup, but its name is in neither the pet nor the mount list. '
-        + 'pick the screen type yourself if this is an item or a skill popup.');
+    warnings.push('Read a pet or mount popup, but its name matched neither list. Check the game '
+        + 'language setting, or pick Pet or Mount yourself.');
     return undefined;
 }
 
@@ -73,7 +74,7 @@ export async function readScreenshot(
 ): Promise<ScreenReadResult> {
     const warnings: string[] = [];
 
-    const canvas = screenshotCanvas(await loadImage(input));
+    const canvas = await gameScreen(await loadImage(input));
     // `type` is the SCREEN (what the currency header says) and drives the currency/forge readers;
     // `subject` is what the popup in the foreground is about and drives the subject readers. They
     // differ exactly when a detail popup sits on a frame with no header — see ScreenSubject.
@@ -99,10 +100,17 @@ export async function readScreenshot(
             break;
         }
         case 'skills': {
-            result.skills = await readSkills(canvas);
+            const sg = await readSkillsGrid(canvas);
+            result.skills = sg.cells;
             // confidence from the share of cells that yielded a level
             const known = result.skills.filter(s => s.level !== null).length;
             result.confidence = result.skills.length ? known / result.skills.length : 0;
+            if (sg.fallback) {
+                // no grid was found: the cells are where a 576x1280 skills screen had them, so
+                // every level is a suggestion to check, never a pre-accepted value
+                result.confidence = Math.min(result.confidence, 0.5);
+                warnings.push('The skills grid was not found, so the levels were read at the usual screen positions. Check each one.');
+            }
             break;
         }
         case 'clanTree': {
@@ -123,6 +131,11 @@ export async function readScreenshot(
             result.unit = await readUnitEitherWay(canvas, dicts, warnings);
             result.screen = result.unit?.kind ?? 'unknown';
             result.confidence = result.unit?.confidence ?? 0;
+            break;
+        }
+        case 'skillPopup': {
+            warnings.push('This is a single skill popup. Skill levels are read from the skills screen '
+                + '(the grid with every skill), so upload that screen instead.');
             break;
         }
         case 'enemy': {

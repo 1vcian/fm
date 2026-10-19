@@ -16,14 +16,16 @@
 // This file only IMPORTS from the rest of src/utils/ocr — it does not change any behaviour of
 // the one-shot pipeline.
 
-import { loadImage, imageToCanvas, screenshotCanvas, type Rect } from './imagePrep';
+import { loadImage, type Rect } from './imagePrep';
+import { gameScreen } from './uiLayout';
 import { classifyScreen, subjectFromPopup, type ScreenSubject } from './templateClassifier';
 import { readItem, readUnit } from './templateReaders';
-import { readSkills } from './skillsReader';
+import { readSkillsGrid } from './skillsReader';
 import { readClanTree } from './clanTreeReader';
 import { readForgeLevel, readSkillAscension } from './screenExtras';
 import { readCurrencies } from './currencyReader';
 import { readSkin, emptySkinDict, type SkinDict } from './skinReader';
+import { readUnitEitherWay } from './autoSyncPipeline';
 import { buildChangesFromReads, type ChangeRow, type AutoSyncProgress } from './autoSync';
 import { setOcrProgress } from './ocrEngine';
 import type { GameDictionaries } from './gameLocalization';
@@ -31,8 +33,9 @@ import type { ScreenReadResult, CurrencyCrops } from './readerTypes';
 import type { UserProfile } from '../../types/Profile';
 
 /** Templates the user can force in the review stage (the readable subset of ScreenTemplate,
- *  plus 'skin' — the per-slot skin popup, which the classifier itself never emits). */
-export type ForcedTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 'skin';
+ *  plus 'skin' (the per-slot skin popup) and 'unit': a pet OR mount popup, decided by the name
+ *  dictionaries because the two popups are the same container). */
+export type ForcedTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 'skin' | 'unit';
 
 /** Review-stage hint = the classifier's popup-aware SUBJECT (templateClassifier.ScreenSubject):
  *  the screen templates plus 'skin' (a skin popup, which shares the coins+gems header with the
@@ -131,9 +134,9 @@ export async function readScreenshotAs(
 ): Promise<ScreenReadResult> {
     const warnings: string[] = [];
 
-    const canvas = screenshotCanvas(await loadImage(input));
+    const canvas = await gameScreen(await loadImage(input));
 
-    const result: ScreenReadResult = { screen: forced, warnings, confidence: 0 };
+    const result: ScreenReadResult = { screen: forced === 'unit' ? 'unknown' : forced, warnings, confidence: 0 };
 
     switch (forced) {
         case 'item': {
@@ -152,10 +155,17 @@ export async function readScreenshotAs(
             break;
         }
         case 'skills': {
-            result.skills = await readSkills(canvas);
+            const sg = await readSkillsGrid(canvas);
+            result.skills = sg.cells;
             // confidence from the share of cells that yielded a level
             const known = result.skills.filter(s => s.level !== null).length;
             result.confidence = result.skills.length ? known / result.skills.length : 0;
+            if (sg.fallback) {
+                // no grid was found: the cells are where a 576x1280 skills screen had them, so
+                // every level is a suggestion to check, never a pre-accepted value
+                result.confidence = Math.min(result.confidence, 0.5);
+                warnings.push('The skills grid was not found, so the levels were read at the usual screen positions. Check each one.');
+            }
             break;
         }
         case 'clanTree': {
@@ -169,11 +179,18 @@ export async function readScreenshotAs(
             result.confidence = result.skin.confidence;
             break;
         }
+        case 'unit': {
+            result.unit = await readUnitEitherWay(canvas, dicts, warnings);
+            result.screen = result.unit?.kind ?? 'unknown';
+            result.confidence = result.unit?.confidence ?? 0;
+            break;
+        }
     }
 
     // Currencies are read for every screen type, keyed off the forced template. The skin popup
     // overlays the main battle screen, which has no calibrated currency bands — skip it there.
-    if (forced !== 'skin') {
+    // A pet-or-mount popup has no header of its own to read currencies from.
+    if (forced !== 'skin' && forced !== 'unit') {
         const currencyCrops: CurrencyCrops = {};
         result.currencies = await readCurrencies(canvas, forced, currencyCrops);
         if (Object.keys(currencyCrops).length) result.currencyCrops = currencyCrops;

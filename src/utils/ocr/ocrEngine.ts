@@ -1,8 +1,9 @@
-// Lazy client-side OCR engine (tesseract.js v7). tesseract.js is DYNAMICALLY imported on
+// Lazy client-side OCR engine (tesseract.js v7), one worker per language set. tesseract.js is DYNAMICALLY imported on
 // first use, so it adds ZERO weight to the initial app bundle — only AutoSync/PvP pull it in.
 // The worker + wasm core + language data then load on demand and are cached by the browser.
 
 import type { Worker } from 'tesseract.js';
+import { tessLangsFor, type GameLang } from './ocrLanguage';
 
 // Page-segmentation-mode values (tesseract's string enum). Declared locally so we never need
 // a static import of the heavy module just to reference a constant.
@@ -12,24 +13,45 @@ export type PsmValue = (typeof PSM)[keyof typeof PSM];
 type OcrImage = HTMLCanvasElement | HTMLImageElement | string;
 export type OcrProgress = (p: { status: string; progress: number }) => void;
 
-let workerPromise: Promise<Worker> | null = null;
+// One worker per tesseract language set. WORDS are read with the game language's model (plus
+// English, see ocrLanguage.tessLangsFor); a pass restricted to digits and number punctuation always
+// uses the English model, because those glyphs are the same Baloo glyphs in every language.
+const workers = new Map<string, Promise<Worker>>();
 let progressCb: OcrProgress | null = null;
+let textLangs = 'eng';
 
 /** Subscribe to load/recognize progress (0..1). Pass null to clear. */
 export function setOcrProgress(cb: OcrProgress | null) { progressCb = cb; }
 
-async function getWorker(): Promise<Worker> {
-    if (!workerPromise) {
-        workerPromise = (async () => {
+/** The language the next screenshots are in; words are read with its model from then on. */
+export function setOcrLanguage(lang: GameLang): void { textLangs = tessLangsFor(lang); }
+export function ocrLanguages(): string { return textLangs; }
+
+function getWorkerFor(langs: string): Promise<Worker> {
+    let w = workers.get(langs);
+    if (!w) {
+        w = (async () => {
             const { createWorker } = await import('tesseract.js');
-            return createWorker('eng', 1, {
+            return createWorker(langs, 1, {
                 logger: (m: { status: string; progress: number }) => {
                     if (progressCb && typeof m.progress === 'number') progressCb(m);
                 },
             });
         })();
+        // a failed load (offline, CDN error) must not poison the cache: the next call retries
+        w.catch(() => { if (workers.get(langs) === w) workers.delete(langs); });
+        workers.set(langs, w);
     }
-    return workerPromise;
+    return w;
+}
+
+/** Digits-only whitelists need no language model beyond English. */
+function isNumericWhitelist(wl: string | undefined): boolean {
+    return !!wl && /^[0-9.,%+\-\/kmbtqKMBTQ ]+$/.test(wl);
+}
+
+async function getWorker(whitelist?: string): Promise<Worker> {
+    return getWorkerFor(isNumericWhitelist(whitelist) ? 'eng' : textLangs);
 }
 
 /** Warm up the worker ahead of time (e.g. when the user opens the AutoSync modal). */
@@ -46,7 +68,7 @@ export interface OcrResult { text: string; confidence: number; words: { text: st
 
 /** Recognise text in an image (usually an already-cropped, preprocessed canvas). */
 export async function ocr(image: OcrImage, opts: OcrOptions = {}): Promise<OcrResult> {
-    const worker = await getWorker();
+    const worker = await getWorker(opts.whitelist);
     await worker.setParameters({
         tessedit_char_whitelist: opts.whitelist ?? '',
         tessedit_pageseg_mode: (opts.psm ?? PSM.SINGLE_LINE) as any,
@@ -89,9 +111,10 @@ export async function ocrPageLines(image: OcrImage): Promise<PageLine[]> {
 
 /** Free the worker (e.g. when the AutoSync flow closes) to reclaim memory. */
 export async function terminateOcr(): Promise<void> {
-    if (workerPromise) {
-        const w = await workerPromise.catch(() => null);
-        workerPromise = null;
+    const all = [...workers.values()];
+    workers.clear();
+    for (const p of all) {
+        const w = await p.catch(() => null);
         if (w) await w.terminate();
     }
 }

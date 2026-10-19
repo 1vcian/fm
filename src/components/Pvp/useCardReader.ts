@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import type { CardRead } from '../../utils/ocr/cardTypes';
 import { readProfileCard, buildCardAssets } from '../../utils/ocr/cardReader';
 import { buildGameDictionaries } from '../../utils/ocr/gameLocalization';
+import { loadLangChoice, resolveLang } from '../../utils/ocr/ocrLanguage';
+import { setOcrLanguage } from '../../utils/ocr/ocrEngine';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameLimits } from '../../hooks/useGameLimits';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -25,8 +27,10 @@ export function useCardReader(): { ready: boolean; read: (file: File) => Promise
         if (!ready) {
             return { ready: false, read: async () => { throw new Error('The screenshot reader is still loading.'); } };
         }
+        // the game language the AutoSync modal remembers (or the browser's): names are matched in it
+        const lang = resolveLang(loadLangChoice());
         const dicts = {
-            ...buildGameDictionaries({ autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization }),
+            ...buildGameDictionaries({ autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization, langs: [...new Set(['en', lang])] }),
             limits,
         };
         const assets = buildCardAssets({
@@ -35,6 +39,6 @@ export function useCardReader(): { ready: boolean; read: (file: File) => Promise
             autoItemMapping,
             skillLibrary,
         });
-        return { ready: true, read: (file: File) => readProfileCard(file, dicts, assets) };
+        return { ready: true, read: (file: File) => { setOcrLanguage(lang); return readProfileCard(file, dicts, assets); } };
     }, [autoItemMapping, skillLibrary, spriteMapping, localization, secondaryStatLibrary, limits, selectedVersion]);
 }

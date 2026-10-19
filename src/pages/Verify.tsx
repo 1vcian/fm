@@ -78,11 +78,11 @@ const Verify: React.FC = () => {
         const logs: string[] = [];
 
         // Base Stats
-        const PLAYER_BASE_DAMAGE = itemBalancingConfig.PlayerBaseDamage || 10;
-        const PLAYER_BASE_HEALTH = itemBalancingConfig.PlayerBaseHealth || 80;
-        const LEVEL_SCALING = itemBalancingConfig.LevelScalingBase || 1.01;
-        const MELEE_MULTI = itemBalancingConfig.PlayerMeleeDamageMultiplier || 1.6;
-        const POWER_DMG_MULTI = itemBalancingConfig.PlayerPowerDamageMultiplier || 8.0;
+        const PLAYER_BASE_DAMAGE = itemBalancingConfig.PlayerBaseDamage;
+        const PLAYER_BASE_HEALTH = itemBalancingConfig.PlayerBaseHealth;
+        const LEVEL_SCALING = itemBalancingConfig.LevelScalingBase;
+        const MELEE_MULTI = itemBalancingConfig.PlayerMeleeDamageMultiplier;
+        const POWER_DMG_MULTI = itemBalancingConfig.PlayerPowerDamageMultiplier;
 
         logs.push(`Config: BaseDmg=${PLAYER_BASE_DAMAGE}, BaseHp=${PLAYER_BASE_HEALTH}, MeleeMulti=${MELEE_MULTI}, PowerDmgMulti=${POWER_DMG_MULTI}`);
 
@@ -314,7 +314,7 @@ const Verify: React.FC = () => {
         let secondaryMeleeDamageMulti = 0;
 
         let critChance = itemBalancingConfig.PlayerBaseCritChance || 0; // Usually 0.05 or similar
-        let critDamage = itemBalancingConfig.PlayerBaseCritDamage || 1.5; // Usually 1.5
+        let critDamage = itemBalancingConfig.PlayerBaseCritDamage; // ItemBalancingConfig.PlayerBaseCritDamage
         let doubleHitChance = 0;
         let attackSpeed = 1.0;
 
@@ -527,7 +527,7 @@ const Verify: React.FC = () => {
             </div>
 
             <p className="mb-4 text-gray-400 text-sm">
-                Note: Power calculation now uses only the config parameter ({itemBalancingConfig?.PlayerPowerDamageMultiplier || 8}x) for both Damage and Health, as requested.
+                Note: Power calculation now uses only the config parameter ({itemBalancingConfig?.PlayerPowerDamageMultiplier ?? '...'}x) for both Damage and Health, as requested.
                 Absolute value will differ from game display by a constant offset, but marginal upgrades are exact.
             </p>
 

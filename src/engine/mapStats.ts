@@ -40,6 +40,9 @@ export interface PlayerAggregates {
     projectileSpeed?: number;
     projectileRadius?: number;
     projectileAffectedByGravity?: boolean;
+    isAiming?: boolean;
+    weaponHandOffset?: { x: number; y: number };
+    weaponMuzzleOffset?: { x: number; y: number };
     skillDamageMultiplier: number;
     skillHealthMultiplier: number;
     secondaryDamageMulti?: number;
@@ -126,14 +129,18 @@ export function playerUnitSpec(agg: PlayerAggregates, pos = { x: 0, y: 0 }, cont
         attackRange: (agg.weaponAttackRange || 0.3) + (agg.attackRangeBonus ?? 0),
         windupTime: agg.weaponWindupTime || 0.5,
         attackDuration: agg.weaponAttackDuration || 1.5,
-        projectile:
-            agg.isRangedWeapon && agg.hasProjectile
-                ? {
-                      speed: agg.projectileSpeed || 15,
-                      collisionRadius: agg.projectileRadius || 0.2,
-                      affectedByGravity: agg.projectileAffectedByGravity ?? false,
-                  }
-                : undefined,
+        // hasProjectile already follows SetUnitWeapon on the combat (skinned) weapon row:
+        // IsRanged and ProjectileId >= 0. Without it the hit lands at once at any range.
+        projectile: agg.hasProjectile
+            ? {
+                  speed: agg.projectileSpeed || 15,
+                  collisionRadius: agg.projectileRadius || 0.2,
+                  affectedByGravity: agg.projectileAffectedByGravity ?? false,
+                  isAiming: !!agg.isAiming,
+                  handOffset: { ...(agg.weaponHandOffset ?? { x: 0, y: 0 }) },
+                  weaponOffset: { ...(agg.weaponMuzzleOffset ?? { x: 0, y: 0 }) },
+              }
+            : undefined,
         tag: 'player',
     };
 }

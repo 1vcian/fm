@@ -2,7 +2,7 @@ import React from 'react';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { X, Bookmark, Shield, Minus, Plus, Check } from 'lucide-react';
 import { ItemSlot, MountSlot, PetSlot } from '../../types/Profile';
-import { AscensionStars } from './AscensionStars';
+import { AscensionStars, ascensionTypeForSlot, useAscensionMax } from './AscensionStars';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getRarityBgStyle, getRarityBorderStyle } from '../../lib/utils';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
 import { formatSecondaryStat } from '../../utils/statNames';
@@ -142,7 +142,9 @@ export function ItemSelectionCard({
     variant = 'default',
     layout = 'tile',
     currentLevel,
-    maxLevel = 299,
+    // No cap of its own: callers that let the level be typed pass the config's max level
+    // (and clamp again in their handler).
+    maxLevel = Infinity,
     className,
     artClassName,
 }: ItemSelectionCardProps) {
@@ -274,6 +276,7 @@ export function ItemSelectionCard({
                             <AscensionStars
                                 value={globalAscensionLevel}
                                 onChange={onAscensionChange}
+                                type={ascensionTypeForSlot(slotKey)}
                                 size="xs"
                             />
                         </div>
@@ -614,8 +617,6 @@ interface RowCardProps {
     starSrc: string;
 }
 
-const MAX_ASCENSION = 3;
-
 function RowCard({
     item, slotKey, slotLabel, isSelected, hasDiff, isEquipped, ascensionLevel, isSaved,
     itemName, itemImage, stats, customStats, tags, perfection, getStatPerfection, spriteMapping,
@@ -646,6 +647,7 @@ function RowCard({
         : { ...getAgeBgStyle(ageIdx ?? 0), ...getAgeBorderStyle(ageIdx ?? 0) };
 
     const substats: { statId: string; value: number }[] = item?.secondaryStats || [];
+    const MAX_ASCENSION = useAscensionMax(ascensionTypeForSlot(slotKey));
     const asc = Math.max(0, Math.min(MAX_ASCENSION, ascensionLevel || 0));
 
     /** label, value, multiplier: one line instead of the three the tile used. */
@@ -888,7 +890,7 @@ function RowCard({
 
                         {onAscensionChange ? (
                             <div onClick={(e) => e.stopPropagation()}>
-                                <AscensionStars value={asc} onChange={onAscensionChange} size="xs" className="origin-left scale-[0.8] sm:scale-90 xl:scale-100" />
+                                <AscensionStars value={asc} onChange={onAscensionChange} type={ascensionTypeForSlot(slotKey)} size="xs" className="origin-left scale-[0.8] sm:scale-90 xl:scale-100" />
                             </div>
                         ) : (
                             <div

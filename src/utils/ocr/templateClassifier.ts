@@ -20,7 +20,8 @@
 // verdict came with a currency header (the user's own screen) or without one (a card that may be
 // somebody else's — a read the caller must never pre-accept). `type` keeps its exact old meaning
 // and value set, so every existing consumer of it is unaffected.
-import { loadImage, imageToCanvas, screenshotCanvas, findStarTiles, detectPopupCard, detectPopupTile, type Rect } from './imagePrep';
+import { gameScreen, findPopupCards, type PopupKind } from './uiLayout';
+import { loadImage, imageToCanvas, findStarTiles, detectPopupCard, detectPopupTile, type Rect } from './imagePrep';
 import { detectOutlinedTile } from './skinReader';
 
 export type ScreenTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 'enemy' | 'unknown';
@@ -36,8 +37,11 @@ export type ScreenTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 
  *              rarity/age-coloured tile with a "Lv." pill, same one-or-two stat lines) and differ
  *              only in the NAME text, so the classifier refuses to guess between them and hands
  *              the frame to the readers, whose closed pet/mount dictionaries can decide.
+ *  - 'skillPopup': a single skill's detail popup (SkillDetailsUiView, or the profile card's
+ *              PlayerPvpProfileSkillPopupUiView). Recognised so the user is told why nothing is read
+ *              from it: the skill levels come from the skills screen grid, not from one popup.
  */
-export type ScreenSubject = ScreenTemplate | 'skin' | 'unit';
+export type ScreenSubject = ScreenTemplate | 'skin' | 'unit' | 'skillPopup';
 
 export interface ClassifyResult {
     type: ScreenTemplate;
@@ -54,7 +58,7 @@ export interface ClassifyResult {
     emblem: number;
     confidence: number;
     /** Evidence for a popup-derived subject (observability only). */
-    popup?: { card: Rect; tile: Rect | null; chroma: number | null };
+    popup?: { card: Rect; tile: Rect | null; chroma: number | null; kind?: PopupKind };
 }
 
 const CANON_W = 576;         // canonical working width (the icon templates were cut at 576w)
@@ -439,9 +443,53 @@ export function subjectFromPopup(src: HTMLCanvasElement, headerCard: boolean): P
     return { subject: tall && desaturated ? 'skin' : 'unit', card, tile, chroma };
 }
 
+/** The known popup container on a frame (largest card first), or null. */
+function popupKindOf(canon: HTMLCanvasElement): PopupKind | null {
+    for (const c of findPopupCards(canon)) {
+        // a popup container is at least 80% of the 1080-unit phone width (896 of 1080)
+        if (c.rect.w < 0.78 * canon.width) continue;
+        return c.kind;
+    }
+    return null;
+}
+
+/** Is the subject visual of a 896x420 profile-card popup ROUND (a skill) rather than a square
+ *  rarity tile (pet / mount)? PlayerPvpProfileSkillPopup puts a 140-unit round SkillVisual centred
+ *  at (110, 106) units from the card's top-left; the pet/mount popups put a 150-unit square tile at
+ *  (35..185, 35..185). The four corners of the 150-unit box are white on the skill popup (outside
+ *  the disc) and tile fill on the others. */
+function cardVisualIsRound(canon: HTMLCanvasElement, card: Rect): boolean {
+    const u = card.w / 896;
+    const ctx = canon.getContext('2d', { willReadFrequently: true })!;
+    const box = { x: card.x + 35 * u, y: card.y + 35 * u, s: 150 * u };
+    let white = 0, n = 0;
+    for (const [fx, fy] of [[0.08, 0.08], [0.92, 0.08], [0.08, 0.92], [0.92, 0.92]]) {
+        const x = Math.round(box.x + fx * box.s), y = Math.round(box.y + fy * box.s);
+        if (x < 0 || y < 0 || x >= canon.width || y >= canon.height) continue;
+        const d = ctx.getImageData(x - 1, y - 1, 3, 3).data;
+        for (let i = 0; i < d.length; i += 4) { n++; if (Math.min(d[i], d[i + 1], d[i + 2]) > 215) white++; }
+    }
+    return n > 0 && white / n > 0.6;
+}
+
+function subjectFromPopupKind(kind: PopupKind, canon: HTMLCanvasElement): ScreenSubject | null {
+    switch (kind) {
+        case 'cardItem': return 'item';
+        case 'skin': return 'skin';
+        case 'unitDetails': return 'unit';
+        case 'skillDetails': return 'skillPopup';
+        case 'cardUnit': {
+            const card = findPopupCards(canon).find(c => c.kind === 'cardUnit');
+            return card && cardVisualIsRound(canon, card.rect) ? 'skillPopup' : 'unit';
+        }
+    }
+    return null;
+}
+
 export async function classifyScreen(input: HTMLImageElement | HTMLCanvasElement | Blob | string): Promise<ClassifyResult> {
     // device bars (tablet / short-phone pillarbox) are not part of the game frame: see trimDeviceBars
-    const img = screenshotCanvas((input instanceof HTMLImageElement || input instanceof HTMLCanvasElement) ? input : await loadImage(input));
+    // the phone-shaped game frame: device bars cut, a wide (height-matched) capture rebuilt; see uiLayout
+    const img = await gameScreen((input instanceof HTMLImageElement || input instanceof HTMLCanvasElement) ? input : await loadImage(input));
     const canon = canvasAtWidth(img, CANON_W);
     const gray = toGray(canon);
     const templates = await loadTemplates();
@@ -471,11 +519,16 @@ export async function classifyScreen(input: HTMLImageElement | HTMLCanvasElement
     // scores; canvas JPEG decode + smoothing reads ~0.01 hotter on the same frames (measured:
     // ticket 0.647 vs 0.64, egg 0.620 vs 0.61), so 0.63 reproduces the proto's decision boundary.
     const TH = 0.63;
+    // The left-band icons (ticket / egg) need more than the proto's bar. Measured on the real
+    // fixtures: a genuine skills or pet header matches its icon at 1.00; the chat and profile-card
+    // frames (World / Clan tabs at the top left) reach 0.63..0.71 for ticket and egg and used to be
+    // classified 'skills' (4 of the 24 train shots). 0.78 keeps a wide margin on both sides.
+    const TH_LEFT = 0.78;
     let type: ScreenTemplate;
     let header = true;                  // did the CURRENCY HEADER decide this?
     if (cur.tube > TUBE_TH) type = 'clanTree';
-    else if (cur.ticket > TH) type = 'skills';
-    else if (cur.egg > TH) type = 'pet';
+    else if (cur.ticket > TH_LEFT) type = 'skills';
+    else if (cur.egg > TH_LEFT) type = 'pet';
     else if (cur.clock > CLOCKWINDER_TH) type = 'mount';
     else if (cur.coin > 0.42 || cur.gem > TH) type = 'item';
     else if (tiles >= 6) { type = 'enemy'; header = false; }
@@ -501,9 +554,18 @@ export async function classifyScreen(input: HTMLImageElement | HTMLCanvasElement
         if (type === 'item') {
             // conservative: with no card found there is nothing to test, so 'item' stands
             if (p.subject === 'skin') subject = 'skin';
-        } else if (p.subject) {
-            subject = p.subject;
-            authoritative = false;
+        } else {
+            // No header: the popup container's PROPORTIONS name it (uiLayout.POPUP_ASPECT, from the
+            // prefab sizes, so this holds on every device and in every language). Only when no
+            // container of a known shape is found does the chroma/height rule above decide.
+            const kind = popupKindOf(canon);
+            const byShape = kind ? subjectFromPopupKind(kind, canon) : null;
+            const chosen = byShape ?? p.subject;
+            if (chosen) {
+                subject = chosen;
+                authoritative = false;
+            }
+            if (kind) popup = { ...(popup ?? { card: p.card ?? { x: 0, y: 0, w: 0, h: 0 }, tile: p.tile, chroma: p.chroma }), kind };
         }
     }
 

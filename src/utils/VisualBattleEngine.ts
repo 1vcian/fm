@@ -129,7 +129,8 @@ export class VisualBattleEngine {
             keepEvents: true,
             skillSystem: (s) => this.mgr.execute(s),
         });
-        const start = this.isMission ? missionSoloPlayerPosition(!!playerStats.isRangedWeapon) : { x: 0, y: 0 };
+        // SetupPlayers groups participants by the combat (skinned) weapon row's IsRanged (0x780EEA4).
+        const start = this.isMission ? missionSoloPlayerPosition(!!(playerStats.combatIsRanged ?? playerStats.isRangedWeapon)) : { x: 0, y: 0 };
         const spec = playerUnitSpec(playerStats as never, { x: debugConfig?.playerStartPos ?? start.x, y: start.y }, context);
         if (this.isMission) spec.radius = MISSION_PLAYER_RADIUS;
         if (debugConfig?.playerSpeed !== undefined) spec.stats.moveSpeed = debugConfig.playerSpeed;
@@ -152,10 +153,11 @@ export class VisualBattleEngine {
     }
 
     /** The equipped mount's collider (UpdateMount); main battles and dungeons only. */
-    setPlayerCollider(radius: number, centerOfMass?: { x: number; y: number }): void {
+    setPlayerCollider(radius: number, centerOfMass?: { x: number; y: number }, unitOffset?: { x: number; y: number }): void {
         if (this.isMission) return;
         this.player.radius = radius;
         if (centerOfMass) this.player.com = { ...centerOfMass };
+        if (unitOffset) this.player.unitOffset = { ...unitOffset };
     }
 
     /** Mission participants fight without active skills, so skill specs are ignored there. */
@@ -201,6 +203,11 @@ export class VisualBattleEngine {
                 this.scene.addUnit(spec);
             }
         });
+    }
+
+    /** Engine ticks run so far: the visualizer takes a new snapshot only when this moves. */
+    ticks(): number {
+        return this.scene.tickCount;
     }
 
     /** Render-frame driver: fractional dt accumulates into whole 0.1 s engine ticks. */

@@ -185,9 +185,10 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
     }, [secondaryUnlockLib, selectedRarity, profile.misc.petAscensionLevel, petAscensionLevel]);
 
     const maxPetLevel = useMemo(() => {
-        if (!petUpgradeLibrary || !selectedRarity) return 100;
-        return (petUpgradeLibrary[selectedRarity]?.LevelInfo?.length || 100);
-    }, [petUpgradeLibrary, selectedRarity]);
+        // PetUpgradeLibrary[rarity].LevelInfo length; until it loads the level cannot move up.
+        const len = selectedRarity ? petUpgradeLibrary?.[selectedRarity]?.LevelInfo?.length : undefined;
+        return typeof len === 'number' ? len : petLevel;
+    }, [petUpgradeLibrary, selectedRarity, petLevel]);
 
     // Trim manual stats if they exceed the new slot limit
     useEffect(() => {

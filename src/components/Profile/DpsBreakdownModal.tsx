@@ -5,7 +5,7 @@ import { X, TrendingUp, Zap, Hash, Swords, Sparkles, HelpCircle } from 'lucide-r
 import { AggregatedStats } from '../../utils/statEngine';
 import { UserProfile } from '../../types/Profile';
 import { formatPercent, formatCompactNumber } from '../../utils/statsCalculator';
-import { doubleSecondStrikeSeconds } from '../../utils/constants';
+import { doubleSecondStrikeSeconds, weaponHitsPerSecond } from '../../utils/constants';
 import { BreakpointTables, BreakpointExplanation } from './BreakpointTables';
 import { cn } from '../../lib/utils';
 import { useProfile } from '../../context/ProfileContext';
@@ -13,6 +13,29 @@ import { useComparison } from '../../context/ComparisonContext';
 
 import { formatNumber } from '../../utils/format';
 import { EngineCheckSection } from './EngineCheckSection';
+import { useEngineCheck } from '../../hooks/useEngineCheck';
+import { TESTED_SECONDS } from '../../engine/dummyRun';
+
+/** How far above the current attack speed the next breakpoint is searched, in % points. */
+const BREAKPOINT_SCAN_PCT = 1000;
+
+/**
+ * The next attack-speed value that makes the weapon hit faster (constants.weaponHitsPerSecond:
+ * the engine's tick-stepped single and double cycles), scanned in 0.1% steps.
+ */
+function nextAttackSpeedBreakpoint(stats: AggregatedStats): { bonusPct: number; needPct: number; hitsPerSecond: number } | null {
+    const d = Math.min(Math.max(stats.doubleDamageChance, 0), 1);
+    const w = stats.weaponWindupTime || 0.5;
+    const dur = stats.weaponAttackDuration || 1.5;
+    const cur = stats.attackSpeedMultiplier;
+    const base = weaponHitsPerSecond(cur, w, dur, d);
+    const startPct = Math.floor((cur - 1) * 1000 + 1e-9) / 10;
+    for (let p = startPct + 0.1; p <= startPct + BREAKPOINT_SCAN_PCT; p = Math.round((p + 0.1) * 10) / 10) {
+        const h = weaponHitsPerSecond(1 + p / 100, w, dur, d);
+        if (h > base + 1e-12) return { bonusPct: p, needPct: p - (cur - 1) * 100, hitsPerSecond: h };
+    }
+    return null;
+}
 
 interface DpsBreakdownModalProps {
     isOpen: boolean;
@@ -29,7 +52,6 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
     const { isComparing, originalUseSkinWindup, testUseSkinWindup, updateOriginalUseSkinWindup, updateTestUseSkinWindup } = useComparison();
     
     const [showFullNumbers, setShowFullNumbers] = useState(false);
-    const [useRealTime, setUseRealTime] = useState(true);
     const [showBreakpoints, setShowBreakpoints] = useState(false);
 
     // Local helper for compact formatting of large values
@@ -56,64 +78,18 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
         }
     };
 
-    // --- WEAPON DPS CALCULATIONS ---
-    const { 
-        cappedCritChance, cappedDoubleChance, critMult, doubleMult, 
-        theoreticalAps, weaponDps, realWeaponDps, realAps,
-        speedBonus, effectiveWindup, realCycleTime
-    } = useMemo(() => {
-        const cCrit = Math.min(stats.criticalChance, 1);
-        const cDouble = Math.min(stats.doubleDamageChance, 1);
-        const bDuration = stats.weaponAttackDuration;
-        const sBonus = stats.attackSpeedMultiplier;
-        
-        return {
-            cappedCritChance: cCrit,
-            cappedDoubleChance: cDouble,
-            critMult: 1 + cCrit * (stats.criticalDamage - 1),
-            doubleMult: 1 + cDouble,
-            speedBonus: sBonus,
-            effectiveWindup: stats.weaponWindupTime / sBonus,
-            theoreticalAps: 1 / (bDuration / sBonus),
-            weaponDps: stats.weaponDps,
-            realAps: stats.realAps,
-            realWeaponDps: stats.realWeaponDps,
-            realCycleTime: stats.realCycleTime
-        };
-    }, [stats]);
-
-    // Used for display throughout the modal
-    const displayAps = useRealTime ? realAps : theoreticalAps;
-    const displayWeaponDps = useRealTime ? realWeaponDps : weaponDps;
-    // Part of the total (statEngine realTotalDps / averageTotalDps), so the footer sums to it.
-    const displayReflectDps = (useRealTime ? stats.realReflectDps : stats.reflectDps) || 0;
-
-    // --- SKILL DPS (from statEngine.skillBreakdown: exact engine tick timing) ---
-    const { damageSkills, buffSkills } = useMemo(() => {
-        const skillMulti = stats.skillDamageMultiplier;
-        const commonMulti = 1 + (stats.secondaryDamageMulti || 0);
-        const shared = {
-            multi: skillMulti * commonMulti,
-            commonMulti,
-            skillMulti,
-            skillTech: stats.skillDamageBreakdown.tree || 0,
-            skillItems: stats.skillDamageBreakdown.substats || 0,
-            skillAsc: stats.skillDamageBreakdown.ascension || 1,
-            commonItems: stats.secondaryDamageMulti || 0,
-        };
-        const rows = (stats.skillBreakdown || []).map((e) => ({
-            ...shared,
-            ...e,
-            name: skillLibrary?.[e.id]?.Name || e.id.replace(/([a-z])([A-Z])/g, '$1 $2'),
-            dps: useRealTime ? e.dps : e.theoreticalDps,
-            // Buff damage rides on weapon hits: hits/s x crit (doubles are extra hits).
-            weaponSynergy: (useRealTime ? realAps : theoreticalAps * doubleMult) * critMult,
-        }));
-        return {
-            damageSkills: rows.filter((r) => !r.isBuff && r.damage > 0),
-            buffSkills: rows.filter((r) => r.isBuff && r.damage > 0),
-        };
-    }, [stats, skillLibrary, useRealTime, realAps, theoreticalAps, doubleMult, critMult]);
+    // --- WEAPON DPS (theoretical): the weapon's own hits only, no skills ---
+    // Stepped to the engine's 0.1 s ticks (statEngine realWeaponDps): the single cycle is
+    // ceil(D/inc)+1 ticks, a double re-seeds the timer to floor(0.75W), crit is averaged.
+    const critMult = 1 + Math.min(stats.criticalChance, 1) * (stats.criticalDamage - 1);
+    const speedBonus = stats.attackSpeedMultiplier;
+    const effectiveWindup = stats.weaponWindupTime / speedBonus;
+    const hitsPerSecond = stats.realAps;
+    const weaponDps = stats.realWeaponDps;
+    const realCycleTime = stats.realCycleTime;
+    const next = useMemo(() => nextAttackSpeedBreakpoint(stats), [stats]);
+    const check = useEngineCheck(stats, profile.skills?.equipped || [], skillLibrary);
+    const tested = check.result?.tested;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-[2px] p-2 md:p-4" onClick={onClose}>
@@ -125,7 +101,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                             <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-orange-400 shrink-0" />
                             <div className="min-w-0">
                                 <h3 className="text-base md:text-xl font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-clip">DPS Breakdown</h3>
-                                <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden text-clip">Math Analysis</p>
+                                <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden text-clip">Weapon formula and 24 h test</p>
                             </div>
                         </div>
                         
@@ -147,25 +123,6 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                             >
                                 <Zap className="w-3 h-3" />
                                 <span>Breakpoints</span>
-                            </button>
-                            <div className="w-px h-4 bg-border/40 mx-1 shrink-0" />
-                            <button 
-                                onClick={() => setUseRealTime(false)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all shrink-0",
-                                    !useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
-                                )}
-                            >
-                                <span>Theoretical</span>
-                            </button>
-                            <button 
-                                onClick={() => setUseRealTime(true)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all shrink-0",
-                                    useRealTime ? 'bg-orange-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
-                                )}
-                            >
-                                <span>Real-Time</span>
                             </button>
                         </div>
 
@@ -220,180 +177,119 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-10 custom-scrollbar bg-bg-primary font-sans">
+                    {/* What the two figures are */}
+                    <div className="bg-bg-input/60 rounded-xl p-3 md:p-4 border border-dashed border-white/10 flex gap-3" data-testid="dps-explainer">
+                        <HelpCircle className="w-5 h-5 text-orange-300 shrink-0 mt-0.5" />
+                        <div className="text-[10px] md:text-[11px] text-white/60 leading-relaxed space-y-1.5">
+                            <p><strong className="text-orange-300">Weapon DPS (theoretical)</strong> is a formula for your weapon alone: damage x hits per second x average crit. Hits per second follow the game's 0.1 s attack breakpoints and your double chance. No skills are in it.</p>
+                            <p><strong className="text-emerald-300">Tested DPS ({TESTED_SECONDS / 3600} h simulation)</strong> is measured: the real combat engine runs your whole build for {TESTED_SECONDS / 3600} hours of game time against a dummy with infinite health and the damage is averaged per second. It adds everything the formula leaves out: each skill with its real cooldown and uptime, buffs on your hits, and the luck of crit and double rolls averaged over hundreds of thousands of attacks.</p>
+                            <p className="text-white/40">The gap between the two is what your skills add. Use the tested figure to compare builds.</p>
+                        </div>
+                    </div>
+
                     {/* Weapon Section */}
                     <section className="space-y-4 md:space-y-6">
                         <div className="flex items-center gap-3 text-orange-400 font-bold uppercase text-[10px] md:text-[11px] tracking-[0.2em] border-b border-orange-500/20 pb-3 font-sans">
                             <Swords className="w-4 h-4 md:w-5 md:h-5" />
-                            Weapon Damage Scaling
+                            Weapon DPS (theoretical)
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                            {/* Base Stats */}
                             <div className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-3 min-w-0">
-                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans flex justify-between">
-                                    Core Power
-                                    {useRealTime && <span className="text-orange-400/60 animate-pulse text-[8px]">Steps Active</span>}
-                                </div>
+                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Attack cycle</div>
                                 <div className="flex justify-between items-baseline gap-2">
-                                    <span className="text-[11px] text-white/60">Base Dmg</span>
+                                    <span className="text-[11px] text-white/60">Damage per hit</span>
                                     <span className="text-base md:text-lg font-mono font-bold text-white break-all">{formatVal(stats.totalDamage)}</span>
                                 </div>
-                                <div className="space-y-2 pt-3 border-t border-white/5">
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40">Attack Cycle</span>
-                                        <span className={`font-mono transition-colors ${useRealTime ? 'text-orange-400 font-bold' : 'text-white/80'}`}>
-                                            {useRealTime ? realCycleTime.toFixed(2) : (stats.weaponAttackDuration / speedBonus).toFixed(3)}s
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40">Base Duration</span>
-                                        <span className="font-mono text-white/60">{stats.weaponAttackDuration.toFixed(2)}s</span>
-                                    </div>
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs border-b border-white/5 pb-2">
-                                        <span className="text-white/40">Base Windup</span>
-                                        <span className="font-mono text-white/60">{stats.weaponWindupTime.toFixed(2)}s</span>
-                                    </div>
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40">Speed Mult</span>
-                                        <span className="font-mono text-white/80">{speedBonus.toFixed(2)}x</span>
-                                    </div>
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40">Eff. Windup</span>
-                                        <span className="font-mono text-white/80">{effectiveWindup.toFixed(2)}s</span>
-                                    </div>
-                                    <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-1 font-mono">
-                                        APS: {displayAps.toFixed(2)}
-                                    </div>
+                                <div className="space-y-2 pt-3 border-t border-white/5 text-[11px] md:text-xs">
+                                    <div className="flex justify-between items-baseline"><span className="text-white/40">Base duration</span><span className="font-mono text-white/60">{stats.weaponAttackDuration.toFixed(2)}s</span></div>
+                                    <div className="flex justify-between items-baseline"><span className="text-white/40">Base windup</span><span className="font-mono text-white/60">{stats.weaponWindupTime.toFixed(2)}s</span></div>
+                                    <div className="flex justify-between items-baseline"><span className="text-white/40">Attack speed</span><span className="font-mono text-white/80">{speedBonus.toFixed(3)}x</span></div>
+                                    <div className="flex justify-between items-baseline"><span className="text-white/40">Windup</span><span className="font-mono text-white/80">{effectiveWindup.toFixed(2)}s</span></div>
+                                    <div className="flex justify-between items-baseline"><span className="text-white/40">Single cycle (ticks)</span><span className="font-mono text-orange-400 font-bold">{realCycleTime.toFixed(1)}s</span></div>
+                                    <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-1 font-mono">Hits/s: {hitsPerSecond.toFixed(3)}</div>
                                 </div>
                             </div>
 
-                            {/* Critical Breakdown */}
                             <div className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-3 min-w-0">
-                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Critical luck</div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40 whitespace-nowrap">Chance</span>
-                                        <span className="font-mono text-white font-bold">{formatPercent(stats.criticalChance)}</span>
-                                    </div>
+                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Critical</div>
+                                <div className="space-y-2 text-[11px] md:text-xs">
+                                    <div className="flex justify-between items-baseline"><span className="text-white/40">Chance</span><span className="font-mono text-white font-bold">{formatPercent(stats.criticalChance)}</span></div>
                                     <div className="flex flex-wrap justify-between gap-x-2 text-[9px] text-white/30 pl-2 font-mono">
                                         <span>Tree: {formatPercent(stats.critChanceBreakdown.tree)}</span>
                                         <span>Items: {formatPercent(stats.critChanceBreakdown.substats)}</span>
                                     </div>
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs pt-2 border-t border-white/5">
-                                        <span className="text-white/40 whitespace-nowrap">Multi</span>
-                                        <span className="font-mono text-white font-bold">{formatPercent(stats.criticalDamage, 0)}</span>
-                                    </div>
-                                    <div className="flex flex-wrap justify-between gap-x-2 text-[9px] text-white/30 pl-2 font-mono">
-                                        <span>Tree: {formatPercent(stats.critDamageBreakdown.tree)}</span>
-                                        <span>Items: {formatPercent(stats.critDamageBreakdown.substats)}</span>
-                                    </div>
-                                    <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-1 font-mono">
-                                        Avg: {critMult.toFixed(2)}x
-                                    </div>
+                                    <div className="flex justify-between items-baseline pt-2 border-t border-white/5"><span className="text-white/40">Damage</span><span className="font-mono text-white font-bold">{formatPercent(stats.criticalDamage, 0)}</span></div>
+                                    <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-1 font-mono">Average: {critMult.toFixed(3)}x</div>
                                     {stats.criticalChance > 1 && (
-                                        <div className="text-[8px] md:text-[9px] text-white/30 italic text-center font-mono">
-                                            Every hit crits; the {formatPercent(stats.criticalChance - cappedCritChance)} past 100% does nothing
-                                        </div>
+                                        <div className="text-[8px] md:text-[9px] text-white/30 italic text-center font-mono">Every hit crits; the {formatPercent(stats.criticalChance - 1)} past 100% does nothing</div>
                                     )}
                                 </div>
                             </div>
 
                             <div className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-3 min-w-0">
-                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans flex justify-between">
-                                    Double Chance
-                                    {useRealTime && stats.doubleDamageChance > 0 && <span className="text-orange-400/60 animate-pulse text-[8px]">Steps Active</span>}
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                        <span className="text-white/40 whitespace-nowrap">Proc Chance</span>
-                                        <span className="font-mono text-white font-bold">{formatPercent(stats.doubleDamageChance)}</span>
-                                    </div>
+                                <div className="text-[10px] uppercase text-white/40 font-bold tracking-widest font-sans">Double strike</div>
+                                <div className="space-y-2 text-[11px] md:text-xs">
+                                    <div className="flex justify-between items-baseline"><span className="text-white/40">Chance</span><span className="font-mono text-white font-bold">{formatPercent(stats.doubleDamageChance)}</span></div>
                                     <div className="flex flex-wrap justify-between gap-x-2 text-[9px] text-white/30 pl-2 font-mono">
                                         <span>Tree: {formatPercent(stats.doubleDamageBreakdown.tree)}</span>
                                         <span>Items: {formatPercent(stats.doubleDamageBreakdown.substats)}</span>
                                     </div>
-                                    {useRealTime && stats.doubleDamageChance > 0 && (
-                                        <div className="pt-2 border-t border-white/5 space-y-1">
-                                            <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                                <span className="text-white/40">2nd Strike</span>
-                                                <span className="font-mono text-orange-400 font-bold">{(stats.doubleHitDelay / speedBonus).toFixed(2)}s → {doubleSecondStrikeSeconds(speedBonus, stats.weaponWindupTime).toFixed(1)}s</span>
-                                            </div>
-                                            <div className="flex justify-between items-baseline text-[11px] md:text-xs">
-                                                <span className="text-white/40">Full Cycle</span>
-                                                <span className="font-mono text-white/80">{stats.realDoubleHitCycle.toFixed(2)}s</span>
-                                            </div>
-                                        </div>
+                                    {stats.doubleDamageChance > 0 && (
+                                        <>
+                                            <div className="flex justify-between items-baseline pt-2 border-t border-white/5"><span className="text-white/40">2nd strike after</span><span className="font-mono text-orange-400 font-bold">{doubleSecondStrikeSeconds(speedBonus, stats.weaponWindupTime).toFixed(1)}s</span></div>
+                                            <div className="flex justify-between items-baseline"><span className="text-white/40">Double cycle</span><span className="font-mono text-white/80">{stats.realDoubleHitCycle.toFixed(1)}s</span></div>
+                                        </>
                                     )}
-                                    {useRealTime ? (
-                                        <div className="text-[8px] md:text-[9px] text-white/30 italic pt-2 text-center font-mono">
-                                            Doubles are already in the weighted attack rate below
-                                        </div>
-                                    ) : (
-                                        <div className="flex justify-end text-[10px] md:text-[11px] text-orange-400 font-bold pt-2 font-mono">
-                                            Multi: {doubleMult.toFixed(2)}x
-                                        </div>
-                                    )}
+                                    <div className="text-[8px] md:text-[9px] text-white/30 italic pt-1 text-center font-mono">Doubles are extra hits, already in hits/s</div>
                                     {stats.doubleDamageChance > 1 && (
-                                        <div className="text-[8px] md:text-[9px] text-white/30 italic mt-1 text-center font-mono">
-                                            Every attack doubles; the {formatPercent(stats.doubleDamageChance - cappedDoubleChance)} past 100% does nothing
-                                        </div>
+                                        <div className="text-[8px] md:text-[9px] text-white/30 italic text-center font-mono">Every attack doubles; the {formatPercent(stats.doubleDamageChance - 1)} past 100% does nothing</div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Weapon Result */}
-                            <div className="bg-orange-500/10 rounded-2xl p-4 md:p-6 border border-orange-500/20 sm:col-span-2 lg:col-span-3 group transition-all hover:bg-orange-500/[0.12]">
+                            {/* Result + breakpoints */}
+                            <div className="bg-orange-500/10 rounded-2xl p-4 md:p-6 border border-orange-500/20 sm:col-span-2 lg:col-span-3">
                                 {showBreakpoints ? (
                                     <div className="space-y-4">
-                                        <div className="flex items-center justify-between border-b border-orange-500/20 pb-3">
-                                            <div className="text-[10px] uppercase text-orange-400 font-bold tracking-[0.1em]">Dynamic Breakpoints for {stats.weaponAttackDuration.toFixed(1)}s Base</div>
-                                            <button onClick={() => setShowBreakpoints(false)} className="text-[10px] text-white/40 hover:text-white/60 uppercase font-bold">Back to Result</button>
+                                        <div className="flex items-center justify-between border-b border-orange-500/20 pb-3 gap-3">
+                                            <div className="text-[10px] uppercase text-orange-400 font-bold tracking-[0.1em]">Attack speed breakpoints for a {stats.weaponAttackDuration.toFixed(1)}s weapon</div>
+                                            <button onClick={() => setShowBreakpoints(false)} className="text-[10px] text-white/40 hover:text-white/60 uppercase font-bold shrink-0">Back</button>
                                         </div>
                                         <div className="overflow-x-auto custom-scrollbar">
-                                        <BreakpointTables 
-                                            weaponAttackDuration={stats.weaponAttackDuration}
-                                            weaponWindupTime={stats.weaponWindupTime}
-                                            currentAttackSpeedMultiplier={stats.attackSpeedMultiplier}
-                                            realCycleTime={stats.realCycleTime}
-                                            realWindup={stats.weaponWindupTime / stats.attackSpeedMultiplier}
-                                            doubleDamageChance={stats.doubleDamageChance}
-                                        />
-
-                                        <BreakpointExplanation />
+                                            <BreakpointTables
+                                                weaponAttackDuration={stats.weaponAttackDuration}
+                                                weaponWindupTime={stats.weaponWindupTime}
+                                                currentAttackSpeedMultiplier={stats.attackSpeedMultiplier}
+                                                realCycleTime={stats.realCycleTime}
+                                                realWindup={stats.weaponWindupTime / stats.attackSpeedMultiplier}
+                                                doubleDamageChance={stats.doubleDamageChance}
+                                            />
+                                            <BreakpointExplanation />
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-                                        <div className="min-w-0 text-left">
-                                            <div className="text-[9px] md:text-[10px] uppercase text-orange-400 font-bold tracking-widest mb-1 font-sans">
-                                                Effective {useRealTime ? 'Weighted Real-Time' : 'Theoretical'} Weapon DPS
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+                                            <div className="min-w-0">
+                                                <div className="text-[9px] md:text-[10px] uppercase text-orange-400 font-bold tracking-widest mb-1">Weapon DPS (theoretical)</div>
+                                                <div className="text-2xl sm:text-3xl md:text-4xl font-mono font-bold text-orange-400 break-all" data-testid="weapon-dps">{formatVal(weaponDps)}</div>
                                             </div>
-                                            <div className="text-2xl sm:text-3xl md:text-4xl font-mono font-bold text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.2)] break-all">
-                                                {formatVal(displayWeaponDps)}
+                                            <div className="text-left md:text-right text-[10px] md:text-[11px] text-white/40 font-mono leading-relaxed">
+                                                Dmg({formatVal(stats.totalDamage)}) x Hits/s({hitsPerSecond.toFixed(3)}) x Crit({critMult.toFixed(3)})
                                             </div>
-                                            {useRealTime && (
-                                                <div className="text-[10px] text-white/40 mt-1 font-mono">
-                                                    {stats.doubleDamageChance > 0 
-                                                        ? `Weighted avg of Normal (${realCycleTime.toFixed(2)}s) and Double (${stats.realDoubleHitCycle.toFixed(2)}s) cycles`
-                                                        : `Quantised to the 0.1s attack interval (10-tick engine)`}
-                                                </div>
-                                            )}
                                         </div>
-                                        <div className="text-left md:text-right text-[10px] md:text-[11px] text-white/30 font-mono leading-relaxed max-w-sm flex flex-wrap md:flex-col gap-x-2">
-                                            <div className="text-orange-300/40 font-bold uppercase text-[8px] md:text-[9px] w-full mb-1">Calculation:</div>
-                                            <span className="whitespace-nowrap">Dmg({formatVal(stats.totalDamage)}) ×</span>
-                                            {useRealTime && stats.doubleDamageChance > 0 ? (
-                                                <>
-                                                    <span className="whitespace-nowrap text-purple-400 font-bold">WeightedAPS({displayAps.toFixed(2)}) ×</span>
-                                                    <span className="whitespace-nowrap">Crit({critMult.toFixed(2)})</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span className="whitespace-nowrap">APS({displayAps.toFixed(2)}) ×</span>
-                                                    <span className="whitespace-nowrap">Crit({critMult.toFixed(2)}) ×</span>
-                                                    <span className="whitespace-nowrap">Double({doubleMult.toFixed(2)})</span>
-                                                </>
-                                            )}
+                                        <div className="pt-3 border-t border-orange-500/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-testid="next-breakpoint">
+                                            <div className="text-[10px] md:text-[11px] text-white/60 leading-relaxed min-w-0">
+                                                {next ? (
+                                                    <>Next breakpoint at <strong className="text-orange-300">+{next.bonusPct.toFixed(1)}% attack speed</strong> ({next.needPct.toFixed(1)} points more than your +{((speedBonus - 1) * 100).toFixed(1)}%): {next.hitsPerSecond.toFixed(3)} hits/s, weapon DPS {formatVal(stats.totalDamage * next.hitsPerSecond * critMult)} (+{((next.hitsPerSecond / hitsPerSecond - 1) * 100).toFixed(1)}%).</>
+                                                ) : (
+                                                    <>No faster breakpoint within +{BREAKPOINT_SCAN_PCT}% attack speed: every hit already lands on the fastest tick.</>
+                                                )}
+                                            </div>
+                                            <button onClick={() => setShowBreakpoints(true)} className="shrink-0 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 flex items-center gap-1.5 w-fit">
+                                                <Zap className="w-3 h-3" /> All breakpoints
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -401,213 +297,28 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                         </div>
                     </section>
 
-                    {/* Skill Boosts Section */}
-                    {buffSkills.length > 0 && (
-                        <section className="space-y-4 md:space-y-6">
-                            <div className="flex items-center gap-3 text-purple-400 font-bold uppercase text-[10px] md:text-[11px] tracking-[0.2em] border-b border-purple-500/20 pb-3 font-sans">
-                                <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
-                                Temporary Boost Contribution
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                                {buffSkills.map((s: any, i) => (
-                                    <div key={i} className="bg-purple-500/5 rounded-2xl p-4 md:p-5 border border-purple-500/10 space-y-4 min-w-0">
-                                        <div className="flex justify-between items-start gap-4">
-                                            <div className="text-xs md:text-sm font-bold text-purple-300 uppercase tracking-tight whitespace-nowrap overflow-hidden text-clip">{s.name}</div>
-                                            <div className="text-right shrink-0">
-                                                <div className="text-base md:text-lg font-mono font-bold text-white">+{formatVal(s.dps)}</div>
-                                                <div className="text-[8px] md:text-[9px] text-purple-400 font-bold uppercase font-sans">Avg DPS</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-y-3 text-[10px] font-mono p-3 bg-purple-500/10 rounded-xl">
-                                            <div className="space-y-0.5">
-                                                <div className="text-purple-300/50 uppercase text-[8px] font-sans">Power</div>
-                                                <div className="text-white break-all">{formatVal(s.damage)}</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <div className="text-purple-300/50 uppercase text-[8px] font-sans">Uptime</div>
-                                                <div className="text-white">{(s.uptime * 100).toFixed(1)}%</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <div className="text-purple-300/50 uppercase text-[8px] font-sans">Cycle</div>
-                                                <div className="text-white">{s.cycleSeconds.toFixed(1)}s</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <div className="text-purple-300/50 uppercase text-[8px] font-sans">Hits/s x Crit</div>
-                                                <div className="text-white">{s.weaponSynergy.toFixed(2)}</div>
-                                            </div>
-                                            <div className="col-span-2 pt-2 border-t border-purple-300/10">
-                                                <div className="text-purple-300/50 uppercase text-[8px] mb-1 font-sans text-left">Formula:</div>
-                                                <div className="text-[9px] text-white/40 leading-tight">
-                                                    (1 + {s.skillTech.toFixed(2)}) × (1 + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(2)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="bg-bg-input/60 rounded-xl p-4 border border-dashed border-purple-500/30">
-                                <div className="flex gap-4">
-                                    <HelpCircle className="w-5 h-5 md:w-6 md:h-6 text-purple-400 shrink-0" />
-                                    <div className="text-[10px] md:text-[11px] text-white/50 leading-relaxed font-sans">
-                                        <p className="mb-2"><strong className="text-purple-300">Weapon Synergy:</strong> Buffs add flat damage to your weapon. Because you hit multiple times per second and can deal Critical/Double hits, every point is scaled by weapon quality. The buff is on your hits for (active ticks - 1) of every (active + cooldown) ticks, and lifesteal heals on the buffed hits too.</p>
-                                        <p className="italic text-[9px] md:text-[10px]">DPS = Power × {useRealTime ? 'Real hits/s (doubles included)' : 'APS × Double Multi'} × Crit Multi × Uptime</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Active Damage Skills Section */}
-                    <section className="space-y-4 md:space-y-6">
-                        <div className="flex items-center gap-3 text-blue-400 font-bold uppercase text-[10px] md:text-[11px] tracking-[0.2em] border-b border-blue-500/20 pb-3 font-sans">
-                            <Zap className="w-4 h-4 md:w-5 md:h-5" />
-                            Direct Skill Damage
-                        </div>
-
-                        {damageSkills.length > 0 ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                                {damageSkills.map((s: any, i) => (
-                                    <div key={i} className="bg-bg-input/40 rounded-2xl p-4 md:p-5 border border-white/5 space-y-4 min-w-0">
-                                        <div className="flex justify-between items-center pb-3 border-b border-white/5 gap-4">
-                                            <div className="text-xs md:text-sm font-bold text-white uppercase whitespace-nowrap overflow-hidden text-clip">{s.name}</div>
-                                            <div className="text-right shrink-0">
-                                                <div className="text-lg md:text-xl font-mono font-bold text-blue-400">{formatVal(s.dps)}</div>
-                                                <div className="text-[8px] md:text-[9px] text-white/40 font-bold uppercase font-sans">Avg DPS</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4 md:gap-6">
-                                            <div className="space-y-2">
-                                                <div className="text-[9px] md:text-[10px] text-blue-300/60 font-bold uppercase font-sans">Power</div>
-                                                <div className="flex justify-between items-baseline text-[10px] md:text-[11px] font-mono gap-2">
-                                                    <span className="text-white/40 whitespace-nowrap overflow-hidden text-clip">Damage</span>
-                                                    <span className="text-white font-bold">{formatVal(s.damage)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-baseline text-[10px] md:text-[11px] pt-1 border-t border-white/5 font-mono gap-2" title="Share of the skill's Damage one target really takes per cast, measured with the combat engine">
-                                                    <span className="text-white/40">Lands</span>
-                                                    <span className="text-blue-300 font-bold">x{s.yieldPerCast.toFixed(2)}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <div className="text-[9px] md:text-[10px] text-blue-300/60 font-bold uppercase font-sans">Timing</div>
-                                                <div className="flex justify-between items-baseline text-[10px] md:text-[11px] font-mono gap-2">
-                                                    <span className="text-white/40">CD</span>
-                                                    <span className="text-white font-bold">{s.cooldown.toFixed(2)}s</span>
-                                                </div>
-                                                <div className="flex justify-between items-baseline text-[10px] md:text-[11px] font-mono gap-2" title="Active phase + cooldown, in 0.1s engine ticks">
-                                                    <span className="text-white/40">Cycle</span>
-                                                    <span className="text-white font-bold">{s.cycleSeconds.toFixed(1)}s</span>
-                                                </div>
-                                                <div className="mt-3 p-1.5 bg-blue-500/5 rounded border border-blue-500/10 text-[8px] md:text-[9px] text-white/20 italic font-mono text-center">
-                                                    (Damage × Lands) / Cycle
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Detailed Multipliers */}
-                                        <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
-                                            <div className="flex items-center gap-2 text-[9px] font-bold text-blue-400/60 uppercase tracking-wider">
-                                                <Zap className="w-3 h-3" />
-                                                Multiplier Breakdown
-                                            </div>
-                                            
-                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 bg-black/20 rounded-xl p-3 font-mono text-[10px]">
-                                                <div className="flex justify-between items-center border-b border-white/5 pb-1 col-span-2">
-                                                    <span className="text-white/30 uppercase text-[8px]">Effective Multiplier</span>
-                                                    <span className="text-blue-400 font-bold text-[11px]">{s.multi.toFixed(3)}x</span>
-                                                </div>
-                                                
-                                                <div className="col-span-2 text-[8px] text-white/20 uppercase mt-1">Skill Layer</div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/40">Base</span>
-                                                    <span className="text-white/80">1.00</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/40">Skill Tech</span>
-                                                    <span className="text-green-400">+{formatPercent(s.skillTech)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/40">Skill Items</span>
-                                                    <span className="text-green-400">+{formatPercent(s.skillItems)}</span>
-                                                </div>
-                                                <div className="flex justify-between border-b border-white/5 pb-1">
-                                                    <span className="text-white/40">× Skill Ascension</span>
-                                                    <span className="text-purple-400 font-bold">×{s.skillAsc.toFixed(2)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/40">= Skill Multi</span>
-                                                    <span className="text-blue-300 font-bold">{s.skillMulti.toFixed(2)}</span>
-                                                </div>
-
-                                                <div className="col-span-2 text-[8px] text-white/20 uppercase mt-2">Common Layer ({s.commonMulti.toFixed(2)}x)</div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/40">Item Substats</span>
-                                                    <span className="text-white/60">+{formatPercent(s.commonItems)}</span>
-                                                </div>
-
-                                                <div className="col-span-2 mt-2 pt-2 border-t border-white/10">
-                                                    <div className="text-[8px] text-white/20 uppercase mb-1 font-sans">Formula:</div>
-                                                    <div className="text-[9px] text-white/40 leading-tight">
-                                                        (1 + {s.skillTech.toFixed(2)}) × (1 + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(2)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-10 bg-bg-input/20 rounded-2xl border border-dashed border-white/10 text-white/30 text-[11px] italic font-mono">
-                                No direct damage skills equipped
-                            </div>
-                        )}
-                    </section>
-
                     <EngineCheckSection
                         stats={stats}
                         equipped={profile.skills?.equipped || []}
                         skillLibrary={skillLibrary}
                         formatVal={v => formatVal(v)}
+                        mode="dps"
+                        weaponTheoretical={weaponDps}
+                        check={check}
                     />
                 </div>
 
                 {/* Footer */}
                 <div className="p-4 md:p-6 border-t border-border bg-bg-secondary flex flex-col md:flex-row gap-4 md:items-center font-mono">
-                    <div className="flex-1 flex flex-wrap items-center justify-between md:justify-start gap-x-4 gap-y-3 md:gap-8 min-w-0">
+                    <div className="flex-1 flex flex-wrap items-end justify-between md:justify-start gap-x-6 gap-y-3 md:gap-10 min-w-0">
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Weapon</span>
-                            <span className="text-sm md:text-xl font-bold text-orange-400 leading-none whitespace-nowrap overflow-hidden text-clip">
-                                {formatVal(displayWeaponDps)}
-                            </span>
+                            <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Weapon DPS (theoretical)</span>
+                            <span className="text-lg md:text-2xl font-bold text-orange-400 leading-none whitespace-nowrap overflow-hidden text-clip">{formatVal(weaponDps)}</span>
                         </div>
-                        <div className="text-white/10 font-bold text-sm md:text-base">+</div>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Skills</span>
-                            <span className="text-sm md:text-xl font-bold text-blue-400 leading-none whitespace-nowrap overflow-hidden text-clip">
-                                {formatVal(stats.skillDps + (useRealTime ? stats.skillBuffDps : stats.theoreticalSkillBuffDps) || 0)}
-                            </span>
-                        </div>
-                        {displayReflectDps > 0 && (
-                            <>
-                                <div className="text-white/10 font-bold text-sm md:text-base">+</div>
-                                <div className="flex flex-col min-w-0" title="Reflected damage, assuming an opponent who hits like you at your pace">
-                                    <span className="text-[8px] md:text-[9px] uppercase text-white/40 font-bold tracking-wider leading-none mb-1 font-sans">Reflect</span>
-                                    <span className="text-sm md:text-xl font-bold text-teal-400 leading-none whitespace-nowrap overflow-hidden text-clip" data-testid="dps-footer-reflect">
-                                        {formatVal(displayReflectDps)}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                        <div className="flex flex-col w-full md:w-auto md:ml-auto border-t md:border-t-0 border-white/5 pt-3 md:pt-0">
-                            <span className="text-[8px] md:text-[9px] uppercase text-orange-400 font-bold tracking-widest bg-orange-500/10 px-2 py-1 rounded-md mb-1 leading-none font-sans w-fit">
-                                Total {useRealTime ? 'Real-Time' : 'Theoretical'} DPS
-                            </span>
-                            <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] leading-none mt-1 break-all">
-                                {formatVal(useRealTime ? stats.realTotalDps : stats.averageTotalDps)}
+                            <span className="text-[8px] md:text-[9px] uppercase text-emerald-400 font-bold tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md mb-1 leading-none font-sans w-fit">Tested DPS ({TESTED_SECONDS / 3600} h)</span>
+                            <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-none mt-1 break-all" data-testid="footer-tested-dps">
+                                {tested ? formatVal(tested.dps) : check.status === 'error' ? 'n/a' : `${Math.round(((check.status === 'loading' && check.progress) || 0) * 100)}%`}
                             </span>
                         </div>
                     </div>

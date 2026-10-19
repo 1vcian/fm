@@ -207,7 +207,8 @@ export default function Eggs() {
                                                 max={maxSlots}
                                                 className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
                                                 value={availableSlots}
-                                                onChange={(e) => setAvailableSlots(Math.min(maxSlots, Math.max(1, parseInt(e.target.value) || 1)))}
+                                                disabled={maxSlots === undefined}
+                                                onChange={(e) => setAvailableSlots(Math.max(1, parseInt(e.target.value) || 1))}
                                             />
                                         </div>
 

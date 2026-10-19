@@ -1253,6 +1253,8 @@ export default function ProgressPrediction() {
                     setSimProgress={setSimProgress}
                     resultsCache={resultsCache}
                 />
+            ) : maxDungeonLevel === null ? (
+                <div className="p-8 text-center text-text-muted">Loading game data</div>
             ) : (
                 <DungeonView
                     dungeonType={activeTab as any}

@@ -16,6 +16,8 @@ import {
     ITEM_SLOTS, type ChangeRow, type AutoSyncProgress,
 } from '../../utils/ocr/autoSync';
 import { classifyBatch, runGuidedSync, type ForcedTemplate, type GuidedEntry, type HintedTemplate } from '../../utils/ocr/guidedSync';
+import { GAME_LANGS, LANG_LABEL, autoGameLang, loadLangChoice, saveLangChoice, resolveLang, type GameLang, type LangChoice } from '../../utils/ocr/ocrLanguage';
+import { setOcrLanguage } from '../../utils/ocr/ocrEngine';
 import { buildSkinDict, resolveSkinForSlot, SKIN_SLOTS } from '../../utils/ocr/skinReader';
 import type { ItemSlot } from '../../types/Profile';
 import { getItemImage } from '../../utils/itemAssets';
@@ -43,9 +45,22 @@ const TEMPLATE_OPTIONS: { value: TemplateChoice; label: string }[] = [
     { value: 'skills', label: 'Skills' },
     { value: 'clanTree', label: 'Clan Tree' },
     { value: 'skin', label: 'Skin' },
+    { value: 'unit', label: 'Pet or mount' },
     { value: 'skip', label: 'Skip' },
 ];
-const PRESET_LABEL: Record<ForcedTemplate, string> = { item: 'Item', mount: 'Mount', pet: 'Pet', skills: 'Skills', clanTree: 'Clan Tree', skin: 'Skin' };
+/** What the review stage says it detected, in words (the classifier's popup-aware subject). */
+const DETECTED_LABEL: Record<HintedTemplate, string> = {
+    item: 'item', pet: 'pet', mount: 'mount', skills: 'skills screen', clanTree: 'clan tree', skin: 'skin',
+    unit: 'pet or mount', skillPopup: 'single skill popup', enemy: 'player profile', unknown: 'not recognised',
+};
+/** Why a detected screen defaults to Skip, so a skipped file is never silent. */
+const DETECTED_REASON: Partial<Record<HintedTemplate, string>> = {
+    skillPopup: 'Skill levels are read from the skills screen grid. Upload that screen instead.',
+    enemy: 'A whole player profile is read on the PvP page, not here. Open one item, pet or mount on it instead.',
+    unknown: 'No known popup or screen header found. Pick the template yourself if it is a game screen.',
+};
+
+const PRESET_LABEL: Record<ForcedTemplate, string> = { item: 'Item', mount: 'Mount', pet: 'Pet', skills: 'Skills', clanTree: 'Clan Tree', skin: 'Skin', unit: 'Pet or mount' };
 const PRESET_SUBTITLE: Record<ForcedTemplate, string> = {
     item: 'Sync your equipment from screenshots',
     mount: 'Sync your mount from screenshots',
@@ -53,6 +68,7 @@ const PRESET_SUBTITLE: Record<ForcedTemplate, string> = {
     skills: 'Sync your skills from screenshots',
     clanTree: 'Scan the clan tech tree levels from screenshots',
     skin: 'Sync your equipped skins from the skin popups',
+    unit: 'Sync a pet or a mount from its popup',
 };
 
 const CATEGORY_LABEL: Record<ChangeRow['category'], string> = {
@@ -116,9 +132,18 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
     // The game's bounds for every value a read can write (see utils/ocr/gameLimits.ts).
     const limits = useGameLimits();
+    // The game language of the screenshots: words are read with that language's OCR model and
+    // matched against that language's names only (plus English). 'auto' = the browser language.
+    const [langChoice, setLangChoice] = useState<LangChoice>(() => loadLangChoice());
+    const gameLang: GameLang = resolveLang(langChoice);
+    // the languages the generated Localization.json actually carries
+    const langOptions = useMemo(() => {
+        const inFile: string[] = Array.isArray(localization?.langs) ? localization.langs : [...GAME_LANGS];
+        return GAME_LANGS.filter(l => inFile.includes(l));
+    }, [localization]);
     const dicts = useMemo(
-        () => ({ ...buildGameDictionaries({ autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization }), limits }),
-        [autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization, limits]
+        () => ({ ...buildGameDictionaries({ autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization, langs: [...new Set(['en', gameLang])] }), limits }),
+        [autoItemMapping, skillLibrary, spriteMapping, secondaryStatLibrary, localization, limits, gameLang]
     );
     const skinDict = useMemo(() => buildSkinDict(skinsLibrary, setsLibrary), [skinsLibrary, setsLibrary]);
 
@@ -139,6 +164,8 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
     const [progress, setProgress] = useState<AutoSyncProgress | null>(null);
     const [rows, setRows] = useState<ChangeRow[]>([]);
     const [error, setError] = useState<string | null>(null);
+    // per screenshot: what the reader could not do and why (shown in the diff stage)
+    const [fileNotes, setFileNotes] = useState<{ name: string; notes: string[] }[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
     const classifyGen = useRef(0); // ignores stale classifyBatch callbacks after a re-entry
     // Which fields the USER changed after the read, as `${rowId}:${field}`. Star detection is the
@@ -181,7 +208,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
             if (classifyGen.current !== gen) return;
             setReview(rs => rs.map((r, j) => {
                 if (j !== i) return r;
-                const readable = res.type === 'item' || res.type === 'pet' || res.type === 'mount' || res.type === 'skills' || res.type === 'clanTree' || res.type === 'skin';
+                const readable = res.type === 'item' || res.type === 'pet' || res.type === 'mount' || res.type === 'skills' || res.type === 'clanTree' || res.type === 'skin' || res.type === 'unit';
                 const choice = (preset || r.touched)
                     ? r.choice
                     : (readable ? res.type as ForcedTemplate : 'skip');
@@ -206,8 +233,15 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
         if (!entries.length) return;
         setStage('processing'); setError(null); setProgress(null);
         try {
-            const { rows } = await runGuidedSync(entries, dicts, profile, setProgress, skinDict);
+            setOcrLanguage(gameLang);
+            const { rows, results } = await runGuidedSync(entries, dicts, profile, setProgress, skinDict);
             setRows(rows);
+            setFileNotes(results.map((res, i) => {
+                const read = !!(res.item || res.unit || res.skin || res.clanTree || (res.skills && res.skills.some(c => c.level !== null)));
+                const notes = [...res.warnings];
+                if (!read) notes.unshift('Nothing could be read from this screenshot.');
+                return { name: entries[i].file.name, notes };
+            }).filter(n => n.notes.length));
             // snapshot the AS-READ ascension per row before the user can touch anything
             scanRef.current = Object.fromEntries(rows.map(r => [r.id, {
                 stars: rowAscension(r),
@@ -606,6 +640,14 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                     ))}
                                 </div>
                             )}
+                            <label className="flex items-center justify-between gap-3 text-[11px] text-text-muted">
+                                <span>Game language <span className="text-text-muted/70">(the language the game shows, for reading names)</span></span>
+                                <select value={langChoice} onChange={e => { const v = e.target.value as LangChoice; setLangChoice(v); saveLangChoice(v); }}
+                                    className={cn('rounded-lg px-1.5 py-1 text-xs font-bold', SELECT_CLS)}>
+                                    <option value="auto">Auto ({LANG_LABEL[autoGameLang()]})</option>
+                                    {langOptions.map(l => <option key={l} value={l}>{LANG_LABEL[l]}</option>)}
+                                </select>
+                            </label>
                             {error && <p className="text-red-400 text-sm flex items-center gap-2"><AlertTriangle className="w-4 h-4" />{error}</p>}
                             <button disabled={!files.length} onClick={startReview}
                                 className="w-full py-3 rounded-xl font-bold bg-accent-primary text-white disabled:opacity-40 hover:brightness-110 transition flex items-center justify-center gap-2">
@@ -642,10 +684,13 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                     {r.detected === null
                                                         ? <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> detecting</span>
                                                         : <>
-                                                            <span>detected: {r.detected}</span>
+                                                            <span>detected: {DETECTED_LABEL[r.detected] ?? r.detected}</span>
                                                             <ConfidenceChip c={r.detConfidence} />
                                                         </>}
                                                 </div>
+                                                {r.detected !== null && DETECTED_REASON[r.detected] && r.choice === 'skip' && (
+                                                    <p className="text-[10px] text-amber-400/80 leading-snug">{DETECTED_REASON[r.detected]}</p>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -671,9 +716,21 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
 
                     {stage === 'diff' && (
                         <div className="space-y-4">
+                            {fileNotes.length > 0 && (
+                                <details className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px]" open={rows.length === 0}>
+                                    <summary className="cursor-pointer font-bold text-amber-400 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Notes on {fileNotes.length} screenshot{fileNotes.length === 1 ? '' : 's'}</summary>
+                                    <ul className="mt-2 space-y-1.5">
+                                        {fileNotes.map((n, i) => (
+                                            <li key={i}><span className="text-white font-bold">{n.name}</span>
+                                                <ul className="list-disc ml-4 text-text-muted">{n.notes.map((t, j) => <li key={j}>{t}</li>)}</ul>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </details>
+                            )}
                             {rows.length === 0 ? (
                                 <div className="py-10 text-center text-text-muted">
-                                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-400" />Nothing detected. Try clearer, full-screen captures of the item / pet / mount detail popups.
+                                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-400" />Nothing detected. Try clearer, full-screen captures of the item / pet / mount detail popups, and check the game language above.
                                     <div className="mt-4"><button onClick={() => setStage('review')} className="px-4 py-2 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold">Back to review</button></div>
                                 </div>
                             ) : (

@@ -35,6 +35,8 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+    const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
+    const { data: skillBaseConfig } = useGameData<any>('SkillBaseConfig.json');
 
     // Combine into LibraryData object
     const libs: LibraryData = useMemo(() => ({
@@ -56,6 +58,8 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         skinsLibrary,
         setsLibrary,
         ascensionConfigsLibrary,
+        petBaseConfig,
+        skillBaseConfig,
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary,
         skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
@@ -64,6 +68,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
         skinsLibrary, setsLibrary, ascensionConfigsLibrary,
+        petBaseConfig, skillBaseConfig,
     ]);
 
     const ready = !!(itemBalancingConfig && itemBalancingLibrary && techTreeLibrary && techTreePositionLibrary);
@@ -110,7 +115,7 @@ export function applyTreeMode(profile: UserProfile, treeMode: TreeMode, libs: Li
             if (treeData?.Nodes) {
                 for (const node of treeData.Nodes) {
                     const nodeData = techTreeLibrary[node.Type];
-                    const maxLevel = nodeData?.MaxLevel || 5;
+                    const maxLevel = nodeData?.MaxLevel ?? 0;
                     maxTree[tree][node.Id] = maxLevel;
                 }
             }
@@ -125,7 +130,7 @@ export function applyTreeMode(profile: UserProfile, treeMode: TreeMode, libs: Li
             }
         }
         nodesList.forEach((type, idx) => {
-            maxTree.Clan[idx] = guildUpgradeLibrary[type]?.MaxLevel || 20;
+            maxTree.Clan[idx] = guildUpgradeLibrary[type]?.MaxLevel ?? 0;
         });
     }
 

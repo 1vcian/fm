@@ -32,7 +32,7 @@
 // 576x1280 geometry (same size in cell-width units), so the reference read is bit-identical.
 
 import { cropCanvas, evidenceCropUrl, type Rect } from './imagePrep';
-import {
+import { levelDigits,
     loadGlyphBank, scoreGlyphChar, fitGlyph, connectedComponents, upscaleCanvas,
     type GlyphBank, type CompStat,
 } from './numberReader';
@@ -156,7 +156,7 @@ function clusterRows(comps: WhiteComp[], gapFactor: number): WhiteComp[][] {
 function readRow(row: WhiteComp[], field: WhiteField, bank: GlyphBank): { value: number | null; raw: string } {
     const sorted = row.slice().sort((a, b) => a.x - b.x);
     const hmax = Math.max(...sorted.map(c => c.h));
-    let raw = '', digits = '';
+    let raw = '';
     for (const c of sorted) {
         const sub = new Float32Array(c.w * c.h);
         for (let yy = 0; yy < c.h; yy++) for (let xx = 0; xx < c.w; xx++) {
@@ -172,8 +172,10 @@ function readRow(row: WhiteComp[], field: WhiteField, bank: GlyphBank): { value:
         let best = LEVEL_CHARS[0], bs = -Infinity;
         for (const ch of LEVEL_CHARS) if (cand[ch] > bs) { bs = cand[ch]; best = ch; }
         raw += best;
-        if (best >= '0' && best <= '9') digits += best;
     }
+    // the localized prefix ("Niv.", "Poz.", "Ур." ...) must never contribute digits: numberReader.levelDigits
+    const gaps = sorted.map((c, i) => i + 1 < sorted.length ? sorted[i + 1].x - (c.x + c.w) : 0);
+    const digits = levelDigits(raw, gaps);
     return { value: digits ? parseInt(digits, 10) : null, raw };
 }
 
@@ -590,8 +592,20 @@ function detectEquipped(canvas: HTMLCanvasElement, cell: GridCell, cw: number, d
  * so far.) `tiles` is accepted for backward compatibility but unused.
  */
 export async function readSkills(canvas: HTMLCanvasElement, _tiles?: Rect[]): Promise<DetectedSkill[]> {
+    return (await readSkillsGrid(canvas)).cells;
+}
+
+/**
+ * readSkills plus whether the grid was DETECTED (`fallback: false`) or laid out from the old fixed
+ * frame fractions because no grid was found (`fallback: true`). A fallback read is positions the
+ * screen was assumed to have, so callers must never pre-accept it, and its equipped flags are
+ * reported as not equipped (unread) rather than guessed from the dimming of unknown pixels.
+ */
+export async function readSkillsGrid(canvas: HTMLCanvasElement): Promise<{ cells: DetectedSkill[]; fallback: boolean }> {
     await loadGlyphBank();
-    const grid = buildGrid(cellCandidates(canvas)) ?? fallbackGrid(canvas);
+    const detected = buildGrid(cellCandidates(canvas));
+    const fallback = !detected;
+    const grid = detected ?? fallbackGrid(canvas);
     const cw = grid.cw;
     // the dimming reference is a property of the WHOLE grid, so it is measured once, before the
     // per-cell reads (see buildDimField)
@@ -625,14 +639,16 @@ export async function readSkills(canvas: HTMLCanvasElement, _tiles?: Rect[]): Pr
         } catch { /* unreadable cell -> level null */ }
         // separate try: an unreadable LEVEL must not silently report the cell as not equipped
         let equipped = false;
-        try {
-            equipped = detectEquipped(canvas, cell, cw, dim ? dimVerdict(dim, ci) : null);
-        } catch { /* -> not equipped */ }
+        if (!fallback) {
+            try {
+                equipped = detectEquipped(canvas, cell, cw, dim ? dimVerdict(dim, ci) : null);
+            } catch { /* -> not equipped */ }
+        }
         const ascension = readCellStars(canvas, cell, cw);
         const cropUrl = cellCropUrl(canvas, cell, cw);
         out.push({ idx, skillId, level, ascension, equipped, maxed: level === 100, cropUrl });
     }
-    return out;
+    return { cells: out, fallback };
 }
 
 export { N_COLS };

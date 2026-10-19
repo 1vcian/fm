@@ -133,9 +133,6 @@ function hammerStageForMissionLevel(
  * The band you are in at a given Hammer Thief level: the highest row whose threshold you have
  * passed. Its MinLevel..MaxLevel is the range of mission levels that can appear for you.
  */
-/** Fallback only: the real ceiling is the highest MinHammerThiefLevel in MissionLevelLibrary. */
-const HAMMER_MAX_LEVEL_FALLBACK = 399;
-
 function bandForHammerLevel(
     hammerLevel: number,
     levelLibrary: Record<string, MissionLevel> | null
@@ -171,7 +168,8 @@ export default function MissionsWiki() {
     );
     const HAMMER_MAX_LEVEL = useMemo(() => {
         const rows = Object.values(levelLibrary || {});
-        return rows.length ? Math.max(...rows.map((b) => b.MinHammerThiefLevel)) : HAMMER_MAX_LEVEL_FALLBACK;
+        // The page shows its loading state until levelLibrary is in (see `loading`).
+        return rows.length ? Math.max(...rows.map((b) => b.MinHammerThiefLevel)) : 0;
     }, [levelLibrary]);
 
     const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;

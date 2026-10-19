@@ -93,10 +93,10 @@ export function isInfiniteClanNode(def: ClanUpgradeDef | null | undefined): bool
     return def?.ValuePerInfiniteLevel != null;
 }
 
-/** MaxLevel with the `?? 20` fallback every clan screen uses. */
+/** GuildTechTreeUpgradeLibrary MaxLevel; a node missing from the config has no levels (0). */
 export function clanNodeMaxLevel(def: ClanUpgradeDef | null | undefined): number {
     const max = def?.MaxLevel;
-    return typeof max === 'number' && max > 0 ? Math.floor(max) : 20;
+    return typeof max === 'number' && max > 0 ? Math.floor(max) : 0;
 }
 
 type LevelSource = Map<number, number> | Record<string | number, number> | null | undefined;

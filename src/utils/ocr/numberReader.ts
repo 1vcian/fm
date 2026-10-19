@@ -429,13 +429,54 @@ function segment(canvas: HTMLCanvasElement, bank: GlyphBank): Glyph[] {
 
 export interface NumberRead { value: number | null; raw: string; confidence: number }
 
+/**
+ * The level digits of a glyph read over 'Lv.0123456789'. The prefix before a level is LOCALIZED
+ * (General.Lv: "Lv." en/de/it/nl/ja/ko, "Niv." fr, "Nv." es/pt-BR, "Sv." tr, "Poz." pl, "Ур." ru,
+ * "等级" / "等級" zh), and the glyph bank classifies every glyph, so the letters of "Niv." / "Poz."
+ * come back as look-alike digits ('i' as 1, 'o' as 0, 'z' as 2). What separates the prefix from
+ * the number in every language is the space of the "{Lv} {N}" label (measured on the real tiles:
+ * "Lv. 102"), so with glyph positions the level is the digits after the widest gap when it clearly
+ * exceeds the glyph spacing (this also covers the Chinese prefix, which has no dot), else the digits
+ * after the dot with the widest gap behind it. `gaps[i]` is the blank width after glyph i. Without
+ * positions: the digits after the last dot that follows a letter, else the trailing digit run.
+ */
+export function levelDigits(raw: string, gaps?: number[]): string {
+    const after = (i: number) => raw.slice(i + 1).replace(/[^\d]/g, '');
+    if (gaps && gaps.length === raw.length) {
+        // the label's space: a gap clearly wider than the rest of the glyph spacing
+        const inner = gaps.slice(0, -1);
+        if (inner.length >= 2) {
+            let mi = 0;
+            for (let i = 1; i < inner.length; i++) if (inner[i] > inner[mi]) mi = i;
+            const rest = inner.filter((_, i) => i !== mi).sort((a, b) => a - b);
+            const med = rest[rest.length >> 1] ?? 0;
+            if (inner[mi] > Math.max(2, 1.8 * med) && after(mi)) return after(mi);
+        }
+        // no clear space: the dot with the widest gap after it
+        let best = -1;
+        for (let i = 0; i < raw.length - 1; i++) {
+            if (raw[i] !== '.' || !after(i)) continue;
+            if (best < 0 || gaps[i] >= gaps[best]) best = i;
+        }
+        if (best >= 0) return after(best);
+    }
+    for (let i = raw.length - 2; i >= 1; i--) {
+        if (raw[i] !== '.' || /\d/.test(raw[i - 1])) continue;
+        const d = after(i);
+        if (d) return d;
+    }
+    const t = raw.match(/([\d.]*\d)[^\d.]*$/);
+    return t ? t[1].replace(/\./g, '') : '';
+}
+
 /** Read an integer (level / count) from a tight crop containing white game-font text. */
 export async function readNumber(canvas: HTMLCanvasElement): Promise<NumberRead> {
     const bank = await loadGlyphBank();
     const glyphs = segment(canvas, bank);
     if (!glyphs.length) return { value: null, raw: '', confidence: 0 };
     const hmax = Math.max(...glyphs.map(g => g.hmax));
-    let raw = '', digits = '', conf = 0, nDig = 0;
+    let raw = '';
+    const scores: number[] = [];
     for (const { g, h } of glyphs) {
         const cand: Record<string, number> = {};
         for (const c of LEVEL_CHARS) cand[c] = scoreGlyphChar(bank, g, c);
@@ -443,9 +484,18 @@ export async function readNumber(canvas: HTMLCanvasElement): Promise<NumberRead>
         let best = 'L', bs = -Infinity;
         for (const c of LEVEL_CHARS) if (cand[c] > bs) { bs = cand[c]; best = c; }
         raw += best;
-        if (best >= '0' && best <= '9') { digits += best; conf += bs; nDig++; }
+        scores.push(bs);
     }
-    return { value: digits ? parseInt(digits, 10) : null, raw, confidence: nDig ? conf / nDig : 0 };
+    const gaps = glyphs.map((g, i) => i + 1 < glyphs.length ? glyphs[i + 1].x - (g.x + g.w) : 0);
+    const digits = levelDigits(raw, gaps);
+    // confidence over the glyphs that make the level (the run levelDigits picked)
+    let conf = 0;
+    if (digits) {
+        const end = raw.lastIndexOf(digits) + digits.length;
+        for (let i = end - digits.length; i < end; i++) conf += scores[i];
+        conf /= digits.length;
+    }
+    return { value: digits ? parseInt(digits, 10) : null, raw, confidence: conf };
 }
 
 // ---------------------------------------------------------------- dark-ink value reader

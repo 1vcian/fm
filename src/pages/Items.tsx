@@ -24,7 +24,7 @@ export default function Items() {
     const { data: itemLibrary, loading: loadingItemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: secondaryParams, loading: loadingSecondaryParams } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');
     const { data: autoMapping, loading: loadingAutoMapping } = useGameData<any>('AutoItemMapping.json');
-    const { data: balancingConfig } = useGameData<any>('ItemBalancingConfig.json');
+    const { data: balancingConfig, loading: loadingBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
@@ -44,7 +44,8 @@ export default function Items() {
         // Binary: ForgeAction.RollItemLevel 0x7839768 caps the stored level at
         // FloorToInt(CalculateValue(..., ItemBaseMaxLevel)); BaseItemVisual.UpdateVisual 0x4037BF8
         // shows it through FormatLevelPlusOne 0x3F79340 (level + 1).
-        const base = (balancingConfig?.ItemBaseMaxLevel ?? 98) + 1;
+        if (!balancingConfig) return null;
+        const base = balancingConfig.ItemBaseMaxLevel + 1;
         const slotBonusKey = {
             'Weapon': 'WeaponLevelUp',
             'Helmet': 'HelmetLevelUp',
@@ -80,8 +81,9 @@ export default function Items() {
     }, [ascensionLevel, ascensionConfigs]);
 
     // Scaling factor from config
-    const levelScaling = balancingConfig?.LevelScalingBase || 1.01;
-    const meleeBaseMulti = balancingConfig?.PlayerMeleeDamageMultiplier || 1.6;
+    // ItemBalancingConfig; the table waits for it (see `loading`), so no guessed fallback.
+    const levelScaling: number = balancingConfig?.LevelScalingBase;
+    const meleeBaseMulti: number = balancingConfig?.PlayerMeleeDamageMultiplier;
 
     // Tech stat bonus key for the current slot
     const statBonusKey = useMemo(() => ({
@@ -97,7 +99,7 @@ export default function Items() {
 
     const statMultiplier = useMemo(() => 1 + (techModifiers[statBonusKey] || 0), [techModifiers, statBonusKey]);
 
-    const loading = loadingItemLibrary || loadingSecondaryParams || loadingAutoMapping;
+    const loading = loadingItemLibrary || loadingSecondaryParams || loadingAutoMapping || loadingBalancingConfig || !balancingConfig;
 
     const items = useMemo(() => {
         if (!itemLibrary) return [];
@@ -126,13 +128,15 @@ export default function Items() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-12">
-            <BreakpointWikiModal
-                isOpen={breakpointModal.isOpen}
-                onClose={() => setBreakpointModal({ isOpen: false })}
-                weaponName={breakpointModal.weapon?.Name || 'Weapon'}
-                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.5}
-                weaponWindupTime={breakpointModal.weapon?.WindupTime || 0.4}
-            />
+            {breakpointModal.weapon && (
+                <BreakpointWikiModal
+                    isOpen={breakpointModal.isOpen}
+                    onClose={() => setBreakpointModal({ isOpen: false })}
+                    weaponName={breakpointModal.weapon.Name || 'Weapon'}
+                    weaponAttackDuration={breakpointModal.weapon.AttackDuration}
+                    weaponWindupTime={breakpointModal.weapon.WindupTime}
+                />
+            )}
 
             {/* Header / Age Selector */}
             <div className="flex flex-col gap-6">
@@ -212,7 +216,8 @@ export default function Items() {
                             <input
                                 type="range"
                                 min="1"
-                                max={currentMaxLevel}
+                                max={currentMaxLevel ?? undefined}
+                                disabled={currentMaxLevel === null}
                                 value={selectedLevel}
                                 onChange={(e) => setSelectedLevel(parseInt(e.target.value))}
                                 className="flex-1 h-3 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
@@ -225,7 +230,7 @@ export default function Items() {
                         <div className="h-10 w-px bg-border/50 hidden md:block" />
 
                         <div className="flex items-center gap-4">
-                            <AscensionStars value={ascensionLevel} onChange={setAscensionLevel} />
+                            <AscensionStars type="Forge" value={ascensionLevel} onChange={setAscensionLevel} />
                             {/* Ascensions-layer Multiplier: x(1 + Value) of AscensionConfigPerLevel[Level - 1] only (AscensionModel.GetLevelStats 0x77E7364; layer math in docs/skill-verification-2026_10.md section 2). */}
                             {ascensionLevel > 0 && (
                                 <div className="bg-amber-400/10 text-amber-400 px-2 py-1 rounded text-xs font-mono font-bold border border-amber-400/20">
@@ -374,7 +379,7 @@ export default function Items() {
                                                                 isOpen: true,
                                                                 weapon: {
                                                                     Name: itemName,
-                                                                    AttackDuration: weaponData.AttackDuration ?? 1.5,
+                                                                    AttackDuration: weaponData.AttackDuration,
                                                                     WindupTime: weaponData.WindupTime
                                                                 }
                                                             });

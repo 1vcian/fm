@@ -90,7 +90,8 @@ export default function FairiesWiki() {
         };
     }, [upgrades]);
 
-    const maxLevel = table?.maxLevel ?? 20;
+    // FairyUpgradesLibrary top level; until it loads the slider is disabled at level 1.
+    const maxLevel = table?.maxLevel ?? 1;
     const shownLevel = Math.min(Math.max(level, 1), maxLevel);
 
     /**
@@ -135,6 +136,7 @@ export default function FairiesWiki() {
                             min="1"
                             max={maxLevel}
                             value={shownLevel}
+                            disabled={!table}
                             onChange={(e) => setLevel(parseInt(e.target.value))}
                             className="flex-1 h-3 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
                         />

@@ -20,8 +20,12 @@ export const RARITIES = [
     "Mythic"
 ];
 
+/**
+ * Active pet slots, still used only by the screenshot reader (src/utils/ocr/autoSync.ts and
+ * AutoSyncModal), which does not receive the configs yet. Equals PetBaseConfig.PetSlotsCount in
+ * 2026_10_08_09_03; everything else reads that config field.
+ */
 export const MAX_ACTIVE_PETS = 3;
-export const MAX_ACTIVE_SKILLS = 3;
 
 /**
  * Skill Mechanics Definitions
@@ -108,13 +112,23 @@ export function attackIncRaw(mult: number): number {
     return Math.floor((SIM_DT_RAW * Math.round(mult * 1e6)) / 4294967296) || 1;
 }
 
+/**
+ * FD6.op_Implicit(F64) (FromF64 0x71961B4): raw_fd6 = (raw_q32 * 10^6) >> 32, a floor. Weapon
+ * windup and attack duration are F64 config values that SetUnitWeapon converts this way, so
+ * 0.6666667000390589 (the Q32.32 of 2/3) is 666666 micro, not the rounded 666667.
+ */
+export function fd6MicroFromF64(seconds: number): number {
+    const raw = BigInt(Math.round(seconds * 4294967296));
+    return Number((raw * 1000000n) >> 32n);
+}
+
 /** Ticks to climb `micro` FD6 units at `inc` per tick; a phase always costs at least one tick. */
 const climbTicks = (micro: number, inc: number) => Math.max(1, Math.ceil(micro / inc));
 
 // Single-attack cycle in ticks: ceil(AttackDuration / inc) ticks + 1 idle re-acquire tick.
 // WINDUP-INDEPENDENT (windup & recovery share one timer). Reproduces the measured table exactly.
 export function attackCycleTicks(mult: number, attackDuration = 1.5): number {
-    return climbTicks(Math.round(attackDuration * 1e6), attackIncRaw(mult)) + 1;
+    return climbTicks(fd6MicroFromF64(attackDuration), attackIncRaw(mult)) + 1;
 }
 
 // Single-attack interval (seconds). Each tick = 0.1s.
@@ -130,8 +144,8 @@ export function attackIntervalSeconds(mult: number, attackDuration = 1.5): numbe
 // + 1                                  idle re-acquire tick
 export function doubleCycleTicks(mult: number, windup: number, attackDuration = 1.5): number {
     const inc = attackIncRaw(mult);
-    const W = Math.round(windup * 1e6);
-    const D = Math.round(attackDuration * 1e6);
+    const W = fd6MicroFromF64(windup);
+    const D = fd6MicroFromF64(attackDuration);
     return climbTicks(W, inc) + climbTicks(D - Math.floor(W * 0.75), inc) + 1;
 }
 
@@ -142,7 +156,7 @@ export function doubleCycleSeconds(mult: number, windup: number, attackDuration 
 
 // Gap between the two strikes of a double (seconds): the climb from floor(0.75*W) back to W.
 export function doubleSecondStrikeSeconds(mult: number, windup: number): number {
-    const W = Math.round(windup * 1e6);
+    const W = fd6MicroFromF64(windup);
     return climbTicks(W - Math.floor(W * 0.75), attackIncRaw(mult)) * 0.1;
 }
 

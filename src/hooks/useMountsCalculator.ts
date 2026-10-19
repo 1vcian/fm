@@ -165,16 +165,18 @@ export function useMountsCalculator() {
     };
 
     // 4. Constants from config — read from unified Levels array
-    const BASE_COST = mountSummonConfig?.SingleSummonCost?.Amount || 50;
+    // NaN until MountSummonConfig loads; `ready` stays false meanwhile and the page shows a loading state.
+    const BASE_COST: number = mountSummonConfig?.SingleSummonCost?.Amount ?? NaN;
     // SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0].
-    const BASE_MOUNTS_PER_SUMMON = baseSummonCount(mountSummonConfig, 1);
+    const BASE_MOUNTS_PER_SUMMON = baseSummonCount(mountSummonConfig);
     const MOUNTS_PER_SUMMON = BASE_MOUNTS_PER_SUMMON * (1 + extraChance);
     // SummonConfig.CanAffordSummon (RVA 0x7865EDC): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(BASE_COST, BASE_MOUNTS_PER_SUMMON, costReduction);
     const levels: any[] = mountSummonConfig?.Levels || [];
-    const maxPossibleLevel = levels.length || 100;
-    const currency = mountSummonConfig?.SingleSummonCost?.Currency || 'ClockWinders';
+    const maxPossibleLevel = levels.length;
+    const currency: string = mountSummonConfig?.SingleSummonCost?.Currency ?? '';
+    const ready = levels.length > 0 && Number.isFinite(BASE_COST) && Number.isFinite(BASE_MOUNTS_PER_SUMMON);
 
     // 5. Simulation Results
     const results = useMemo(() => {
@@ -225,6 +227,7 @@ export function useMountsCalculator() {
     });
 
     return {
+        ready,
         level, setLevel,
         progress, setProgress,
         windersCount, setWindersCount,

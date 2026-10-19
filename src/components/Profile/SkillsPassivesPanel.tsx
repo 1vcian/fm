@@ -104,7 +104,8 @@ export function SkillsPassivesPanel() {
         setIsUndoVisible(false);
         const skillData = skillLibrary?.[skillId];
         const rarity = skillData?.Rarity || 'Common';
-        const maxLevel = skillPassiveLibrary?.[rarity]?.LevelStats?.length || 299;
+        const maxLevel = skillPassiveLibrary?.[rarity]?.LevelStats?.length; // SkillPassiveLibrary
+        if (typeof maxLevel !== 'number') return;
         const clampedLevel = Math.max(0, Math.min(newLevel, maxLevel));
         const updatedPassives = { ...passives, [skillId]: clampedLevel };
 
@@ -266,6 +267,7 @@ export function SkillsPassivesPanel() {
                     </button>
                     <div className="scale-90 sm:scale-100 origin-right">
                         <AscensionStars
+                            type="Skills"
                             value={profile.misc.skillAscensionLevel || 0}
                             onChange={(val) => updateNestedProfile('misc', { skillAscensionLevel: val })}
                         />
@@ -310,7 +312,7 @@ export function SkillsPassivesPanel() {
                     const level = passives[id] || 0;
                     const stats = getSkillStats(id, level);
                     const spriteInfo = getSpriteInfo(id);
-                    const maxLevel = skillPassiveLibrary?.[rarity]?.LevelStats?.length || 299;
+                    const maxLevel = skillPassiveLibrary?.[rarity]?.LevelStats?.length ?? level; // SkillPassiveLibrary
                     const owned = level > 0;
                     // The full name and both stats live in the tooltip: the tile itself has room
                     // for the artwork and the level, which is what the game shows too.

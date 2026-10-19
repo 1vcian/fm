@@ -82,7 +82,8 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
     const configDuration = typeof pvpBaseConfig?.PvpMatchTimerSeconds === 'number'
         ? pvpBaseConfig.PvpMatchTimerSeconds
         : null;
-    const T = customLen ?? configDuration ?? 60;
+    // NaN until PvpBaseConfig loads: `analysis` is then null and the panel stays hidden.
+    const T = customLen ?? configDuration ?? NaN;
     const isGameDefault = configDuration !== null && T === configDuration;
     const currentR = globalStats?.skillCooldownReduction ?? 0;
 

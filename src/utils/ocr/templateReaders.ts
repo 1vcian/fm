@@ -22,7 +22,7 @@ import { countStars } from './starCounter';
 import { readWhiteLevelRow } from './skillsReader';
 import { embedIcon, matchItemIcon } from './iconMatcher';
 import { ocr, ocrPageLines, PSM, type PageLine } from './ocrEngine';
-import { normalizeName, bestMatch, parsePercent, parseCompactNumber } from './parse';
+import { normalizeName, foldText, bestMatch, parsePercent, parseCompactNumber } from './parse';
 import { parseMainStatKind, matchSubstat } from './gameDictionary';
 import { AGE_COLORS, RARITY_COLORS, RARITY_NAMES, STAR, nearestColor, type RGB } from './templateParams';
 import { AGES } from '../constants';
@@ -175,6 +175,12 @@ function printable(s: string, lo: number, hi: number): boolean {
  */
 function resolveSubstatValue(bankRaw: string, pct: number | null, lo: number, hi: number): number | null {
     const raw = (bankRaw.match(/[\d.]+/g) ?? []).join('');
+    // Glyphs that are not digits or points INSIDE the number (after the sign, before the closing
+    // "%") mean the bank lost a digit there: "+71.5%" read as "+%.5%". Such a read is not a
+    // zero-edit candidate, whatever it collapses to; each stray glyph counts as one edit, so a
+    // printable tesseract read of the same line wins over it.
+    const core = bankRaw.replace(/^[+-]+/, '').replace(/%+$/, '');
+    const junk = (core.match(/[^\d.]/g) ?? []).length;
     const pctStr = pct != null && Number.isFinite(pct) ? String(pct) : null;
     const pctOk = pctStr != null && printable(pctStr, lo, hi);
     const cands = new Map<string, number>(); // printable string -> edit cost
@@ -182,8 +188,8 @@ function resolveSubstatValue(bankRaw: string, pct: number | null, lo: number, hi
         s = s.replace(/^\./, '');
         if (printable(s, lo, hi) && (cands.get(s) ?? 9) > cost) cands.set(s, cost);
     };
-    const forms: [string, number][] = [[raw, 0]];
-    if (raw.length > 1) forms.push([raw.slice(1), 1]);
+    const forms: [string, number][] = [[raw, junk]];
+    if (raw.length > 1) forms.push([raw.slice(1), junk + 1]);
     for (const [f, c0] of forms) {
         if (!f) continue;
         add(f, c0);
@@ -223,9 +229,9 @@ function resolveSubstatValue(bankRaw: string, pct: number | null, lo: number, hi
  * line's bbox mid-token (".1% Critical Damage" for "+75.1% "), so trusting its x-extent used
  * to clip the leading "+7" off the value word — the proto never did, it row-projected the full
  * card width right of the tile. */
-function lineRectOnSource(src: HTMLCanvasElement, card: Rect, l: PageLine): Rect {
+function lineRectOnSource(src: HTMLCanvasElement, card: CardBox, l: PageLine): Rect {
     const m = Math.max(2, Math.round(3 * src.width / CANON_W));
-    const x0 = card.x + TILE_X * card.w;
+    const x0 = card.x + (card.textFrac ?? TILE_X) * card.w;
     return clampRect({
         x: x0,
         y: card.y + l.y0 / OCR_SCALE - m,
@@ -239,13 +245,37 @@ function lineRectOnSource(src: HTMLCanvasElement, card: Rect, l: PageLine): Rect
 function firstInkToken(src: HTMLCanvasElement, rect: Rect, opts: InkValueOpts, gapPx: number): Rect | null {
     const r = clampRect(rect, src.width, src.height);
     const data = src.getContext('2d', { willReadFrequently: true })!.getImageData(r.x, r.y, r.w, r.h).data;
-    const cols = new Int32Array(r.w);
-    for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
+    const isInk = (x: number, y: number): boolean => {
         const i = (y * r.w + x) * 4;
         const R = data[i], G = data[i + 1], B = data[i + 2];
         const mn = Math.min(R, G, B), mx = Math.max(R, G, B);
-        if (mx - mn < opts.satMax && ((mn + mx) >> 1) < opts.brMax) cols[x]++;
+        return mx - mn < opts.satMax && ((mn + mx) >> 1) < opts.brMax;
+    };
+    // The line box comes from tesseract and can span a neighbouring text row (measured: the
+    // Japanese and Korean models return CJK line boxes about twice the text height, which glued the
+    // row above onto the value token and dropped its decimal point: "1.87b" read as 187b). Keep
+    // the run of ink rows through the band's middle when it is clearly thinner than the band.
+    const rowInk = new Int32Array(r.h);
+    for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) if (isInk(x, y)) rowInk[y]++;
+    let ya = 0, yb = r.h;
+    {
+        const runs: [number, number][] = [];
+        let s0 = -1, blank = 0;
+        for (let y = 0; y <= r.h; y++) {
+            if (y < r.h && rowInk[y] > 0) { if (s0 < 0) s0 = y; blank = 0; }
+            else if (s0 >= 0 && (y === r.h || ++blank > 1)) { runs.push([s0, y - blank]); s0 = -1; blank = 0; }
+        }
+        const mid = r.h / 2;
+        const pick = runs.find(([a, b]) => a <= mid && b >= mid)
+            ?? runs.slice().sort((p, q) => (q[1] - q[0]) - (p[1] - p[0]))[0];
+        if (pick && (pick[1] - pick[0]) * 1.6 < r.h) {
+            ya = Math.max(0, pick[0] - 1); yb = Math.min(r.h, pick[1] + 2);
+            // the word gap the caller derived from the over-tall box is too wide for this row
+            gapPx = Math.min(gapPx, Math.max(3, Math.round(0.24 * (yb - ya))));   // en: gap 5 px at a 22 px row
+        }
     }
+    const cols = new Int32Array(r.w);
+    for (let y = ya; y < yb; y++) for (let x = 0; x < r.w; x++) if (isInk(x, y)) cols[x]++;
     let x0t = -1, x1t = -1;
     for (let x = 0; x < r.w; x++) if (cols[x] > 0) { if (x0t < 0) x0t = x; x1t = x; }
     if (x0t < 0) return null;
@@ -255,7 +285,7 @@ function firstInkToken(src: HTMLCanvasElement, rect: Rect, opts: InkValueOpts, g
         else run = 0;
     }
     const end = gap < 0 ? x1t + 1 : gap;
-    return { x: r.x + x0t, y: r.y, w: end - x0t, h: r.h };
+    return { x: r.x + x0t, y: r.y + ya, w: end - x0t, h: yb - ya };
 }
 
 // Main stat + substats live RIGHT of the equipment tile (proto_substats / proto_mainstat
@@ -263,9 +293,51 @@ function firstInkToken(src: HTMLCanvasElement, rect: Rect, opts: InkValueOpts, g
 // lines, so without this clamp the leftmost "value token" is the tile text, not the number.
 const TILE_X = 0.27;
 
+/** The popup card plus where its text column starts (fraction of the card width). */
+type CardBox = Rect & { textFrac?: number };
+
+/**
+ * Where the text column starts, from the DETECTED subject tile: just right of it. The prefabs put
+ * the text at different offsets per popup (EquippedItemPopup: tile ends at 0.25 of the card, text
+ * at 0.29; PlayerPvpProfileItemPopup: 0.23 / 0.27; PlayerPvpProfilePet/MountPopup: 0.21 / 0.25),
+ * so the fixed 0.27 cut the first digit off every pet and mount popup opened from a profile card
+ * ("14.7m" read 4.7m, "94m" 4m, "2.29b" 29b on the real train shots). The column never starts
+ * right of the old constant, so no popup loses text it used to read.
+ */
+function textColumnFrac(src: HTMLCanvasElement, card: Rect, tile: Rect | null | undefined): number {
+    // The gap between the tile and the text is a band of columns that is white from the card's
+    // upper third to its bottom (the tile, its star and the text all sit in those rows, the
+    // "Equipped" ribbon above them). Measured from the pixels, so a tile whose detected box came
+    // out short (a dark Underworld fill) cannot move the column into the tile.
+    const x0 = Math.round(card.x + 0.15 * card.w), x1 = Math.round(card.x + TILE_X * card.w);
+    const y0 = Math.round(card.y + 0.30 * card.h), y1 = Math.round(card.y + 0.90 * card.h);
+    if (x1 - x0 < 4 || y1 - y0 < 4) return TILE_X;
+    const d = src.getContext('2d', { willReadFrequently: true })!.getImageData(x0, y0, x1 - x0, y1 - y0).data;
+    const w = x1 - x0, h = y1 - y0;
+    const minRun = Math.max(2, Math.round(0.008 * card.w));
+    let run = 0, sawInk = false;
+    for (let x = 0; x < w; x++) {
+        let ink = 0;
+        for (let y = 0; y < h; y++) {
+            const i = (y * w + x) * 4;
+            if (Math.min(d[i], d[i + 1], d[i + 2]) < 215) ink++;
+        }
+        if (ink > 0.02 * h) { sawInk = true; run = 0; continue; }
+        if (sawInk && ++run >= minRun) {
+            // the gap begins `run - 1` columns back; start the text column inside it
+            const gapStart = x - run + 1;
+            return Math.min(TILE_X, (x0 + gapStart + 1 - card.x) / card.w);
+        }
+    }
+    // no gap found: the detected tile's right edge, then the old constant
+    if (!tile) return TILE_X;
+    const right = (tile.x + tile.w - card.x) / card.w;
+    return right > 0.19 && right < TILE_X ? right + 0.012 : TILE_X;
+}
+
 /** Re-read one line's value token with the glyph bank -> raw string over opts.chars ('' = none). */
 async function readValueToken(
-    src: HTMLCanvasElement, card: Rect, l: PageLine, opts: InkValueOpts, gapPx: number,
+    src: HTMLCanvasElement, card: CardBox, l: PageLine, opts: InkValueOpts, gapPx: number,
 ): Promise<string> {
     try {
         const r = lineRectOnSource(src, card, l);
@@ -300,17 +372,18 @@ function parseMainRaw(raw: string): string | null {
     return num ? num + suf : null;
 }
 
-async function readCardText(src: HTMLCanvasElement, dicts?: GameDictionaries): Promise<CardText> {
+async function readCardText(src: HTMLCanvasElement, dicts?: GameDictionaries, tile?: Rect | null): Promise<CardText> {
     // Full popup card via the proto find_card port (the brightness-band heuristic clips the card
     // to the substat rows on pet/mount screens, losing the main-stat lines above them).
     const card = detectPopupCard(src) ?? detectBrightCard(src) ?? { x: 0, y: 0, w: src.width, h: src.height };
-    const cardRect = clampRect(card, src.width, src.height);
+    const cardRect: CardBox = clampRect(card, src.width, src.height);
+    cardRect.textFrac = textColumnFrac(src, cardRect, tile);
     // OCR only the text column right of the subject tile. The tile's own "Lv. N" label sits on the
     // first substat's row; tesseract merged the two into one line ("LVN02 Critical Damage +73.8%")
     // and, on resampled or recompressed captures, dropped that line altogether (measured: the
     // first substat of two item fixtures lost at 1080 px with bars and at JPEG q55). Line rects
     // keep cardRect's vertical origin, so lineRectOnSource is unchanged.
-    const textX = Math.round(cardRect.x + TILE_X * cardRect.w);
+    const textX = Math.round(cardRect.x + cardRect.textFrac * cardRect.w);
     const textRect = clampRect({ x: textX, y: cardRect.y, w: cardRect.x + cardRect.w - textX, h: cardRect.h }, src.width, src.height);
     const cardCanvas = cropCanvas(src, textRect, OCR_SCALE);
     let lines: PageLine[] = [];
@@ -347,8 +420,9 @@ async function readCardText(src: HTMLCanvasElement, dicts?: GameDictionaries): P
             continue;
         }
         if (/total/i.test(text) || /upgrade|remove/i.test(text)) continue;
+        if (dicts && containsAnyWord(text, [...dicts.words.totalDamage, ...dicts.words.totalHealth])) continue;
         if (!/\d/.test(text)) continue;
-        const kind = parseMainStatKind(text);
+        const kind = parseMainStatKind(text, dicts?.words);
         if (kind) {
             // word gap: max(14, 0.35*bandh*4) @4x canonical (proto_mainstat._word_groups) -> 1x source px
             const bandH = (l.y1 - l.y0) / OCR_SCALE;
@@ -506,9 +580,12 @@ function colorKeyCrop(src: HTMLCanvasElement, rect: Rect, hue: number | null, sc
 
 /** Fallback candidate score when no dictionary is available: letter density, junk-penalised. */
 function textPlausibility(t: string): number {
-    const letters = (t.match(/[A-Za-z]/g) ?? []).length;
-    if (letters < 3) return 0;
-    const junk = (t.match(/[^A-Za-z0-9[\]\s.'&-]/g) ?? []).length;
+    // letters of any script (a Cyrillic or CJK name is as plausible as a Latin one); CJK names are
+    // short, so two of their letters already make a word
+    const letters = (t.match(/\p{L}/gu) ?? []).length;
+    const cjk = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(t);
+    if (letters < (cjk ? 2 : 3)) return 0;
+    const junk = (t.match(/[^\p{L}\p{N}[\]\s.'&-]/gu) ?? []).length;
     return Math.max(0, Math.min(0.6, (letters - junk) / Math.max(1, t.length)));
 }
 
@@ -557,13 +634,24 @@ async function readNameBand(
     return best.text;
 }
 
-/** Longest AGE word present in the tag text -> age index, or -1. */
-function ageFromTag(text: string): number {
+/** Longest AGE word present in the tag text -> age index, or -1. The words are the localized age
+ *  names (Localization.json `ages`, every active language), compared with spaces and punctuation
+ *  removed so "Early-Modern" / "Раннее Новое время" match however tesseract spaced them. */
+function ageFromTag(text: string, words?: string[][]): number {
     if (!text) return -1;
-    const t = text.toLowerCase().replace(/[^a-z]/g, '');
-    const cand = AGES.map((a, i) => ({ a: a.toLowerCase().replace(/[^a-z]/g, ''), i })).sort((x, y) => y.a.length - x.a.length);
-    for (const { a, i } of cand) if (a && t.includes(a)) return i;
+    const squash = (x: string) => foldText(x).replace(/\s+/g, '');
+    const t = squash(text);
+    const lists = words ?? AGES.map(a => [a]);
+    const cand = lists.flatMap((ws, i) => ws.map(w => ({ a: squash(w), i }))).sort((x, y) => y.a.length - x.a.length);
+    for (const { a, i } of cand) if (a.length >= 2 && t.includes(a)) return i;
     return -1;
+}
+
+/** Whether a folded OCR line contains one of the folded phrases (whole words for scripts with
+ *  spaces, substring for CJK). */
+function containsAnyWord(text: string, phrases: string[]): boolean {
+    const f = ` ${foldText(text)} `;
+    return phrases.some(p => p && (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(p) ? f.includes(p) : f.includes(` ${p} `)));
 }
 
 function clamp01(x: number): number { return Math.max(0, Math.min(1, x)); }
@@ -571,7 +659,7 @@ function clamp01(x: number): number { return Math.max(0, Math.min(1, x)); }
 // ---------------------------------------------------------------- public: item
 export async function readItem(src: HTMLCanvasElement, dicts?: GameDictionaries): Promise<DetectedItem> {
     const tile = detectPopupTile(src);
-    const card = await readCardText(src, dicts);
+    const card = await readCardText(src, dicts, tile);
     const mainStat = card.main[0];
     const group: 'damage' | 'health' | undefined = mainStat?.kind;
 
@@ -581,11 +669,18 @@ export async function readItem(src: HTMLCanvasElement, dicts?: GameDictionaries)
 
     // AGE — tile fill colour (primary), cross-checked against the "[Age]" tag word.
     const tileRgb = sampleTileColor(src, tile);
-    const ageIdx = classifyColor(tileRgb, AGE_COLORS);
+    const colourAge = classifyColor(tileRgb, AGE_COLORS);
     // an "[Age]" word IS the whole point of this band, so score candidates on finding one
-    const tagText = await readNameBand(src, 'orange', t => (ageFromTag(t) >= 0 ? 1 : 0.4 * textPlausibility(t)));
-    const tagAge = ageFromTag(tagText);
-    const tagAgree = tagAge < 0 || tagAge === ageIdx;
+    const ageWords = dicts?.words.ages;
+    const tagText = await readNameBand(src, 'orange', t => (ageFromTag(t, ageWords) >= 0 ? 1 : 0.4 * textPlausibility(t)));
+    const tagAge = ageFromTag(tagText, ageWords);
+    const tagAgree = tagAge < 0 || tagAge === colourAge;
+    // The tag is the game printing the age word itself; the fill colour is sampled around the
+    // item art, which on a large dark sprite drowns the fill (measured: an Interstellar purple
+    // tile with a dark-green alien head read Underworld, a Multiverse tile read Medieval). A tag
+    // word that matched a dictionary age exactly therefore wins, and a disagreement still lowers
+    // the confidence below.
+    const ageIdx = tagAge >= 0 ? tagAge : colourAge;
 
     const level = await readTileLevel(src, tile);
     const levelCropUrl = evidenceCropUrl(src, tileLevelRect(tile)); // evidence of the "Lv." band
@@ -636,7 +731,7 @@ function classifyRarityHue(rgb: RGB | null): number {
 
 export async function readUnit(src: HTMLCanvasElement, kind: 'pet' | 'mount', dicts?: GameDictionaries): Promise<DetectedUnit> {
     const tile = detectUnitTile(src);
-    const card = await readCardText(src, dicts);
+    const card = await readCardText(src, dicts, tile);
     const mainStat = card.main[0];
 
     // RARITY — proto_rarity.popup_rarity: dominant saturated colour of the card HEADER BAND
@@ -668,7 +763,7 @@ export async function readUnit(src: HTMLCanvasElement, kind: 'pet' | 'mount', di
         // NOTE: the tag word must be looked up on the RAW text — normalizeName() deletes rarity
         // words by design, so tokenising its output could never find one.
         let tagRarity: string | null = null;
-        for (const w of tagText.toLowerCase().split(/[^a-z]+/)) { const r = w && dicts.rarities.get(w); if (r) { tagRarity = r; break; } }
+        for (const w of foldText(tagText).split(' ')) { const r = w && dicts.rarities.get(w); if (r) { tagRarity = r; break; } }
         if (tagRarity) rarityAgree = tagRarity.toLowerCase() === rarity.toLowerCase();
     }
 

@@ -545,7 +545,7 @@ export function TechTreePanel() {
                         const nodesList = guildPositionLibrary[category].Nodes || [];
                         for (const nodeType of nodesList) {
                             const upgradeDef = guildUpgradeLibrary[nodeType];
-                            const max = upgradeDef?.MaxLevel || 20;
+                            const max = upgradeDef?.MaxLevel ?? 0;
                             const current = userTree[globalId] || 0;
                             maxTotal += max;
                             currentTotal += current;
@@ -570,7 +570,7 @@ export function TechTreePanel() {
 
             nodes.forEach((node: any) => {
                 const effect = treeEffects[node.type];
-                const max = effect?.MaxLevel || 5;
+                const max = effect?.MaxLevel ?? 0;
                 const current = userTree[node.id] || 0;
 
                 maxTotal += max;
@@ -704,7 +704,7 @@ export function TechTreePanel() {
                                         const globalId = nObj.globalId;
                                         const nodeType = nObj.type;
                                         const upgradeDef = guildUpgradeLibrary?.[nodeType];
-const maxLevel = upgradeDef?.MaxLevel || 20;
+const maxLevel = upgradeDef?.MaxLevel ?? 0;
                                         // Infinite nodes open past MaxLevel once the whole clan tree is maxed.
                                         const cap = clanCaps.get(globalId) ?? maxLevel;
                                         const currentLevel = currentTreeLevels[globalId] || 0;
@@ -862,7 +862,7 @@ const maxLevel = upgradeDef?.MaxLevel || 20;
                                 <div className="flex flex-nowrap gap-2 sm:gap-3 justify-center w-full overflow-x-auto px-1">
                                     {layerNodes.map((node) => {
                                         const effect = treeEffects?.[node.type];
-                                        const maxLevel = effect?.MaxLevel || 5;
+                                        const maxLevel = effect?.MaxLevel ?? 0;
                                         const currentLevel = currentTreeLevels[node.id] || 0;
                                         const unlocked = isNodeUnlocked(node, currentTreeLevels);
                                         const completed = isNodeCompleted(node.id, currentTreeLevels, maxLevel);

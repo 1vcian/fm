@@ -6,7 +6,7 @@ import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
 import { cn } from '../../lib/utils';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
-import { FAIRIES, FAIRY_MAX_LEVEL, SEASON_STATS, SeasonFairyStat, fairyPerStep, fairyRawBonus } from '../../utils/fairies';
+import { FAIRIES, SEASON_STATS, SeasonFairyStat, fairyPerStep, fairyRawBonus } from '../../utils/fairies';
 import { AggregatedStats } from '../../utils/statEngine';
 import { Minus, Plus, Sparkles } from 'lucide-react';
 
@@ -89,12 +89,13 @@ export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
     const { data: fairyUpgrades } = useGameData<Record<string, { Level: number }>>('FairyUpgradesLibrary.json');
     const stats = useGlobalStats(false);
 
-    const maxLevel = fairyUpgrades ? Math.max(...Object.keys(fairyUpgrades).map(Number)) : FAIRY_MAX_LEVEL;
     const stored: FairySelection = profile.misc.fairy ?? { name: null, level: 1 };
     const value: FairySelection =
         variant === 'original' ? originalFairy ?? stored
         : variant === 'test' ? testFairy ?? stored
         : stored;
+    // Top level of FairyUpgradesLibrary; until it loads the level cannot move up.
+    const maxLevel = fairyUpgrades ? Math.max(...Object.keys(fairyUpgrades).map(Number)) : value.level;
     const onChange =
         variant === 'original' ? updateOriginalFairy
         : variant === 'test' ? updateTestFairy

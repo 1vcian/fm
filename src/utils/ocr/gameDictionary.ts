@@ -5,7 +5,7 @@
 // Idx, LocalizationId). Skill ids ARE the SkillLibrary keys. Substat statIds come from
 // SecondaryStatLibrary. Pet/mount name lookups are added separately (see gamePets.ts).
 
-import { normalizeName, bestMatch, type MatchResult } from './parse';
+import { foldText, normalizeName, bestMatch, type MatchResult } from './parse';
 
 /** AutoItemMapping TypeName -> the profile item slot key in Profile.items. */
 export const TYPE_NAME_TO_SLOT: Record<string, string> = {
@@ -118,10 +118,20 @@ export function matchSubstat(label: string, dict: Map<string, string>, minScore 
 }
 
 /** Main-stat label on item/pet/mount popups: "236m Damage", "1.87b Health", "241m Damage (ranged)". */
-export function parseMainStatKind(line: string): { kind: 'damage' | 'health'; ranged: boolean } | null {
+export function parseMainStatKind(
+    line: string, words?: { damage: string[]; health: string[]; ranged: string[] },
+): { kind: 'damage' | 'health'; ranged: boolean } | null {
     const l = line.toLowerCase();
     const ranged = /\(?\s*ranged\s*\)?/.test(l);
     if (/health/.test(l)) return { kind: 'health', ranged: false };
     if (/damage/.test(l)) return { kind: 'damage', ranged };
+    if (!words) return null;
+    // the localized words (Localization.json ui.damage / ui.health / ui.ranged), folded the same
+    // way as the OCR line; a whole-word hit only, so "Schaden" never matches inside another word
+    const f = ` ${foldText(line)} `;
+    const has = (ws: string[]) => ws.some(w => w && (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(w) ? f.includes(w) : f.includes(` ${w} `)));
+    const r = has(words.ranged);
+    if (has(words.health)) return { kind: 'health', ranged: false };
+    if (has(words.damage)) return { kind: 'damage', ranged: r };
     return null;
 }

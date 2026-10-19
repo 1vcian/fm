@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-toastify';
+import { fullscreenModalOpen, holdFullscreenModal, showDonationToast } from './donationToast';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Coffee, ExternalLink, Github, Sparkles, X } from 'lucide-react';
@@ -14,6 +14,7 @@ import { cn } from '../../lib/utils';
 import { formatVersion } from '../../lib/formatVersion';
 import { getAnvilTexturePath, resolveTextureVersion } from '../../utils/ascensionUtils';
 import { RELEASE_NOTES } from '../../data/releaseNotes';
+
 
 const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
     const baseMessages = [
@@ -126,6 +127,7 @@ export default function AppShell() {
     const [isStatsOpen, setIsStatsOpen] = useState(false);
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
     const [showVersionPopup, setShowVersionPopup] = useState(false);
+    useEffect(() => (showVersionPopup ? holdFullscreenModal() : undefined), [showVersionPopup]);
     const [popupVersion, setPopupVersion] = useState('');
     /**
      * What actually changed in the newest game data. Written at build time by
@@ -274,59 +276,17 @@ export default function AppShell() {
         // Show toast if frequent visitor (every 3rd session/refresh) and it's been an hour
         if (visitCount > 1 && visitCount % 3 === 0 && (now - lastToastTime) > oneHour) {
             const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-
             setTimeout(() => {
-                toast(
-                    <div className="flex flex-col gap-0.5 select-none">
-                        <div className="font-black text-[10px] uppercase tracking-widest text-[#FFDD00] flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#FFDD00] animate-pulse" />
-                            Support the Forge
-                        </div>
-                        <div className="font-bold text-sm leading-tight text-white">
-                            {randomMsg}
-                        </div>
-                        <div className="text-[9px] mt-1 font-black uppercase text-white/40 flex items-center gap-1">
-                            Click to support the developer <span className="animate-bounce text-xs">☕❤️</span>
-                        </div>
-                    </div>,
-                    {
-                        icon: <div className="text-xl">🛠️</div>,
-                        autoClose: 10000,
-                        position: "bottom-left",
-                        onClick: () => window.open('https://www.buymeacoffee.com/1vcian', '_blank'),
-                        className: "!bg-bg-secondary/90 !backdrop-blur-md !text-white border border-[#FFDD00]/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] cursor-pointer hover:border-[#FFDD00]/60 transition-all font-sans rounded-2xl",
-                        progressClassName: "!bg-[#FFDD00]"
-                    }
-                );
+                // Never over a fullscreen modal (the battle viewer): try again on a later visit.
+                if (fullscreenModalOpen()) return;
+                showDonationToast(randomMsg);
                 localStorage.setItem('fm_last_toast_time', now.toString());
             }, 5000);
         }
 
         // Expose test function to window for the user
         (window as any).__triggerTestToast = () => {
-            const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-            toast(
-                <div className="flex flex-col gap-0.5 select-none">
-                    <div className="font-black text-[10px] uppercase tracking-widest text-[#FFDD00] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#FFDD00] animate-pulse" />
-                        Support the Forge
-                    </div>
-                    <div className="font-bold text-sm leading-tight text-white">
-                        {randomMsg}
-                    </div>
-                    <div className="text-[9px] mt-1 font-black uppercase text-white/40 flex items-center gap-1">
-                        Click to support the developer <span className="animate-bounce text-xs">☕❤️</span>
-                    </div>
-                </div>,
-                {
-                    icon: <div className="text-xl">🛠️</div>,
-                    autoClose: 10000,
-                    position: "bottom-left",
-                    onClick: () => window.open('https://www.buymeacoffee.com/1vcian', '_blank'),
-                    className: "!bg-bg-secondary/90 !backdrop-blur-md !text-white border border-[#FFDD00]/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] cursor-pointer hover:border-[#FFDD00]/60 transition-all font-sans rounded-2xl",
-                    progressClassName: "!bg-[#FFDD00]"
-                }
-            );
+            showDonationToast(messages[Math.floor(Math.random() * messages.length)]);
         };
 
         return () => {

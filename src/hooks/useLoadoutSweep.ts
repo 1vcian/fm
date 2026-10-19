@@ -66,9 +66,10 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
 
     const profileRef = useRef(profile);
     profileRef.current = profile;
-    const { petLibrary, mountUpgradeLibrary, itemBalancingConfig, itemBalancingLibrary } = libs;
+    const { petLibrary, mountUpgradeLibrary, itemBalancingConfig, itemBalancingLibrary, petBaseConfig } = libs;
+    const petSlots: number | undefined = petBaseConfig?.PetSlotsCount;
 
-    const isReady = !!petLibrary && !!mountUpgradeLibrary && !!itemBalancingConfig && !!itemBalancingLibrary;
+    const isReady = !!petLibrary && !!mountUpgradeLibrary && !!itemBalancingConfig && !!itemBalancingLibrary && typeof petSlots === 'number';
 
     // --- Candidate pool -----------------------------------------------------
     // Keyed on content rather than array identity: equipping a loadout picked
@@ -81,11 +82,12 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
     }, [profile.pets.savedBuilds, profile.pets.active, profile.mount.active, profile.mount.savedBuilds]);
 
     const combos = useMemo((): LoadoutCombo[] => {
-        // Every combination of up to MAX_ACTIVE_PETS saved pets times the active + saved
+        // Every combination of up to PetBaseConfig.PetSlotsCount saved pets times the active + saved
         // mounts (no saved pets: the active pets), shared with the build optimizer.
-        return enumerateLoadouts(profileRef.current);
+        if (typeof petSlots !== 'number') return [];
+        return enumerateLoadouts(profileRef.current, petSlots);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [poolKey]);
+    }, [poolKey, petSlots]);
 
     // Everything that feeds the engine *except* the two slots the sweep overrides.
     // Equipping a result changes only those, so it must not restart the sweep.

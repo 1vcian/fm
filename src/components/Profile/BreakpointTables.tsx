@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import { Heart } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { attackIntervalSeconds, doubleCycleSeconds } from '../../utils/constants';
+import { maxSubstatTotal } from '../../utils/substatBodies';
 import { cn } from '../../lib/utils';
 
 interface BreakpointTablesProps {
@@ -36,9 +37,14 @@ export const BreakpointTables = memo(({
     doubleDamageChance,
 }: BreakpointTablesProps) => {
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
+    const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
+    const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
 
-    const maxAttackSpeedSubstat = secondaryStatLibrary?.AttackSpeed?.UpperRange || 0.4;
-    const maxPossibleSpeedBonus = (maxAttackSpeedSubstat * 12 * 100) + 0.1;
+    // Gear cap: AttackSpeed UpperRange on every piece that can carry it (item types + pet slots +
+    // the mount, see substatBodies.ts). Null until the configs are loaded: no guessed fallback.
+    const maxAttackSpeedTotal = maxSubstatTotal(secondaryStatLibrary?.AttackSpeed, itemBalancingLibrary, petBaseConfig);
+    // The scan runs in 0.1% steps; +0.1 keeps the cap itself inside the float loop.
+    const maxPossibleSpeedBonus = maxAttackSpeedTotal === null ? null : maxAttackSpeedTotal * 100 + 0.1;
     const currentBonus = (currentAttackSpeedMultiplier - 1) * 100;
     const dc = Math.min(Math.max(doubleDamageChance ?? 0, 0), 1);
 
@@ -52,6 +58,7 @@ export const BreakpointTables = memo(({
     // Those are the only attack-speed values that give a real DPS gain.
     const gains = useMemo(() => {
         const out: Gain[] = [];
+        if (maxPossibleSpeedBonus === null) return out;
         let prevSingle = attackIntervalSeconds(1, weaponAttackDuration);
         let prevDouble = doubleCycleSeconds(1, weaponWindupTime, weaponAttackDuration);
         let prevEff = timePerHit(prevSingle, prevDouble, dc);
@@ -125,7 +132,9 @@ export const BreakpointTables = memo(({
                 <div className="bg-black/25 border border-white/5 rounded-lg p-3">
                     <div className="text-[9px] uppercase tracking-wider text-white/40">Best reachable</div>
                     <div className="text-lg font-black text-green-400">{bestEff.toFixed(2)}s<span className="text-[10px] text-white/40 font-normal"> /hit</span></div>
-                    <div className="text-[9px] text-white/40 font-mono">at gear cap +{(maxPossibleSpeedBonus - 0.1).toFixed(0)}%</div>
+                    <div className="text-[9px] text-white/40 font-mono">
+                        {maxPossibleSpeedBonus === null ? 'loading gear cap' : `at gear cap +${(maxPossibleSpeedBonus - 0.1).toFixed(0)}%`}
+                    </div>
                 </div>
             </div>
 

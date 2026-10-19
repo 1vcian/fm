@@ -5,6 +5,8 @@ import { TrendingUp, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { formatVersion } from '../lib/formatVersion';
 import { getStatName } from '../utils/statNames';
+import { useGameData } from '../hooks/useGameData';
+import { maxSubstatPieces } from '../utils/substatBodies';
 
 interface SecondaryStat {
     Stat: string;
@@ -22,6 +24,11 @@ export default function SecondaryStatsWiki() {
     const [targetData, setTargetData] = useState<SecondaryStatLibrary | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // Pieces that can each carry one line of a stat (item types + pet slots + mount), from the
+    // newest config. Null until those configs load: no guessed fallback.
+    const { data: itemBalancingLibrary } = useGameData<Record<string, unknown>>('ItemBalancingLibrary.json');
+    const { data: petBaseConfig } = useGameData<{ PetSlotsCount?: number }>('PetBaseConfig.json');
+    const substatPieces = maxSubstatPieces(itemBalancingLibrary, petBaseConfig);
 
     // Initial fetch of versions
     useEffect(() => {
@@ -178,8 +185,8 @@ export default function SecondaryStatsWiki() {
                                         Math.abs(base.UpperRange - target.UpperRange) > 0.0000000001
                                     );
 
-                                    const calculateMaxTotal = (statName: string, upperRange: number) => {
-                                        let total = upperRange * 12;
+                                    const calculateMaxTotal = (statName: string, upperRange: number, pieces: number) => {
+                                        let total = upperRange * pieces;
                                         // Cap chance-based stats at 100%
                                         if (statName.toLowerCase().includes('chance')) {
                                             total = Math.min(total, 1.0);
@@ -251,7 +258,8 @@ export default function SecondaryStatsWiki() {
                                                         // stats with UpperRange > 0 (SecondaryStatLibrary.get_IsRollable 0x78360F8, split into
                                                         // _rollableStats / _nonRollableStats by SharedGameConfig.OnLoaded 0x77FE5F0).
                                                         : target.UpperRange <= 0 ? <span className="text-text-muted font-medium">Not rollable</span>
-                                                        : formatValue(calculateMaxTotal(name, target.UpperRange))}
+                                                        : substatPieces === null ? <RefreshCw className="w-3 h-3 animate-spin inline text-text-muted" />
+                                                        : formatValue(calculateMaxTotal(name, target.UpperRange, substatPieces))}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">

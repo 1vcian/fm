@@ -251,8 +251,9 @@ export default function ForgeCalculator() {
     const [gemsSpent, setGemsSpent] = useState<number>(0);
     const effectiveForgeSteps = Math.min(forgeSteps, maxForgeSpendSteps);
     const forgeSpendWarPoints = useMemo(() => {
-        if (!guildWarConfig) return null;
-        const coinsPerReward = guildWarBaseConfig?.CoinsSpentOnForgeNeededToGrantOneActionReward || 1000;
+        // GuildWarConfig.CoinsSpentOnForgeNeededToGrantOneActionReward: no figure until it loads.
+        const coinsPerReward = guildWarBaseConfig?.CoinsSpentOnForgeNeededToGrantOneActionReward;
+        if (!guildWarConfig || typeof coinsPerReward !== 'number' || coinsPerReward <= 0) return null;
         const coinReward = getWarPointsForTask(guildWarConfig, 'SpendCoinsOnForge');
         const gemReward = getWarPointsForTask(guildWarConfig, 'SpendGemOnForge');
         // Sum real upgrade coin cost across the steps (simulated level → +steps), node-reduced.
@@ -314,11 +315,11 @@ export default function ForgeCalculator() {
                 const nodeDef = techTreeLib[nodeMap.type];
                 if (!nodeDef) return;
 
-                if (!nodeDef.Stats || !nodeDef.Stats[0]) return;
+                if (!nodeDef.Stats || !nodeDef.Stats[0] || typeof nodeDef.MaxLevel !== 'number') return;
                 const stat = nodeDef.Stats[0];
 
                 // Max possible value for this node instance
-                const maxVal = stat.Value + ((nodeDef.MaxLevel || 1) - 1) * stat.ValueIncrease;
+                const maxVal = stat.Value + (nodeDef.MaxLevel - 1) * stat.ValueIncrease;
 
                 const key = classifyForgeNode(nodeDef)?.key || '';
 

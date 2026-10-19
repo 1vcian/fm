@@ -290,9 +290,19 @@ export class SkillManager {
 
     private applyBuffs(scene: CombatScene, isAlly: boolean): void {
         const { dmg, hp } = this.buffTotals(isAlly);
+        // Display only (CombatStatsVec.buffParts): which buff added how much of dmg.
+        let parts: Record<string, number> | undefined;
+        if (dmg !== 0) {
+            parts = {};
+            for (const sk of this.skills) {
+                if (sk.isAlly !== isAlly || !sk.isActive || !BUFF_SKILLS.has(sk.id) || sk.damage === 0) continue;
+                parts[sk.id] = (parts[sk.id] ?? 0) + sk.damage;
+            }
+        }
         for (const u of scene.units) {
             if (u.destroyed || u.isSummon || u.isAlly !== isAlly) continue;
             u.stats.dmg = u.baseDmg + dmg;
+            u.stats.buffParts = parts;
             u.stats.hpMax = u.baseHpMax + hp;
             u.stats.hpMaxNoMulti = u.baseHpMaxNoMulti + hp;
             if (u.hp > u.stats.hpMax) u.hp = u.stats.hpMax; // downward clamp only
@@ -305,10 +315,9 @@ export class SkillManager {
         if (BUFF_SKILLS.has(sk.id)) return; // buffs spawn nothing
 
         const fwd = sk.isAlly ? 1 : -1;
-        // Entities.TryGetPlayer(isAlly) (CreateSkillEffectEntities 0x77F1900): no player, no effect.
-        const player =
-            scene.units.find((u) => !u.destroyed && u.isAlly === sk.isAlly && u.isPlayer) ??
-            scene.units.find((u) => !u.destroyed && u.isAlly === sk.isAlly && !u.isSummon);
+        // Entities.TryGetPlayer(isAlly) (CreateSkillEffectEntities 0x77F1900): the side's player
+        // entity by id, still found while killed and not yet swept; no player, no effect.
+        const player = scene.units.find((u) => !u.destroyed && u.isAlly === sk.isAlly && u.isPlayer);
         if (!player) return;
         const px = player.pos.x;
         const py = player.pos.y;
@@ -325,14 +334,14 @@ export class SkillManager {
             pos: Vec2,
             radius: number,
             dmg: number,
-            opts: Partial<{ vel: Vec2; duration: number; pulse: number; pulseTimer: number; timer: number; finalPulse: boolean; hasPulse: boolean }>
+            opts: Partial<{ vel: Vec2; duration: number; pulse: number; pulseTimer: number; timer: number; finalPulse: boolean; hasPulse: boolean; ownerId: number }>
         ) =>
             scene.addAreaProjectile({
                 pos: { ...pos },
                 vel: opts.vel ?? { x: 0, y: 0 },
                 radius,
                 isAllied: sk.isAlly,
-                ownerId: player.id,
+                ownerId: opts.ownerId ?? player.id,
                 duration: opts.duration ?? 1.0,
                 hasPulse: opts.hasPulse ?? false,
                 pulseDuration: opts.pulse ?? 0,
@@ -416,8 +425,11 @@ export class SkillManager {
                 aoe(center, 6, perHit, { hasPulse: true, pulse: q32(0.2), pulseTimer: -1.0, duration: 4.0 });
                 return;
             case 'StrafeRun':
-                // 0x77EEFA0: center, r=3, pulse 1/4, Duration 1.0, full damage per pulse.
-                aoe(center, 3, sk.damage, { hasPulse: true, pulse: 0.25, duration: 1.0 });
+                // 0x77EEFA0: center, r=3, pulse 1/4, Duration 1.0, full damage per pulse, IsAlly from
+                // the skill. Unlike every other builder it never writes UnitId (+0x64), so the area's
+                // attacker (AoeDamage 0x77F54EC: TryGetUnit(UnitId)) is entity 0, the ally player,
+                // whichever side cast it: a reflect off a StrafeRun hit lands on that unit.
+                aoe(center, 3, sk.damage, { hasPulse: true, pulse: 0.25, duration: 1.0, ownerId: 0 });
                 return;
             case 'CannonBarrage':
                 // 0x77EEB4C: per ball r1 (A), r2 (B), r3 (B); pos = center + ((2r1-1)*2*fwd, 2r2-1),
@@ -445,9 +457,18 @@ export class SkillManager {
                     radius: 0.35,
                     centerOfMass: { x: 0, y: 0 },
                     attackRange: 4.0,
-                    windupTime: 10 / 60,
+                    windupTime: q32(10 / 60), // F64.Ratio(10, 60), then FD6 (floor): 166666 micro
                     attackDuration: 0.5,
-                    projectile: { speed: 30, collisionRadius: q32(0.2), affectedByGravity: false },
+                    // UnitProjectileConfig: Speed 30, Radius Ratio(2,10), no gravity, not aiming,
+                    // HandOffset (0, Ratio(23,10)), WeaponOffset (0, 0): the shot leaves 2.3 above.
+                    projectile: {
+                        speed: 30,
+                        collisionRadius: q32(0.2),
+                        affectedByGravity: false,
+                        isAiming: false,
+                        handOffset: { x: 0, y: q32(2.3) },
+                        weaponOffset: { x: 0, y: 0 },
+                    },
                     isSummon: true,
                     destroyAfter: sk.activeDuration,
                     targetable: false,
@@ -498,12 +519,27 @@ export class SkillManager {
         const ty = target.pos.y + target.com.y;
         const dx = tx - p0.x;
         const dy = ty - p0.y;
+        // GetBallisticStartDirection 0x77EE220 / GetBallisticAngle 0x77F665C, with Gravity.Y =
+        // Ratio(-981, 100) and dy' = start.y - end.y: a = Atan2(g*dx, v^2 - Sqrt(v^4 - g*(g*dx^2 +
+        // 2*dy'*v^2))), direction (-Sin a, Cos a). Written with g = +9.81 and dy = end - start it is
+        // the same angle; dx = 0 gives straight up or down, exactly as the game's Atan2 does.
         const g = 9.81;
         const v2 = speed * speed;
         const disc = v2 * v2 - g * (g * dx * dx + 2 * dy * v2);
         let dirX: number;
         let dirY: number;
-        if (disc < 0 || dx === 0) {
+        if (disc < 0) {
+            // Fixed64.Sqrt (0x6DCAF18) of a negative calls FixedUtil.InvalidArgument, whose default
+            // handler (FixedUtil .cctor 0x712A850) throws ArgumentException. Nothing on the way up
+            // catches it: SkillSystem.ActivateSkill 0x77F12F8, CombatScene.ActivateSkill 0x77E8228,
+            // ActivateSkillAction.Execute 0x77E7F24, ModelUtil.RunAction 0x4793448, and on PvP
+            // TryActivateSkills 0x7852318 -> Step -> RunToCompletion 0x78526A4 ->
+            // StartLocalPvpBattle 0x3EB4A10 only have finally blocks that rethrow (PvP never sends
+            // PvpReplayStartAction). The configs never reach it: shots start at most 16 behind the
+            // caster, targets are at most 15 + 3 formation columns away (main battle 12 enemies,
+            // dungeons 10, PvP 18 apart, missions carry no skills), dx <= 34, while v = 20 reaches
+            // dx 34 up to a 6.2 height gap. Only a debug spawn override gets here; a straight shot
+            // keeps that simulation going.
             const d = Math.sqrt(dx * dx + dy * dy) || 1;
             dirX = dx / d;
             dirY = dy / d;

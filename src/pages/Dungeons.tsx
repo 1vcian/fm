@@ -320,6 +320,7 @@ export default function Dungeons() {
     }, [selectedTab, level, rewardData, techTreeMultipliers]);
 
     const navigate = (delta: number) => {
+        if (maxDungeonLevel === null) return;
         setLevel(prev => Math.max(1, Math.min(maxDungeonLevel + 1, prev + delta)));
     };
 
@@ -365,21 +366,27 @@ export default function Dungeons() {
 
     // Dynamic War Points Mapping — read amounts from whatever day holds the task
     // (independent of day layout), then apply the clan boost.
-    const warPointsPerKey = useMemo(() => {
-        if (!warDayConfig) return { Hammer: 1000, Skill: 1000, Egg: 1000, Potion: 1000 };
+    // GuildWarDayConfigLibrary task rewards; null until it loads (no guessed amount).
+    const warPointsPerKey = useMemo((): Record<DungeonType, number> | null => {
+        if (!warDayConfig) return null;
 
         const getPoints = (taskName: string) =>
             getWarPointsForTask(warDayConfig, taskName) * (1 + dungeonKeyWarBonus + dungeonDayBoost);
 
         return {
-            Hammer: getPoints('UseHammerThiefDungeonKey') || 1000,
-            Skill: getPoints('UseGhostTownDungeonKey') || 1000, // Check mapping: GhostTown usually gives Skill Tickets
-            Egg: getPoints('UseInvasionDungeonKey') || 1000,
-            Potion: getPoints('UseZombieInvasionDungeonKey') || 1000
+            Hammer: getPoints('UseHammerThiefDungeonKey'),
+            Skill: getPoints('UseGhostTownDungeonKey'),
+            Egg: getPoints('UseInvasionDungeonKey'),
+            Potion: getPoints('UseZombieInvasionDungeonKey')
         };
     }, [warDayConfig, dungeonKeyWarBonus, dungeonDayBoost]);
 
     // ... (rest of code) ...
+
+    // DungeonBaseConfig.MaxDungeonLevel bounds the stage selector: nothing to pick until it loads.
+    if (maxDungeonLevel === null) {
+        return <div className="p-8 text-center text-text-muted">Loading game data</div>;
+    }
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in">
@@ -401,7 +408,7 @@ export default function Dungeons() {
                             Guild War Points{dungeonKeyWarBonus > 0 ? ` (+${(dungeonKeyWarBonus * 100).toFixed(0)}% clan)` : ''}
                         </h3>
                         <div className="bg-accent-primary/20 text-accent-primary px-2 py-1 rounded text-xs font-bold border border-accent-primary/20">
-                            {Math.round(Object.entries(profile?.misc?.dungeonKeyCounts || {}).reduce((sum, [type, count]) => {
+                            {warPointsPerKey === null ? '...' : Math.round(Object.entries(profile?.misc?.dungeonKeyCounts || {}).reduce((sum, [type, count]) => {
                                 const pts = warPointsPerKey[type as DungeonType] || 0;
                                 return sum + ((count as number) * pts);
                             }, 0))} Points
@@ -410,14 +417,14 @@ export default function Dungeons() {
                     <div className="grid grid-cols-4 gap-2">
                         {DUNGEON_TABS.map(tab => {
                             const keyCount = (profile?.misc?.dungeonKeyCounts as any)?.[tab.id] || 0;
-                            const pts = warPointsPerKey[tab.id];
-                            const totalPts = keyCount * pts;
+                            const pts = warPointsPerKey?.[tab.id] ?? null;
+                            const totalPts = pts === null ? '...' : keyCount * pts;
                             return (
                                 <div key={tab.id} className="flex flex-col items-center gap-2">
                                     <div className="relative group">
                                         <SpriteIcon name={tab.icon} size={32} className="drop-shadow-md" />
                                         <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/90 px-1.5 py-0.5 rounded text-[9px] border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none text-white">
-                                            {totalPts} pts ({pts}/key)
+                                            {totalPts} pts ({pts ?? '...'}/key)
                                         </span>
                                     </div>
                                     <input

@@ -53,11 +53,12 @@ export function useBattleSimulation() {
     const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14 || loading15 || loading16 || loading17;
 
     // Derived Constants
-    const maxDungeonLevel = useMemo(() => dungeonBaseConfig?.MaxDungeonLevel ?? 399, [dungeonBaseConfig]);
+    // DungeonBaseConfig.MaxDungeonLevel; null until it loads (pages show their loading state).
+    const maxDungeonLevel = useMemo((): number | null => dungeonBaseConfig?.MaxDungeonLevel ?? null, [dungeonBaseConfig]);
     const difficultyCount = useMemo(() => mainBattleDifficultyCount(mainBattleConfig), [mainBattleConfig]);
 
     const maxAgeIdx = useMemo(() => {
-        if (!mainBattleLibrary) return 10; // Fallback
+        if (!mainBattleLibrary) return -1; // not loaded yet: no ages
         let maxAge = 0;
         Object.keys(mainBattleLibrary).forEach(key => {
             const match = key.match(/['"]?AgeIdx['"]?\s*:\s*(\d+)/);
@@ -194,6 +195,7 @@ export function useBattleSimulation() {
         // Levels 0 up to maxDungeonLevel
         let maxBeatableLevel = -1;
 
+        if (maxDungeonLevel === null) return -1;
         for (let level = 0; level <= maxDungeonLevel; level++) {
             const result = simulateDungeon(dungeonType, level);
             if (result && result.victory) {

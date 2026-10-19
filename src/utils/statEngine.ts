@@ -43,15 +43,6 @@ export interface BasePlayerStats {
     itemBaseMaxLevel: number;
 }
 
-export const DEFAULT_BASE_STATS: BasePlayerStats = {
-    baseDamage: 10,
-    baseHealth: 80,
-    baseCritDamage: 0.2,
-    meleeDamageMultiplier: 1.6,
-    powerDamageMultiplier: 8.0,
-    levelScalingBase: 1.01,
-    itemBaseMaxLevel: 99,
-};
 
 /** One equipped skill's contribution, exact engine timing (steady state, no initial charge). */
 export interface SkillDpsEntry {
@@ -165,11 +156,20 @@ export interface AggregatedStats {
     eggFreebieChance: number;
     mountFreebieChance: number;
 
+    /** The EQUIPPED weapon's WeaponLibrary.IsRanged: drives the melee damage multiplier. */
     isRangedWeapon: boolean;
+    /**
+     * The combat weapon row's IsRanged: the skin row when a weapon skin is visible (SetUnitWeapon
+     * runs on GetSkinnedItemId), else the equipped weapon's. Mission grouping reads this one.
+     */
+    combatIsRanged: boolean;
     weaponAttackRange: number;
     weaponWindupTime: number;
     weaponAttackDuration: number;
     isAiming: boolean;
+    /** WeaponLibrary Hand / Offset of the combat weapon row: where its shots leave from. */
+    weaponHandOffset: { x: number; y: number };
+    weaponMuzzleOffset: { x: number; y: number };
 
     hasProjectile: boolean;
     projectileSpeed: number;
@@ -309,10 +309,13 @@ export const DEFAULT_STATS: AggregatedStats = {
     eggFreebieChance: 0,
     mountFreebieChance: 0,
     isRangedWeapon: false,
+    combatIsRanged: false,
     weaponAttackRange: 1,
     weaponWindupTime: 0.5,
     weaponAttackDuration: 1.0,
     isAiming: false,
+    weaponHandOffset: { x: 0, y: 0 },
+    weaponMuzzleOffset: { x: 0, y: 0 },
     hasProjectile: false,
     projectileSpeed: 0,
     projectileRadius: 0,
@@ -388,6 +391,10 @@ export interface LibraryData {
     skinsLibrary?: any;
     setsLibrary?: any;
     ascensionConfigsLibrary?: any;
+    /** PetBaseConfig.json (PetSlotsCount: active pet slots). */
+    petBaseConfig?: any;
+    /** SkillBaseConfig.json (SkillSlotsCount: equipped skill slots). */
+    skillBaseConfig?: any;
     // Missing fields from BattleHelper
     mainBattleLibrary?: any;
     enemyAgeScalingLibrary?: any;
@@ -658,16 +665,25 @@ export class StatEngine {
     }
 
     private parseBaseStats(): BasePlayerStats {
+        // ItemBalancingConfig drives every base number. No guessed fallback: callers wait for the
+        // config to load (useGlobalStats and friends gate on it). Without it every base number is
+        // NaN (unknown), so nothing downstream can show a made-up value; the tech/clan modifier
+        // maps do not depend on it and stay valid.
         const config = this.libs.itemBalancingConfig;
-        if (!config) return DEFAULT_BASE_STATS;
+        if (!config) {
+            return {
+                baseDamage: NaN, baseHealth: NaN, baseCritDamage: NaN, meleeDamageMultiplier: NaN,
+                powerDamageMultiplier: NaN, levelScalingBase: NaN, itemBaseMaxLevel: NaN,
+            };
+        }
         return {
-            baseDamage: config.PlayerBaseDamage || 10,
-            baseHealth: config.PlayerBaseHealth || 80,
-            baseCritDamage: config.PlayerBaseCritDamage || 0.2,
-            meleeDamageMultiplier: config.PlayerMeleeDamageMultiplier || 1.6,
-            powerDamageMultiplier: config.PlayerPowerDamageMultiplier || 8.0,
-            levelScalingBase: config.LevelScalingBase || 1.01,
-            itemBaseMaxLevel: (config.ItemBaseMaxLevel || 98) + 1,
+            baseDamage: config.PlayerBaseDamage,
+            baseHealth: config.PlayerBaseHealth,
+            baseCritDamage: config.PlayerBaseCritDamage,
+            meleeDamageMultiplier: config.PlayerMeleeDamageMultiplier,
+            powerDamageMultiplier: config.PlayerPowerDamageMultiplier,
+            levelScalingBase: config.LevelScalingBase,
+            itemBaseMaxLevel: config.ItemBaseMaxLevel + 1,
         };
     }
 
@@ -683,40 +699,50 @@ export class StatEngine {
             const baseKey = `{'Age': ${weapon.age}, 'Type': 'Weapon', 'Idx': ${weapon.idx}}`;
             const baseData = this.libs.weaponLibrary[baseKey];
 
-            if (baseData) {
-                // Determine base weapon characteristics
-                const attackRange = baseData.AttackRange || 0;
-                this.stats.isRangedWeapon = typeof baseData.IsRanged === 'boolean' ? baseData.IsRanged : attackRange >= 1; // WeaponLibrary.IsRanged
-                this.stats.weaponAttackRange = attackRange;
-                this.stats.isAiming = !!baseData.IsAiming;
+            if (baseData) this.applyCombatWeapon(baseData, weapon.skin?.idx);
+        }
+    }
 
-                // Animation defaults from base weapon
-                this.stats.weaponWindupTime = baseData.WindupTime || 0.5;
-                this.stats.weaponAttackDuration = baseData.AttackDuration || 1.5;
-
-                // SKIN OVERRIDE FOR ANIMATION ONLY
-                if (weapon.skin && weapon.skin.idx !== undefined && (this.profile.misc.useSkinWindup !== false)) {
-                    const skinAge = this.stats.isRangedWeapon ? -1001 : -1000;
-                    const skinKey = `{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${weapon.skin.idx}}`;
-                    const skinData = this.libs.weaponLibrary[skinKey];
-                    if (skinData) {
-                        this.stats.weaponWindupTime = skinData.WindupTime || this.stats.weaponWindupTime;
-                        this.stats.weaponAttackDuration = skinData.AttackDuration || this.stats.weaponAttackDuration;
-                        this.debugLogs.push(`SKIN OVERRIDE: Using animation from skin index ${weapon.skin.idx} (W:${this.stats.weaponWindupTime}s, D:${this.stats.weaponAttackDuration}s)`);
-                    }
-                }
-
-                // Projectiles (Always from Base Weapon)
-                const projId = baseData.ProjectileId;
-                if (projId !== undefined && projId > -1 && this.libs.projectilesLibrary) {
-                    const projData = this.libs.projectilesLibrary[String(projId)];
-                    if (projData) {
-                        this.stats.hasProjectile = true;
-                        this.stats.projectileSpeed = projData.Speed || 0;
-                        this.stats.projectileRadius = projData.CollisionRadius || 0;
-                        this.stats.projectileAffectedByGravity = !!projData.AffectedByGravity;
-                    }
-                }
+    /**
+     * The weapon the battle runs on. Every mode passes the SKINNED weapon id to SetUnitWeapon
+     * (0x77E8D10): GetSkinnedItemId (0x77FB0B0) returns, when a weapon skin is visible,
+     * ItemId(-1001 if the equipped weapon IsRanged else -1000, Weapon, skin idx) (SkinConfig.
+     * GetSecondaryItemId / GetMainItemId), and that row supplies AttackRange, WindupTime,
+     * AttackDuration, IsRanged, IsAiming, Hand, Offset and the projectile, which exists only when
+     * the row IsRanged with ProjectileId >= 0 (otherwise the hit lands at once, like melee).
+     * The equipped weapon keeps deciding the melee damage multiplier (isRangedWeapon).
+     */
+    private applyCombatWeapon(baseData: any, skinIdx: number | undefined) {
+        const attackRange = baseData.AttackRange || 0;
+        this.stats.isRangedWeapon = typeof baseData.IsRanged === 'boolean' ? baseData.IsRanged : attackRange >= 1; // WeaponLibrary.IsRanged
+        let row = baseData;
+        if (skinIdx !== undefined && this.profile.misc.useSkinWindup !== false && this.libs.weaponLibrary) {
+            const skinAge = this.stats.isRangedWeapon ? -1001 : -1000;
+            const skinRow = this.libs.weaponLibrary[`{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${skinIdx}}`];
+            if (skinRow) {
+                row = skinRow;
+                this.debugLogs.push(`SKIN WEAPON: combat row ${skinAge}/${skinIdx} (W:${skinRow.WindupTime}s, D:${skinRow.AttackDuration}s, range ${skinRow.AttackRange})`);
+            }
+        }
+        this.stats.combatIsRanged = typeof row.IsRanged === 'boolean' ? row.IsRanged : (row.AttackRange || 0) >= 1;
+        this.stats.weaponAttackRange = row.AttackRange || 0;
+        this.stats.weaponWindupTime = row.WindupTime;
+        this.stats.weaponAttackDuration = row.AttackDuration;
+        this.stats.isAiming = !!row.IsAiming;
+        this.stats.weaponHandOffset = { x: row.Hand?.X ?? 0, y: row.Hand?.Y ?? 0 };
+        this.stats.weaponMuzzleOffset = { x: row.Offset?.X ?? 0, y: row.Offset?.Y ?? 0 };
+        this.stats.hasProjectile = false;
+        this.stats.projectileSpeed = 0;
+        this.stats.projectileRadius = 0;
+        this.stats.projectileAffectedByGravity = false;
+        const projId = row.ProjectileId;
+        if (this.stats.combatIsRanged && projId !== undefined && projId > -1 && this.libs.projectilesLibrary) {
+            const projData = this.libs.projectilesLibrary[String(projId)];
+            if (projData) {
+                this.stats.hasProjectile = true;
+                this.stats.projectileSpeed = projData.Speed || 0;
+                this.stats.projectileRadius = projData.CollisionRadius || 0;
+                this.stats.projectileAffectedByGravity = !!projData.AffectedByGravity;
             }
         }
     }
@@ -913,38 +939,7 @@ export class StatEngine {
                 // Melee or ranged: WeaponLibrary.IsRanged
                 const weaponKey = `{'Age': ${item.age}, 'Type': 'Weapon', 'Idx': ${item.idx}}`;
                 const weaponData = this.libs.weaponLibrary?.[weaponKey];
-                if (weaponData) {
-                    const attackRange = weaponData.AttackRange || 0;
-                    this.stats.isRangedWeapon = typeof weaponData.IsRanged === 'boolean' ? weaponData.IsRanged : attackRange >= 1; // WeaponLibrary.IsRanged
-                    this.stats.weaponAttackRange = attackRange;
-                    this.stats.weaponWindupTime = weaponData.WindupTime || 0.5;
-                    this.stats.weaponAttackDuration = weaponData.AttackDuration || 1.0;
-                    this.stats.isAiming = !!weaponData.IsAiming;
-
-                    // Projectile info
-                    const projId = weaponData.ProjectileId;
-                    if (projId !== undefined && projId > -1 && this.libs.projectilesLibrary) {
-                        const projData = this.libs.projectilesLibrary[String(projId)];
-                        if (projData) {
-                            this.stats.hasProjectile = true;
-                            this.stats.projectileSpeed = projData.Speed || 0;
-                            this.stats.projectileRadius = projData.CollisionRadius || 0;
-                            this.stats.projectileAffectedByGravity = !!projData.AffectedByGravity;
-                        }
-                    }
-
-                    // skin combat stats override (Age -1000 for Melee, -1001 for Ranged)
-                    if (item.skin?.idx !== undefined && this.libs.weaponLibrary && (this.profile.misc.useSkinWindup !== false)) {
-                        const skinAge = this.stats.isRangedWeapon ? -1001 : -1000;
-                        const skinKey = `{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${item.skin.idx}}`;
-                        const skinWeaponData = this.libs.weaponLibrary[skinKey];
-
-                        if (skinWeaponData) {
-                            // Only override windupTime as requested
-                            this.stats.weaponWindupTime = skinWeaponData.WindupTime ?? this.stats.weaponWindupTime;
-                        }
-                    }
-                }
+                if (weaponData) this.applyCombatWeapon(weaponData, item.skin?.idx);
             }
 
             const techBonusKey = StatEngine.slotToTechBonus[slotKey];

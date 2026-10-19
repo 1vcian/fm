@@ -32,7 +32,7 @@ export function realAgeScale(v: unknown): number {
 interface EnemyConfigLibs {
     enemyLibrary: Record<string, { WeaponId?: { Age: number; Type: string; Idx: number } }>;
     weaponLibrary: Record<string, WeaponInfoJson>;
-    projectilesLibrary?: Record<string, { Speed?: number; CollisionRadius?: number; AffectedByGravity?: boolean }>;
+    projectilesLibrary?: Record<string, { Speed: number; CollisionRadius: number; AffectedByGravity: boolean }>;
     itemBalancingConfig?: { EnemyRangedDamageMultiplier?: number };
 }
 
@@ -41,7 +41,10 @@ interface WeaponInfoJson {
     WindupTime: number;
     AttackDuration: number;
     IsRanged?: boolean;
+    IsAiming?: boolean;
     ProjectileId?: number;
+    Hand?: { X: number; Y: number };
+    Offset?: { X: number; Y: number };
 }
 
 /** ItemId.get_DefaultWeapon (0x7835200): Age 10000, Weapon, Idx 0 (the bare-handed enemy weapon). */
@@ -52,26 +55,35 @@ const weaponKey = (age: number, idx: number) => `{'Age': ${age}, 'Type': 'Weapon
 /**
  * SetUnitWeapon (0x77E8D10): AttackRange, WindUp and AttackDuration straight from the weapon row;
  * a projectile only when IsRanged and ProjectileId >= 0 (a ranged weapon without one hits
- * instantly at range, like melee). The fallbacks below only fire on a broken config.
+ * instantly at range, like melee). Every value comes from the WeaponLibrary / ProjectilesLibrary
+ * rows; a missing row is a broken config and throws instead of using a guessed number.
  */
 function weaponLoadout(age: number, idx: number, libs: EnemyConfigLibs) {
     const weapon: WeaponInfoJson | undefined = libs.weaponLibrary[weaponKey(age, idx)];
-    const isRanged = weapon?.IsRanged ?? (weapon ? weapon.AttackRange > 1.0 : false);
+    if (!weapon) throw new Error(`WeaponLibrary has no row ${weaponKey(age, idx)}`);
+    const isRanged = weapon.IsRanged ?? weapon.AttackRange > 1.0;
     const proj =
-        isRanged && weapon && weapon.ProjectileId !== undefined && weapon.ProjectileId >= 0
+        isRanged && weapon.ProjectileId !== undefined && weapon.ProjectileId >= 0
             ? libs.projectilesLibrary?.[String(weapon.ProjectileId)]
             : undefined;
+    if (isRanged && weapon.ProjectileId !== undefined && weapon.ProjectileId >= 0 && !proj) {
+        throw new Error(`ProjectilesLibrary has no row ${weapon.ProjectileId}`);
+    }
     return {
         weaponSpriteKey: `${age}_5_${idx}`,
-        attackRange: weapon?.AttackRange ?? 0.3,
-        windupTime: weapon?.WindupTime ?? 0.5,
-        attackDuration: weapon?.AttackDuration ?? 1.5,
+        attackRange: weapon.AttackRange,
+        windupTime: weapon.WindupTime,
+        attackDuration: weapon.AttackDuration,
         isRanged,
         projectile: proj
             ? {
-                  speed: proj.Speed ?? 15,
-                  collisionRadius: proj.CollisionRadius ?? 0.2,
-                  affectedByGravity: proj.AffectedByGravity ?? false,
+                  speed: proj.Speed,
+                  collisionRadius: proj.CollisionRadius,
+                  affectedByGravity: proj.AffectedByGravity,
+                  // IsAiming, Hand and Offset place the muzzle (ExecuteAttack 0x77F58C8).
+                  isAiming: !!weapon.IsAiming,
+                  handOffset: { x: weapon.Hand?.X ?? 0, y: weapon.Hand?.Y ?? 0 },
+                  weaponOffset: { x: weapon.Offset?.X ?? 0, y: weapon.Offset?.Y ?? 0 },
               }
             : undefined,
     };
@@ -93,16 +105,15 @@ export interface MainBattleConfigJson {
     DifficultyScaling?: { DifficultyIdx: number; HpMulti: number; DmgMulti: number }[] | null;
 }
 
-/** Hard's multiplier in every build that predates the DifficultyScaling table. */
-const LEGACY_DIFFICULTY_MULTI = 6_000_000;
-
 /**
  * How many main-battle difficulties a build has. From 2026_10 it is the length of
  * MainBattleConfig.DifficultyScaling (`HasDifficulty(i)` is `0 <= i < Count` in the binary);
  * older builds shipped Normal and Hard only.
  */
 export function mainBattleDifficultyCount(config: MainBattleConfigJson | null | undefined): number {
-    const table = config?.DifficultyScaling;
+    // No config loaded: no difficulties yet (callers render nothing until it arrives).
+    if (!config) return 0;
+    const table = config.DifficultyScaling;
     return table && table.length > 0 ? table.length : 2;
 }
 
@@ -119,12 +130,17 @@ export function mainBattleDifficultyMultipliers(
 ): { hp: number; dmg: number } {
     const table = config?.DifficultyScaling;
     if (table && table.length > 0) {
+        // GetDifficultyScaling (0x77FD084): DifficultyScaling[clamp(idx, 0, Count - 1)], by list
+        // position (the row's DifficultyIdx field is not consulted).
         const clamped = Math.min(Math.max(difficultyIdx, 0), table.length - 1);
-        const row = table.find(r => r.DifficultyIdx === clamped) ?? table[clamped];
+        const row = table[clamped];
         return { hp: row.HpMulti, dmg: row.DmgMulti };
     }
-    const hpBase = config?.EnemyHpDifficultyMulti ?? LEGACY_DIFFICULTY_MULTI;
-    const dmgBase = config?.EnemyDmgDifficultyMulti ?? LEGACY_DIFFICULTY_MULTI;
+    const hpBase = config?.EnemyHpDifficultyMulti;
+    const dmgBase = config?.EnemyDmgDifficultyMulti;
+    if (typeof hpBase !== 'number' || typeof dmgBase !== 'number') {
+        throw new Error('MainBattleConfig.json is not loaded');
+    }
     return { hp: Math.pow(hpBase, difficultyIdx), dmg: Math.pow(dmgBase, difficultyIdx) };
 }
 
@@ -139,7 +155,8 @@ export function mainBattleWaveSpecs(
     const multi = mainBattleDifficultyMultipliers(mainBattleConfig, difficultyIdx);
     const baseHp = realAgeScale(ageScaling.Health) * multi.hp;
     const baseDmg = realAgeScale(ageScaling.Damage) * multi.dmg;
-    const rangedMulti = libs.itemBalancingConfig?.EnemyRangedDamageMultiplier ?? 0.67;
+    const rangedMulti = libs.itemBalancingConfig?.EnemyRangedDamageMultiplier;
+    if (typeof rangedMulti !== 'number') throw new Error('ItemBalancingConfig.EnemyRangedDamageMultiplier is not loaded');
 
     const flat: { id: number }[] = [];
     for (const group of wave.Enemies ?? []) {
@@ -186,7 +203,8 @@ export function hammerThiefSpec(row: { Health: number; Damage: number }): WaveEn
         hp: row.Health,
         radius: 1.0,
         attackRange: 0.5,
-        windupTime: 0.8,
+        // F64.Ratio(48, 60) is Q32.32-truncated (0.79999999981...), then FD6: 799999 micro.
+        windupTime: Math.floor((48 * 4294967296) / 60) / 4294967296,
         attackDuration: 1.5,
         tag: 'enemy:hammerThief',
     };
@@ -317,15 +335,16 @@ export function missionWaveSpecs(
     rng: RandomPCG | number | bigint
 ): WaveEnemySpec[] {
     const itemRng = rng instanceof RandomPCG ? rng : new RandomPCG(rng);
-    const count = mission.UnitCount ?? 6;
+    const count = mission.UnitCount;
+    if (typeof count !== 'number') throw new Error('MissionBattleLibrary row has no UnitCount');
     const { hp, dmg } = missionEnemyStats(mission, level, levelMultiplier);
     const offsets = missionFormation(count);
 
     const out: WaveEnemySpec[] = [];
     for (let i = 0; i < count; i++) {
-        const weapon = randomItem(mission.ChanceToHaveWeapon ?? 1, mission.PossibleWeapons, itemRng);
-        randomItem(mission.ChanceToHaveHelmet, mission.PossibleHelmets, itemRng);
-        randomItem(mission.ChanceToHaveArmour, mission.PossibleArmours, itemRng);
+        const weapon = randomItem(mission.ChanceToHaveWeapon, mission.PossibleWeapons, itemRng);
+        const helmet = randomItem(mission.ChanceToHaveHelmet, mission.PossibleHelmets, itemRng);
+        const armour = randomItem(mission.ChanceToHaveArmour, mission.PossibleArmours, itemRng);
         const w = weapon ? weaponLoadout(weapon.Item1, weapon.Item2, libs) : weaponLoadout(DEFAULT_WEAPON.Age, DEFAULT_WEAPON.Idx, libs);
         out.push({
             offset: offsets[i],
@@ -337,6 +356,11 @@ export function missionWaveSpecs(
             projectile: w.projectile,
             tag: 'mission',
             weaponSpriteKey: w.weaponSpriteKey,
+            // Display only: the rolled helmet / armour, drawn by the battle viewer.
+            cosmeticKeys: {
+                helmet: helmet ? `${helmet.Item1}_0_${helmet.Item2}` : undefined,
+                armour: armour ? `${armour.Item1}_1_${armour.Item2}` : undefined,
+            },
         });
     }
     return out;

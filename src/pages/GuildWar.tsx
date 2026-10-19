@@ -237,15 +237,15 @@ export default function GuildWar() {
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
                                                 <span className="text-text-muted">Max Tickets / Member</span>
-                                                <span className="font-bold text-text-primary">{warConfig?.MaxWarTicketsPerMember || 5}</span>
+                                                <span className="font-bold text-text-primary">{warConfig?.MaxWarTicketsPerMember ?? '...'}</span>
                                             </div>
                                             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
                                                 <span className="text-text-muted">Max Atk Points</span>
-                                                <span className="font-bold text-text-primary">{warConfig?.MaxPointsForAttackingOpponentGuildMember || 50}</span>
+                                                <span className="font-bold text-text-primary">{warConfig?.MaxPointsForAttackingOpponentGuildMember ?? '...'}</span>
                                             </div>
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-text-muted">Brawl Win Bonus</span>
-                                                <span className="font-bold text-accent-primary">+{warConfig?.BrawlWinPointsReward || 1000}</span>
+                                                <span className="font-bold text-accent-primary">+{warConfig?.BrawlWinPointsReward ?? '...'}</span>
                                             </div>
                                         </div>
                                     </Card>

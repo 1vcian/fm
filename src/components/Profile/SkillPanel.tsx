@@ -10,7 +10,7 @@ import { Input } from '../UI/Input';
 import { SkillSlot } from '../../types/Profile';
 import { cn } from '../../lib/utils';
 import { useState, useMemo } from 'react';
-import { MAX_ACTIVE_SKILLS, SKILL_MECHANICS } from '../../utils/constants';
+import { SKILL_MECHANICS } from '../../utils/constants';
 
 /** Artwork well for one of the three slot cards: three across on a phone leaves about 110px each. */
 const SLOT_ART = 'w-12 h-12 sm:w-20 sm:h-20 xl:w-24 xl:h-24';
@@ -93,6 +93,9 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
     }, [skillAscensionLevel, ascensionConfigsLibrary]);
 
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
+    // Equipped skill slots, SkillBaseConfig.SkillSlotsCount (no empty slot offered until it loads).
+    const { data: skillBaseConfig } = useGameData<any>('SkillBaseConfig.json');
+    const skillSlots: number | null = typeof skillBaseConfig?.SkillSlotsCount === 'number' ? skillBaseConfig.SkillSlotsCount : null;
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
     const globalStats = useGlobalStats();
@@ -114,14 +117,17 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
         updateSkills(newSkills);
     };
 
+    /** Top level of a skill: the length of its SkillLibrary per-level tables, null until loaded. */
+    const skillMaxLevel = (id: string): number | null => {
+        const data = skillLibrary?.[id];
+        if (!data) return null;
+        return Math.max(data.DamagePerLevel?.length || 0, data.HealthPerLevel?.length || 0);
+    };
+
     const handleUpdateLevel = (index: number, newLevel: number) => {
         const skill = equippedSkills[index];
-        let maxLevel = 9999;
-
-        if (skillLibrary && skillLibrary[skill.id]) {
-            const data = skillLibrary[skill.id];
-            maxLevel = Math.max(data.DamagePerLevel?.length || 0, data.HealthPerLevel?.length || 0);
-        }
+        const maxLevel = skillMaxLevel(skill.id);
+        if (maxLevel === null) return; // SkillLibrary not loaded yet
 
         const clampedLevel = Math.max(1, Math.min(newLevel, maxLevel));
         const newSkills = [...equippedSkills];
@@ -151,7 +157,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
             newSkills[editingIdx] = skillToAdd;
             updateSkills(newSkills);
         } else {
-            if (equippedSkills.length >= MAX_ACTIVE_SKILLS) return;
+            if (skillSlots === null || equippedSkills.length >= skillSlots) return;
             updateSkills([...equippedSkills, skillToAdd]);
         }
         setPreviousSkills(null);
@@ -340,6 +346,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                     {variant === 'default' && !isComparing && <SectionSyncButton preset="skills" label="Sync" />}
                     <AscensionStars
+                        type="Skills"
                         value={skillAscensionLevel}
                         onChange={handleAscensionChange}
                         size="sm"
@@ -415,7 +422,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                             }}
                             perfection={null}
                             getStatPerfection={() => null}
-                            maxLevel={skillLibrary?.[skill.id]?.DamagePerLevel?.length || 999}
+                            maxLevel={skillMaxLevel(skill.id) ?? skill.level}
                             customStats={
                                 <div className="flex flex-col gap-1.5">
                                     {/* Damage: label, hit count, targeting tag, total, per hit and
@@ -471,8 +478,9 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                                         const reduction = globalStats?.skillCooldownReduction || 0;
                                         const activeDuration = stats.duration || 0;
                                         const cdComponent = stats.cooldown * (1 - reduction);
-                                        const T = typeof pvpBaseConfig?.PvpMatchTimerSeconds === 'number'
-                                            ? pvpBaseConfig.PvpMatchTimerSeconds : 60;
+                                        // PvpBaseConfig.PvpMatchTimerSeconds: the strip waits for the config.
+                                        if (typeof pvpBaseConfig?.PvpMatchTimerSeconds !== 'number') return null;
+                                        const T: number = pvpBaseConfig.PvpMatchTimerSeconds;
 
                                         const casts = skillCastTimes(T, cdComponent, activeDuration);
                                         const activations = casts.length;
@@ -529,7 +537,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                     );
                 })}
 
-                {equippedSkills.length < MAX_ACTIVE_SKILLS && (
+                {skillSlots !== null && equippedSkills.length < skillSlots && (
                     <EmptyRowCard
                         className="min-w-0" artClassName={SLOT_ART}
                         label="Add Skill"

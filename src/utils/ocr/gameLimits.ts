@@ -61,7 +61,7 @@ export function limitsReady(cfg: GameLimitConfigs): boolean {
 }
 
 export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
-    const baseItemMax = (Number(cfg.itemBalancingConfig?.ItemBaseMaxLevel) || 98) + 1;
+    const baseItemMax = Number(cfg.itemBalancingConfig?.ItemBaseMaxLevel) + 1;
     const itemBonus: Record<string, number> = {};
     for (const tree of Object.values<any>(cfg.techTreePositionLibrary || {})) {
         for (const node of tree?.Nodes || []) {
@@ -74,13 +74,15 @@ export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
         }
     }
     const levelCount = (lib: any, rarity: string) => {
+        // Upgrade library LevelInfo length; a rarity missing from the config has no levels.
         const n = lib?.[rarity]?.LevelInfo?.length;
-        return typeof n === 'number' && n > 0 ? n : 100;
+        return typeof n === 'number' && n > 0 ? n : 0;
     };
     const keys = (lib: any) => Object.keys(lib || {}).map(Number).filter(Number.isFinite);
-    const skillLevel = Math.max(0, ...keys(cfg.skillUpgradeLibrary)) || 99;
-    const forgeLevel = Math.max(0, ...Object.values<any>(cfg.forgeUpgradeLibrary || {}).map(v => Number(v?.Level) || 0)) || 34;
-    const asc = (k: string) => cfg.ascensionConfigsLibrary?.[k]?.AscensionConfigPerLevel?.length ?? 3;
+    // Only built once limitsReady() saw every library, so these are read straight from the config.
+    const skillLevel = Math.max(0, ...keys(cfg.skillUpgradeLibrary));
+    const forgeLevel = Math.max(0, ...Object.values<any>(cfg.forgeUpgradeLibrary || {}).map(v => Number(v?.Level) || 0));
+    const asc = (k: string) => cfg.ascensionConfigsLibrary?.[k]?.AscensionConfigPerLevel?.length ?? 0;
     const statMax = new Map<string, number>();
     for (const [statId, def] of Object.entries<any>(cfg.secondaryStatLibrary || {})) {
         const up = def?.UpperRange;

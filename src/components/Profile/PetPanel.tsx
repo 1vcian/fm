@@ -7,7 +7,6 @@ import { Button } from '../UI/Button';
 import { PetSlot, MountSlot, UserProfile, SkillSlot } from '../../types/Profile';
 import { useState, useMemo, useCallback } from 'react';
 import { cn } from '../../lib/utils';
-import { MAX_ACTIVE_PETS } from '../../utils/constants';
 
 /** Artwork well for one of the three slot cards: three across on a phone leaves about 110px each. */
 const SLOT_ART = 'w-12 h-12 sm:w-20 sm:h-20 xl:w-24 xl:h-24';
@@ -76,6 +75,9 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     const [previousMount, setPreviousMount] = useState<MountSlot | null | undefined>(undefined);
 
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
+    // Active pet slots, PetBaseConfig.PetSlotsCount (no slots drawn until it loads).
+    const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
+    const petSlots: number | null = typeof petBaseConfig?.PetSlotsCount === 'number' ? petBaseConfig.PetSlotsCount : null;
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
     const { data: petUpgradeLib } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
@@ -161,7 +163,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
             setIsModalOpen(false);
             return;
         }
-        if (activePets.length >= MAX_ACTIVE_PETS) return;
+        if (petSlots === null || activePets.length >= petSlots) return;
         updatePets([...activePets, pet]);
         setPreviousPets(null);
         setIsModalOpen(false);
@@ -182,7 +184,8 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
 
     const handleLevelChange = (index: number, delta: number) => {
         const pet = activePets[index];
-        const maxLevel = petUpgradeLib?.[pet.rarity]?.LevelInfo?.length || 100;
+        const maxLevel = petUpgradeLib?.[pet.rarity]?.LevelInfo?.length; // PetUpgradeLibrary
+        if (typeof maxLevel !== 'number') return;
         const newLevel = Math.max(1, Math.min(maxLevel, pet.level + delta));
         if (newLevel === pet.level) return;
 
@@ -461,6 +464,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                 <div className="flex items-center justify-end gap-2">
                     {variant === 'default' && !isComparing && <SectionSyncButton preset="pet" label="Sync" />}
                     <AscensionStars
+                        type="Pets"
                         value={petAscensionLevel}
                         onChange={handleAscensionChange}
                         size="sm"
@@ -480,7 +484,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                     // wide as the viewport breakpoint believes.
                     isComparing ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'
                 )}>
-                {Array.from({ length: MAX_ACTIVE_PETS }).map((_, idx) => {
+                {Array.from({ length: petSlots ?? 0 }).map((_, idx) => {
                     const pet = activePets[idx];
                     const hasDiff = checkDiff(idx);
 
@@ -602,7 +606,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 updatePets(newPets);
                                 setPreviousPets(null);
                             }}
-                            maxLevel={petUpgradeLib?.[pet.rarity]?.LevelInfo?.length || 100}
+                            maxLevel={petUpgradeLib?.[pet.rarity]?.LevelInfo?.length ?? pet.level}
                         />
                     );
                 })}

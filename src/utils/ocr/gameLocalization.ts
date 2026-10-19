@@ -6,7 +6,8 @@
 // first and never overwritten.
 
 import type { GameLimits } from './gameLimits';
-import { normalizeName } from './parse';
+import { normalizeName, foldText } from './parse';
+import { AGES } from '../constants';
 import {
     buildItemDictionary, buildSkillDictionary, buildSubstatDictionary,
     type ItemIdentity,
@@ -24,12 +25,67 @@ export interface LocalizationData {
     ui: Record<string, Record<string, string>>;        // word -> {lang: text}
 }
 
+/** Languages whose strings go into the dictionaries. Null = all of them (the historical default).
+ *  A screenshot is in ONE language, and every extra language is another set of short words a
+ *  misread can fuzzy-match, so the AutoSync modal narrows this to the chosen game language plus
+ *  English (buildGameDictionaries `langs`). */
+let activeLangs: Set<string> | null = null;
+
 function addTranslations<T>(map: Map<string, T>, translations: Record<string, string> | undefined, value: T) {
     if (!translations) return;
-    for (const s of Object.values(translations)) {
+    for (const [lang, s] of Object.entries(translations)) {
+        if (activeLangs && !activeLangs.has(lang)) continue;
+        if (typeof s !== 'string') continue;
         const k = normalizeName(s);
         if (k && !map.has(k)) map.set(k, value);
     }
+}
+
+/** Folded words of one `ui` entry (Localization.json) in the active languages, English first. */
+function uiWords(loc: LocalizationData | null, key: string, english: string): string[] {
+    const out = new Set<string>([foldText(english)]);
+    const tr = loc?.ui?.[key];
+    if (tr) for (const [lang, s] of Object.entries(tr)) {
+        if (activeLangs && !activeLangs.has(lang)) continue;
+        const f = foldText(s);
+        if (f) out.add(f);
+    }
+    return [...out];
+}
+
+/** Words the readers look for in OCR'd text, per language (folded with parse.foldText). */
+export interface UiWords {
+    damage: string[];
+    health: string[];
+    ranged: string[];
+    totalDamage: string[];
+    totalHealth: string[];
+    /** level prefix ("Lv.", "Niv.", "Ур.", "等级" ...) without its dot */
+    lv: string[];
+    /** age index -> the age word in every active language */
+    ages: string[][];
+}
+
+function buildUiWords(loc: LocalizationData | null, ageNamesEn: string[]): UiWords {
+    const ages: string[][] = ageNamesEn.map((en, i) => {
+        const set = new Set<string>([foldText(en)]);
+        const tr = (loc as any)?.ages?.[String(i)] as Record<string, string> | undefined;
+        if (tr) for (const [lang, s] of Object.entries(tr)) {
+            if (lang === 'en_key' || (activeLangs && !activeLangs.has(lang))) continue;
+            const f = foldText(s);
+            if (f) set.add(f);
+        }
+        return [...set];
+    });
+    return {
+        damage: uiWords(loc, 'damage', 'Damage'),
+        health: uiWords(loc, 'health', 'Health'),
+        ranged: uiWords(loc, 'ranged', 'ranged'),
+        totalDamage: uiWords(loc, 'total damage', 'Total Damage'),
+        totalHealth: uiWords(loc, 'total health', 'Total Health'),
+        lv: uiWords(loc, 'lv', 'Lv'),
+        ages,
+    };
 }
 
 export function buildItemDictLocalized(autoItemMapping: any, loc?: LocalizationData | null): Map<string, ItemIdentity> {
@@ -103,6 +159,10 @@ export interface GameDictionaries {
     /** statId -> min % for a single roll (SecondaryStatLibrary.LowerRange*100). */
     statMin?: Map<string, number>;
     loc: LocalizationData | null;
+    /** Localized words the readers look for (main-stat kind, age tag, level prefix). */
+    words: UiWords;
+    /** The languages the dictionaries were built for (null = every language in the file). */
+    langs: string[] | null;
     /** The game's bounds for every value a read can write (gameLimits.ts). Null until loaded. */
     limits?: GameLimits | null;
 }
@@ -129,9 +189,25 @@ function buildStatMax(secondaryStatLibrary: any): Map<string, number> {
 export function buildGameDictionaries(cfg: {
     autoItemMapping: any; skillLibrary: any; spriteMapping: any;
     secondaryStatLibrary?: any; localization?: LocalizationData | null;
+    /** Restrict every dictionary to these languages (e.g. ['en', 'ru']); omit for all. */
+    langs?: string[] | null;
 }): GameDictionaries {
     const loc = cfg.localization ?? null;
+    activeLangs = cfg.langs?.length ? new Set(cfg.langs) : null;
+    try {
+        return buildAll(cfg, loc);
+    } finally {
+        activeLangs = null;
+    }
+}
+
+function buildAll(cfg: {
+    autoItemMapping: any; skillLibrary: any; spriteMapping: any;
+    secondaryStatLibrary?: any; langs?: string[] | null;
+}, loc: LocalizationData | null): GameDictionaries {
     return {
+        words: buildUiWords(loc, AGES),
+        langs: cfg.langs?.length ? [...cfg.langs] : null,
         items: buildItemDictLocalized(cfg.autoItemMapping, loc),
         substats: buildSubstatDictLocalized(loc),
         skills: buildSkillDictLocalized(cfg.skillLibrary, loc),

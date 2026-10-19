@@ -66,11 +66,11 @@ export function MiscPanel() {
         let maxLevels = 0;
         for (const t of ['Forge', 'Power', 'SkillsPetTech']) {
             const nds = techTreePositionLibrary?.[t]?.Nodes;
-            if (nds) for (const n of nds) maxLevels += techTreeLibrary?.[n.Type]?.MaxLevel || 5;
+            if (nds) for (const n of nds) maxLevels += techTreeLibrary?.[n.Type]?.MaxLevel ?? 0;
         }
         if (guildPositionLibrary && guildUpgradeLibrary) {
             for (const cat of Object.keys(guildPositionLibrary)) {
-                for (const type of guildPositionLibrary[cat]?.Nodes || []) maxLevels += guildUpgradeLibrary[type]?.MaxLevel || 20;
+                for (const type of guildPositionLibrary[cat]?.Nodes || []) maxLevels += guildUpgradeLibrary[type]?.MaxLevel ?? 0;
             }
         }
         const pct = maxLevels > 0 ? Math.min(100, Math.round((levels / maxLevels) * 100)) : null;
@@ -85,8 +85,9 @@ export function MiscPanel() {
         updateNestedProfile('misc', { [key]: value });
     };
 
-    const minEggSlots = Math.max(2, petConfig?.EggHatchSlotStartCount || 2);
-    const maxEggSlots = petConfig?.EggHatchSlotMaxCount || 4;
+    // PetBaseConfig.EggHatchSlotStartCount / EggHatchSlotMaxCount; the stepper waits for them.
+    const minEggSlots: number | null = typeof petConfig?.EggHatchSlotStartCount === 'number' ? petConfig.EggHatchSlotStartCount : null;
+    const maxEggSlots: number | null = typeof petConfig?.EggHatchSlotMaxCount === 'number' ? petConfig.EggHatchSlotMaxCount : null;
 
     // Format seconds to H:M:S or similar
     const formatTime = (seconds: number) => {
@@ -118,6 +119,7 @@ export function MiscPanel() {
                             <div className="text-xs text-text-muted">Affects enhancement costs</div>
                         </div>
                         <AscensionStars
+                            type="Forge"
                             value={profile.misc.forgeAscensionLevel || 0}
                             onChange={(val) => updateMisc('forgeAscensionLevel', val)}
                         />
@@ -262,15 +264,15 @@ export function MiscPanel() {
                             </div>
                             <div className="min-w-0">
                                 <div className="font-bold">Egg Slots</div>
-                                <div className="text-xs text-text-muted">Max hatching ({minEggSlots}-{maxEggSlots})</div>
+                                <div className="text-xs text-text-muted">Max hatching ({minEggSlots === null || maxEggSlots === null ? '...' : `${minEggSlots}-${maxEggSlots}`})</div>
                             </div>
                         </div>
                         <div className="flex items-center justify-between bg-bg-input p-2 rounded-lg border border-border">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => updateMisc('eggSlots', Math.max(minEggSlots, profile.misc.eggSlots - 1))}
-                                disabled={profile.misc.eggSlots <= minEggSlots}
+                                onClick={() => { if (minEggSlots !== null) updateMisc('eggSlots', Math.max(minEggSlots, profile.misc.eggSlots - 1)); }}
+                                disabled={minEggSlots === null || profile.misc.eggSlots <= minEggSlots}
                             >
                                 <Minus className="w-4 h-4" />
                             </Button>
@@ -278,8 +280,8 @@ export function MiscPanel() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => updateMisc('eggSlots', Math.min(maxEggSlots, profile.misc.eggSlots + 1))}
-                                disabled={profile.misc.eggSlots >= maxEggSlots}
+                                onClick={() => { if (maxEggSlots !== null) updateMisc('eggSlots', Math.min(maxEggSlots, profile.misc.eggSlots + 1)); }}
+                                disabled={maxEggSlots === null || profile.misc.eggSlots >= maxEggSlots}
                             >
                                 <Plus className="w-4 h-4" />
                             </Button>

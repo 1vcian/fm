@@ -32,6 +32,11 @@ export interface CombatStatsVec {
     doubleDamageChance: number;
     attackSpeedMulti: number;
     reflectChance: number;
+    /**
+     * Display only, never read by the combat: the part of `dmg` each active buff skill adds
+     * (SkillManager.applyBuffs), so a weapon hit's damage can be attributed to its sources.
+     */
+    buffParts?: Record<string, number>;
 }
 
 export function defaultStats(): CombatStatsVec {
@@ -55,10 +60,18 @@ export function defaultStats(): CombatStatsVec {
 
 export type CombatState = 'idle' | 'windingUp' | 'onCooldown';
 
+/**
+ * UnitProjectileConfig (SetUnitWeapon 0x77E8D10): ProjectilesLibrary Speed / CollisionRadius /
+ * AffectedByGravity plus the weapon row's IsAiming, Hand and Offset, which place the muzzle
+ * (AttacksSystem.ExecuteAttack 0x77F58C8). Offsets default to (0, 0), aiming to false.
+ */
 export interface ProjectileConfig {
     speed: number;
     collisionRadius: number;
     affectedByGravity: boolean;
+    isAiming?: boolean;
+    handOffset?: Vec2;
+    weaponOffset?: Vec2;
 }
 
 export interface UnitSpec {
@@ -77,9 +90,13 @@ export interface UnitSpec {
     projectile?: ProjectileConfig;
     radius?: number; // default 0.35; guild war 0.5; mounts ColliderRadius
     centerOfMass?: Vec2; // default (0, 0.45)
+    /** UnitOffSet: MountLibrary.UnitOffset in main battles and dungeons (UpdateMount), else (0, 0). Moves the muzzle only. */
+    unitOffset?: Vec2;
     /** Display-only passthrough for the visualizer (sprites, names). */
     tag?: string;
     weaponSpriteKey?: string;
+    /** Display only: helmet / armour item keys ("age_type_idx") a mission enemy rolled. No combat effect. */
+    cosmeticKeys?: { helmet?: string; armour?: string };
     /** Display only: the skill that created this unit (Drone), carried onto its shots and hits. */
     skillId?: string;
     /** Skill summons (Drone): excluded from buffs and from enemy-center math. */
@@ -97,6 +114,7 @@ export interface Unit {
     isPlayer: boolean;
     pos: Vec2;
     com: Vec2;
+    unitOffset: Vec2;
     vel: Vec2;
     radius: number;
     attackRange: number;
@@ -125,6 +143,7 @@ export interface Unit {
     destroyed: boolean;
     tag?: string;
     weaponSpriteKey?: string;
+    cosmeticKeys?: { helmet?: string; armour?: string };
     skillId?: string;
 }
 
@@ -184,6 +203,8 @@ export interface CombatEvent {
      */
     source?: 'melee' | 'ranged' | 'skill' | 'reflect' | 'lifesteal' | 'buff';
     skillId?: string;
+    /** Display only: the part of `dmg` added by each active buff skill (crit applied). */
+    buffDmg?: Record<string, number>;
     x?: number;
     y?: number;
 }

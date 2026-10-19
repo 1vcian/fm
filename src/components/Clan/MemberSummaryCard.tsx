@@ -244,8 +244,8 @@ export function useTreeIndex(enabled = true): TreeIndex | null {
                     raw.map(node => ({
                         id: Number(node.id),
                         type: String(node.type || ''),
-                        // MiscPanel's fallback, kept identical so the two "to complete" numbers agree.
-                        max: techTreeLibrary?.[node.type]?.MaxLevel || 5,
+                        // Same read as MiscPanel, so the two "to complete" numbers agree.
+                        max: techTreeLibrary?.[node.type]?.MaxLevel ?? 0,
                         tier: typeof node.tier === 'number' ? node.tier : undefined,
                     })),
                 ),
@@ -260,7 +260,7 @@ export function useTreeIndex(enabled = true): TreeIndex | null {
                     clanNodes.push({
                         id: globalId++,
                         type: String(type),
-                        max: guildUpgradeLibrary?.[type]?.MaxLevel || 20,
+                        max: guildUpgradeLibrary?.[type]?.MaxLevel ?? 0,
                     });
                 }
             }

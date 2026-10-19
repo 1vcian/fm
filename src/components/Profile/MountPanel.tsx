@@ -66,7 +66,8 @@ export function MountPanel() {
 
     const handleLevelChange = (delta: number) => {
         if (!activeMount) return;
-        const maxLevel = mountUpgradeLibrary?.[activeMount.rarity]?.LevelInfo?.length || 100;
+        const maxLevel = mountUpgradeLibrary?.[activeMount.rarity]?.LevelInfo?.length; // MountUpgradeLibrary
+        if (typeof maxLevel !== 'number') return;
         const newLevel = Math.max(1, Math.min(maxLevel, activeMount.level + delta));
         if (newLevel === activeMount.level) return;
         updateNestedProfile('mount', { active: { ...activeMount, level: newLevel } });

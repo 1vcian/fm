@@ -49,8 +49,9 @@ export function useEggsCalculator() {
     });
 
     const [timeLimitHours, setTimeLimitHours] = useState(24);
-    const [availableSlots, _setAvailableSlots] = useState(3);
-    const maxSlots = petConfig?.EggHatchSlotMaxCount || 4;
+    const [availableSlots, _setAvailableSlots] = useState<number>(() => profile?.misc?.eggSlots ?? 0);
+    // PetBaseConfig.EggHatchSlotMaxCount; undefined until it loads (the slot input waits for it).
+    const maxSlots: number | undefined = petConfig?.EggHatchSlotMaxCount;
 
     // Sync from profile when profile changes (e.g. user switch)
     useEffect(() => {
@@ -77,6 +78,7 @@ export function useEggsCalculator() {
 
 
     const setAvailableSlots = (val: number) => {
+        if (typeof maxSlots !== 'number') return;
         const safeVal = Math.min(maxSlots, Math.max(1, val));
         _setAvailableSlots(safeVal);
         if (profile) {

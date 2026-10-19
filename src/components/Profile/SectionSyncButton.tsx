@@ -6,7 +6,7 @@ import type { ForcedTemplate } from '../../utils/ocr/guidedSync';
 import { cn } from '../../lib/utils';
 
 const PRESET_TITLE: Record<ForcedTemplate, string> = {
-    item: 'equipment', mount: 'mount', pet: 'pets', skills: 'skills', clanTree: 'clan tech tree', skin: 'skins',
+    item: 'equipment', mount: 'mount', pet: 'pets', skills: 'skills', clanTree: 'clan tech tree', skin: 'skins', unit: 'pets and mounts',
 };
 
 /** What to have on screen when the shot is taken, per template. */
@@ -17,6 +17,7 @@ const PRESET_HINT: Record<ForcedTemplate, string> = {
     skills: 'Open the Skills tab with the level grid visible, then capture. Several shots are fine if the grid scrolls.',
     clanTree: 'Open the Clan → Tech Tree tab, then capture. Scroll and take several shots to cover every node.',
     skin: 'Open the skin popup (name + set bonus lines), then capture. One skin per shot.',
+    unit: 'Open the pet or mount detail popup, then capture. One per shot.',
 };
 
 /**

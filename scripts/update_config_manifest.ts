@@ -217,6 +217,29 @@ async function main() {
             console.log(`Texture MD5 manifest generated successfully at ${TEXTURE_MD5_MANIFEST_FILE}`);
         }
 
+        // 6. Generate src/data/assetVersions.json: which Texture2D folders exist and which of them
+        // ship the emblem sheets and the battle visuals. The resolvers in ascensionUtils.ts,
+        // emblem.ts and gameView/visualData.ts read it, so a new asset drop needs no code edit.
+        const ASSET_VERSIONS_FILE = path.resolve(__dirname, '../src/data/assetVersions.json');
+        if (fs.existsSync(TEXTURE_DIR)) {
+            const folders = fs.readdirSync(TEXTURE_DIR, { withFileTypes: true })
+                .filter(dirent => dirent.isDirectory())
+                .map(dirent => dirent.name)
+                .sort();
+            const has = (folder: string, file: string) => fs.existsSync(path.join(TEXTURE_DIR, folder, file));
+            const EMBLEM_SHEETS = ['EmblemShapes.png', 'EmblemIcons.png', 'EmblemHolder.png'];
+            const assetVersions = {
+                texture: folders,
+                emblem: folders.filter(f => EMBLEM_SHEETS.every(s => has(f, s))),
+                battleVisuals: folders.filter(f => has(f, 'BattleVisuals.json')),
+            };
+            const next = JSON.stringify(assetVersions, null, 2) + '\n';
+            // Rewrite only on change, so the dev server does not reload for nothing.
+            const prev = fs.existsSync(ASSET_VERSIONS_FILE) ? fs.readFileSync(ASSET_VERSIONS_FILE, 'utf-8') : '';
+            if (prev !== next) fs.writeFileSync(ASSET_VERSIONS_FILE, next);
+            console.log(`Asset versions: ${folders.length} texture, ${assetVersions.emblem.length} emblem, ${assetVersions.battleVisuals.length} battle visuals`);
+        }
+
         generateDelta(versions);
 
     } catch (error) {

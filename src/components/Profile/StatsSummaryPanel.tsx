@@ -27,6 +27,7 @@ import { getAveragePerfection } from '../../utils/itemCalculations';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
 import { LifestealBreakdownModal } from './LifestealBreakdownModal';
+import { useEngineCheck, type EngineCheckState } from '../../hooks/useEngineCheck';
 import { StatSourcesModal, MultiplierBreakdown } from './StatSourcesModal';
 import { TOTAL_DAMAGE_KEY, TOTAL_HEALTH_KEY, TOTAL_POWER_KEY } from '../../types/statAttribution';
 
@@ -214,6 +215,20 @@ export function ComparisonStatRow({
     isCompact = true
 }: ComparisonStatRowProps) {
     const isMinimal = variant === 'minimal';
+    // A tested figure still being simulated (NaN): no values and no delta yet.
+    if (!Number.isFinite(originalValue) || !Number.isFinite(testValue)) {
+        return (
+            <div className={cn("flex items-center gap-3 rounded-lg border border-border/20 bg-bg-input/20", isMinimal ? "p-1.5 px-2" : "p-2.5")}>
+                <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-bg-secondary shrink-0", color)}>
+                    {React.cloneElement(icon as React.ReactElement, { className: 'w-3 h-3' })}
+                </div>
+                <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted leading-tight">{label}</span>
+                    <span className="text-[11px] font-mono text-text-muted animate-pulse">Simulating 24 h...</span>
+                </div>
+            </div>
+        );
+    }
 
     const defaultFormat = (val: number) => isCompact
         ? formatCompactNumber(val)
@@ -671,6 +686,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         return result;
     }, [profile, secondaryStatLibrary]);
 
+    // Tested DPS/HPS: the combat engine for 24 h of game time (dummyRun.testedRun) per build. The
+    // hook shares one worker job per build, so the modals and the comparison reuse these runs.
+    const testedCur = useEngineCheck(fullStats, profile.skills?.equipped, skillLibrary);
+    const testedOrig = useEngineCheck(originalFullStats, originalProfile?.skills?.equipped, skillLibrary, !!isComparing);
+    const testedTest = useEngineCheck(testFullStats, testProfile?.skills?.equipped, skillLibrary, !!isComparing);
+
     if (!stats || !fullStats) {
         return (
             <Card className="h-full flex items-center justify-center">
@@ -683,60 +704,82 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         );
     }
 
-    // The stat engine's own totals and parts, so every DPS figure here (cards, compare rows,
-    // breakdown modal) is the same number: total = weapon + skills + reflect.
-    const calculateDpsDetails = (s: AggregatedStats) => {
-        // Buff damage rides on weapon hits, so it follows the weapon cadence of each mode.
-        const skills = s.skillDps + (s.theoreticalSkillBuffDps || 0);
-        const realSkills = s.skillDps + (s.skillBuffDps || 0);
+    // Two DPS/HPS figures, the same everywhere in this panel and in the breakdown modals:
+    //   theoretical  the weapon alone (statEngine realWeaponDps: tick-stepped hits, doubles, crit),
+    //                no skills; HPS = regen + lifesteal on those hits
+    //   tested       the combat engine over 24 h of game time against an unkillable dummy, every
+    //                source included (NaN until the worker answers)
+    const sumBy = (m: Record<string, number> | undefined, prefix: string) =>
+        Object.entries(m ?? {}).reduce((a, [k, v]) => (k === prefix || k.startsWith(prefix + ':') ? a + v : a), 0);
+    const testedOf = (c: EngineCheckState) => (c.status === 'done' ? c.result.tested : null);
+    const calculateDpsDetails = (s: AggregatedStats, c: EngineCheckState = testedCur) => {
+        const t = testedOf(c);
         return {
-            total: s.averageTotalDps, weapon: s.weaponDps, skills, reflect: s.reflectDps || 0,
-            realTotal: s.realTotalDps, realWeapon: s.realWeaponDps, realSkills, realReflect: s.realReflectDps || 0,
+            total: s.realWeaponDps, weapon: s.realWeaponDps,
+            realTotal: t ? t.dps : NaN,
+            realWeapon: t ? sumBy(t.dpsBySource, 'weapon') : NaN,
+            realBuffs: t ? sumBy(t.dpsBySource, 'buff') : NaN,
+            realSkills: t ? sumBy(t.dpsBySource, 'skill') : NaN,
+            check: c,
         };
     };
-    /** Breakdown rows of one DPS figure; reflect only when the build has any. */
-    const dpsRows = (d: ReturnType<typeof calculateDpsDetails>, real: boolean) => [
-        { label: 'Weapon', value: real ? d.realWeapon : d.weapon },
-        { label: 'Skills', value: real ? d.realSkills : d.skills },
-        ...((real ? d.realReflect : d.reflect) > 0 ? [{ label: 'Reflect', value: real ? d.realReflect : d.reflect }] : []),
-    ];
-    const dpsSub = (d: ReturnType<typeof calculateDpsDetails>, real: boolean) =>
-        dpsRows(d, real).map(r => `${r.label}: ${formatCompactNumber(r.value)}`).join(', ');
+    /** Breakdown rows of one DPS figure (fixed rows, so a comparison lines them up). */
+    const dpsRows = (d: ReturnType<typeof calculateDpsDetails>, real: boolean) => real
+        ? [
+            { label: 'Weapon hits', value: d.realWeapon },
+            { label: 'Buffs on hits', value: d.realBuffs },
+            { label: 'Skills', value: d.realSkills },
+        ]
+        : [{ label: 'Weapon hits', value: d.weapon }];
+    const testedPending = (c: EngineCheckState) =>
+        c.status === 'error' ? `Simulation failed: ${c.error}` : `Simulating 24 h of combat ${Math.round(((c.status === 'loading' && c.progress) || 0) * 100)}%`;
+    const dpsSub = (d: ReturnType<typeof calculateDpsDetails>, real: boolean) => {
+        if (!real) return `Weapon alone, no skills: damage x hits/s (0.1 s breakpoints, doubles) x crit`;
+        if (!Number.isFinite(d.realTotal)) return testedPending(d.check);
+        return dpsRows(d, true).filter(r => r.value > 0).map(r => `${r.label}: ${formatCompactNumber(r.value)}`).join(', ') + '. 24 h against a dummy';
+    };
 
-    const calculateHpsDetails = (s: AggregatedStats, real: boolean) => {
-        const regen = s.totalHealth * s.healthRegen;
-        // Lifesteal heals on weapon hits, buff damage included (statEngine lifestealHps).
-        const lifesteal = real ? s.lifestealHps : s.theoreticalLifestealHps;
-        const skills = s.skillHps;
-        // No block term: BattleSystem.ApplyDmg (RVA 0x77F4BD0) applies block only to incoming
-        // damage and clamps every heal with FD6.Min(Hp + heal, HpMax). Block is shown on its
-        // own as damage avoided; these totals are upper bounds (healing past max HP is lost).
+    const calculateHpsDetails = (s: AggregatedStats, real: boolean, c: EngineCheckState = testedCur) => {
+        const blockChance = s.blockChance || 0;
+        if (!real) {
+            // Regen on HpMaxNoMulti + lifesteal on the weapon's own hits. Block never adds healing.
+            const regen = s.totalHealth * s.healthRegen;
+            const lifesteal = s.realWeaponDps * s.lifeSteal;
+            return { total: regen + lifesteal, regen, lifesteal, skills: 0, blockChance, check: c };
+        }
+        const t = testedOf(c);
+        if (!t) return { total: NaN, regen: NaN, lifesteal: NaN, skills: NaN, blockChance, check: c };
         return {
-            total: regen + lifesteal + skills,
-            regen,
-            lifesteal,
-            skills,
-            blockChance: s.blockChance || 0
+            total: t.hps,
+            regen: sumBy(t.hpsBySource, 'regen'),
+            lifesteal: sumBy(t.hpsBySource, 'lifesteal'),
+            skills: sumBy(t.hpsBySource, 'heal'),
+            blockChance,
+            check: c,
         };
     };
+    const hpsSub = (d: ReturnType<typeof calculateHpsDetails>) => !Number.isFinite(d.total)
+        ? testedPending(d.check)
+        : `Regen: ${formatCompactNumber(d.regen)}, Lifesteal: ${formatCompactNumber(d.lifesteal)}${d.skills > 0 ? `, Skills: ${formatCompactNumber(d.skills)}` : ''}. Before the max HP cap`;
 
     const currentDpsDetails = calculateDpsDetails(fullStats);
     const effectiveDps = currentDpsDetails.total;
     const currentHpsDetails = calculateHpsDetails(fullStats, false);
     const currentRealHpsDetails = calculateHpsDetails(fullStats, true);
-    
+
     const effectiveHps = currentHpsDetails.total;
     const realHps = currentRealHpsDetails.total;
-    
+
     const treeBonusEntries = Object.entries(techModifiers).filter(([_, v]) => v > 0);
 
-    const NO_DPS = { total: 0, weapon: 0, skills: 0, reflect: 0, realTotal: 0, realWeapon: 0, realSkills: 0, realReflect: 0 };
-    const originalDpsDetails = originalFullStats ? calculateDpsDetails(originalFullStats) : NO_DPS;
-    const testDpsDetails = testFullStats ? calculateDpsDetails(testFullStats) : NO_DPS;
-    const originalHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, false) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const originalRealHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, true) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const testHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, false) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const testRealHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, true) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const NO_DPS = { total: 0, weapon: 0, realTotal: 0, realWeapon: 0, realBuffs: 0, realSkills: 0, check: testedOrig };
+    const NO_HPS = { total: 0, regen: 0, lifesteal: 0, skills: 0, blockChance: 0, check: testedOrig };
+    const originalDpsDetails = originalFullStats ? calculateDpsDetails(originalFullStats, testedOrig) : NO_DPS;
+    const testDpsDetails = testFullStats ? calculateDpsDetails(testFullStats, testedTest) : NO_DPS;
+    const originalHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, false, testedOrig) : NO_HPS;
+    const originalRealHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, true, testedOrig) : NO_HPS;
+    const testHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, false, testedTest) : NO_HPS;
+    const testRealHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, true, testedTest) : NO_HPS;
 
     const originalDps = originalDpsDetails.total;
     const testDps = testDpsDetails.total;
@@ -745,7 +788,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const originalRealHps = originalRealHpsDetails.total;
     const testRealHps = testRealHpsDetails.total;
 
-    const formatValue = (val: number) => isCompactStats
+    const formatValue = (val: number) => !Number.isFinite(val) ? '...' : isCompactStats
         ? formatCompactNumber(val)
         : val.toLocaleString(undefined, { maximumFractionDigits: 0 });
 
@@ -820,16 +863,16 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
 
             {viewTab === 'metrics' && (
                 <>
-                    {/* Theoretical Block */}
+                    {/* Weapon only (theoretical) block */}
                     <div className="bg-white/5 rounded-xl border border-white/5 overflow-hidden">
                         <div className="px-3 py-1.5 bg-white/5 border-b border-white/5 flex items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Theoretical Metrics</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Weapon only (theoretical)</span>
                         </div>
                         <div className="p-2 space-y-2">
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<Zap className="w-4 h-4" />}
-                                label="Theoretical DPS"
+                                label="Weapon DPS"
                                 originalValue={originalDps}
                                 testValue={testDps}
                                 color="text-orange-400"
@@ -849,7 +892,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
-                                label="Theoretical HPS"
+                                label="Weapon HPS"
                                 originalValue={originalHps}
                                 testValue={testHps}
                                 color="text-emerald-400"
@@ -867,7 +910,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<Heart className="w-4 h-4 text-purple-400" />}
-                                label="Lifesteal/sec (upper bound)"
+                                label="Lifesteal/sec"
                                 originalValue={originalHpsDetails.lifesteal}
                                 testValue={testHpsDetails.lifesteal}
                                 color="text-purple-400"
@@ -885,17 +928,17 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         </div>
                     </div>
 
-                    {/* Real-Time Block */}
+                    {/* Tested (24 h) block */}
                     <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
                         <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10 flex items-center gap-2">
                             <Zap className="w-3 h-3 text-orange-400" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Real-Time Metrics</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Tested (24 h simulation)</span>
                         </div>
                         <div className="p-2 space-y-2">
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<Zap className="w-4 h-4" />}
-                                label="Real-Time DPS"
+                                label="Tested DPS"
                                 originalValue={originalDpsDetails.realTotal}
                                 testValue={testDpsDetails.realTotal}
                                 color="text-orange-500"
@@ -915,7 +958,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<TrendingUp className="w-4 h-4 text-emerald-500" />}
-                                label="Real-Time HPS"
+                                label="Tested HPS"
                                 originalValue={originalRealHps}
                                 testValue={testRealHps}
                                 color="text-emerald-500"
@@ -933,7 +976,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
                                 icon={<Heart className="w-4 h-4 text-purple-500" />}
-                                label="Lifesteal/sec (upper bound)"
+                                label="Lifesteal/sec"
                                 originalValue={originalRealHpsDetails.lifesteal}
                                 testValue={testRealHpsDetails.lifesteal}
                                 color="text-purple-500"
@@ -1124,22 +1167,22 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         </>
                     ) : viewTab === 'metrics' ? (
                         <>
-                            {/* Grouped Theoretical */}
+                            {/* Grouped weapon only */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theo DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Weapon DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-white/10" />
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Theo HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Weapon HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
                                 <div className="w-px h-6 bg-white/10" />
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Theo LS/s" originalValue={originalHpsDetails.lifesteal} testValue={testHpsDetails.lifesteal} color="text-purple-400" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Weapon LS/s" originalValue={originalHpsDetails.lifesteal} testValue={testHpsDetails.lifesteal} color="text-purple-400" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
                             </div>
 
-                            {/* Grouped Real-Time */}
+                            {/* Grouped tested */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-orange-500/5 rounded-xl border border-orange-500/10 ring-1 ring-orange-500/10">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Tested DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-orange-500/10" />
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Real HPS" originalValue={originalRealHps} testValue={testRealHps} color="text-emerald-500" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Tested HPS" originalValue={originalRealHps} testValue={testRealHps} color="text-emerald-500" />
                                 <div className="w-px h-6 bg-orange-500/10" />
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-500" />} label="Real LS/s" originalValue={originalRealHpsDetails.lifesteal} testValue={testRealHpsDetails.lifesteal} color="text-purple-500" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-500" />} label="Tested LS/s" originalValue={originalRealHpsDetails.lifesteal} testValue={testRealHpsDetails.lifesteal} color="text-purple-500" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
                             </div>
                         </>
                     ) : viewTab === 'passives' ? (
@@ -1386,6 +1429,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     stats={modalData?.stats || stats}
                     profile={modalData?.profile || profile}
                     variant={modalData?.variant || 'default'}
+                    skillLibrary={skillLibrary}
                 />
             </div>
         );
@@ -1691,15 +1735,15 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 );
                             })()}
                         <div className="space-y-4">
-                            {/* Theoretical Block */}
+                            {/* Weapon only (theoretical) block */}
                             <div className="bg-white/5 rounded-xl border border-white/5 overflow-hidden">
                                 <div className="px-3 py-1.5 bg-white/5 border-b border-white/5 flex items-center gap-2">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Theoretical Metrics</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Weapon only (theoretical)</span>
                                 </div>
                                 <div className="p-2 space-y-1">
                                     <StatRow
                                         icon={<Zap className="w-4 h-4" />}
-                                        label="Theoretical DPS"
+                                        label="Weapon DPS"
                                         value={formatValue(effectiveDps)}
                                         subValue={dpsSub(currentDpsDetails, false)}
                                         color="text-orange-400"
@@ -1707,32 +1751,33 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     />
                                     <StatRow
                                         icon={<TrendingUp className="w-4 h-4" />}
-                                        label="Theoretical HPS"
+                                        label="Weapon HPS"
                                         value={formatValue(effectiveHps)}
-                                        subValue={`Regen: ${formatCompactNumber(currentHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentHpsDetails.skills)}${currentHpsDetails.blockChance > 0 ? `. Block ${formatPercent(currentHpsDetails.blockChance)} avoids damage, adds no healing` : ''}. Upper bound: healing is capped at max HP`}
+                                        subValue={hpsSub(currentHpsDetails)}
+                                        onInfoPointsClick={() => setShowLifestealModal(true)}
                                         color="text-emerald-400"
                                     />
                                     <StatRow
                                         icon={<Heart className="w-4 h-4" />}
-                                        label="Lifesteal/sec (upper bound)"
+                                        label="Lifesteal/sec"
                                         value={formatValue(currentHpsDetails.lifesteal)}
-                                        subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                        subValue={`Weapon DPS x Lifesteal ${formatPercent(fullStats.lifeSteal)}, before the max HP cap`}
                                         color="text-purple-400"
                                         onInfoPointsClick={() => setShowLifestealModal(true)}
                                     />
                                 </div>
                             </div>
 
-                            {/* Real-Time Block */}
+                            {/* Tested (24 h) block */}
                             <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
                                 <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10 flex items-center gap-2">
                                     <Zap className="w-3 h-3 text-orange-400" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Real-Time Metrics</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Tested (24 h simulation)</span>
                                 </div>
                                 <div className="p-2 space-y-1">
                                     <StatRow
                                         icon={<Zap className="w-4 h-4" />}
-                                        label="Real-Time DPS"
+                                        label="Tested DPS"
                                         value={formatValue(currentDpsDetails.realTotal)}
                                         subValue={dpsSub(currentDpsDetails, true)}
                                         color="text-orange-500"
@@ -1740,16 +1785,17 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     />
                                     <StatRow
                                         icon={<TrendingUp className="w-4 h-4" />}
-                                        label="Real-Time HPS"
+                                        label="Tested HPS"
                                         value={formatValue(realHps)}
-                                        subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}${currentRealHpsDetails.blockChance > 0 ? `. Block ${formatPercent(currentRealHpsDetails.blockChance)} avoids damage, adds no healing` : ''}. Upper bound: healing is capped at max HP`}
+                                        subValue={hpsSub(currentRealHpsDetails)}
+                                        onInfoPointsClick={() => setShowLifestealModal(true)}
                                         color="text-emerald-500"
                                     />
                                     <StatRow
                                         icon={<Heart className="w-4 h-4" />}
-                                        label="Lifesteal/sec (upper bound)"
+                                        label="Lifesteal/sec"
                                         value={formatValue(currentRealHpsDetails.lifesteal)}
-                                        subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                        subValue={Number.isFinite(currentRealHpsDetails.lifesteal) ? `All lifesteal in the 24 h run (weapon hits and buffs), before the max HP cap` : testedPending(testedCur)}
                                         color="text-purple-500"
                                         onInfoPointsClick={() => setShowLifestealModal(true)}
                                     />
@@ -1995,31 +2041,33 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 />
                                 <StatRow
                                     icon={<TrendingUp className="w-4 h-4 text-text-primary" />}
-                                    label="Theo HPS"
+                                    label="Weapon HPS"
                                     value={formatCompactNumber(effectiveHps)}
-                                    subValue={`Regen: ${formatCompactNumber(currentHpsDetails.regen)}, Life: ${formatCompactNumber(currentHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentHpsDetails.skills)}`}
+                                    subValue={hpsSub(currentHpsDetails)}
+                                    onInfoPointsClick={() => setShowLifestealModal(true)}
                                     color="text-emerald-400"
                                 />
                                 <StatRow
                                     icon={<TrendingUp className="w-4 h-4 text-text-primary" />}
-                                    label="Real HPS"
-                                    value={formatCompactNumber(realHps)}
-                                    subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, Life: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}`}
+                                    label="Tested HPS"
+                                    value={formatValue(realHps)}
+                                    subValue={hpsSub(currentRealHpsDetails)}
+                                    onInfoPointsClick={() => setShowLifestealModal(true)}
                                     color="text-emerald-500"
                                 />
                                 <StatRow
                                     icon={<Heart className="w-4 h-4 text-purple-400" />}
-                                    label="Theo Lifesteal/sec"
+                                    label="Weapon Lifesteal/sec"
                                     value={formatCompactNumber(currentHpsDetails.lifesteal)}
-                                    subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                    subValue={`Weapon DPS x Lifesteal ${formatPercent(fullStats.lifeSteal)}, before the max HP cap`}
                                     color="text-purple-400"
                                     onInfoPointsClick={() => setShowLifestealModal(true)}
                                 />
                                 <StatRow
                                     icon={<Heart className="w-4 h-4 text-purple-500" />}
-                                    label="Real Lifesteal/sec"
-                                    value={formatCompactNumber(currentRealHpsDetails.lifesteal)}
-                                    subValue={`(Weapon + buff DPS) × LifeSteal ${formatPercent(fullStats.lifeSteal)}. Upper bound: healing is capped at max HP`}
+                                    label="Tested Lifesteal/sec"
+                                    value={formatValue(currentRealHpsDetails.lifesteal)}
+                                    subValue={Number.isFinite(currentRealHpsDetails.lifesteal) ? `All lifesteal in the 24 h run (weapon hits and buffs), before the max HP cap` : testedPending(testedCur)}
                                     color="text-purple-500"
                                     onInfoPointsClick={() => setShowLifestealModal(true)}
                                 />
@@ -2138,6 +2186,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 stats={modalData?.stats || fullStats}
                 profile={modalData?.profile || profile}
                 variant={modalData?.variant || 'default'}
+                skillLibrary={skillLibrary}
             />
             <StatSourcesModal
                 isOpen={!!sourceModal}

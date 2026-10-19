@@ -17,12 +17,23 @@ export default function EggSummonCalculator() {
     const eggSummon = useEggSummonCalculator();
 
     // Target Calculator State
-    const [targetLevel, setTargetLevel] = useState(eggSummon.maxPossibleLevel || 100);
+    // Defaults to the top level of EggSummonConfig.Levels until the player picks one.
+    const [pickedTargetLevel, setTargetLevel] = useState<number | null>(null);
+    const targetLevel = pickedTargetLevel ?? eggSummon.maxPossibleLevel;
     // Defaults to the last ascension in AscensionConfigsLibrary until the player picks one.
     const [pickedTargetAscension, setTargetAscension] = useState<number | null>(null);
     const targetAscension = pickedTargetAscension ?? eggSummon.maxAscension;
 
-    if (!eggSummon.available) {
+    if (eggSummon.loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">
+                <RefreshCcw className="w-8 h-8 opacity-50 animate-spin" />
+                <p>Loading game data</p>
+            </div>
+        );
+    }
+
+    if (!eggSummon.available || !eggSummon.ready) {
         return (
             <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">
                 <Info className="w-8 h-8 opacity-50" />

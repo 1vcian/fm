@@ -54,7 +54,7 @@ export function useEggSummonCalculator() {
     const { profile, updateProfile } = useProfile();
 
     // Data Loading
-    const { data: eggSummonConfig } = useGameData<any>('EggSummonConfig.json');
+    const { data: eggSummonConfig, loading: eggSummonConfigLoading } = useGameData<any>('EggSummonConfig.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const maxAscension = maxAscensionFrom(ascensionConfigs, 'Pets');
 
@@ -85,9 +85,10 @@ export function useEggSummonCalculator() {
     }), [treeModifiers]);
 
     // Constants from config
-    const BASE_COST = eggSummonConfig?.SingleSummonCost?.Amount || 100;
+    // NaN until EggSummonConfig loads; `ready` stays false meanwhile and the page shows a loading state.
+    const BASE_COST: number = eggSummonConfig?.SingleSummonCost?.Amount ?? NaN;
     // SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0].
-    const BASE_EGGS_PER_SUMMON = baseSummonCount(eggSummonConfig, 1);
+    const BASE_EGGS_PER_SUMMON = baseSummonCount(eggSummonConfig);
     const EGGS_PER_SUMMON = BASE_EGGS_PER_SUMMON * (1 + techBonuses.extraChance);
     // SummonConfig.CanAffordSummon (RVA 0x7865EDC): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
@@ -95,7 +96,8 @@ export function useEggSummonCalculator() {
 
     // Levels data
     const levels = eggSummonConfig?.Levels || [];
-    const maxPossibleLevel = levels.length || 100;
+    const maxPossibleLevel = levels.length;
+    const ready = levels.length > 0 && Number.isFinite(BASE_COST) && Number.isFinite(BASE_EGGS_PER_SUMMON);
 
     // Simulation Results
     const results = useMemo(() => {
@@ -142,6 +144,8 @@ export function useEggSummonCalculator() {
 
     return {
         available: !!eggSummonConfig, // Whether the new system is available for this version
+        loading: eggSummonConfigLoading,
+        ready,
         level, setLevel,
         progress, setProgress,
         eggshellCount, setEggshellCount,
@@ -152,7 +156,7 @@ export function useEggSummonCalculator() {
         applyResultsToProfile,
         calculateNeededCurrency,
         maxAscension,
-        currency: eggSummonConfig?.SingleSummonCost?.Currency || 'Eggshells',
+        currency: (eggSummonConfig?.SingleSummonCost?.Currency ?? '') as string,
         baseCost: BASE_COST * BASE_EGGS_PER_SUMMON,
         finalCostPerSummon,
         eggsPerSummon: EGGS_PER_SUMMON

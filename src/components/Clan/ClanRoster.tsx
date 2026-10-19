@@ -145,6 +145,10 @@ function sortMembers(members: MemberSummary[], key: SortKey, desc: boolean): Mem
  * Props
  * ------------------------------------------------------------------------------------------ */
 
+
+/** Day hint while GuildWarDayConfigLibrary is still loading. */
+const DAY_WORK_WAITING = { short: '', long: 'Waiting for the war day config.', idle: false };
+
 export interface ClanRosterProps {
     /**
      * Roster rows. Omit to read `useClan().roster`, which is the normal path. Passing rows also
@@ -219,9 +223,11 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
             tech: 'tech tree', forge: 'forging', forgeSpend: 'forge spend', dungeons: 'dungeons',
             skills: 'skills', mounts: 'mounts', eggs: 'eggs', pets: 'pets',
         };
-        const map = warDayConfig ? computeWarDaysMap(warDayConfig as never) : null;
-        return Array.from({ length: 6 }, (_, day) => {
-            if (!map) return { short: '', long: 'Waiting for the war day config.', idle: false };
+        // One entry per day key of GuildWarDayConfigLibrary (the war length is the config's).
+        if (!warDayConfig) return [];
+        const map = computeWarDaysMap(warDayConfig as never);
+        const dayCount = Object.keys(warDayConfig as Record<string, unknown>).length;
+        return Array.from({ length: dayCount }, (_, day) => {
             const here = WAR_CATEGORIES.filter(c => (map[c] || []).includes(day));
             if (here.length === 0) {
                 return {
@@ -657,8 +663,8 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                     {/* WHAT SCORING ON THIS DAY MEANS — the answer to "what do I do
                                         today", which a bare number never gave. Derived from the
                                         config's own day map, so it follows a reshuffle. */}
-                                    <div className="mt-0.5 text-[8px] leading-tight text-text-muted whitespace-nowrap overflow-hidden text-clip" title={dayWork[day].long}>
-                                        {dayWork[day].short}
+                                    <div className="mt-0.5 text-[8px] leading-tight text-text-muted whitespace-nowrap overflow-hidden text-clip" title={(dayWork[day] ?? DAY_WORK_WAITING).long}>
+                                        {(dayWork[day] ?? DAY_WORK_WAITING).short}
                                     </div>
 
                                     {/* The same day WITH each member's own WarPointsOnDay node applied.
@@ -681,7 +687,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                                     {/* A day the game awards nothing for is not a zero score, it is a
                                         day with no scoring tasks. Saying "0" invites the reader to
                                         wonder who let the clan down. */}
-                                    {value === 0 && dayWork[day].idle && (
+                                    {value === 0 && dayWork[day]?.idle && (
                                         <div className="text-[8px] leading-tight text-text-muted">no task points</div>
                                     )}
                                 </div>

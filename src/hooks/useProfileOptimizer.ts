@@ -2,18 +2,19 @@ import { useCallback } from 'react';
 import { useTreeModeProfile } from './useGlobalStats';
 import { StatEngine } from '../utils/statEngine';
 import { SkillSlot, UserProfile } from '../types/Profile';
-import { MAX_ACTIVE_SKILLS } from '../utils/constants';
 
 export function useProfileOptimizer() {
     // Same libraries and header tree mode as the profile stats (useGlobalStats).
     const { profile, libs } = useTreeModeProfile();
-    const { petLibrary, skillLibrary, mountUpgradeLibrary, itemBalancingConfig } = libs as any;
+    const { petLibrary, skillLibrary, mountUpgradeLibrary, itemBalancingConfig, skillBaseConfig } = libs as any;
+    // Equipped skill slots, SkillBaseConfig.SkillSlotsCount.
+    const skillSlots: number | undefined = skillBaseConfig?.SkillSlotsCount;
 
     // Pets + mount search lives in useLoadoutSweep (time-sliced, tree-mode aware), shown by
     // LoadoutSweepPopover from the AUTO buttons.
 
     const optimizeSkills = useCallback((): SkillSlot[] | null => {
-        if (!skillLibrary) return null;
+        if (!skillLibrary || !itemBalancingConfig || typeof skillSlots !== 'number') return null;
 
         // Build the candidate list from the library, using levels from passives
         const collection: SkillSlot[] = Object.keys(skillLibrary).map(id => ({
@@ -30,7 +31,7 @@ export function useProfileOptimizer() {
         let bestValue = -1;
 
         const n = collection.length;
-        const slotsToFill = Math.min(n, MAX_ACTIVE_SKILLS);
+        const slotsToFill = Math.min(n, skillSlots);
 
         const checkSet = (candidate: SkillSlot[]) => {
             const tempProfile: UserProfile = {
@@ -72,10 +73,10 @@ export function useProfileOptimizer() {
         }
 
         return bestSet.length > 0 ? bestSet : null;
-    }, [profile, libs, skillLibrary]);
+    }, [profile, libs, skillLibrary, itemBalancingConfig, skillSlots]);
 
     return {
         optimizeSkills,
-        isReady: !!petLibrary && !!skillLibrary && !!mountUpgradeLibrary && !!itemBalancingConfig
+        isReady: !!petLibrary && !!skillLibrary && !!mountUpgradeLibrary && !!itemBalancingConfig && typeof skillSlots === 'number'
     };
 }

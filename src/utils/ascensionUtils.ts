@@ -1,3 +1,5 @@
+import assetVersions from '../data/assetVersions.json';
+
 /**
  * Texture sheets are shipped per game-data version, but a config version does not always come with
  * one: a server side config retune produces a new config id while the client build, and therefore
@@ -8,30 +10,11 @@
  * So a config version is mapped to the newest texture version at or below it. Same client build
  * means identical sheets, and an older sheet is always better than a broken image.
  *
- * This list mirrors the folder names under `public/Texture2D`, which are also the keys of
- * `public/parsed_configs/TextureMD5Manifest.json`. To regenerate:
- *     ls public/Texture2D
- * A folder missing from this list is not a failure: the resolver simply falls back further.
+ * The folder list comes from src/data/assetVersions.json, which `npm run update-configs`
+ * regenerates from the folders under `public/Texture2D` (it runs before dev and build), so a new
+ * texture drop is picked up without touching this file.
  */
-const TEXTURE_VERSIONS = [
-    '2026_04_02',
-    '2026_05_06_11_12',
-    '2026_05_08_11_17',
-    '2026_05_08_11_30',
-    '2026_05_12_12_51',
-    '2026_05_15_20_01',
-    '2026_05_21_13_52',
-    '2026_05_21_16_30',
-    '2026_05_23_14_08',
-    '2026_07_03_12_39',
-    '2026_07_14_17_28',
-    '2026_07_15_12_09',
-    '2026_08_21_00_29',
-    '2026_08_26_08_49',
-    '2026_09_02_09_08',
-    '2026_09_08_08_08',
-    '2026_10_08_09_03',
-] as const;
+const TEXTURE_VERSIONS: readonly string[] = assetVersions.texture;
 
 /**
  * The texture folder to use for a given config version: the newest one at or below it, or the
@@ -41,7 +24,7 @@ const TEXTURE_VERSIONS = [
  */
 export function resolveTextureVersion(version?: string | null): string | undefined {
     if (!version) return undefined;
-    if (TEXTURE_VERSIONS.includes(version as typeof TEXTURE_VERSIONS[number])) return version;
+    if (TEXTURE_VERSIONS.includes(version)) return version;
     let best: string | undefined;
     for (const candidate of TEXTURE_VERSIONS) {
         if (candidate <= version) best = candidate;

@@ -9,7 +9,7 @@ import { RefreshCw, Sliders, Hash, Zap, TrendingUp, Wand2, Swords, Crosshair, Us
 import { getStatName } from '../../utils/statNames';
 import { cn } from '../../lib/utils';
 import { UserProfile } from '../../types/Profile';
-import { FAIRIES, FAIRY_MAX_LEVEL, SEASON_STATS, fairyRawBonus } from '../../utils/fairies';
+import { FAIRIES, SEASON_STATS, fairyRawBonus } from '../../utils/fairies';
 import { applyTreeMode, useStatLibraries } from '../../hooks/useGlobalStats';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { useSubstatOptimizer } from '../../hooks/useBuildOptimizer';
@@ -98,8 +98,9 @@ export default function SubstatsCalculator() {
     const [slotMode, setSlotMode] = useState<'profile' | 'max'>('profile');
     const [weaponType, setWeaponType] = useState<'profile' | 'melee' | 'ranged'>('profile');
     // Output of the optimizer, not an input: which fairy (at max level) won the search.
-    const [bestFairy, setBestFairy] = useState<FairySelection>(
-        () => ({ name: profile.misc.fairy?.name ?? null, level: FAIRY_MAX_LEVEL })
+    // `level: null` = the top level of FairyUpgradesLibrary, resolved below once it loads.
+    const [bestFairyPick, setBestFairy] = useState<{ name: FairySelection['name']; level: number | null }>(
+        () => ({ name: profile.misc.fairy?.name ?? null, level: null })
     );
     const [statAllocations, setStatAllocations] = useState<Record<string, number>>({});
     const [includeSkills, setIncludeSkills] = useState(true);
@@ -114,8 +115,13 @@ export default function SubstatsCalculator() {
     }, [enterCompareMode, exitCompareMode]);
 
     const maxFairyLevel = useMemo(
-        () => (fairyUpgrades ? Math.max(...Object.keys(fairyUpgrades).map(Number)) : FAIRY_MAX_LEVEL),
+        // Top level of FairyUpgradesLibrary; 0 until it loads (canOptimize waits for it).
+        () => (fairyUpgrades ? Math.max(...Object.keys(fairyUpgrades).map(Number)) : 0),
         [fairyUpgrades]
+    );
+    const bestFairy: FairySelection = useMemo(
+        () => ({ name: bestFairyPick.name, level: bestFairyPick.level ?? maxFairyLevel }),
+        [bestFairyPick, maxFairyLevel]
     );
 
     // Only what can actually roll on gear: tree-only stats ship with a 0..0 range.
@@ -136,16 +142,17 @@ export default function SubstatsCalculator() {
     }, [itemUnlockLibrary]);
 
     const rarSlotCount = useCallback((rarity: string | undefined): number => {
-        if (!rarity || !petUnlockLibrary) return 1;
-        return petUnlockLibrary[rarity]?.NumberOfSecondStats ?? 1;
+        // SecondaryStatPetUnlockLibrary; no slots until it loads (same as itemSlotCount).
+        if (!rarity || !petUnlockLibrary) return 0;
+        return petUnlockLibrary[rarity]?.NumberOfSecondStats ?? 0;
     }, [petUnlockLibrary]);
 
     const maxItemSlots = useMemo(() => {
-        if (!itemUnlockLibrary) return 2;
+        if (!itemUnlockLibrary) return 0;
         return Math.max(...Object.values<any>(itemUnlockLibrary).map((r) => r.NumberOfSecondStats));
     }, [itemUnlockLibrary]);
     const maxRaritySlots = useMemo(() => {
-        if (!petUnlockLibrary) return 2;
+        if (!petUnlockLibrary) return 0;
         return Math.max(...Object.values<any>(petUnlockLibrary).map((r) => r.NumberOfSecondStats));
     }, [petUnlockLibrary]);
 

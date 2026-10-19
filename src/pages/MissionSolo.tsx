@@ -144,8 +144,6 @@ function hammerStageForMissionLevel(
  * The band you are in at a given Hammer Thief level: the highest row whose threshold you have
  * passed. Its MinLevel..MaxLevel is the range of mission levels that can appear for you.
  */
-const HAMMER_MAX_LEVEL = 399;
-
 function bandForHammerLevel(
     hammerLevel: number,
     levelLibrary: Record<string, MissionLevel> | null
@@ -182,6 +180,17 @@ export default function MissionSolo() {
     const { data: ascensionStarsBonusLibrary } = useGameData<Record<string, AscensionStarsBonusRow>>('AscensionStarsBonusLibrary.json');
 
     const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;
+
+    // Both slider ceilings come from MissionLevelLibrary (same as MissionsWiki): the highest
+    // MaxLevel and the highest MinHammerThiefLevel. The page waits for it (see `loading`).
+    const maxMissionLevel = useMemo(
+        () => Math.max(1, ...Object.values(levelLibrary || {}).map((b) => b.MaxLevel)),
+        [levelLibrary]
+    );
+    const HAMMER_MAX_LEVEL = useMemo(() => {
+        const rows = Object.values(levelLibrary || {});
+        return rows.length ? Math.max(...rows.map((b) => b.MinHammerThiefLevel)) : 0;
+    }, [levelLibrary]);
 
     const handleSimulate = async (battle: MissionBattle) => {
         if (!playerStats) return;
@@ -512,7 +521,7 @@ export default function MissionSolo() {
                         <input
                             type="range"
                             min={byHammer ? 0 : 1}
-                            max={byHammer ? HAMMER_MAX_LEVEL : 60}
+                            max={byHammer ? HAMMER_MAX_LEVEL : maxMissionLevel}
                             value={byHammer ? hammerLevel : missionLevel}
                             onChange={(e) =>
                                 byHammer
@@ -523,7 +532,7 @@ export default function MissionSolo() {
                         />
                         <div className="flex justify-between text-[10px] font-black text-text-muted uppercase tracking-tighter">
                             <span>{byHammer ? formatStage(0) : 'Level 1'}</span>
-                            <span>{byHammer ? formatStage(HAMMER_MAX_LEVEL) : 'Level 60'}</span>
+                            <span>{byHammer ? formatStage(HAMMER_MAX_LEVEL) : `Level ${maxMissionLevel}`}</span>
                         </div>
 
                         {byHammer && hammerBand && (

@@ -18,18 +18,24 @@ export class RandomPCG {
     private state: bigint;
 
     constructor(seed: bigint | number) {
-        // Standard PCG seeding: state = 0 -> advance -> state += seed -> advance, which
-        // collapses to the closed form below.
+        // ctor(ulong) 0x72CB814 / CreateFromSeed 0x72CB9CC: state = seed * MULT + 0x1A08EE1184BA6D32,
+        // which is INC * MULT + INC: the standard PCG seeding collapsed to one step.
         const s = BigInt(seed) & MASK64;
         this.state = (s * MULT + ((INC * MULT + INC) & MASK64)) & MASK64;
     }
 
+    /**
+     * NextUInt (0x72CBA4C) / NextF64 (0x72CBEAC): the rotation is assembled with ADD, not OR
+     * (`lsr w12, w10, w13; lsl w10, w10, -w13; add w0, w10, w12`). For rot != 0 the two halves
+     * do not overlap and ADD equals OR; for rot == 0 both shifts are 0 and the output is
+     * 2 * xorshifted mod 2^32, which is what the game returns on 1 draw in 32.
+     */
     nextUInt32(): number {
         const old = this.state;
         this.state = (old * MULT + INC) & MASK64;
         const xorshifted = Number(((old >> 18n) ^ old) >> 27n & 0xffffffffn);
         const rot = Number(old >> 59n);
-        return ((xorshifted >>> rot) | (xorshifted << (32 - rot))) >>> 0;
+        return ((xorshifted >>> rot) + ((xorshifted << ((32 - rot) & 31)) >>> 0)) >>> 0;
     }
 
     /** Uniform [0,1), 32 bits of entropy — matches the game's NextF64 as used in combat. */

@@ -61,13 +61,15 @@ interface BuiltScene {
 /**
  * The equipped mount's collider (BattleModelExtensions.UpdateMount, 0x77E96EC, run by UpdatePlayer
  * in main battles and dungeons): Radius = ColliderRadius, CenterOfMass and UnitOffSet from the
- * MountLibrary row. Without a mount the unit keeps the defaults (radius 0.35, COM (0, 0.45)).
- * The radius is part of every range check, so a bigger mount reaches (and is reached) further.
+ * MountLibrary row. Without a mount the unit keeps the defaults (radius 0.35, COM (0, 0.45),
+ * UnitOffSet (0, 0)). The radius is part of every range check, so a bigger mount reaches (and is
+ * reached) further; UnitOffSet only moves the muzzle of ranged shots (ExecuteAttack 0x77F58C8).
+ * PvP (PvpCombatScene.SetupPlayer 0x7852A88) and missions never call UpdateMount.
  */
 export function mountCollider(
     profile: UserProfile | null,
     libs: Pick<LibraryData, 'mountLibrary'>
-): { radius: number; centerOfMass: { x: number; y: number } } | null {
+): { radius: number; centerOfMass: { x: number; y: number }; unitOffset: { x: number; y: number } } | null {
     const active = profile?.mount?.active;
     if (!active || !libs.mountLibrary) return null;
     const row = libs.mountLibrary[`{'Rarity': '${active.rarity}', 'Id': ${active.id}}`];
@@ -75,6 +77,7 @@ export function mountCollider(
     return {
         radius: row.ColliderRadius,
         centerOfMass: { x: row.CenterOfMass?.X ?? 0, y: row.CenterOfMass?.Y ?? 0.45 },
+        unitOffset: { x: row.UnitOffset?.X ?? 0, y: row.UnitOffset?.Y ?? 0 },
     };
 }
 
@@ -93,7 +96,8 @@ function buildScene(
     const scene = new CombatScene({ seed, skillSystem: (s) => mgr.execute(s) });
 
     const isMission = mode === 'mission';
-    const defaultPos = isMission ? missionSoloPlayerPosition(!!playerStats.isRangedWeapon) : { x: 0, y: 0 };
+    // SetupPlayers groups participants by the combat (skinned) weapon row's IsRanged (0x780EEA4).
+    const defaultPos = isMission ? missionSoloPlayerPosition(!!(playerStats.combatIsRanged ?? playerStats.isRangedWeapon)) : { x: 0, y: 0 };
     const spec = playerUnitSpec(playerStats as never, {
         x: debugConfig?.playerStartPos ?? defaultPos.x,
         y: defaultPos.y,
@@ -106,6 +110,7 @@ function buildScene(
         if (mount) {
             spec.radius = mount.radius;
             spec.centerOfMass = mount.centerOfMass;
+            spec.unitOffset = mount.unitOffset;
         }
     }
     if (debugConfig?.playerSpeed !== undefined) spec.stats.moveSpeed = debugConfig.playerSpeed;
@@ -365,11 +370,13 @@ export function simulateMissionBattleMulti(
     runs: number = 100,
     debugConfig?: DebugConfig
 ): BattleResult | null {
-    if (!mission) return null;
-    const levelMulti = libs.missionBaseConfig?.HealthAndDamageLevelMultiplier ?? 1.524;
+    // MissionBaseConfig drives the level multiplier and the timer: no result until it loads.
+    const levelMulti = libs.missionBaseConfig?.HealthAndDamageLevelMultiplier;
+    const timerSeconds = libs.missionBaseConfig?.MissionBattleMatchTimerSeconds;
+    if (!mission || typeof levelMulti !== 'number' || typeof timerSeconds !== 'number') return null;
     // MissionCombatScene.BattleTimer = MissionBattleMatchTimerSeconds, minus dt before each frame;
-    // at <= 0 the mission is LOST (Update 0x780DE54): 180 s -> 1800 frames.
-    const maxTicks = timerFrames(libs.missionBaseConfig?.MissionBattleMatchTimerSeconds ?? 180);
+    // at <= 0 the mission is LOST (Update 0x780DE54): 180 s in 2026_10_08_09_03 -> 1800 frames.
+    const maxTicks = timerFrames(timerSeconds);
     const enemyLibs = {
         enemyLibrary: libs.enemyLibrary as never,
         weaponLibrary: libs.weaponLibrary as never,

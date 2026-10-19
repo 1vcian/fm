@@ -161,7 +161,7 @@ export default function Clan() {
 
     /**
      * Level cap per flattened globalId, from utils/clanTechStacking.clanNodeCaps: the same
-     * flattening as `categories` below and as ClanContext, with the same `?? 20` fallback, so they
+     * flattening as `categories` below and as ClanContext, with the same MaxLevel read (clanNodeMaxLevel), so they
      * cannot disagree. Caps of the clan's published row: infinite nodes are open once THAT row is
      * fully maxed.
      */
@@ -329,7 +329,7 @@ export default function Clan() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                     {cat.nodes.map(({ globalId, type }: { globalId: number; type: string }) => {
                                         const def = guildUpgradeLibrary?.[type];
-                                        const maxLevel = def?.MaxLevel ?? 20;
+                                        const maxLevel = def?.MaxLevel ?? 0;
                                         // Editing bound: MaxLevel, or open-ended for an infinite node
                                         // once the whole tree is maxed (GuildTechTreeHelpers.IsInfinite).
                                         const cap = editCaps.caps.get(globalId) ?? maxLevel;

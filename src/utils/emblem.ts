@@ -32,6 +32,8 @@
  * (reverseForge/scratch/clan_badge_roundtrip.ts).
  */
 
+import assetVersions from '../data/assetVersions.json';
+
 /* -------------------------------------------------------------------------- */
 /* Colours — straight out of GuildEmblemColors.json                           */
 /* -------------------------------------------------------------------------- */
@@ -205,30 +207,25 @@ export const EMBLEM_ICON_COUNT = EMBLEM_ICON_SHEET.columns * EMBLEM_ICON_SHEET.r
  * The Texture2D/ folders that actually ship the three emblem sheets, newest
  * first.
  *
- * This is NOT versions.json: that lists 27 config versions and only these 17
- * have a Texture2D/ folder at all. An <img> or a CSS background that 404s
- * cannot report the failure, so on the other 10 versions every emblem in the
- * app would silently stay blank with nothing to retry — which is exactly what
- * Emblems.tsx did before this list existed.
+ * This is NOT versions.json: not every config version has a Texture2D/
+ * folder. An <img> or a CSS background that 404s cannot report the failure,
+ * so on those versions every emblem in the app would silently stay blank
+ * with nothing to retry, which is exactly what Emblems.tsx did before this
+ * list existed.
  *
- * reverseForge/scratch/clan_badge_roundtrip.ts checks it against the real
- * contents of public/Texture2D/, so a new texture drop fails a check instead
- * of letting the list rot.
+ * The list comes from src/data/assetVersions.json, which `npm run update-configs` regenerates
+ * from the folders under public/Texture2D that hold all three sheets, so a new texture drop is
+ * picked up without a code edit. reverseForge/scratch/clan_badge_roundtrip.ts still checks it
+ * against the real folder contents.
  */
-export const EMBLEM_ART_VERSIONS: readonly string[] = [
-    '2026_10_08_09_03', '2026_09_08_08_08', '2026_09_02_09_08', '2026_08_26_08_49',
-    '2026_08_21_00_29', '2026_07_15_12_09', '2026_07_14_17_28', '2026_07_03_12_39',
-    '2026_05_23_14_08', '2026_05_21_16_30', '2026_05_21_13_52', '2026_05_15_20_01',
-    '2026_05_12_12_51', '2026_05_08_11_30', '2026_05_08_11_17', '2026_05_06_11_12',
-    '2026_04_02',
-];
+export const EMBLEM_ART_VERSIONS: readonly string[] = [...assetVersions.emblem].reverse();
 
 /**
  * Fallback art version: the newest one that carries the sheets.
  *
  * Falling back is free — EmblemShapes.png (md5 3f8ec895), EmblemIcons.png
- * (8f4fbf3f) and EmblemHolder.png (4517f9c2) are byte-identical in all 17
- * folders that have them, so which version an emblem is drawn from cannot
+ * (8f4fbf3f) and EmblemHolder.png (4517f9c2) are byte-identical in all the
+ * folders shipped so far, so which version an emblem is drawn from cannot
  * change how it looks.
  */
 export const EMBLEM_FALLBACK_VERSION = EMBLEM_ART_VERSIONS[0];

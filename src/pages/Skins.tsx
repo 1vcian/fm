@@ -110,13 +110,13 @@ export default function Skins() {
                 
                 if (age === -1000) {
                     lookup[idx].melee = { 
-                        windup: data.WindupTime ?? 0.5, 
-                        duration: data.AttackDuration || 1.5 
+                        windup: data.WindupTime,
+                        duration: data.AttackDuration
                     };
                 } else if (age === -1001) {
                     lookup[idx].ranged = { 
-                        windup: data.WindupTime ?? 0.5, 
-                        duration: data.AttackDuration || 1.5 
+                        windup: data.WindupTime,
+                        duration: data.AttackDuration
                     };
                 }
             }
@@ -145,13 +145,15 @@ export default function Skins() {
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
-            <BreakpointWikiModal
-                isOpen={breakpointModal.isOpen}
-                onClose={() => setBreakpointModal({ isOpen: false })}
-                weaponName={breakpointModal.weapon?.Name || 'Skin'}
-                weaponAttackDuration={breakpointModal.weapon?.AttackDuration || 1.5}
-                weaponWindupTime={breakpointModal.weapon?.WindupTime || 0.4}
-            />
+            {breakpointModal.weapon && (
+                <BreakpointWikiModal
+                    isOpen={breakpointModal.isOpen}
+                    onClose={() => setBreakpointModal({ isOpen: false })}
+                    weaponName={breakpointModal.weapon.Name || 'Skin'}
+                    weaponAttackDuration={breakpointModal.weapon.AttackDuration}
+                    weaponWindupTime={breakpointModal.weapon.WindupTime}
+                />
+            )}
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
                     Skins & Sets
@@ -230,7 +232,7 @@ export default function Skins() {
                                             {setDisplayName(setId)}
                                         </h2>
                                         <p className="text-xs text-text-muted mt-1">
-                                            Collect {setInfo.BonusTiers[0]?.RequiredPieces || 2} pieces to activate bonuses.
+                                            Collect {setInfo.BonusTiers[0]?.RequiredPieces} pieces to activate bonuses.
                                         </p>
                                     </div>
                                 </div>

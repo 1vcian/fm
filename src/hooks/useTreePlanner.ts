@@ -252,7 +252,7 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
             }
 
             const nodeConfig = techTreeLibrary[step.nodeType!];
-            const maxLvl = nodeConfig?.MaxLevel || 5;
+            const maxLvl = nodeConfig?.MaxLevel ?? 0;
             const currentLvl = (virtualTree as any)[treeName!]?.[step.nodeId!] || 0;
 
             // Check prerequisites

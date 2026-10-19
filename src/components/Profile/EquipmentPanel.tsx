@@ -287,6 +287,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                         )}
                         <div className="flex items-center gap-2 bg-bg-input/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/50">
                             <AscensionStars
+                                type="Forge"
                                 value={globalAscensionLevel}
                                 onChange={(val) => {
                                     if (isComparing) {
@@ -508,7 +509,8 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
     const handleLevelChange = (delta: number, e: React.MouseEvent) => {
         e.stopPropagation();
         if (!mount) return;
-        const maxLevel = mountUpgradeLibrary?.[mount.rarity]?.LevelInfo?.length || 100;
+        const maxLevel = mountUpgradeLibrary?.[mount.rarity]?.LevelInfo?.length; // MountUpgradeLibrary
+        if (typeof maxLevel !== 'number') return;
         const newLevel = Math.max(1, Math.min(maxLevel, mount.level + delta));
         if (newLevel === mount.level) return;
         const updatedMount = { ...mount, level: newLevel };

@@ -173,12 +173,12 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         if (!dropData) return [0];
 
         const unlocked: number[] = [];
-        for (let i = 0; i < 10; i++) {
-            const chance = dropData[`Age${i}`] || 0;
-            if (chance > 0) {
-                unlocked.push(i);
-            }
+        // Every AgeN column of the ItemAgeDropChancesLibrary row (the config's own age count).
+        for (const [k, v] of Object.entries<any>(dropData)) {
+            const m = /^Age(\d+)$/.exec(k);
+            if (m && (Number(v) || 0) > 0) unlocked.push(Number(m[1]));
         }
+        unlocked.sort((x, y) => x - y);
         return unlocked.length > 0 ? unlocked : [0];
     }, [ageDropChances, profile.misc.forgeLevel, unlockAll]);
 
@@ -418,17 +418,18 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         if (!weaponData) return null;
 
         const projId = weaponData.ProjectileId;
-        const hasProjectile = typeof projId === 'number' && projId > 0;
-        const attackRange = weaponData.AttackRange || 1;
+        // A projectile exists only when the row IsRanged with ProjectileId >= 0 (as in statEngine).
+        const hasProjectile = !!weaponData.IsRanged && typeof projId === 'number' && projId >= 0;
+        const attackRange: number = weaponData.AttackRange; // WeaponLibrary row
 
         const info = {
-            // Ranged = AttackRange >= 1, Melee = AttackRange < 1
-            isRanged: attackRange >= 1,
+            // WeaponLibrary.IsRanged, as statEngine.applyCombatWeapon reads it.
+            isRanged: !!weaponData.IsRanged,
             // For saved items, use the saved item's data if available, or fallback to library
             // Logic handled by using selectedItemData in base stats, but weapon info comes from library
             attackRange,
-            windupTime: weaponData.WindupTime || 0.5,
-            attackDuration: weaponData.AttackDuration || 1,
+            windupTime: weaponData.WindupTime,
+            attackDuration: weaponData.AttackDuration,
             isAiming: !!weaponData.IsAiming,
             projectileSpeed: 0,
             projectileRadius: 0,
@@ -453,22 +454,22 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     const skinWeaponInfo = useMemo(() => {
         if (slot !== 'Weapon' || !weaponLibrary || skinIdx === null) return null;
 
-        // Determine if we should use 999 (Melee) or 1000 (Ranged)
-        // Usually, the skin matches the base weapon's "rangedness" in terms of stats used.
+        // GetSkinnedItemId (0x77FB0B0): the skin row is ItemId(-1001 if the equipped weapon
+        // IsRanged else -1000, Weapon, skin idx), the same lookup statEngine.applyCombatWeapon does.
         const baseIsRanged = weaponInfo?.isRanged ?? false;
-        const skinAge = baseIsRanged ? 1000 : 999;
+        const skinAge = baseIsRanged ? -1001 : -1000;
 
         const key = `{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${skinIdx}}`;
         const skinData = weaponLibrary[key];
         if (!skinData) return null;
 
         const projId = skinData.ProjectileId;
-        const hasProjectile = typeof projId === 'number' && projId > 0;
+        const hasProjectile = !!skinData.IsRanged && typeof projId === 'number' && projId >= 0;
 
         const info = {
-            attackRange: skinData.AttackRange || 0,
-            windupTime: skinData.WindupTime || 0.5,
-            attackDuration: skinData.AttackDuration || 1,
+            attackRange: skinData.AttackRange,
+            windupTime: skinData.WindupTime,
+            attackDuration: skinData.AttackDuration,
             isAiming: !!skinData.IsAiming,
             projectileSpeed: 0,
             projectileRadius: 0,

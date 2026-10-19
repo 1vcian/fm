@@ -18,6 +18,7 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
     const { profile, updateNestedProfile } = useProfile();
     const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const {
+        ready,
         level, setLevel,
         progress, setProgress,
         ticketCount, setTicketCount,
@@ -35,7 +36,9 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
     const skillWarBoost = warPointBonuses?.summon || 0;
 
     // Target Calculator State
-    const [targetLevel, setTargetLevel] = useState(maxPossibleLevel || 100);
+    // Defaults to the top level of SkillSummonConfig.Levels until the player picks one.
+    const [pickedTargetLevel, setTargetLevel] = useState<number | null>(null);
+    const targetLevel = pickedTargetLevel ?? maxPossibleLevel;
     // Defaults to the last ascension in AscensionConfigsLibrary until the player picks one.
     const [pickedTargetAscension, setTargetAscension] = useState<number | null>(null);
     const targetAscension = pickedTargetAscension ?? maxAscension;
@@ -49,6 +52,16 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
         Ultimate: '#FF5D5D',  // Age 5 / Ultimate
         Mythic: '#D55DFF',    // Age 6 / Interstellar / Mythic?? (Checking config: Interstellar is D55DFF, Mythic is D55DFF). OK.
     };
+
+    // Costs, summon size and levels all come from SkillSummonConfig: nothing to show until it loads.
+    if (!ready) {
+        return (
+            <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">
+                <RefreshCcw className="w-8 h-8 opacity-50 animate-spin" />
+                <p>Loading game data</p>
+            </div>
+        );
+    }
 
 
     return (
