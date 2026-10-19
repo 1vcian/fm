@@ -119,6 +119,29 @@ export function skillCastTimes(battleSeconds: number, cooldownSeconds: number, a
 export const BUFF_SKILL_TYPES: ReadonlySet<string> = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
 const BUFF_SKILLS = BUFF_SKILL_TYPES;
 
+/**
+ * Where each skill's damage is centered and how it is delivered, from its SkillBuilder (RVAs in
+ * spawnEffects below). "the enemies" = CreateSkillEffectEntities' center (0x77F1900): the mean
+ * Position of the opposite non-summon units with |x - player.x| < 10, else player + 10 forward.
+ * Area damage hits units whose center is inside the radius, on the pulse or the final pulse
+ * (HandleAreaProjectiles 0x77F3840: Timer += dt, final pulse when Timer > Duration).
+ */
+export const SKILL_EPICENTER: Readonly<Record<string, string>> = {
+    Arrows: '3 arcing shots from 12 behind you, at each enemy',
+    Shuriken: '5 arcing shots from 12 behind you, at each enemy',
+    Shout: 'area r10 at 5 in front of you, a pulse every 1.5/8 s for 1.5 s',
+    Meteorite: '5 areas r5 around the enemies, each lands after 1 s + a random 0 to 1 s',
+    Stampede: 'area r3 from 15 behind you, runs forward at 8/s, a pulse every 0.25 s for 8 s',
+    Thorns: 'area r3 on the enemies, a pulse every 0.5 s, then a final hit 1.5 s after the cast',
+    Bomb: 'area r4 on the enemies, lands after 1 s',
+    Worm: 'area r4 on the enemies, lands after 0.1 s',
+    Lightning: '5 areas r3 around the enemies, each lands after a random 0 to 0.5 s',
+    RainOfArrows: 'area r6 on the enemies, a pulse every 0.2 s after a 1 s delay, ends 4 s after the cast',
+    StrafeRun: 'area r3 on the enemies, a pulse every 0.25 s for 1 s',
+    CannonBarrage: '3 areas r6 around the enemies, each lands after 1 s + a random 0 to 0.5 s',
+    Drone: 'a drone from 10 behind you that flies in and shoots for its duration',
+};
+
 /** GetSkillDamageCount (0x77EDA78): how many pieces the skill's damage is split into. */
 const DAMAGE_COUNT: Record<string, number> = {
     Arrows: 3,

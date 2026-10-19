@@ -87,6 +87,7 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
+    const { data: skinUpgradeLibrary } = useGameData<any>('SkinUpgradeLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const libs: LibraryData = useMemo(() => ({
@@ -95,14 +96,14 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
         techTreeLibrary, techTreePositionLibrary,
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
-        skinsLibrary, setsLibrary, ascensionConfigsLibrary
+        skinsLibrary, setsLibrary, skinUpgradeLibrary, ascensionConfigsLibrary
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary,
         skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
         techTreeLibrary, techTreePositionLibrary,
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
-        skinsLibrary, setsLibrary, ascensionConfigsLibrary
+        skinsLibrary, setsLibrary, skinUpgradeLibrary, ascensionConfigsLibrary
     ]);
 
 

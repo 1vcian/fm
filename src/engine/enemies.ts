@@ -191,6 +191,33 @@ export interface DungeonLevelRow {
 }
 
 /**
+ * Simulator-only "test against dummy" target, not a game unit: infinite HP, it walks at the
+ * default unit move speed like every enemy (so it reaches a ranged player too), and it swings
+ * the bare-handed enemy weapon (DEFAULT_WEAPON row of WeaponLibrary). Every hit takes the
+ * player straight down to a quarter of HpMax (up to 75% of HpMax per hit, never below 25%), so
+ * regen, lifesteal, block, dodge and reflect all stay visible for as long as the test runs.
+ */
+export const TEST_DUMMY_HIT_FRACTION = 0.75;
+export const TEST_DUMMY_FLOOR_FRACTION = 0.25;
+
+export function testDummySpec(libs: EnemyConfigLibs): WaveEnemySpec {
+    const w = weaponLoadout(DEFAULT_WEAPON.Age, DEFAULT_WEAPON.Idx, libs);
+    const HUGE = 1e18;
+    return {
+        offset: { x: 0, y: 0 },
+        stats: { hpMax: HUGE, hpMaxNoMulti: HUGE, dmg: 0 },
+        hp: HUGE,
+        attackRange: w.attackRange,
+        windupTime: w.windupTime,
+        attackDuration: w.attackDuration,
+        projectile: w.projectile,
+        tag: 'dummy',
+        weaponSpriteKey: w.weaponSpriteKey,
+        testDummy: { hitFraction: TEST_DUMMY_HIT_FRACTION, floorFraction: TEST_DUMMY_FLOOR_FRACTION },
+    };
+}
+
+/**
  * The Hammer Thief (HammerThiefDungeonBattleModel.SetupEnemies, 0x7802464): ONE unit, no
  * weapon item, IsHammerThief set, at (player.X + 15, 0), with hardcoded combat data:
  * Radius 1.0, AttackRange 0.5 (F64.Ratio(1,2)), WindUp 0.8 (Ratio(48,60)), AttackDuration 1.5

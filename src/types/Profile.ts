@@ -9,11 +9,30 @@ export interface ItemSlot {
         statId: string;
         value: number;
     }[];
-    skin?: {
-        idx: number;
-        type?: string; // Cache the skin type (e.g. "Helmet", "Armour") for easier lookup
-        stats: { [statType: string]: number };
-    };
+    skin?: EquippedSkin;
+}
+
+/**
+ * A skin as worn by an item. `stats` are the rolled values (SkinsLibrary PossibleStats range),
+ * `level` the skin's upgrade level (absent = 0, what every skin had before levels were tracked).
+ * `savedId` links it to the archive entry it was equipped from (profile.skins.saved).
+ */
+export interface EquippedSkin {
+    idx: number;
+    type?: string; // Cache the skin type (e.g. "Helmet", "Armour") for easier lookup
+    stats: { [statType: string]: number };
+    level?: number;
+    savedId?: string;
+}
+
+/** One skin in the skin archive: a SkinsLibrary SkinId with its rolled stats and level. */
+export interface SavedSkin {
+    id: string;
+    type: string; // SkinsLibrary SkinId.Type: "Weapon" | "Helmet" | "Armour"
+    idx: number;
+    stats: { [statType: string]: number };
+    level: number;
+    customName?: string;
 }
 
 export interface PetSlot {
@@ -97,6 +116,11 @@ export interface UserProfile {
         active: MountSlot | null;
         collection: { [key: string]: MountSlot };
         savedBuilds: MountSlot[];
+    };
+
+    /** Skin archive. Optional: profiles saved before it existed load without it. */
+    skins?: {
+        saved: SavedSkin[];
     };
 
     skills: {
@@ -215,6 +239,9 @@ export const INITIAL_PROFILE: UserProfile = {
         active: null,
         collection: {},
         savedBuilds: [],
+    },
+    skins: {
+        saved: [],
     },
     skills: {
         equipped: [],

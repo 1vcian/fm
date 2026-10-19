@@ -22,7 +22,7 @@
  */
 import { CombatScene } from './scene';
 import { SkillManager, type SkillSpec } from './skills';
-import { WaveRunner, mainBattleFormation } from './modes';
+import { WaveRunner, mainBattleFormation, setupPvp, timerFrames, type PvpHpConfig, type PvpLoadout } from './modes';
 import type { UnitSpec } from './types';
 
 /** Seconds discarded at the start of a steady-state run. */
@@ -251,4 +251,96 @@ export function engineCheck(unit: UnitSpec, skills: SkillSpec[], o: EngineCheckO
     o.onProgress?.(1);
     const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
     return { tested, dps, hps, openingDps, targets, seeds, seconds, ms: t1 - t0 };
+}
+
+/** One skill in a PvP run against the dummy. */
+export interface PvpSkillTrace {
+    id: string;
+    slot: number;
+    /** Ticks (0.1 s each) on which the skill was activated. */
+    casts: number[];
+    /** Damage skills: its own hits on the dummy inside the timer. Buffs: the part they added to weapon hits. */
+    damage: number;
+    hits: number;
+    /** Tick of the last hit inside the timer, -1 if none. */
+    lastHitTick: number;
+    /** Casts after the last hit that landed: their damage never reached the dummy before the timer. */
+    wastedCasts: number;
+    /** Buffs: ticks the buff was active inside the timer. */
+    activeTicks: number;
+    /** Ticks from the first cast to its first hit on the dummy (the effect's travel or fall time), -1 if none. */
+    firstHitDelayTicks: number;
+}
+
+export interface PvpSkillRunResult {
+    timerSeconds: number;
+    frames: number;
+    skills: PvpSkillTrace[];
+    /** Sum of the damage skills' own damage (skills never crit, so this is deterministic per seed). */
+    skillDamage: number;
+}
+
+/**
+ * A PvP battle against a dummy, for the skill cycle: setupPvp with the player's loadout on both
+ * sides (the shared HP multiplier, the 18 spawn gap and the opponent walking in like a mirror
+ * would), then the opponent is made unkillable, harmless and statless (no dodge, block or reflect).
+ * It runs PvpMatchTimerSeconds of frames (timerFrames) in runPvp's order: tick, then the player's
+ * TryActivateSkills. Every skill hit and every cast is traced, so a cast whose meteor or projectile
+ * lands after the timer shows as wasted.
+ */
+export function pvpSkillRun(loadout: PvpLoadout, skills: SkillSpec[], cfg: PvpHpConfig, seed = 1): PvpSkillRunResult {
+    const sm = new SkillManager();
+    for (const s of skills) sm.addSkill({ ...s, isAlly: true });
+    const scene = new CombatScene({ seed, skillSystem: (s) => sm.execute(s) });
+    const dummy: PvpLoadout = {
+        ...loadout,
+        stats: { dmg: 0, moveSpeed: loadout.stats.moveSpeed },
+        petCount: 0, skillCount: 0, hasMount: false, tag: 'dummy',
+    };
+    const setup = setupPvp(loadout, dummy, cfg, scene);
+    const target = setup.enemy;
+    target.baseHpMax = HUGE;
+    target.stats.hpMax = HUGE;
+    target.hp = HUGE;
+
+    const frames = timerFrames(setup.timerSeconds);
+    const order = sm.snapshot();
+    const traces: PvpSkillTrace[] = order.map((s, i) => ({
+        id: s.id, slot: skills.find(k => k.id === s.id)?.slot ?? i, casts: [], damage: 0, hits: 0,
+        lastHitTick: -1, wastedCasts: 0, activeTicks: 0, firstHitDelayTicks: -1,
+    }));
+    const firstHit = traces.map(() => -1);
+    const byId = new Map(traces.map(t => [t.id, t]));
+    for (let t = 0; t < frames; t++) {
+        scene.tick();
+        for (const e of scene.tickEvents) {
+            if (e.heal || e.dodged || e.targetId !== target.id) continue;
+            if (e.source === 'skill' && e.skillId) {
+                const tr = byId.get(e.skillId);
+                if (tr) {
+                    tr.damage += e.dmg; tr.hits++; tr.lastHitTick = scene.tickCount;
+                    const i = traces.indexOf(tr);
+                    if (firstHit[i] < 0) firstHit[i] = scene.tickCount;
+                }
+            }
+            if (e.buffDmg) for (const k in e.buffDmg) {
+                const tr = byId.get(k);
+                if (tr) { tr.damage += e.buffDmg[k]; tr.hits++; tr.lastHitTick = scene.tickCount; }
+            }
+        }
+        const before = sm.snapshot();
+        sm.tryAutoActivate(scene, true);
+        const after = sm.snapshot();
+        after.forEach((s, i) => {
+            if (s.state === 'active' && before[i].state !== 'active') traces[i].casts.push(scene.tickCount);
+            if (s.state === 'active') traces[i].activeTicks++;
+        });
+    }
+    let skillDamage = 0;
+    for (const [i, tr] of traces.entries()) {
+        tr.wastedCasts = tr.casts.filter(c => c > tr.lastHitTick).length;
+        if (firstHit[i] >= 0 && tr.casts.length > 0) tr.firstHitDelayTicks = firstHit[i] - tr.casts[0];
+        if (!order[i].isBuff) skillDamage += tr.damage;
+    }
+    return { timerSeconds: setup.timerSeconds, frames, skills: traces, skillDamage };
 }

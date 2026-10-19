@@ -1,10 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
     ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
-    ArrowLeftRight, Info, Sword, RotateCcw, Layers, Trophy
+    ArrowLeftRight, Info, Layers
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -17,12 +17,9 @@ import { getStatName } from '../../utils/statNames';
 import { useComparison } from '../../context/ComparisonContext';
 import { useProfile } from '../../context/ProfileContext';
 import { calculateStats, AggregatedStats } from '../../utils/statEngine';
+import { comparisonSideProfile } from './DummyTestButton';
 import { useTreeMode } from '../../context/TreeModeContext';
-import { UserProfile, PetSlot, MountSlot, SkillSlot } from '../../types/Profile';
-import { LoadoutSweepPopover, AutoLoadoutMetric } from './LoadoutSweepPopover';
-import { BuildOptimizerModal } from './BuildOptimizerModal';
-import type { Candidate } from '../../optimizer/buildOptimizer';
-import { LoadoutCombo } from '../../hooks/useLoadoutSweep';
+import { UserProfile } from '../../types/Profile';
 import { getAveragePerfection } from '../../utils/itemCalculations';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
@@ -436,6 +433,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
 
     const [openSection, setOpenSection] = useState<string | null>(null);
     const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits' | 'passives'>(defaultTab);
+    const comparison = useComparison();
     const {
         isComparing,
         originalItems,
@@ -458,9 +456,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         testUseSkinWindup,
         originalFairy,
         testFairy,
-        updateTestPet,
-        updateTestMount,
-        updateTestSkill,
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
@@ -469,84 +464,11 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         setIsCompactStats,
         excludeSubstats,
         setExcludeSubstats
-    } = useComparison();
+    } = comparison;
     const stats = useGlobalStats(excludeSubstats);
     const fullStats = useGlobalStats(false);
     const techModifiers = useTreeModifiers() as Record<string, number>;
     const { profile, profiles, activeProfileId } = useProfile();
-
-    // --- Auto-optimize the Test build (drives the strip's AUTO buttons) --------
-    // Each AUTO button runs the loadout sweep (useLoadoutSweep) over the Test build and opens
-    // a popover with the top results; a clicked row is loaded into Test.
-    // undefined = nothing to revert; null = revert to "no mount equipped"
-    const [previousTestPets, setPreviousTestPets] = useState<PetSlot[] | null>(null);
-    const [previousTestMount, setPreviousTestMount] = useState<MountSlot | null | undefined>(undefined);
-    // On: score saved builds at their own level. Off: score everything at level 1.
-    const [respectSavedLevels, setRespectSavedLevels] = useState(true);
-    // The open popover: its metric and the Test build snapshot it searches over.
-    const [autoRequest, setAutoRequest] = useState<{ metric: AutoLoadoutMetric; base: UserProfile } | null>(null);
-
-    // Saved builds are global, so the sweep has candidates whenever either pool is non-empty.
-    const autoOptimizeDisabled =
-        (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
-
-    const buildTestBase = (): UserProfile => {
-        // Evaluate against the Test build's own items/mount/ascensions, keeping
-        // everything the Test side doesn't override (tech tree, passives, saved builds).
-        // The header's tree mode is applied inside the sweep.
-        return {
-            ...profile,
-            items: testItems ?? profile.items,
-            mount: { ...profile.mount, active: testMount ?? profile.mount.active },
-            pets: { ...profile.pets, active: testPets ?? profile.pets.active },
-            skills: { ...profile.skills, equipped: testSkills ?? profile.skills.equipped },
-            misc: {
-                ...profile.misc,
-                forgeAscensionLevel: testForgeAscension ?? profile.misc.forgeAscensionLevel,
-                mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel,
-                petAscensionLevel: testPetAscension ?? profile.misc.petAscensionLevel,
-                skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel,
-                useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup,
-                fairy: testFairy ?? profile.misc.fairy,
-            },
-        };
-    };
-
-    const handleAutoOptimizeTest = (metric: AutoLoadoutMetric) => {
-        const testBase = buildTestBase();
-        // Same metric again closes the popover; another metric re-ranks a fresh search.
-        setAutoRequest(prev => (prev?.metric === metric ? null : { metric, base: testBase }));
-    };
-
-    const handleLoadIntoTest = (combo: LoadoutCombo) => {
-        // Remember the Test loadout from before the first row loaded, for REVERT.
-        if (!previousTestPets && previousTestMount === undefined) {
-            setPreviousTestPets(testPets ? [...testPets] : [...profile.pets.active]);
-            setPreviousTestMount(testMount);
-        }
-        updateTestPet(combo.petSet);
-        updateTestMount(combo.mount);
-    };
-
-    const closeAutoPopover = useCallback(() => setAutoRequest(null), []);
-
-    // AUTO BEST: the build optimizer (BuildOptimizerModal) over a snapshot of the Test build.
-    const [optimizerBase, setOptimizerBase] = useState<UserProfile | null>(null);
-    const [previousTestSkills, setPreviousTestSkills] = useState<SkillSlot[] | null>(null);
-    const handleLoadBuildIntoTest = (c: Candidate) => {
-        if (!previousTestSkills) setPreviousTestSkills(testSkills ? [...testSkills] : [...profile.skills.equipped]);
-        handleLoadIntoTest({ petSet: c.petSet, mount: c.mount });
-        updateTestSkill(c.skills);
-    };
-
-    const handleRevertTest = () => {
-        if (previousTestPets) updateTestPet(previousTestPets);
-        if (previousTestMount !== undefined) updateTestMount(previousTestMount);
-        if (previousTestSkills) updateTestSkill(previousTestSkills);
-        setPreviousTestPets(null);
-        setPreviousTestMount(undefined);
-        setPreviousTestSkills(null);
-    };
 
     const { treeMode, setTreeMode } = useTreeMode();
 
@@ -579,40 +501,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
 
         const effectiveTechTree = applyTreeMode(profile, treeMode, libs).techTree;
 
-        const originalProfile = {
-            ...profile,
-            items: originalItems,
-            techTree: effectiveTechTree,
-            mount: { ...profile.mount, active: originalMount },
-            pets: { ...profile.pets, active: originalPets || profile.pets.active },
-            skills: { ...profile.skills, equipped: originalSkills || profile.skills.equipped },
-            misc: {
-                ...profile.misc,
-                forgeAscensionLevel: originalForgeAscension ?? profile.misc.forgeAscensionLevel,
-                mountAscensionLevel: originalMountAscension ?? profile.misc.mountAscensionLevel,
-                petAscensionLevel: originalPetAscension ?? profile.misc.petAscensionLevel,
-                skillAscensionLevel: originalSkillAscension ?? profile.misc.skillAscensionLevel,
-                useSkinWindup: originalUseSkinWindup ?? profile.misc.useSkinWindup,
-                fairy: originalFairy ?? profile.misc.fairy
-            }
-        };
-        const testProfile = {
-            ...profile,
-            items: testItems,
-            techTree: effectiveTechTree,
-            mount: { ...profile.mount, active: testMount },
-            pets: { ...profile.pets, active: testPets || profile.pets.active },
-            skills: { ...profile.skills, equipped: testSkills || profile.skills.equipped },
-            misc: {
-                ...profile.misc,
-                forgeAscensionLevel: testForgeAscension ?? profile.misc.forgeAscensionLevel,
-                mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel,
-                petAscensionLevel: testPetAscension ?? profile.misc.petAscensionLevel,
-                skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel,
-                useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup,
-                fairy: testFairy ?? profile.misc.fairy
-            }
-        };
+        const originalProfile = comparisonSideProfile(profile, comparison, 'original', effectiveTechTree);
+        const testProfile = comparisonSideProfile(profile, comparison, 'test', effectiveTechTree);
 
         const origStats = calculateStats(originalProfile, libs, excludeSubstats);
         const testStats = calculateStats(testProfile, libs, excludeSubstats);
@@ -634,7 +524,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         originalPets, testPets, originalSkills, testSkills,
         originalPetAscension, testPetAscension, originalSkillAscension, testSkillAscension,
         originalUseSkinWindup, testUseSkinWindup, originalFairy, testFairy,
-        treeMode, libs, excludeSubstats
+        treeMode, libs, excludeSubstats, comparison
     ]);
 
     const activePerfectionDetails = useMemo(() => {
@@ -1302,109 +1192,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <div className="order-1 flex-1 sm:order-none sm:flex-none flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-bg-input/30 sm:min-w-[120px] shrink-0">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/70 text-center">Equipped Perfection</span>
                         <PerfectionMeter value={originalPerfection} className="gap-2" />
-                    </div>
-
-                    {/* Auto Test Build controls (center). Each AUTO button opens the top-5 popover. */}
-                    <div className="relative order-3 w-full sm:order-none sm:w-auto grid grid-cols-4 gap-1 sm:flex sm:items-center sm:justify-center sm:gap-1.5 sm:flex-wrap">
-                    <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-widest text-text-muted/60 mr-0.5">Auto Test Build</span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        data-auto-loadout-trigger
-                        aria-expanded={autoRequest?.metric === 'dps'}
-                        className={cn(
-                            "h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
-                            autoRequest?.metric === 'dps' && "bg-red-500/15 border-red-500/50"
-                        )}
-                        onClick={() => handleAutoOptimizeTest('dps')}
-                        disabled={autoOptimizeDisabled}
-                        title="Rank the best 3 pets + mount for DPS on the Test build"
-                    >
-                        <Sword className="w-3 h-3" />
-                        <span className="hidden sm:inline">AUTO DPS</span>
-                        <span className="sm:hidden">DPS</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        data-auto-loadout-trigger
-                        aria-expanded={autoRequest?.metric === 'power'}
-                        className={cn(
-                            "h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
-                            autoRequest?.metric === 'power' && "bg-amber-500/15 border-amber-500/50"
-                        )}
-                        onClick={() => handleAutoOptimizeTest('power')}
-                        disabled={autoOptimizeDisabled}
-                        title="Rank the best 3 pets + mount for Power on the Test build"
-                    >
-                        <Zap className="w-3 h-3" />
-                        <span className="hidden sm:inline">AUTO POWER</span>
-                        <span className="sm:hidden">PWR</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        data-auto-loadout-trigger
-                        aria-expanded={autoRequest?.metric === 'lifesteal'}
-                        className={cn(
-                            "h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
-                            autoRequest?.metric === 'lifesteal' && "bg-purple-500/15 border-purple-500/50"
-                        )}
-                        onClick={() => handleAutoOptimizeTest('lifesteal')}
-                        disabled={autoOptimizeDisabled}
-                        title="Rank the best 3 pets + mount for Lifesteal/sec on the Test build"
-                    >
-                        <Heart className="w-3 h-3" />
-                        <span className="hidden sm:inline">AUTO LIFESTEAL/SEC</span>
-                        <span className="sm:hidden">LS/S</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid="auto-best-build"
-                        className={cn(
-                            "h-7 px-2 text-[10px] font-bold border-yellow-500/20 hover:bg-yellow-500/10 hover:border-yellow-500/40 text-yellow-400 gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit",
-                            optimizerBase && "bg-yellow-500/15 border-yellow-500/50"
-                        )}
-                        onClick={() => setOptimizerBase(buildTestBase())}
-                        title="Find the best skills, pets and mount for the Test build by simulated arena win rate"
-                    >
-                        <Trophy className="w-3 h-3" />
-                        <span className="hidden sm:inline">AUTO BEST</span>
-                        <span className="sm:hidden">BEST</span>
-                    </Button>
-                    {(previousTestPets || previousTestMount !== undefined || previousTestSkills) && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="col-span-4 h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-full justify-center sm:w-fit"
-                            onClick={handleRevertTest}
-                        >
-                            <RotateCcw className="w-3 h-3" />
-                            REVERT
-                        </Button>
-                    )}
-                    {optimizerBase && (
-                        <BuildOptimizerModal
-                            base={optimizerBase}
-                            onLoad={handleLoadBuildIntoTest}
-                            onClose={() => setOptimizerBase(null)}
-                            targetLabel="Test"
-                        />
-                    )}
-                    {autoRequest && (
-                        <LoadoutSweepPopover
-                            metric={autoRequest.metric}
-                            base={autoRequest.base}
-                            respectSavedLevels={respectSavedLevels}
-                            onToggleRespectSavedLevels={() => setRespectSavedLevels(v => !v)}
-                            currentPets={testPets ?? profile.pets.active}
-                            currentMount={testMount ?? null}
-                            onLoad={handleLoadIntoTest}
-                            onClose={closeAutoPopover}
-                            targetLabel="Test"
-                        />
-                    )}
                     </div>
 
                     {/* Test build perfection (far right) */}

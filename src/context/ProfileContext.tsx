@@ -19,6 +19,7 @@ import {
     SharePayloadSource
 } from '../utils/shareCodec';
 import { ensureProfileIdsMigrated } from '../services/profileIdMigration';
+import { linkInlineSkins } from '../utils/skinArchive';
 import { useProfileSync, type ProfileSyncApi } from '../services/useProfileSync';
 
 const STORAGE_KEY = 'forgeMaster_profiles';
@@ -86,15 +87,17 @@ const sanitizeProfile = (profile: UserProfile): UserProfile => {
         }
     }
 
-    if (itemsChanged || savedItemsChanged) {
-        return {
+    const cleaned = (itemsChanged || savedItemsChanged)
+        ? {
             ...profile,
             items: itemsChanged ? newItems : profile.items,
             savedItems: savedItemsChanged ? newSavedItems : profile.savedItems
-        };
-    }
+        }
+        : profile;
 
-    return profile;
+    // Skin archive migration: inline item skins (profiles from before the archive) become
+    // archive entries and the items reference them by savedId.
+    return linkInlineSkins(cleaned) ?? cleaned;
 };
 
 interface ProfileContextType {
@@ -275,6 +278,14 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Get current profile (prioritize imported profile if viewing)
     const profile = importedProfile || profiles.find(p => p.id === activeProfileId) || profiles[0] || INITIAL_PROFILE;
 
+    const updateProfileRef = React.useRef<((u: Partial<UserProfile>) => void) | null>(null);
+    // Skin archive: any inline skin that reaches the active profile later (a cloud pull, AutoSync,
+    // an old item preset) is moved into the archive and linked, so the archive always holds it.
+    useEffect(() => {
+        const linked = linkInlineSkins(profile);
+        if (linked) updateProfileRef.current?.({ items: linked.items, savedItems: linked.savedItems, skins: linked.skins });
+    }, [profile]);
+
     // Save all profiles to localStorage
     const saveAllProfiles = useCallback((profilesToSave: UserProfile[], activeId: string) => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(profilesToSave));
@@ -304,6 +315,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
             ));
         }
     }, [activeProfileId, importedProfile]);
+    updateProfileRef.current = updateProfile;
 
     const updateNestedProfile = useCallback((section: keyof UserProfile, data: any) => {
         const stamp = section === 'techTree' ? { techTreeUpdatedAt: Date.now() } : {};

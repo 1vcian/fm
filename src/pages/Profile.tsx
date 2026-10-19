@@ -12,6 +12,7 @@ import { StatsSummaryPanel } from '../components/Profile/StatsSummaryPanel';
 import { ProfileHeaderPanel } from '../components/Profile/ProfileHeaderPanel';
 import { SkillsPassivesPanel } from '../components/Profile/SkillsPassivesPanel';
 import { SkinSetPanel } from '../components/Profile/SkinSetPanel';
+import { SkinArchivePanel } from '../components/Profile/SkinArchivePanel';
 import { AutoSyncModal } from '../components/Profile/AutoSyncModal';
 import { PvpModal } from '../components/Profile/PvpModal';
 import { AccountPanel } from '../components/Profile/AccountPanel';
@@ -170,6 +171,9 @@ export default function Profile() {
                             />
                         </div>
 
+                        {/* Skin archive: Equip goes to the Test build */}
+                        <SkinArchivePanel />
+
                         {/* Comparison Pet Panels */}
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                             <PetPanel
@@ -199,6 +203,7 @@ export default function Profile() {
                 ) : (
                     <>
                         <EquipmentPanel />
+                        <SkinArchivePanel />
                         <PetPanel />
                         <SkillPanel />
                     </>

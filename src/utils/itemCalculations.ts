@@ -1,3 +1,4 @@
+import { resolvedSkinStats, SLOT_TO_SKIN_TYPE } from './skinArchive';
 import { ItemSlot } from '../types/Profile';
 import { personalTechShare } from './clanTechStacking';
 
@@ -125,6 +126,8 @@ export const getItemStats = (
         itemBalancingLibrary: any;
         itemBalancingConfig: any;
         weaponLibrary: any;
+        /** SkinUpgradeLibrary.json: the skin bonus shown at the skin's level. */
+        skinUpgradeLibrary?: any;
     },
     modifiers: {
         techModifiers: Record<string, number>;
@@ -179,8 +182,8 @@ export const getItemStats = (
     const personalTechBonus = personalTechShare(techBonus, clanTechBonus);
     const ascMulti = (forgeAscensionMulti || 1);
     const meleeMulti = (slotKey === 'Weapon' && isMelee) ? meleeBaseMulti : 1;
-    const skinDmgMulti = (1 + (item.skin?.stats?.['Damage'] || 0));
-    const skinHpMulti = (1 + (item.skin?.stats?.['Health'] || 0));
+    // The skin's stats at its level (skinArchive.resolvedSkinStats, GetResolvedStatContributionsForLevel 0x77B5FF4).
+    const skinStats = item.skin ? resolvedSkinStats(item.skin, libraries.skinUpgradeLibrary, SLOT_TO_SKIN_TYPE[slotKey]) : {};
 
     let damage = baseDamage * levelMulti * techMulti * ascMulti * meleeMulti;
     let health = baseHealth * levelMulti * techMulti * ascMulti;
@@ -190,8 +193,8 @@ export const getItemStats = (
     }
 
     let skinBonuses = { 
-        damage: item.skin?.stats?.['Damage'] || 0, 
-        health: item.skin?.stats?.['Health'] || 0 
+        damage: skinStats['Damage'] || 0,
+        health: skinStats['Health'] || 0
     };
 
     // skin multipliers are global, not per-item

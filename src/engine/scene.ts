@@ -112,6 +112,7 @@ export class CombatScene {
             weaponSpriteKey: spec.weaponSpriteKey,
             cosmeticKeys: spec.cosmeticKeys,
             skillId: spec.skillId,
+            testDummy: spec.testDummy,
         };
         this.units.push(unit);
         return unit;
@@ -465,7 +466,10 @@ export class CombatScene {
         const reflectRoll = this.rng.rollLE(target.stats.reflectChance);
         const reflected = !blocked && reflectRoll;
         const critical = this.rng.rollLT(stats.criticalChance);
-        const dmg = critical ? stats.dmg * stats.criticalMulti : stats.dmg;
+        let dmg = critical ? stats.dmg * stats.criticalMulti : stats.dmg;
+        // Simulator-only test dummy: a fixed share of the target's HpMax, floored (see UnitSpec).
+        const td = attacker?.testDummy;
+        if (td) dmg = Math.max(0, Math.min(td.hitFraction * target.stats.hpMax, target.hp - td.floorFraction * target.stats.hpMax));
         let buffDmg: Record<string, number> | undefined;
         if (stats.buffParts) {
             buffDmg = {};

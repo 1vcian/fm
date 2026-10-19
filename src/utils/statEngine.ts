@@ -10,6 +10,7 @@ import { attackIntervalSeconds, doubleCycleSeconds, weaponHitsPerSecond } from '
 import { BUFF_SKILL_TYPES, buffActiveTicks, skillCycleTicks } from '../engine/skills';
 import { skillYieldPerCast } from '../engine/skillYield';
 import { getNormalizedTarget } from './ascensionUtils';
+import { activeSetTiers, resolvedSkinStats, SLOT_TO_SKIN_TYPE, withArchivedSkins } from './skinArchive';
 import {
     StatAttribution, StatContribution, SourceRef, canonicalStatKey,
     TOTAL_DAMAGE_KEY, TOTAL_HEALTH_KEY, TOTAL_POWER_KEY
@@ -390,6 +391,8 @@ export interface LibraryData {
     secondaryStatLibrary?: any;
     skinsLibrary?: any;
     setsLibrary?: any;
+    /** SkinUpgradeLibrary.json (skin level stat increase, level experience). */
+    skinUpgradeLibrary?: any;
     ascensionConfigsLibrary?: any;
     /** PetBaseConfig.json (PetSlotsCount: active pet slots). */
     petBaseConfig?: any;
@@ -448,6 +451,7 @@ export class StatEngine {
     private techModifiers: Record<string, number> = {};
 
     // Mapping from item slot to tech tree node name
+    private static readonly slotToSkinType: Record<string, string> = SLOT_TO_SKIN_TYPE;
     private static readonly slotToTechBonus: Record<string, string> = {
         'Weapon': 'WeaponBonus',
         'Helmet': 'HelmetBonus',
@@ -513,7 +517,8 @@ export class StatEngine {
     private attribution: StatAttribution = { byStat: {}, formula: {} };
 
     constructor(profile: UserProfile, libs: LibraryData, excludeSubstats = false, trackAttribution = false) {
-        this.profile = profile;
+        // Skins equipped from the archive are worn as the archive has them now (stats, level).
+        this.profile = withArchivedSkins(profile);
         this.libs = libs;
         this.excludeSubstats = excludeSubstats;
         this.trackAttribution = trackAttribution;
@@ -904,12 +909,15 @@ export class StatEngine {
 
             // Collect Skin Multipliers (global player-level, NOT per-item)
             // StatTarget is PlayerSkinMultiplierStatTarget => applied to total player damage/health
+            // The skin's stats at its level: rolled + increase * Level
+            // (GetResolvedStatContributionsForLevel 0x77B5FF4, see skinArchive.resolvedSkinStats).
             if (item.skin && item.skin.stats) {
-                const skinDmgBonus = item.skin.stats['Damage'] || 0;
-                const skinHpBonus = item.skin.stats['Health'] || 0;
+                const resolved = resolvedSkinStats(item.skin, this.libs.skinUpgradeLibrary, StatEngine.slotToSkinType[slotKey]);
+                const skinDmgBonus = resolved['Damage'] || 0;
+                const skinHpBonus = resolved['Health'] || 0;
                 this.skinDamageMulti += skinDmgBonus;
                 this.skinHealthMulti += skinHpBonus;
-                this.debugLogs.push(`SKIN ${slotKey}: idx=${item.skin.idx} Damage=+${(skinDmgBonus * 100).toFixed(1)}% Health=+${(skinHpBonus * 100).toFixed(1)}%`);
+                this.debugLogs.push(`SKIN ${slotKey}: idx=${item.skin.idx} level=${item.skin.level || 0} Damage=+${(skinDmgBonus * 100).toFixed(1)}% Health=+${(skinHpBonus * 100).toFixed(1)}%`);
             }
 
             // Accumulate totals
@@ -954,50 +962,11 @@ export class StatEngine {
      * Set bonuses are Multiplier type (e.g. +10% Damage, +10% Health).
      */
     private collectSkinSetBonuses() {
-        if (!this.libs.skinsLibrary || !this.libs.setsLibrary) return;
-
-        const slotToJsonType: Record<string, string> = {
-            'Weapon': 'Weapon', 'Helmet': 'Helmet', 'Body': 'Armour',
-            'Gloves': 'Gloves', 'Belt': 'Belt', 'Necklace': 'Necklace',
-            'Ring': 'Ring', 'Shoe': 'Shoes'
-        };
-
-        const equippedSetCounts: Record<string, number> = {};
-        const slots: (keyof UserProfile['items'])[] = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
-
-        for (const slotKey of slots) {
-            const item = this.profile.items[slotKey];
-            if (!item?.skin) continue;
-
-            const jsonType = slotToJsonType[slotKey];
-            const lookupType = item.skin?.type || jsonType;
-            const skinEntry = Object.values(this.libs.skinsLibrary).find(
-                (s: any) => s.SkinId.Type === lookupType && s.SkinId.Idx === item.skin?.idx
-            ) as any;
-
-            this.debugLogs.push(`SET LOOKUP ${slotKey}: skinType=${lookupType} skinIdx=${item.skin.idx} found=${!!skinEntry} setId=${skinEntry?.BaseSetId || 'none'}`);
-
-            if (skinEntry?.BaseSetId) {
-                equippedSetCounts[skinEntry.BaseSetId] = (equippedSetCounts[skinEntry.BaseSetId] || 0) + 1;
-            }
-        }
-
-        for (const [setId, count] of Object.entries(equippedSetCounts)) {
-            const setEntry = this.libs.setsLibrary[setId];
-            if (!setEntry?.BonusTiers) continue;
-
-            for (const tier of setEntry.BonusTiers) {
-                if (count >= tier.RequiredPieces) {
-                    for (const stat of tier.BonusStats.Stats) {
-                        const statType = stat.StatNode?.UniqueStat?.StatType;
-                        const value = stat.Value || 0;
-                        if (statType === 'Damage') this.setDamageMulti += value;
-                        if (statType === 'Health') this.setHealthMulti += value;
-                    }
-                }
-            }
-
-            this.debugLogs.push(`Set ${setId}: ${count} pieces, SetDamage +${(this.setDamageMulti * 100).toFixed(0)}%, SetHealth +${(this.setHealthMulti * 100).toFixed(0)}%`);
+        // Equipped skins only, every reached tier adds, never level-scaled: skinArchive.activeSetTiers.
+        for (const tier of activeSetTiers(this.profile.items, this.libs.skinsLibrary, this.libs.setsLibrary)) {
+            this.setDamageMulti += tier.stats['Damage'] || 0;
+            this.setHealthMulti += tier.stats['Health'] || 0;
+            this.debugLogs.push(`Set ${tier.setId}: ${tier.pieces} pieces (tier ${tier.requiredPieces}), SetDamage +${(this.setDamageMulti * 100).toFixed(0)}%, SetHealth +${(this.setHealthMulti * 100).toFixed(0)}%`);
         }
     }
 

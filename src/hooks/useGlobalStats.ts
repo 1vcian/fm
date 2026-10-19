@@ -34,6 +34,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
+    const { data: skinUpgradeLibrary } = useGameData<any>('SkinUpgradeLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
     const { data: skillBaseConfig } = useGameData<any>('SkillBaseConfig.json');
@@ -57,6 +58,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         secondaryStatLibrary,
         skinsLibrary,
         setsLibrary,
+        skinUpgradeLibrary,
         ascensionConfigsLibrary,
         petBaseConfig,
         skillBaseConfig,
@@ -67,7 +69,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         guildPositionLibrary, guildUpgradeLibrary,
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
-        skinsLibrary, setsLibrary, ascensionConfigsLibrary,
+        skinsLibrary, setsLibrary, skinUpgradeLibrary, ascensionConfigsLibrary,
         petBaseConfig, skillBaseConfig,
     ]);
 

@@ -15,6 +15,8 @@ import { cn, getAgeBgStyle, getAgeIconStyle, getRarityBgStyle } from '../../lib/
 import { AGES } from '../../utils/constants';
 import { getItemImage, getItemName } from '../../utils/itemAssets';
 import { getStatName } from '../../utils/statNames';
+import { OPEN_SKIN_ARCHIVE_EVENT, resolvedSkinStats, skinDisplayName } from '../../utils/skinArchive';
+import type { SavedSkin } from '../../types/Profile';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
@@ -115,6 +117,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
+    const { data: skinUpgradeLibrary } = useGameData<any>('SkinUpgradeLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
@@ -162,6 +165,14 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     // Skin State
     const [skinIdx, setSkinIdx] = useState<number | null>(null);
     const [skinStatsList, setSkinStatsList] = useState<{ type: string; value: number }[]>([]);
+    // Skin level (0 = a fresh skin) and the archive entry the skin came from (profile.skins.saved).
+    const [skinLevel, setSkinLevel] = useState(0);
+    const [skinSavedId, setSkinSavedId] = useState<string | undefined>(undefined);
+    /** Level and archive link of the skin being built, only when set (old saves stay byte-identical). */
+    const skinExtras = () => ({
+        ...(skinLevel > 0 ? { level: skinLevel } : {}),
+        ...(skinSavedId ? { savedId: skinSavedId } : {}),
+    });
 
     // Get unlocked ages based on drop chances (age is unlocked if drop chance > 0 OR unlockAll is true)
     const unlockedAges = useMemo(() => {
@@ -227,7 +238,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             );
                             return skinEntry ? (skinEntry as any).SkinId.Type : undefined;
                         })() : undefined,
-                        stats: skinStatsRecord
+                        stats: skinStatsRecord,
+                        ...skinExtras(),
                     } : undefined
                 };
 
@@ -256,7 +268,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 }
             }
         }
-    }, [level, manualStats, skinIdx, skinStatsList, ageIdx, selectedSavedItemIndex, slot, skinsLibrary, updateNestedProfile, profile.items, isOpen]);
+    }, [level, manualStats, skinIdx, skinStatsList, skinLevel, skinSavedId, ageIdx, selectedSavedItemIndex, slot, skinsLibrary, updateNestedProfile, profile.items, isOpen]);
 
     // Sync state when modal opens
     useEffect(() => {
@@ -291,6 +303,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             setLevel(current ? current.level : 1);
             setManualStats(current?.secondaryStats?.map(s => ({ type: s.statId, value: s.value })) || []);
             setSkinIdx(current?.skin?.idx ?? null);
+            setSkinLevel(current?.skin?.level ?? 0);
+            setSkinSavedId(current?.skin?.savedId);
 
             if (current?.skin?.stats) {
                 const stats = Object.entries(current.skin.stats).map(([type, value]) => ({ type, value }));
@@ -559,6 +573,12 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         ).sort((a: any, b: any) => a.SkinId.Idx - b.SkinId.Idx); // Sort by ID local for list order
     }, [skinsLibrary, jsonType]);
 
+    // Archive skins wearable on this slot (profile.skins.saved, same SkinId.Type).
+    const archiveForSlot = useMemo(
+        () => (profile.skins?.saved || []).filter(a => a.type === jsonType),
+        [profile.skins?.saved, jsonType]
+    );
+
     const handleDeleteSavedItem = (index: number, e: React.MouseEvent) => {
         e.stopPropagation();
 
@@ -608,7 +628,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         );
                         return skinEntry ? (skinEntry as any).SkinId.Type : undefined;
                     })() : undefined,
-                    stats: skinStatsRecord
+                    stats: skinStatsRecord,
+                    ...skinExtras(),
                 } : undefined
             };
             onSelect(newItem);
@@ -651,154 +672,100 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         setManualStats(manualStats.filter((_, i) => i !== index));
     };
 
-    // Skin Stats Management
-
-    const addSkinStat = (possibleStats: any[]) => {
-        if (skinStatsList.length < (possibleStats.length || 0)) {
-            const existingTypes = new Set(skinStatsList.map(s => s.type));
-            // Find first available type
-            const nextStat = possibleStats.find(s => !existingTypes.has(s.StatNode.UniqueStat.StatType));
-
-            if (nextStat) {
-                const type = nextStat.StatNode.UniqueStat.StatType;
-                setSkinStatsList([...skinStatsList, {
-                    type,
-                    value: 0.01 // Default to 1%
-                }]);
-            }
+    // Skins come from the skin archive only (profile.skins.saved): the archive panel creates and
+    // edits them, here an archived skin of this slot's type is put on the item (linked by savedId,
+    // so later archive edits and level-ups reach the item) or the skin is taken off.
+    const pickArchivedSkin = (a: SavedSkin | null) => {
+        if (!a) {
+            setSkinIdx(null);
+            setSkinStatsList([]);
+            setSkinLevel(0);
+            setSkinSavedId(undefined);
+            return;
         }
+        setSkinIdx(a.idx);
+        setSkinStatsList(Object.entries(a.stats).map(([type, value]) => ({ type, value: Number(value) })));
+        setSkinLevel(a.level || 0);
+        setSkinSavedId(a.id);
     };
 
-    const updateSkinStat = (index: number, field: 'type' | 'value', value: any, possibleStats: any[]) => {
-        const newStats = [...skinStatsList];
-
-        if (field === 'type') {
-            // Find limits for new type and clamp value
-            const statDef = possibleStats.find(s => s.StatNode.UniqueStat.StatType === value);
-            let val = newStats[index].value;
-            // Hardcoded 1% to 100% limits
-            val = Math.max(0.01, Math.min(1.0, val));
-            newStats[index] = { ...newStats[index], type: value, value: val };
-        } else {
-            newStats[index] = { ...newStats[index], [field]: value };
-        }
-        setSkinStatsList(newStats);
+    const openSkinArchive = () => {
+        window.dispatchEvent(new CustomEvent(OPEN_SKIN_ARCHIVE_EVENT, { detail: { type: jsonType, create: archiveForSlot.length === 0 } }));
+        onClose();
     };
-
-    const removeSkinStat = (index: number) => {
-        setSkinStatsList(skinStatsList.filter((_, i) => i !== index));
-    };
-
 
     const renderSkinSelection = () => {
         if (availableSkins.length === 0) return null;
+        // A skin on the item that is not (or no longer) in the archive: shown so it is not lost silently.
+        const unlinked = skinIdx !== null && !archiveForSlot.some(a => a.id === skinSavedId);
 
         return (
-            <div className="pt-4 border-t border-border mt-4">
-                <div className="flex items-center justify-between mb-2">
+            <div className="pt-4 border-t border-border mt-4" data-testid="item-skin-archive">
+                <div className="flex items-center justify-between gap-2 mb-2">
                     <h4 className="font-bold text-sm text-text-muted uppercase tracking-wider">Skin</h4>
-                    {skinIdx !== null && (
-                        <Button variant="ghost" size="sm" onClick={() => { setSkinIdx(null); setSkinStatsList([]); }} className="h-6 text-xs text-red-400">
-                            <Trash2 className="w-3 h-3 mr-1" /> Remove
-                        </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={openSkinArchive} className="h-6 text-xs" data-testid="item-skin-open-archive">
+                        <Bookmark className="w-3 h-3 mr-1" /> Skin archive
+                    </Button>
                 </div>
 
-                {/* Skin List */}
-                <div className="grid grid-cols-5 gap-2 mb-4">
-                    {availableSkins.map((skin: any) => {
-                        const isSelected = skinIdx === skin.SkinId.Idx;
+                <div className="flex flex-col gap-1.5">
+                    <button
+                        onClick={() => pickArchivedSkin(null)}
+                        data-testid="item-skin-none"
+                        className={cn(
+                            'flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs text-left',
+                            skinIdx === null ? 'border-accent-primary bg-accent-primary/10' : 'border-border hover:border-accent-primary/50'
+                        )}
+                    >
+                        <span className="w-8 h-8 rounded bg-bg-input border border-border/60 shrink-0 flex items-center justify-center text-text-muted">
+                            <X className="w-4 h-4" />
+                        </span>
+                        <span className="font-bold">No skin</span>
+                    </button>
 
+                    {unlinked && (
+                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/5 text-xs">
+                            <span className="w-8 h-8 rounded shrink-0" style={getSkinSpriteStyle({ SkinId: { Type: jsonType, Idx: skinIdx! } }, spriteMapping?.skins?.mapping, selectedVersion)} />
+                            <span className="min-w-0">
+                                <span className="font-bold">{skinDisplayName(skinsLibrary, jsonType, skinIdx!)} Lv{skinLevel}</span>
+                                <span className="block text-[10px] text-amber-300">Worn now, not in the archive</span>
+                            </span>
+                        </div>
+                    )}
+
+                    {archiveForSlot.map(a => {
+                        const active = skinSavedId === a.id && skinIdx !== null;
+                        const resolved = resolvedSkinStats(a, skinUpgradeLibrary);
                         return (
                             <button
-                                key={skin.SkinId.Idx}
-                                onClick={() => {
-                                    setSkinIdx(skin.SkinId.Idx);
-                                    if (skin.PossibleStats && skin.PossibleStats.length > 0) {
-                                        const firstStat = skin.PossibleStats[0];
-                                        setSkinStatsList([{
-                                            type: firstStat.StatNode.UniqueStat.StatType,
-                                            value: 0.01 // Default to 1%
-                                        }]);
-                                    } else {
-                                        setSkinStatsList([]);
-                                    }
-                                }}
+                                key={a.id}
+                                onClick={() => pickArchivedSkin(a)}
+                                data-testid="item-skin-option"
                                 className={cn(
-                                    "aspect-square rounded-lg border-2 flex items-center justify-center relative overflow-hidden bg-bg-secondary",
-                                    isSelected ? "border-accent-primary" : "border-border hover:border-accent-primary/50"
+                                    'flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs text-left min-w-0',
+                                    active ? 'border-accent-primary bg-accent-primary/10' : 'border-border hover:border-accent-primary/50'
                                 )}
-                                title={`Skin ${skin.SkinId.Idx}`}
                             >
-                                <div
-                                    className="w-full h-full"
-                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
-                                />
+                                <span className="w-8 h-8 rounded shrink-0" style={getSkinSpriteStyle({ SkinId: { Type: a.type, Idx: a.idx } }, spriteMapping?.skins?.mapping, selectedVersion)} />
+                                <span className="min-w-0 flex-1">
+                                    <span className="font-bold block truncate">{a.customName || skinDisplayName(skinsLibrary, a.type, a.idx)} <span className="text-text-muted font-normal">Lv{a.level || 0}</span></span>
+                                    <span className="block text-[10px] text-green-400 truncate">
+                                        {Object.entries(resolved).map(([k, v]) => `${k} +${(v * 100).toFixed(1)}%`).join(', ') || 'No stats'}
+                                    </span>
+                                </span>
                             </button>
                         );
                     })}
+
+                    {archiveForSlot.length === 0 && (
+                        <div className="text-center text-xs text-text-muted py-3 px-2 rounded-lg border border-dashed border-border" data-testid="item-skin-empty">
+                            No {jsonType} skin in your archive yet.
+                            <button onClick={openSkinArchive} className="block mx-auto mt-1.5 px-2.5 py-1 rounded-md border border-accent-primary/50 text-accent-primary font-bold hover:bg-accent-primary/10">
+                                Add one in the skin archive
+                            </button>
+                        </div>
+                    )}
                 </div>
-
-                {/* Skin Stats Inputs */}
-                {skinIdx !== null && (
-                    <div className="space-y-2 bg-bg-input/30 p-2 rounded">
-                        {(() => {
-                            const selectedSkin = availableSkins.find((s: any) => s.SkinId.Idx === skinIdx) as any;
-                            const possibleStats = selectedSkin?.PossibleStats || [];
-                            const maxStats = selectedSkin?.MaxStatCount || 0;
-
-                            return (
-                                <>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-bold text-text-muted">
-                                            SKIN STATS ({skinStatsList.length}/{maxStats})
-                                        </span>
-                                        {skinStatsList.length < maxStats && (
-                                            <Button variant="ghost" size="sm" onClick={() => addSkinStat(possibleStats)} className="h-6 text-xs">
-                                                <Plus className="w-3 h-3 mr-1" /> Add
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    <div className="flex flex-col gap-3">
-                                        {skinStatsList.map((stat, i) => {
-                                            // Get constraints for this stat type
-                                            const statDef = possibleStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === stat.type);
-                                            const min = statDef?.MinValue || 0;
-                                            const max = statDef?.MaxValue || 1;
-
-                                            const statOptions = possibleStats
-                                                .filter((s: any) => s.StatNode.UniqueStat.StatType === stat.type || !skinStatsList.some(existing => existing.type === s.StatNode.UniqueStat.StatType))
-                                                .map((s: any) => ({
-                                                    id: s.StatNode.UniqueStat.StatType,
-                                                    name: s.StatNode.UniqueStat.StatType
-                                                }));
-
-                                            return (
-                                                <SecondaryStatCard
-                                                    key={i}
-                                                    statId={stat.type}
-                                                    value={parseFloat((stat.value * 100).toFixed(2))}
-                                                    options={statOptions}
-                                                    onStatIdChange={(newId) => updateSkinStat(i, 'type', newId, possibleStats)}
-                                                    onValueChange={(newVal) => updateSkinStat(i, 'value', newVal / 100, possibleStats)}
-                                                    onRemove={() => removeSkinStat(i)}
-                                                    range={{ min: 0.01, max: 1.0 }}
-                                                />
-                                            );
-                                        })}
-                                    </div>
-
-                                    {skinStatsList.length === 0 && (
-                                        <div className="text-center text-xs text-text-muted py-2 italic opacity-50">
-                                            No skin stats active. Click "Add" to configure.
-                                        </div>
-                                    )}
-                                </>
-                            );
-                        })()}
-                    </div>
-                )}
             </div>
         );
     };
@@ -1538,7 +1505,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                 stats={getItemStats(
                                                     saved,
                                                     slot,
-                                                    { itemBalancingLibrary: itemLibrary, itemBalancingConfig, weaponLibrary },
+                                                    { itemBalancingLibrary: itemLibrary, itemBalancingConfig, weaponLibrary, skinUpgradeLibrary },
                                                     { techModifiers, forgeAscensionMulti, clanModifiers }
                                                 )}
                                                 perfection={getPerfection(saved, secondaryStatLibrary)}
@@ -1551,9 +1518,13 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     if (saved.skin) {
                                                         setSkinIdx(saved.skin.idx);
                                                         setSkinStatsList(Object.entries(saved.skin.stats).map(([k, v]) => ({ type: k, value: Number(v) })));
+                                                        setSkinLevel(saved.skin.level ?? 0);
+                                                        setSkinSavedId(saved.skin.savedId);
                                                     } else {
                                                         setSkinIdx(null);
                                                         setSkinStatsList([]);
+                                                        setSkinLevel(0);
+                                                        setSkinSavedId(undefined);
                                                     }
                                                 }}
                                                 onDelete={(e) => handleDeleteSavedItem((saved as any).savedIndex, e)}

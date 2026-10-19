@@ -2,10 +2,10 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Zap as PowerIcon, Cat, Sword, RotateCcw, Heart, Trophy } from 'lucide-react';
+import { Cat } from 'lucide-react';
 import { Button } from '../UI/Button';
-import { PetSlot, MountSlot, UserProfile, SkillSlot } from '../../types/Profile';
-import { useState, useMemo, useCallback } from 'react';
+import { PetSlot } from '../../types/Profile';
+import { useState, useMemo } from 'react';
 import { cn } from '../../lib/utils';
 
 /** Artwork well for one of the three slot cards: three across on a phone leaves about 110px each. */
@@ -22,10 +22,6 @@ import { SectionSyncButton } from './SectionSyncButton';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
-import { LoadoutSweepPopover, AutoLoadoutMetric } from './LoadoutSweepPopover';
-import { LoadoutCombo } from '../../hooks/useLoadoutSweep';
-import { BuildOptimizerModal } from './BuildOptimizerModal';
-import type { Candidate } from '../../optimizer/buildOptimizer';
 
 interface PetPanelProps {
     variant?: 'default' | 'original' | 'test';
@@ -48,10 +44,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         updateTestPetAscension,
         isCompactStats
     } = useComparison();
-    // AUTO buttons: the open top-5 popover (metric + profile snapshot it searches over).
-    const [autoRequest, setAutoRequest] = useState<{ metric: AutoLoadoutMetric; base: UserProfile } | null>(null);
-    const [respectSavedLevels, setRespectSavedLevels] = useState(true);
-    const closeAutoPopover = useCallback(() => setAutoRequest(null), []);
     
     const activePets = useMemo(() => {
         if (variant === 'original' && originalPets) return originalPets;
@@ -70,9 +62,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPetIdx, setEditingPetIdx] = useState<number | null>(null);
     const [petToSave, setPetToSave] = useState<PetSlot | null>(null);
-    const [previousPets, setPreviousPets] = useState<PetSlot[] | null>(null);
-    // undefined = nothing to revert; null = revert to "no mount equipped"
-    const [previousMount, setPreviousMount] = useState<MountSlot | null | undefined>(undefined);
 
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     // Active pet slots, PetBaseConfig.PetSlotsCount (no slots drawn until it loads).
@@ -152,7 +141,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     };
 
     const handleRemove = (index: number) => {
-        setPreviousPets(null);
         const newPets = [...activePets];
         newPets.splice(index, 1);
         updatePets(newPets);
@@ -165,7 +153,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         }
         if (petSlots === null || activePets.length >= petSlots) return;
         updatePets([...activePets, pet]);
-        setPreviousPets(null);
         setIsModalOpen(false);
     };
 
@@ -178,7 +165,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         const newPets = [...activePets];
         newPets[index] = pet;
         updatePets(newPets);
-        setPreviousPets(null);
         setEditingPetIdx(null);
     };
 
@@ -216,7 +202,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
             updatePets(newPets);
         }
         
-        setPreviousPets(null);
     };
 
     const handleAscensionChange = (val: number) => {
@@ -228,50 +213,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         }
     };
 
-    // Optimizer searches saved pets AND saved mounts, so enable when either pool has entries.
-    const autoDisabled = (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
-
-    // Only rendered for the default (non-compare) panel. Compare mode drives its
-    // own optimizer from the comparison strip (see StatsSummaryPanel).
-    // Each AUTO button runs the loadout sweep over the profile and opens the top-5 popover;
-    // the same button again closes it.
-    const handleAutoOptimize = (metric: AutoLoadoutMetric) => {
-        setAutoRequest(prev => (prev?.metric === metric ? null : { metric, base: profile }));
-    };
-
-    const handleLoadLoadout = (combo: LoadoutCombo) => {
-        // Remember the loadout from before the first row loaded, for REVERT.
-        if (!previousPets && previousMount === undefined) {
-            setPreviousPets([...activePets]);
-            setPreviousMount(profile.mount.active);
-        }
-        updatePets(combo.petSet);
-        updateNestedProfile('mount', { active: combo.mount });
-    };
-
-    // AUTO BEST: the build optimizer over the profile; a loaded row also sets the skills.
-    const [showOptimizer, setShowOptimizer] = useState(false);
-    const [previousSkills, setPreviousSkills] = useState<SkillSlot[] | null>(null);
-    const handleLoadBuild = (c: Candidate) => {
-        if (!previousSkills) setPreviousSkills([...profile.skills.equipped]);
-        handleLoadLoadout({ petSet: c.petSet, mount: c.mount });
-        updateNestedProfile('skills', { equipped: c.skills });
-    };
-
-    const handleRevert = () => {
-        if (previousSkills) {
-            updateNestedProfile('skills', { equipped: previousSkills });
-            setPreviousSkills(null);
-        }
-        if (previousPets) {
-            updatePets(previousPets);
-            setPreviousPets(null);
-        }
-        if (previousMount !== undefined) {
-            updateNestedProfile('mount', { active: previousMount });
-            setPreviousMount(undefined);
-        }
-    };
 
     const handleConfirmSave = (name: string) => {
         if (!petToSave) return;
@@ -376,89 +317,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                         {panelTitle}
                     </h2>
                     
-                    {variant === 'default' && (
-                    <div className="relative flex items-center gap-1.5 flex-wrap">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
-                            onClick={() => handleAutoOptimize('dps')}
-                            disabled={autoDisabled}
-                            data-auto-loadout-trigger
-                            title="Rank the best 3 pets + mount for DPS"
-                        >
-                            <Sword className="w-3 h-3" />
-                            AUTO DPS
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
-                            onClick={() => handleAutoOptimize('power')}
-                            disabled={autoDisabled}
-                            data-auto-loadout-trigger
-                            title="Rank the best 3 pets + mount for Power"
-                        >
-                            <PowerIcon className="w-3 h-3" />
-                            AUTO POWER
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
-                            onClick={() => handleAutoOptimize('lifesteal')}
-                            disabled={autoDisabled}
-                            data-auto-loadout-trigger
-                            title="Rank the best 3 pets + mount for Lifesteal/sec"
-                        >
-                            <Heart className="w-3 h-3" />
-                            AUTO LIFESTEAL/SEC
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-[10px] font-bold border-yellow-500/20 hover:bg-yellow-500/10 hover:border-yellow-500/40 text-yellow-400 gap-1 active:scale-95 transition-all w-fit"
-                            onClick={() => setShowOptimizer(true)}
-                            data-testid="auto-best-build"
-                            title="Find the best skills, pets and mount by simulated arena win rate"
-                        >
-                            <Trophy className="w-3 h-3" />
-                            AUTO BEST
-                        </Button>
-                        {(previousPets || previousMount !== undefined || previousSkills) && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-fit"
-                                onClick={handleRevert}
-                            >
-                                <RotateCcw className="w-3 h-3" />
-                                REVERT
-                            </Button>
-                        )}
-                        {showOptimizer && (
-                            <BuildOptimizerModal
-                                base={profile}
-                                onLoad={handleLoadBuild}
-                                onClose={() => setShowOptimizer(false)}
-                                targetLabel="your profile"
-                            />
-                        )}
-                        {autoRequest && (
-                            <LoadoutSweepPopover
-                                metric={autoRequest.metric}
-                                base={autoRequest.base}
-                                respectSavedLevels={respectSavedLevels}
-                                onToggleRespectSavedLevels={() => setRespectSavedLevels(v => !v)}
-                                currentPets={activePets}
-                                currentMount={profile.mount.active}
-                                onLoad={handleLoadLoadout}
-                                onClose={closeAutoPopover}
-                                targetLabel="your profile"
-                            />
-                        )}
-                    </div>
-                    )}
                 </div>
 
                 <div className="flex items-center justify-end gap-2">
@@ -604,7 +462,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 const newPets = [...activePets];
                                 newPets[idx] = { ...pet, level: newLevel };
                                 updatePets(newPets);
-                                setPreviousPets(null);
                             }}
                             maxLevel={petUpgradeLib?.[pet.rarity]?.LevelInfo?.length ?? pet.level}
                         />

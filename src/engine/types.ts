@@ -106,6 +106,11 @@ export interface UnitSpec {
     /** Drone is neither: it cannot be hit nor block movement. Default true. */
     targetable?: boolean;
     solid?: boolean;
+    /**
+     * Simulator-only test dummy (no game counterpart): each hit takes hitFraction of the target's
+     * HpMax but never brings it below floorFraction of HpMax, so regen and lifesteal stay visible.
+     */
+    testDummy?: { hitFraction: number; floorFraction: number };
 }
 
 export interface Unit {
@@ -145,6 +150,7 @@ export interface Unit {
     weaponSpriteKey?: string;
     cosmeticKeys?: { helmet?: string; armour?: string };
     skillId?: string;
+    testDummy?: { hitFraction: number; floorFraction: number };
 }
 
 export interface Projectile {

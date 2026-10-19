@@ -1,4 +1,6 @@
 import { useProfile } from '../../context/ProfileContext';
+import { DummyTestButton } from './DummyTestButton';
+import { AutoBestButton } from './AutoBestButton';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
@@ -146,6 +148,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
+    const { data: skinUpgradeLibrary } = useGameData<any>('SkinUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
@@ -308,6 +311,8 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                 </div>
                             )}
                         </div>
+                        {!isPvp && <DummyTestButton variant={variant} />}
+                        {!isPvp && variant !== 'original' && <AutoBestButton variant={variant === 'test' ? 'test' : 'default'} />}
                         {showCompareButton && !isComparing && variant === 'default' && (
                             <Button
                                 variant="primary"
@@ -397,7 +402,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                 stats={getItemStats(
                                     equipped,
                                     slot.key,
-                                    { itemBalancingLibrary, itemBalancingConfig, weaponLibrary },
+                                    { itemBalancingLibrary, itemBalancingConfig, weaponLibrary, skinUpgradeLibrary },
                                     { techModifiers, forgeAscensionMulti, clanModifiers }
                                 )}
                                 perfection={getPerfection(equipped, secondaryStatLibrary)}

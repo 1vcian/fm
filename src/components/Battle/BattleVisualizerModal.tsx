@@ -5,7 +5,7 @@ import { VisualBattleEngine } from '../../utils/VisualBattleEngine';
 import { PvpVisualEngine } from '../../pvp/simulate';
 import type { PvpFighter } from '../../pvp/fighter';
 import type { PvpHpConfig } from '../../engine';
-import { dungeonWaveSpecs, mainBattleWaveSpecs, missionWaveSpecs, skillSpecs, skillDamageCount } from '../../engine';
+import { dungeonWaveSpecs, mainBattleWaveSpecs, missionWaveSpecs, skillSpecs, skillDamageCount, testDummySpec, TEST_DUMMY_FLOOR_FRACTION } from '../../engine';
 import type { AggregatedStats } from '../../utils/statEngine';
 import type { LibraryData } from '../../utils/BattleHelper';
 import { stageLabel } from '../../utils/difficulty';
@@ -53,6 +53,8 @@ interface BattleVisualizerModalProps {
      * multiplier, timer, HP % decides a timeout). Everything else is the same visualizer.
      */
     pvp?: { p1: PvpFighter; p2: PvpFighter; cfg: PvpHpConfig; seed: number };
+    /** "Test against dummy": one infinite-HP dummy that keeps the player at a quarter of HpMax. */
+    testDummy?: boolean;
 }
 
 export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
@@ -69,7 +71,8 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     customWaves,
     debugConfig,
     onDebugConfigChange,
-    pvp
+    pvp,
+    testDummy
 }) => {
     const { selectedVersion } = useGameDataContext();
     const [engine, setEngine] = useState<{ tick(dt: number): void; getSnapshot(): any; ticks?(): number } | null>(null);
@@ -200,7 +203,9 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             itemBalancingConfig: libs.itemBalancingConfig,
         } as any;
         let wavesList: any[] = [];
-        if (customWaves && customWaves.length) {
+        if (testDummy) {
+            wavesList = [[testDummySpec(enemyLibs)]];
+        } else if (customWaves && customWaves.length) {
             wavesList = customWaves;
         } else if (dungeonType && dungeonLevel !== undefined) {
             const library = ({
@@ -289,7 +294,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
         return () => {
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
-    }, [isOpen, ageIdx, battleIdx, difficultyMode, libs, playerStats, customWaves, dungeonType, dungeonLevel, restartKey, debugConfig, isDebugMode, pvp]);
+    }, [isOpen, ageIdx, battleIdx, difficultyMode, libs, playerStats, customWaves, dungeonType, dungeonLevel, restartKey, debugConfig, isDebugMode, pvp, testDummy]);
 
     // Helper functions setupDungeonWave, setupWave, startWaveLogic removed as we preload everything now
 
@@ -470,6 +475,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     // Get title - use same format as main app
     const getTitle = () => {
         if (pvp) return `${pvp.p1.name} vs ${pvp.p2.name}`;
+        if (testDummy) return 'Test against dummy';
         if (dungeonType) {
             const world = Math.floor((dungeonLevel || 0) / 10) + 1;
             const stage = ((dungeonLevel || 0) % 10) + 1;
@@ -736,7 +742,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             <div className="flex items-center gap-1">
                                 <Shield className="w-3 h-3 text-red-400" />
                                 <span className="text-gray-400">Enemy Damage:</span>
-                                <span className="text-red-300 font-bold">{fmt(combatStats.enemyDamage)}</span>
+                                <span className="text-red-300 font-bold">{testDummy ? `each hit takes you down to ${TEST_DUMMY_FLOOR_FRACTION * 100}% of your HP` : fmt(combatStats.enemyDamage)}</span>
                             </div>
                             {ageIdx !== -2 && (
                                 <div className="flex items-center gap-1">

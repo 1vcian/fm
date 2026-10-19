@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { ownedSkillLevels } from '../optimizer/buildOptimizer';
 import { useTreeModeProfile } from './useGlobalStats';
 import { StatEngine } from '../utils/statEngine';
 import { SkillSlot, UserProfile } from '../types/Profile';
@@ -16,11 +17,12 @@ export function useProfileOptimizer() {
     const optimizeSkills = useCallback((): SkillSlot[] | null => {
         if (!skillLibrary || !itemBalancingConfig || typeof skillSlots !== 'number') return null;
 
-        // Build the candidate list from the library, using levels from passives
-        const collection: SkillSlot[] = Object.keys(skillLibrary).map(id => ({
+        // Only the skills the player has unlocked, each at its own level (ownedSkillLevels).
+        const owned = ownedSkillLevels(profile);
+        const collection: SkillSlot[] = Object.keys(skillLibrary).filter(id => owned[id] > 0).map(id => ({
             id: id,
             rarity: skillLibrary[id].Rarity || 'Common',
-            level: profile.skills.passives[id] || 1,
+            level: owned[id],
             evolution: 0,
             ascensionLevel: profile.misc.skillAscensionLevel || 0
         }));

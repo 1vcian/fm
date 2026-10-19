@@ -1,70 +1,36 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown, Timer } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronRight, Loader2, Timer, X } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { SkillSlot } from '../../types/Profile';
 import { Input } from '../UI/Input';
 import { cn } from '../../lib/utils';
-import { BUFF_SKILL_TYPES, buffActiveTicks, skillCastTimes, skillCycleTicks, skillFirstCastTick } from '../../engine/skills';
+import { BUFF_SKILL_TYPES, SKILL_EPICENTER, playerUnitSpec, pvpSkillRun, skillSpecs, type PvpLoadout, type PvpSkillRunResult } from '../../engine';
+import { pvpConfigFromJson } from '../../pvp/simulate';
+import { formatCompactNumber } from '../../utils/statsCalculator';
 import { CooldownBreakpoints } from './CooldownBreakpoints';
 
 /**
- * ==== Cast timing model: the engine's exact tick math (src/engine/skills.ts) ====
- * - Every skill starts on a hardcoded 4.0 s charge. Skill timers lose FD6(dt) = 0.099999 s per
- *   0.1 s tick, so the first cast lands after ceil(4.0 / 0.099999) = 41 ticks = 4.1 s.
- * - After a cast the skill is Active for ActiveDuration, THEN on cooldown (CDR scales only the
- *   cooldown); each phase costs max(1, ceil(seconds / 0.099999)) ticks, so
- *       cast_n = 4.1 s + n * (activeTicks + cooldownTicks) * 0.1 s
- *   There is no minimum cooldown in the game.
+ * Skills cycle, measured by the combat engine: a PvP battle against a dummy (src/engine/dummyRun.ts
+ * pvpSkillRun). The player's real loadout walks in from the PvP spawn, every skill fires when ready
+ * (TryActivateSkills after each frame) and only the skill damage that reaches the dummy before the
+ * PvpMatchTimerSeconds timer runs out counts. A cast whose meteor or projectile lands after the
+ * timer is wasted, which no cast-time formula can see.
+ *
+ * The run is repeated over the cooldown reduction sweep: skills never crit in the engine, so the
+ * skill damage is deterministic for a seed and equal values are a true plateau.
  */
-const FIRST_CAST = skillFirstCastTick() / 10;
-const EPS = 1e-9;
-
-/** Same list the engine uses to separate buffs from damage casts */
-const isBuffType = (id: string) => BUFF_SKILL_TYPES.has(id);
-
 const SWEEP_STEP = 0.001; // 0.1%
 const SWEEP_MAX = 0.25;   // 25% (SkillCooldownMulti rolls are 1%-7% each, 3+ sources stack)
 const GRID_N = Math.round(SWEEP_MAX / SWEEP_STEP);
+/** Relative difference below which two skill damage totals are the same plateau. */
+const SAME = 1e-9;
 
-interface CastInfo { count: number; last: number; period: number; }
-interface CycleWindow { from: number; to: number; casts: number; }
-
-function castModel(T: number, baseCd: number, duration: number, r: number): CastInfo {
-    const cd = baseCd * (1 - r);
-    const period = skillCycleTicks(cd, duration) / 10;
-    const times = skillCastTimes(T, cd, duration);
-    return { count: times.length, last: times.length ? times[times.length - 1] : -1, period };
-}
-
-function landsInFinalSecond(T: number, info: CastInfo): boolean {
-    // last cast lands inside the final second: [T-1, T]
-    return info.count > 0 && info.last >= T - 1 - EPS && info.last <= T + EPS;
-}
-
-function castTimes(T: number, baseCd: number, duration: number, r: number): number[] {
-    return skillCastTimes(T, baseCd * (1 - r), duration, 200);
-}
-
-function pct(r: number, decimals = 1): string {
-    return `${(r * 100).toFixed(decimals)}%`;
-}
-
-function prettyName(id: string): string {
-    return id.replace(/([a-z])([A-Z])/g, '$1 $2');
-}
-
-interface SkillAdvice {
-    id: string;
-    rarity: string;
-    baseCd: number;
-    duration: number;
-    isBuff: boolean;
-    windows: CycleWindow[];
-    current: CastInfo & { inWindow: boolean };
-    nearest: { window: CycleWindow; delta: number } | null;
-    coverage: { pct: number; lastSecCovered: boolean } | null;
-}
+const pct = (r: number, decimals = 1) => `${(r * 100).toFixed(decimals)}%`;
+const prettyName = (id: string) => id.replace(/([a-z])([A-Z])/g, '$1 $2');
+const sec = (tick: number) => (tick / 10).toFixed(1);
+const same = (a: number, b: number) => Math.abs(a - b) <= SAME * Math.max(1, Math.abs(a), Math.abs(b));
 
 interface SkillsCycleProps {
     skills: SkillSlot[];
@@ -75,435 +41,384 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
     const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
     const globalStats = useGlobalStats();
 
-    const [expanded, setExpanded] = useState(false);
+    const [open, setOpen] = useState(false);
     const [customLen, setCustomLen] = useState<number | null>(null);
     const [timelineMode, setTimelineMode] = useState<'current' | 'target'>('current');
 
-    const configDuration = typeof pvpBaseConfig?.PvpMatchTimerSeconds === 'number'
-        ? pvpBaseConfig.PvpMatchTimerSeconds
-        : null;
-    // NaN until PvpBaseConfig loads: `analysis` is then null and the panel stays hidden.
+    const pvpConfig = useMemo(() => pvpConfigFromJson(pvpBaseConfig), [pvpBaseConfig]);
+    const configDuration = pvpConfig?.PvpMatchTimerSeconds ?? null;
     const T = customLen ?? configDuration ?? NaN;
     const isGameDefault = configDuration !== null && T === configDuration;
     const currentR = globalStats?.skillCooldownReduction ?? 0;
 
-    const analysis = useMemo(() => {
-        if (!skillLibrary || skills.length === 0 || !isFinite(T) || T <= FIRST_CAST + 1) return null;
+    const equipped = useMemo(
+        () => skills.filter(s => s && s.id && (s.level ?? 0) > 0),
+        [skills]
+    );
 
-        const perSkill: SkillAdvice[] = [];
-        for (const slot of skills) {
-            const cfg = skillLibrary[slot.id];
-            if (!cfg) continue;
-            const baseCd = cfg.Cooldown || 0;
-            const duration = cfg.ActiveDuration || 0;
-            const isBuff = isBuffType(cfg.Type || slot.id) && duration > 0;
+    /** The engine run at one reduction. */
+    const runner = useMemo(() => {
+        if (!globalStats || !skillLibrary || !pvpConfig || equipped.length === 0 || !isFinite(T) || T <= 0) return null;
+        const spec = playerUnitSpec(globalStats as never, { x: 0, y: 0 }, 'league');
+        const loadout: PvpLoadout = {
+            health: spec.stats.hpMax ?? 1,
+            stats: spec.stats,
+            attackRange: spec.attackRange,
+            windupTime: spec.windupTime,
+            attackDuration: spec.attackDuration,
+            projectile: spec.projectile,
+            // The HP multiplier does not move skill damage: the dummy never attacks.
+            petCount: 0, skillCount: 0, hasMount: false,
+            tag: 'player',
+        };
+        const cfg = { ...pvpConfig, PvpMatchTimerSeconds: T };
+        const list = equipped.map(s => ({ id: s.id, level: s.level }));
+        return (r: number): PvpSkillRunResult =>
+            pvpSkillRun(loadout, skillSpecs({ ...(globalStats as any), skillCooldownReduction: r }, list, skillLibrary), cfg, 1);
+    }, [globalStats, skillLibrary, pvpConfig, equipped, T]);
 
-            // Sweep 0 -> 25% at 0.1% steps, merge contiguous aligned steps (same cast count) into windows
-            const windows: CycleWindow[] = [];
-            if (!isBuff && baseCd > 0) {
-                let open: CycleWindow | null = null;
-                for (let i = 0; i <= GRID_N; i++) {
-                    const r = i * SWEEP_STEP;
-                    const info = castModel(T, baseCd, duration, r);
-                    if (landsInFinalSecond(T, info)) {
-                        if (open && open.casts === info.count && Math.round(open.to / SWEEP_STEP) === i - 1) {
-                            open.to = r;
-                        } else {
-                            open = { from: r, to: r, casts: info.count };
-                            windows.push(open);
-                        }
-                    } else {
-                        open = null;
-                    }
-                }
-            }
+    // One battle at the current reduction is cheap, so the card on the page always shows it.
+    const preview = useMemo(() => (runner ? runner(currentR) : null), [runner, currentR]);
 
-            const now = castModel(T, baseCd, duration, currentR);
-            const inWindow = !isBuff && landsInFinalSecond(T, now);
+    // The sweep is GRID_N + 1 battles of T seconds: only while the popup is open, and one frame
+    // after it opens so the popup paints its loading state first.
+    const [analysis, setAnalysis] = useState<Analysis | null>(null);
+    useEffect(() => {
+        setAnalysis(null);
+        if (!open || !runner) return;
+        const id = window.setTimeout(() => setAnalysis(sweep(runner, currentR)), 30);
+        return () => window.clearTimeout(id);
+    }, [open, runner, currentR]);
 
-            let nearest: SkillAdvice['nearest'] = null;
-            if (!isBuff && !inWindow && windows.length > 0) {
-                let bestW = windows[0];
-                let bestDist = Infinity;
-                let bestDelta = 0;
-                for (const w of windows) {
-                    const delta = currentR < w.from ? w.from - currentR : (currentR > w.to ? w.to - currentR : 0);
-                    if (Math.abs(delta) < bestDist) {
-                        bestDist = Math.abs(delta);
-                        bestW = w;
-                        bestDelta = delta;
-                    }
-                }
-                nearest = { window: bestW, delta: bestDelta };
-            }
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open]);
 
-            let coverage: SkillAdvice['coverage'] = null;
-            if (isBuff) {
-                // The buff is on the units from the tick after the cast for activeTicks - 1 ticks.
-                const on = buffActiveTicks(duration) / 10;
-                let uptime = 0;
-                let lastSecCovered = false;
-                for (const t0 of castTimes(T, baseCd, duration, currentR)) {
-                    uptime += Math.max(0, Math.min(on, T - t0));
-                    if (t0 < T && t0 + duration > T - 1) lastSecCovered = true;
-                }
-                coverage = { pct: uptime / T, lastSecCovered };
-            }
+    if (!runner || !preview) return null;
 
-            perSkill.push({
-                id: slot.id, rarity: slot.rarity, baseCd, duration, isBuff,
-                windows, current: { ...now, inWindow }, nearest, coverage
-            });
-        }
-
-        // Combined recommendation across DAMAGE skills only
-        const dmgSkills = perSkill.filter(s => !s.isBuff && s.baseCd > 0);
-        let combined: {
-            allAligned: boolean;
-            score: number;
-            of: number;
-            ranges: { from: number; to: number; totalCasts: number }[];
-            best: { from: number; to: number; totalCasts: number };
-            recommendedR: number;
-            currentScore: number;
-        } | null = null;
-
-        if (dmgSkills.length > 0) {
-            const scoreAt = (r: number) => {
-                let score = 0, total = 0;
-                for (const s of dmgSkills) {
-                    const info = castModel(T, s.baseCd, s.duration, r);
-                    if (landsInFinalSecond(T, info)) score++;
-                    total += info.count;
-                }
-                return { score, total };
-            };
-
-            const grid = Array.from({ length: GRID_N + 1 }, (_, i) => scoreAt(i * SWEEP_STEP));
-            const maxScore = grid.reduce((m, g) => Math.max(m, g.score), 0);
-
-            if (maxScore > 0) {
-                const ranges: { from: number; to: number; totalCasts: number }[] = [];
-                let open: { from: number; to: number; totalCasts: number } | null = null;
-                for (let i = 0; i <= GRID_N; i++) {
-                    if (grid[i].score === maxScore) {
-                        const r = i * SWEEP_STEP;
-                        if (open && Math.round(open.to / SWEEP_STEP) === i - 1) {
-                            open.to = r;
-                            open.totalCasts = Math.max(open.totalCasts, grid[i].total);
-                        } else {
-                            open = { from: r, to: r, totalCasts: grid[i].total };
-                            ranges.push(open);
-                        }
-                    } else {
-                        open = null;
-                    }
-                }
-
-                // Pick best range: highest total cast count, tie-break nearest to current reduction
-                const distTo = (g: { from: number; to: number }) =>
-                    currentR < g.from ? g.from - currentR : (currentR > g.to ? currentR - g.to : 0);
-                let best = ranges[0];
-                for (const g of ranges) {
-                    if (g.totalCasts > best.totalCasts) best = g;
-                    else if (g.totalCasts === best.totalCasts && distTo(g) < distTo(best)) best = g;
-                }
-
-                const atCurrent = scoreAt(currentR);
-                const currentIsOptimal = atCurrent.score === maxScore;
-                const recommendedR = currentIsOptimal ? currentR : (best.from + best.to) / 2;
-
-                combined = {
-                    allAligned: maxScore === dmgSkills.length,
-                    score: maxScore,
-                    of: dmgSkills.length,
-                    ranges,
-                    best,
-                    recommendedR,
-                    currentScore: atCurrent.score
-                };
-            } else {
-                combined = {
-                    allAligned: false, score: 0, of: dmgSkills.length,
-                    ranges: [], best: { from: currentR, to: currentR, totalCasts: 0 },
-                    recommendedR: currentR,
-                    currentScore: 0
-                };
-            }
-        }
-
-        return { perSkill, dmgSkills, combined };
-    }, [skillLibrary, skills, T, currentR]);
-
-    if (!analysis || analysis.perSkill.length === 0) return null;
-
-    const { perSkill, combined } = analysis;
-    const recommendedR = combined?.recommendedR ?? currentR;
-    const shownR = timelineMode === 'target' ? recommendedR : currentR;
-    const currentOptimal = combined !== null && combined.currentScore === combined.score && combined.score > 0;
-    const headerStatus = combined === null
-        ? null
-        : currentOptimal
-            ? { label: combined.allAligned ? 'ALIGNED' : `${combined.currentScore}/${combined.of} ALIGNED`, className: 'bg-green-500/15 text-green-400 border-green-500/30' }
-            : { label: combined.score > 0 ? `GO ${pct(recommendedR)}` : 'NO WINDOW', className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
+    const previewWasted = preview.skills.reduce((n, s) => n + s.wastedCasts, 0);
+    const shown = timelineMode === 'target' && analysis?.target ? analysis.target : analysis?.current ?? null;
+    const shownR = timelineMode === 'target' && analysis?.next ? analysis.next.r : currentR;
 
     return (
-        <div className="rounded-xl border border-border bg-bg-input/30 overflow-hidden">
-            {/* Header (collapsible) */}
+        <>
             <button
-                onClick={() => setExpanded(!expanded)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-bg-input/50 transition-colors"
+                onClick={() => setOpen(true)}
+                data-testid="skills-cycle"
+                className="group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-border bg-bg-input/30 hover:bg-bg-input/60 hover:border-accent-primary/50 transition-colors text-left"
             >
-                <div className="flex items-center gap-2">
-                    <Timer className="w-4 h-4 text-accent-primary" />
-                    <span className="text-xs font-bold text-text-primary uppercase tracking-wide">Skills Cycle</span>
-                    <span className="text-[10px] font-mono text-text-muted">CDR {pct(currentR)}</span>
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 shrink-0 rounded-lg bg-accent-primary/15 border border-accent-primary/30 flex items-center justify-center">
+                        <Timer className="w-4 h-4 text-accent-primary" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="text-xs font-bold text-text-primary uppercase tracking-wide">Skills Cycle</div>
+                        <div className="text-[10px] font-mono text-text-muted truncate">
+                            CDR {pct(currentR)} · {formatCompactNumber(preview.skillDamage)} skill dmg in {T}s
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {headerStatus && (
-                        <span className={cn('text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border', headerStatus.className)}>
-                            {headerStatus.label}
-                        </span>
-                    )}
-                    <ChevronDown className={cn('w-4 h-4 text-text-muted transition-transform', expanded && 'rotate-180')} />
+                <div className="flex items-center gap-2 shrink-0">
+                    <span
+                        className={cn(
+                            'text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border',
+                            previewWasted > 0 ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'
+                        )}
+                        data-testid="skills-cycle-status"
+                    >
+                        {previewWasted > 0 ? `${previewWasted} WASTED` : 'NO WASTE'}
+                    </span>
+                    <span className="hidden sm:flex items-center gap-1 text-[10px] font-bold text-accent-primary group-hover:underline">
+                        Simulate <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
+                    <ChevronRight className="sm:hidden w-4 h-4 text-text-muted" />
                 </div>
             </button>
 
-            {expanded && (
-                <div className="px-3 pb-3 flex flex-col gap-3">
-                    {/* Battle length + current reduction */}
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <div className="flex items-center gap-1.5 bg-bg-input/50 p-1 rounded border border-border/30">
-                            <span className="text-[10px] text-text-muted px-1 whitespace-nowrap">Battle length</span>
-                            <Input
-                                type="number"
-                                step="1"
-                                min="5"
-                                value={T}
-                                onChange={(e) => {
-                                    const v = parseFloat(e.target.value);
-                                    setCustomLen(isFinite(v) && v > 0 ? v : null);
-                                }}
-                                className="w-14 h-7 text-center font-mono font-bold text-xs text-text-primary bg-bg-secondary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                            <span className="text-[10px] text-text-muted pr-1">s</span>
-                            {isGameDefault && (
-                                <span className="text-[9px] text-green-400/80 pr-1 whitespace-nowrap">(game default)</span>
-                            )}
-                            {customLen !== null && configDuration !== null && customLen !== configDuration && (
-                                <button
-                                    onClick={() => setCustomLen(null)}
-                                    className="text-[9px] text-accent-primary hover:underline pr-1"
-                                    title={`Reset to game default (${configDuration}s from PvpBaseConfig)`}
-                                >
-                                    reset
-                                </button>
-                            )}
-                        </div>
-                        <span className="text-[10px] text-text-secondary font-mono">
-                            Your reduction: <span className="font-bold text-text-primary">{pct(currentR, 2)}</span>
-                        </span>
-                    </div>
-
-                    {/* Combined recommendation */}
-                    {combined && (
-                        <div className={cn(
-                            'rounded p-2 border text-[11px] leading-snug',
-                            currentOptimal
-                                ? 'bg-green-500/10 border-green-500/25 text-green-400'
-                                : 'bg-amber-500/10 border-amber-500/25 text-amber-400'
-                        )}>
-                            {combined.score === 0 ? (
-                                <span>No reduction &le; {pct(SWEEP_MAX, 0)} lands a final cast in the last second for any damage skill at {T}s.</span>
-                            ) : (
-                                <>
-                                    <span className="font-bold">
-                                        {combined.allAligned
-                                            ? `All ${combined.of} damage skill${combined.of > 1 ? "s" : ""} land a final cast`
-                                            : `Best compromise: ${combined.score}/${combined.of} damage skills land a final cast`}
-                                    </span>
-                                    <span className="text-text-secondary"> at </span>
-                                    <span className="font-mono font-bold">
-                                        {combined.best.from === combined.best.to
-                                            ? pct(combined.best.from)
-                                            : `${pct(combined.best.from)}-${pct(combined.best.to)}`}
-                                    </span>
-                                    {currentOptimal ? (
-                                        <span>. You are in the window.</span>
-                                    ) : (
-                                        <span>
-                                            . You are at <span className="font-mono">{pct(currentR)}</span>, adjust by{' '}
-                                            <span className="font-mono font-bold">
-                                                {recommendedR >= currentR ? '+' : '−'}{pct(Math.abs(recommendedR - currentR))}
-                                            </span>.
-                                        </span>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Per-skill windows */}
-                    <div className="flex flex-col gap-1.5">
-                        {perSkill.map((s) => (
-                            <div key={s.id} className="bg-bg-input/50 rounded p-2 border border-border/30">
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className={cn('text-[11px] font-bold', `text-rarity-${s.rarity.toLowerCase()}`)}>
-                                            {prettyName(s.id)}
-                                        </span>
-                                        <span className="text-[9px] font-mono text-text-muted">
-                                            CD {s.baseCd}s{s.duration > 0 ? ` · DUR ${s.duration}s` : ''}
-                                        </span>
-                                    </div>
-                                    {s.isBuff ? (
-                                        <span className={cn(
-                                            'text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border',
-                                            s.coverage?.lastSecCovered
-                                                ? 'bg-green-500/15 text-green-400 border-green-500/30'
-                                                : 'bg-bg-secondary/50 text-text-secondary border-border/30'
-                                        )}>
-                                            BUFF · {((s.coverage?.pct ?? 0) * 100).toFixed(0)}% uptime{s.coverage?.lastSecCovered ? ' · covers final second' : ''}
-                                        </span>
-                                    ) : s.current.inWindow ? (
-                                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-green-500/15 text-green-400 border-green-500/30">
-                                            IN WINDOW · last {s.current.last.toFixed(1)}s · {s.current.count} casts
-                                        </span>
-                                    ) : (
-                                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-amber-500/15 text-amber-400 border-amber-500/30">
-                                            {s.nearest
-                                                ? `at ${pct(currentR)} → ${s.nearest.delta >= 0 ? '+' : '−'}${pct(Math.abs(s.nearest.delta))} to ${pct(s.nearest.window.from)}-${pct(s.nearest.window.to)}`
-                                                : `no window ≤ ${pct(SWEEP_MAX, 0)}`}
-                                            {' '}· last {s.current.last.toFixed(1)}s
-                                        </span>
-                                    )}
+            {open && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-stretch sm:items-center justify-center bg-black/80 backdrop-blur-sm sm:p-4" onClick={() => setOpen(false)}>
+                    <div
+                        role="dialog"
+                        aria-label="Skills cycle simulation"
+                        data-testid="skills-cycle-modal"
+                        className="bg-bg-primary text-text-primary w-full sm:max-w-3xl h-full sm:h-auto sm:max-h-[92vh] sm:rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-gradient-to-r from-accent-primary/15 via-bg-secondary/40 to-bg-secondary/40">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-9 h-9 shrink-0 rounded-xl bg-accent-primary/20 border border-accent-primary/40 flex items-center justify-center">
+                                    <Timer className="w-5 h-5 text-accent-primary" />
                                 </div>
-                                {!s.isBuff && s.windows.length > 0 && (
-                                    <div className="flex items-center gap-1 flex-wrap mt-1.5">
-                                        {s.windows.map((w, i) => {
-                                            const active = currentR >= w.from - EPS && currentR <= w.to + EPS;
-                                            return (
-                                                <span
-                                                    key={i}
-                                                    title={`${w.casts} casts, final one in the last second`}
-                                                    className={cn(
-                                                        'text-[9px] font-mono px-1.5 py-0.5 rounded border',
-                                                        active
-                                                            ? 'bg-green-500/20 text-green-400 border-green-500/40 font-bold'
-                                                            : 'bg-bg-secondary/60 text-text-secondary border-border/40'
-                                                    )}
-                                                >
-                                                    {pct(w.from)}-{pct(w.to)} <span className="opacity-70">({w.casts}x)</span>
-                                                </span>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                <div className="min-w-0">
+                                    <div className="text-sm font-bold text-text-primary">Skills cycle simulation</div>
+                                    <div className="text-[10px] text-text-muted truncate">A PvP battle against a dummy, run by the combat engine at every reduction from 0 to {pct(SWEEP_MAX, 0)}</div>
+                                </div>
                             </div>
-                        ))}
-                    </div>
+                            <button onClick={() => setOpen(false)} aria-label="Close" data-testid="skills-cycle-close" className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-input">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
-                    {/* Cooldown breakpoints (casts/min vs reduction, exact tick math) */}
-                    <CooldownBreakpoints skills={perSkill.map((p) => ({ id: p.id, baseCd: p.baseCd, duration: p.duration }))} currentR={currentR} />
-
-                    {/* Timeline */}
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-2">
-                            <span className="text-[9px] text-text-muted uppercase font-bold tracking-wide">Cast timeline</span>
-                            <div className="flex items-center gap-1">
-                                <button
-                                    onClick={() => setTimelineMode('current')}
-                                    className={cn(
-                                        'px-2 py-0.5 text-[9px] font-bold font-mono rounded border transition-colors',
-                                        timelineMode === 'current'
-                                            ? 'bg-accent-primary text-black border-accent-primary'
-                                            : 'bg-transparent text-text-muted border-border/40 hover:border-text-muted'
-                                    )}
-                                >
-                                    CURRENT {pct(currentR)}
-                                </button>
-                                {combined && combined.score > 0 && (
+                        <div className="px-4 py-2.5 border-b border-border/60 flex items-center gap-3 flex-wrap">
+                            <div className="flex items-center gap-1.5 bg-bg-input/50 p-1 rounded-lg border border-border/30">
+                                <span className="text-[10px] text-text-muted px-1 whitespace-nowrap">Battle length</span>
+                                <Input
+                                    type="number"
+                                    step="1"
+                                    min="5"
+                                    value={T}
+                                    onChange={(e) => {
+                                        const v = parseFloat(e.target.value);
+                                        setCustomLen(isFinite(v) && v > 0 ? v : null);
+                                    }}
+                                    className="w-14 h-7 text-center font-mono font-bold text-xs text-text-primary bg-bg-secondary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                                <span className="text-[10px] text-text-muted pr-1">s</span>
+                                {isGameDefault && <span className="text-[9px] text-green-400/80 pr-1 whitespace-nowrap">(game default)</span>}
+                                {customLen !== null && configDuration !== null && customLen !== configDuration && (
                                     <button
-                                        onClick={() => setTimelineMode('target')}
-                                        className={cn(
-                                            'px-2 py-0.5 text-[9px] font-bold font-mono rounded border transition-colors',
-                                            timelineMode === 'target'
-                                                ? 'bg-accent-primary text-black border-accent-primary'
-                                                : 'bg-transparent text-text-muted border-border/40 hover:border-text-muted'
-                                        )}
+                                        onClick={() => setCustomLen(null)}
+                                        className="text-[9px] text-accent-primary hover:underline pr-1"
+                                        title={`Reset to game default (${configDuration}s from PvpBaseConfig)`}
                                     >
-                                        TARGET {pct(recommendedR)}
+                                        reset
                                     </button>
                                 )}
                             </div>
+                            <span className="text-[10px] text-text-muted">{equipped.length} skill{equipped.length === 1 ? '' : 's'} equipped, seed 1</span>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            {perSkill.map((s) => {
-                                const times = castTimes(T, s.baseCd, s.duration, shownR);
-                                const lastT = times.length > 0 ? times[times.length - 1] : -1;
-                                return (
-                                    <div key={s.id} className="flex items-center gap-1.5">
-                                        <span className={cn('w-20 shrink-0 whitespace-nowrap overflow-hidden text-clip text-right text-[9px] font-bold', `text-rarity-${s.rarity.toLowerCase()}`)}>
-                                            {prettyName(s.id)}
-                                        </span>
-                                        <div className="relative flex-1 h-5 rounded bg-bg-secondary/70 border border-border/30 overflow-hidden">
-                                            {/* last-second zone */}
-                                            <div
-                                                className="absolute top-0 bottom-0 bg-red-500/20 border-l border-red-400/60"
-                                                style={{ left: `${((T - 1) / T) * 100}%`, right: 0 }}
-                                            />
-                                            {/* buff duration bars */}
-                                            {s.isBuff && times.map((t, i) => (
-                                                <div
-                                                    key={`b${i}`}
-                                                    className="absolute top-[3px] bottom-[3px] bg-green-500/25 rounded-sm"
-                                                    style={{
-                                                        left: `${(t / T) * 100}%`,
-                                                        width: `${(Math.min(s.duration, T - t) / T) * 100}%`
-                                                    }}
-                                                />
-                                            ))}
-                                            {/* cast ticks */}
-                                            {times.map((t, i) => (
-                                                <div
-                                                    key={i}
-                                                    title={`Cast ${i + 1} @ ${t.toFixed(1)}s`}
-                                                    className={cn(
-                                                        'absolute top-0 bottom-0',
-                                                        t === lastT
-                                                            ? (t >= T - 1 ? 'w-[3px] bg-green-400' : 'w-[3px] bg-amber-400')
-                                                            : s.isBuff ? 'w-[2px] bg-green-400/70' : 'w-[2px] bg-red-400/80'
-                                                    )}
-                                                    style={{ left: `calc(${(t / T) * 100}% - 1px)` }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {/* axis */}
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-20 shrink-0" />
-                                <div className="relative flex-1 h-3 text-[8px] font-mono text-text-muted">
-                                    <span className="absolute left-0">0s</span>
-                                    <span className="absolute" style={{ left: '50%', transform: 'translateX(-50%)' }}>{(T / 2).toFixed(0)}s</span>
-                                    <span className="absolute" style={{ left: `${((T - 1) / T) * 100}%`, transform: 'translateX(-50%)' }} >{(T - 1).toFixed(0)}s</span>
-                                    <span className="absolute right-0">{T}s</span>
+
+                        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4">
+                            {!analysis ? (
+                                <div className="flex flex-col items-center justify-center gap-2 py-16 text-[11px] text-text-secondary" data-testid="skills-cycle-loading">
+                                    <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
+                                    Running {GRID_N + 1} battles of {T}s
                                 </div>
-                            </div>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="skills-cycle-summary">
+                                        <Kpi label="Skill damage" value={formatCompactNumber(analysis.current.skillDamage)}
+                                            hint={analysis.maxDmg > 0 ? `${pct(analysis.current.skillDamage / analysis.maxDmg)} of the best` : undefined} />
+                                        <Kpi label="Your reduction" value={pct(currentR, 2)}
+                                            hint={analysis.floor < currentR - 1e-12 ? `same damage from ${pct(analysis.floor)}` : 'no slack'}
+                                            tone={analysis.floor < currentR - 1e-12 ? 'amber' : undefined} />
+                                        <Kpi label="Next gain" value={analysis.next ? pct(analysis.next.r) : 'none'}
+                                            hint={analysis.next
+                                                ? `+${pct(analysis.next.r - currentR)} CDR, +${pct(analysis.next.dmg / Math.max(1, analysis.current.skillDamage) - 1)} dmg`
+                                                : `nothing up to ${pct(SWEEP_MAX, 0)}`}
+                                            tone="green" />
+                                        <Kpi label="Wasted casts" value={String(analysis.current.skills.reduce((n, s) => n + s.wastedCasts, 0))}
+                                            hint="landed after the timer"
+                                            tone={analysis.current.skills.some(s => s.wastedCasts > 0) ? 'amber' : 'green'} />
+                                    </div>
+
+                                    <SweepChart grid={analysis.grid} maxDmg={analysis.maxDmg} currentR={currentR} nextR={analysis.next?.r ?? null} />
+
+                                    <Section title="Skills">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {analysis.current.skills.map((s) => {
+                                                const slot = equipped[s.slot];
+                                                const isBuff = BUFF_SKILL_TYPES.has(s.id);
+                                                const cfg = skillLibrary?.[slot?.id ?? s.id];
+                                                return (
+                                                    <div key={s.id} className={cn('rounded-lg p-2.5 border bg-bg-input/40', s.wastedCasts > 0 ? 'border-amber-500/40' : 'border-border/40')} data-testid="skills-cycle-skill">
+                                                        <div className="flex items-baseline justify-between gap-2">
+                                                            <span className={cn('text-xs font-bold', slot && `text-rarity-${slot.rarity.toLowerCase()}`)}>{prettyName(s.id)}</span>
+                                                            {cfg && <span className="text-[9px] font-mono text-text-muted">CD {cfg.Cooldown}s{cfg.ActiveDuration > 0 ? ` · DUR ${cfg.ActiveDuration}s` : ''}</span>}
+                                                        </div>
+                                                        <div className="mt-1.5 grid grid-cols-3 gap-1 text-center">
+                                                            <Stat label="casts" value={String(s.casts.length)} />
+                                                            <Stat label={isBuff ? 'added to hits' : 'damage'} value={formatCompactNumber(s.damage)} />
+                                                            {isBuff
+                                                                ? <Stat label="uptime" value={pct(s.activeTicks / analysis.current.frames, 0)} />
+                                                                : <Stat label="last hit" value={s.lastHitTick >= 0 ? `${sec(s.lastHitTick)}s` : 'none'} />}
+                                                        </div>
+                                                        {s.wastedCasts > 0 && (
+                                                            <div className="mt-1.5 text-[10px] font-bold text-amber-400">{s.wastedCasts} cast{s.wastedCasts === 1 ? '' : 's'} landed nothing before the timer</div>
+                                                        )}
+                                                        {!isBuff && (
+                                                            <div className="mt-1.5 text-[9px] text-text-muted leading-snug" data-testid="skills-cycle-epicenter">
+                                                                {SKILL_EPICENTER[s.id] ?? 'no effect in the engine'}
+                                                                {s.firstHitDelayTicks >= 0 && <> · first hit <span className="font-mono text-text-secondary">{sec(s.firstHitDelayTicks)}s</span> after the first cast</>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </Section>
+
+                                    {shown && (
+                                        <Section
+                                            title="Cast timeline"
+                                            right={
+                                                <div className="flex items-center gap-1">
+                                                    {(['current', 'target'] as const).filter(m => m === 'current' || analysis.next).map(m => (
+                                                        <button
+                                                            key={m}
+                                                            onClick={() => setTimelineMode(m)}
+                                                            className={cn(
+                                                                'px-2 py-0.5 text-[9px] font-bold font-mono rounded border transition-colors',
+                                                                timelineMode === m ? 'bg-accent-primary text-black border-accent-primary' : 'bg-transparent text-text-muted border-border/40 hover:border-text-muted'
+                                                            )}
+                                                        >
+                                                            {m === 'current' ? `CURRENT ${pct(currentR)}` : `NEXT ${pct(analysis.next!.r)}`}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            }
+                                        >
+                                            <div className="flex flex-col gap-1" data-testid="skills-cycle-timeline">
+                                                {shown.skills.map((s) => {
+                                                    const slot = equipped[s.slot];
+                                                    const isBuff = BUFF_SKILL_TYPES.has(s.id);
+                                                    const dur = skillLibrary?.[slot?.id ?? s.id]?.ActiveDuration ?? 0;
+                                                    return (
+                                                        <div key={s.id} className="flex items-center gap-1.5">
+                                                            <span className={cn('w-20 shrink-0 whitespace-nowrap overflow-hidden text-clip text-right text-[9px] font-bold', slot && `text-rarity-${slot.rarity.toLowerCase()}`)}>
+                                                                {prettyName(s.id)}
+                                                            </span>
+                                                            <div className="relative flex-1 h-6 rounded bg-bg-secondary/70 border border-border/30 overflow-hidden">
+                                                                {isBuff && s.casts.map((c, i) => (
+                                                                    <div key={`b${i}`} className="absolute top-[3px] bottom-[3px] bg-green-500/25 rounded-sm"
+                                                                        style={{ left: `${(c / 10 / T) * 100}%`, width: `${(Math.min(dur, T - c / 10) / T) * 100}%` }} />
+                                                                ))}
+                                                                {s.casts.map((c, i) => {
+                                                                    const lost = c > s.lastHitTick;
+                                                                    return (
+                                                                        <div
+                                                                            key={i}
+                                                                            title={`Cast ${i + 1} at ${sec(c)}s${lost ? ', nothing landed before the timer' : ''}`}
+                                                                            className={cn('absolute top-0 bottom-0', lost ? 'w-[3px] bg-amber-400' : isBuff ? 'w-[2px] bg-green-400/70' : 'w-[2px] bg-red-400/80')}
+                                                                            style={{ left: `calc(${(c / 10 / T) * 100}% - 1px)` }}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="w-20 shrink-0" />
+                                                    <div className="relative flex-1 h-3 text-[8px] font-mono text-text-muted">
+                                                        <span className="absolute left-0">0s</span>
+                                                        <span className="absolute" style={{ left: '50%', transform: 'translateX(-50%)' }}>{(T / 2).toFixed(0)}s</span>
+                                                        <span className="absolute right-0">{T}s</span>
+                                                    </div>
+                                                </div>
+                                                <span className="text-[9px] text-text-muted">At {pct(shownR)}. Red: a hit skill cast, green: a buff and its active time, amber: a cast that landed nothing before the timer.</span>
+                                            </div>
+                                        </Section>
+                                    )}
+
+                                    <Section title="Cooldown breakpoints">
+                                        <CooldownBreakpoints
+                                            skills={equipped.map(s => ({ id: s.id, baseCd: skillLibrary?.[s.id]?.Cooldown || 0, duration: skillLibrary?.[s.id]?.ActiveDuration || 0 }))}
+                                            currentR={currentR}
+                                        />
+                                    </Section>
+                                </>
+                            )}
+                            <p className="pt-2 border-t border-border/40 text-[9px] text-text-muted leading-snug">
+                                Measured by the combat engine: a PvP battle against a dummy that never attacks, never dies and has no dodge
+                                or block. Skills run on time alone: the first cast after the fixed 4.0 s charge, then every active + cooldown
+                                phase, whatever the walk. Only damage that reaches the dummy before the timer counts. Skills never crit, so the skill
+                                damage is exact for the run. Sweep: 0 to {pct(SWEEP_MAX, 0)} in {pct(SWEEP_STEP)} steps.
+                                {configDuration !== null && ` Battle length ${configDuration}s from PvpBaseConfig (PvpMatchTimerSeconds).`}
+                            </p>
                         </div>
                     </div>
-
-                    {/* Model footnote */}
-                    <p className="text-[9px] text-text-muted leading-snug">
-                        Engine model (0.1s ticks): first cast at {FIRST_CAST.toFixed(1)}s (4.0s charge), then every
-                        active + cooldown phase, each rounded up to whole ticks of 0.099999s; cooldown = CD × (1 - reduction),
-                        no minimum. A skill is "aligned" when its final cast lands in the last second
-                        [{(T - 1).toFixed(0)}-{T}s]. Sweep: 0-{pct(SWEEP_MAX, 0)} in {pct(SWEEP_STEP)} steps.
-                        {configDuration !== null && ` Battle length ${configDuration}s from PvpBaseConfig (PvpMatchTimerSeconds).`}
-                    </p>
-                </div>
+                </div>,
+                document.body
             )}
+        </>
+    );
+}
+
+interface Analysis {
+    current: PvpSkillRunResult;
+    grid: { r: number; dmg: number }[];
+    floor: number;
+    next: { r: number; dmg: number } | null;
+    maxDmg: number;
+    target: PvpSkillRunResult | null;
+}
+
+function sweep(runner: (r: number) => PvpSkillRunResult, currentR: number): Analysis {
+    const current = runner(currentR);
+    const grid = Array.from({ length: GRID_N + 1 }, (_, i) => ({ r: i * SWEEP_STEP, dmg: runner(i * SWEEP_STEP).skillDamage }));
+    // Lowest reduction that still gives the current skill damage (the start of its plateau).
+    let floor = currentR;
+    for (let i = grid.length - 1; i >= 0; i--) {
+        if (grid[i].r > currentR + 1e-12) continue;
+        if (same(grid[i].dmg, current.skillDamage)) floor = grid[i].r; else break;
+    }
+    // Next reduction above the current one that lands more skill damage.
+    const next = grid.find(g => g.r > currentR + 1e-12 && g.dmg > current.skillDamage && !same(g.dmg, current.skillDamage)) ?? null;
+    const maxDmg = grid.reduce((m, g) => Math.max(m, g.dmg), 0);
+    const target = next ? runner(next.r) : null;
+    return { current, grid, floor, next, maxDmg, target };
+}
+
+function Kpi({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: 'green' | 'amber' }) {
+    return (
+        <div className={cn(
+            'rounded-lg border px-2.5 py-2 bg-bg-input/40',
+            tone === 'green' ? 'border-green-500/30' : tone === 'amber' ? 'border-amber-500/40' : 'border-border/50'
+        )}>
+            <div className="text-[9px] uppercase font-bold tracking-wide text-text-muted">{label}</div>
+            <div className={cn('text-base font-mono font-bold', tone === 'green' ? 'text-green-400' : tone === 'amber' ? 'text-amber-400' : 'text-text-primary')}>{value}</div>
+            {hint && <div className="text-[9px] text-text-muted leading-tight">{hint}</div>}
+        </div>
+    );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="rounded bg-bg-secondary/60 py-1">
+            <div className="text-[11px] font-mono font-bold text-text-primary">{value}</div>
+            <div className="text-[8px] uppercase text-text-muted">{label}</div>
+        </div>
+    );
+}
+
+function Section({ title, right, children }: { title: string; right?: ReactNode; children: ReactNode }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-text-muted uppercase font-bold tracking-wide">{title}</span>
+                {right}
+            </div>
+            {children}
+        </div>
+    );
+}
+
+/** Skill damage against the reduction, as a step line, with the current and next reductions marked. */
+function SweepChart({ grid, maxDmg, currentR, nextR }: { grid: { r: number; dmg: number }[]; maxDmg: number; currentR: number; nextR: number | null }) {
+    if (maxDmg <= 0) return null;
+    const min = grid.reduce((m, g) => Math.min(m, g.dmg), Infinity);
+    const span = Math.max(maxDmg - min, maxDmg * 1e-6);
+    const W = 500, H = 60;
+    const x = (r: number) => (r / SWEEP_MAX) * W;
+    const y = (d: number) => H - 4 - ((d - min) / span) * (H - 8);
+    const points = grid.map(g => `${x(g.r).toFixed(1)},${y(g.dmg).toFixed(1)}`).join(' ');
+    return (
+        <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-text-muted uppercase font-bold tracking-wide">Skill damage by reduction</span>
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-24 rounded bg-bg-secondary/70 border border-border/30" data-testid="skills-cycle-chart">
+                <polyline points={points} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-accent-primary" vectorEffect="non-scaling-stroke" />
+                {currentR <= SWEEP_MAX && <line x1={x(currentR)} x2={x(currentR)} y1={0} y2={H} stroke="currentColor" className="text-text-primary" strokeDasharray="3 2" vectorEffect="non-scaling-stroke" />}
+                {nextR !== null && <line x1={x(nextR)} x2={x(nextR)} y1={0} y2={H} stroke="currentColor" className="text-green-400" vectorEffect="non-scaling-stroke" />}
+            </svg>
+            <div className="flex justify-between text-[8px] font-mono text-text-muted">
+                <span>0% ({formatCompactNumber(grid[0].dmg)})</span>
+                <span>dashed: you, green: next gain</span>
+                <span>{pct(SWEEP_MAX, 0)} ({formatCompactNumber(grid[grid.length - 1].dmg)})</span>
+            </div>
         </div>
     );
 }
