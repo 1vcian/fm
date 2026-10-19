@@ -175,5 +175,14 @@
         "supporter_message": {
             "note": "Thanks for your good work!!"
         }
+    },
+    {
+        "coffee_count": 1,
+        "supporter": {
+            "name": "JokersHammer"
+        },
+        "supporter_message": {
+            "note": "Nice work! I'm trying to compare forge items before selecting it. Can't figure it out 😕"
+        }
     }
 ]
