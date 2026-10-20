@@ -184,6 +184,7 @@ interface RunOutcome {
     ticks: number;
     playerHp: number;
     waves: WaveResult[];
+    progress?: number;
 }
 
 function runOnce(
@@ -215,6 +216,7 @@ function runOnce(
         ticks: lite.ticks,
         playerHp: lite.playerHp,
         waves: waveResults(waves, lite, player.stats.hpMax),
+        progress: lite.enemyProgress,
     };
 }
 
@@ -225,6 +227,7 @@ function toResult(
 ): BattleResult {
     const wins = outcomes.filter((o) => o.victory).length;
     const representative = outcomes.find((o) => o.victory) ?? outcomes[0];
+    const losses = outcomes.filter((o) => !o.victory);
     return {
         difficultyIdx: 0,
         ...extra,
@@ -232,6 +235,7 @@ function toResult(
         victory: representative.victory,
         winProbability: (wins / outcomes.length) * 100,
         totalRuns: outcomes.length,
+        lossProgress: losses.length ? losses.reduce((s, o) => s + (o.progress ?? 0), 0) / losses.length : undefined,
         playerHealthRemaining: representative.playerHp,
         totalTime: representative.ticks / 10,
         totalEnemyHp: representative.waves.reduce((s, w) => s + w.totalEnemyHp, 0),
@@ -408,6 +412,7 @@ export function simulateMissionBattleMulti(
             ticks: lite.ticks,
             playerHp: lite.playerHp,
             waves: waveResults([wave], lite, player.stats.hpMax),
+            progress: lite.enemyProgress,
         });
     }
     // battleIdx carries the MissionId: the visualizer modal looks the mission row up again
