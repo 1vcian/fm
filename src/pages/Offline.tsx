@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { useProfile } from '../context/ProfileContext';
 import { useGameData } from '../hooks/useGameData';
-import { useTreeMode } from '../context/TreeModeContext';
+import { useTreeModifiers } from '../hooks/useCalculatedStats';
+import { useTreeLimits } from '../hooks/useTreeLimits';
+import { SandboxPanel, type SandboxField } from '../components/UI/SandboxPanel';
 import { Card } from '../components/UI/Card';
 import { TrendingUp, Info } from 'lucide-react';
 import { GameIcon } from '../components/UI/GameIcon';
@@ -10,71 +11,30 @@ import { formatNumber } from '../utils/format';
 
 
 export default function Offline() {
-    const { profile } = useProfile();
-    const { treeMode } = useTreeMode();
-    const { data: techLibrary } = useGameData<any>('TechTreeLibrary.json');
-    const { data: techMapping } = useGameData<any>('TechTreeMapping.json');
     const { data: idleConfig } = useGameData<any>('IdleConfig.json');
 
     const [totalOfflineHours, setTotalOfflineHours] = useState(2);
 
-    // Calculate bonuses based on current Tree Mode
-    const bonuses = useMemo(() => {
-        let coinMultiplier = 1;
-        let hammerMultiplier = 1;
-        let maxTimeMultiplier = 1;
-
-        if (!profile?.techTree || !techLibrary || !techMapping?.trees) {
-            return { coinMultiplier, hammerMultiplier, maxTimeMultiplier };
-        }
-
-        const getEffectiveTree = () => {
-            if (treeMode === 'my') return profile.techTree;
-            if (treeMode === 'empty') return { Forge: {}, Power: {}, SkillsPetTech: {} } as any;
-
-            // for 'max' mode, build tree from mapping and max levels from library
-            const maxTree: any = { Forge: {}, Power: {}, SkillsPetTech: {} };
-            Object.entries(techMapping.trees).forEach(([treeName, treeDef]: [string, any]) => {
-                if (treeDef.nodes) {
-                    treeDef.nodes.forEach((node: any) => {
-                        const nodeConfig = techLibrary[node.type];
-                        maxTree[treeName][node.id] = nodeConfig?.MaxLevel ?? 0;
-                    });
-                }
-            });
-            return maxTree;
-        };
-
-        const activeTree = getEffectiveTree();
-
-        Object.entries(activeTree).forEach(([treeName, nodes]) => {
-            const treeMapping = techMapping.trees[treeName];
-            if (!treeMapping?.nodes) return;
-
-            Object.entries(nodes as Record<string, number>).forEach(([nodeId, level]) => {
-                if (level <= 0) return;
-
-                const nodeDef = treeMapping.nodes.find((n: any) => n.id === parseInt(nodeId));
-                if (!nodeDef) return;
-
-                const nodeConfig = techLibrary[nodeDef.type];
-                if (!nodeConfig?.Stats?.[0]) return;
-
-                const stat = nodeConfig.Stats[0];
-                const bonusValue = stat.Value + ((level - 1) * stat.ValueIncrease);
-
-                if (nodeDef.type === 'CoinOfflineReward') {
-                    coinMultiplier += bonusValue;
-                } else if (nodeDef.type === 'HammerOfflineReward') {
-                    hammerMultiplier += bonusValue;
-                } else if (nodeDef.type === 'MaxOfflineReward') {
-                    maxTimeMultiplier += bonusValue;
-                }
-            });
-        });
-
-        return { coinMultiplier, hammerMultiplier, maxTimeMultiplier };
-    }, [profile, techLibrary, techMapping, treeMode]);
+    // Tech tree bonuses of the selected tree mode, with the sandbox overrides on top.
+    const treeModifiers = useTreeModifiers();
+    const treeLimits = useTreeLimits();
+    const profileCoin = treeModifiers['CoinOfflineReward'] || 0;
+    const profileHammer = treeModifiers['HammerOfflineReward'] || 0;
+    const profileMaxTime = treeModifiers['MaxOfflineReward'] || 0;
+    const [sandbox, setSandbox] = useState<Record<string, number>>({});
+    const coinBonus = sandbox.coin ?? profileCoin;
+    const hammerBonus = sandbox.hammer ?? profileHammer;
+    const maxTimeBonus = sandbox.maxTime ?? profileMaxTime;
+    const sandboxFields: SandboxField[] = [
+        { key: 'coin', label: 'Offline coins', value: coinBonus, profileValue: profileCoin, min: 0, ...treeLimits.personal('CoinOfflineReward'), onChange: v => setSandbox(p => ({ ...p, coin: v })) },
+        { key: 'hammer', label: 'Offline hammers', value: hammerBonus, profileValue: profileHammer, min: 0, ...treeLimits.personal('HammerOfflineReward'), onChange: v => setSandbox(p => ({ ...p, hammer: v })) },
+        { key: 'maxTime', label: 'Max offline time', value: maxTimeBonus, profileValue: profileMaxTime, min: 0, ...treeLimits.personal('MaxOfflineReward'), onChange: v => setSandbox(p => ({ ...p, maxTime: v })) },
+    ];
+    const bonuses = {
+        coinMultiplier: 1 + coinBonus,
+        hammerMultiplier: 1 + hammerBonus,
+        maxTimeMultiplier: 1 + maxTimeBonus,
+    };
 
     // IdleConfig.MaxIdleSeconds; the page waits for the config (see the loading state below).
     const baseMaxTimeHours: number = (idleConfig?.MaxIdleSeconds ?? NaN) / 3600;
@@ -137,6 +97,8 @@ export default function Offline() {
                     <p className="text-text-muted">Calculate earnings while you are away</p>
                 </div>
             </div>
+
+            <SandboxPanel fields={sandboxFields} onReset={() => setSandbox({})} />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Inputs */}

@@ -36,6 +36,7 @@ export default function WarPrizesCalculator() {
     const { data: tierConfig } = useGameData<Record<string, TierConfig>>('GuildTierConfig.json');
     const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
     const { data: starsBonusLibrary } = useGameData<any>('AscensionStarsBonusLibrary.json');
+    const { data: techNodes } = useGameData<any>('TechNodesLibrary.json');
     const { selectedVersion } = useGameDataContext();
     const { profile } = useProfile();
     const defaultAscension =
@@ -99,22 +100,37 @@ export default function WarPrizesCalculator() {
         }
         return Math.round(sum * 1e6) / 1e6;
     };
+    /** The StatNode Layer of the stars bonus and of a clan tech node, as the configs declare it. */
+    const starsLayer = useMemo(() => {
+        for (const row of Object.values<any>(starsBonusLibrary || {})) {
+            for (const st of row?.BonusStats?.Stats || []) if (st?.StatNode?.Layer) return String(st.StatNode.Layer);
+        }
+        return 'None';
+    }, [starsBonusLibrary]);
+    const techLayer = (type: string) => String(techNodes?.[type]?.StatNodes?.[0]?.Layer ?? 'None');
     const starsPotionBonus = starsBonusAt(ascensionStars);
     const maxAscensionStars = useMemo(() => Math.max(0, ...Object.values<any>(starsBonusLibrary || {}).map(r => Number(r?.RequiredStars) || 0)), [starsBonusLibrary]);
 
-    // Apply the multipliers; GuildPotions get an extra win/lose-specific boost and the ascension stars boost.
-    // The calculation is multiplicative between the war/potions tree multipliers and the ascension stars.
-    const applyBonus = (rewards: CurrencyReward[], baseBonus: number, potionBonus: number) =>
-        (rewards || []).map(r => {
-            if (r.Type === 'GuildPotions') {
-                const boosted = r.Amount * (1 + baseBonus + potionBonus) * (1 + starsPotionBonus);
-                return { ...r, boosted };
-            }
-            return { ...r, boosted: r.Amount * (1 + baseBonus) };
-        });
+    // CurrencyReward.ScaledAmount (0x786D2F0) runs StatHelper.CalculateValueFromStats (0x78605C4): the
+    // multipliers of one StatNode Layer add up, and the layers multiply. The war reward node and the
+    // ascension stars are Layer None, the guild potions node is Layer TechTree, so for GuildPotions
+    // amount x (1 + war + stars) x (1 + potions).
+    const scaled = (amount: number, parts: { layer: string; value: number }[]) => {
+        const byLayer = new Map<string, number>();
+        for (const p of parts) byLayer.set(p.layer, (byLayer.get(p.layer) ?? 0) + p.value);
+        let v = amount;
+        for (const sum of byLayer.values()) v *= 1 + sum;
+        return v;
+    };
+    const applyBonus = (rewards: CurrencyReward[], won: boolean, baseBonus: number, potionBonus: number) => {
+        const war = { layer: techLayer(won ? 'ClanWarWinRewards' : 'ClanWarLoseRewards'), value: baseBonus };
+        return (rewards || []).map(r => r.Type === 'GuildPotions'
+            ? { ...r, boosted: scaled(r.Amount, [war, { layer: starsLayer, value: starsPotionBonus }, { layer: techLayer(won ? 'GuildPotionsFromClanWarWin' : 'GuildPotionsFromClanWarLose'), value: potionBonus }]) }
+            : { ...r, boosted: scaled(r.Amount, [war]) });
+    };
 
-    const wonRewards = tier ? applyBonus(tier.WarWonRewards, winBonus, potionsWinBonus) : [];
-    const lostRewards = tier ? applyBonus(tier.WarLostRewards, loseBonus, potionsLoseBonus) : [];
+    const wonRewards = tier ? applyBonus(tier.WarWonRewards, true, winBonus, potionsWinBonus) : [];
+    const lostRewards = tier ? applyBonus(tier.WarLostRewards, false, loseBonus, potionsLoseBonus) : [];
 
     const RewardRow = ({ type, base, boosted }: { type: string; base: number; boosted: number }) => {
         const icon = CURRENCY_ICON[type];

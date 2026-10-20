@@ -3,6 +3,16 @@ import { Card } from '../components/UI/Card';
 import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle, Star, Quote, Users, Github, PlusCircle, MinusCircle } from 'lucide-react';
 import contributorsStats from '../data/contributors_stats.json';
 
+/** Background colours of Buy Me a Coffee's default avatars, as they appear in the dp URLs of supporters.json. */
+const AVATAR_COLORS = ['FFB3A0', 'EC9689', 'FFD8CF', '80BEAF', 'B6CDBD', 'E3CBF4', 'FAC799', 'FFABD0', 'B3DDD1'];
+
+/** Buy Me a Coffee's own default avatar (a cup with the initials) for a supporter that came without a dp. */
+function defaultAvatar(name: string): string {
+    const color = AVATAR_COLORS[[...name].reduce((h, c) => h + c.charCodeAt(0), 0) % AVATAR_COLORS.length];
+    const initials = name.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2).toUpperCase();
+    return `https://cdn.buymeacoffee.com/uploads/profile_pictures/default/v2/${color}/${initials || 'default'}.png`;
+}
+
 export default function FAQ() {
     const [supporters, setSupporters] = useState<any[]>([]);
     const [contributors, setContributors] = useState<any[]>([]);
@@ -216,15 +226,9 @@ export default function FAQ() {
                                         
                                         <div className="flex items-start justify-between mb-3 relative z-10">
                                             <div className="flex items-center gap-3">
-                                                {s.dp ? (
-                                                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-border bg-bg-secondary">
-                                                        <img src={s.dp} alt={s.name} className="w-full h-full object-cover" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex items-center justify-center font-black text-yellow-500 shadow-inner">
-                                                        {s.name[0]}
-                                                    </div>
-                                                )}
+                                                <div className="w-10 h-10 rounded-xl overflow-hidden border border-border bg-bg-secondary">
+                                                    <img src={s.dp || defaultAvatar(s.name)} alt={s.name} className="w-full h-full object-cover" />
+                                                </div>
                                                 <div>
                                                     <div className="font-black text-text-primary text-sm uppercase tracking-tight">{s.name}</div>
                                                 </div>
