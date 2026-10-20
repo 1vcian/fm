@@ -473,7 +473,8 @@ export class BattleSceneRenderer {
                 if (uv.unitShadow >= 0) rig.nodes[uv.unitShadow].hidden = true;
             }
             rig.update(root);
-            // HP bar: HpBarView, shown once damaged; the white prefill follows in 0.3 s (SetHp).
+            // HP bar: HpBarView, shown once damaged (SetHp 0x4018A44: hp < hpMax or AlwaysDisplayed,
+            // with no mode check, so PvP fighters show it too); the white prefill follows in 0.3 s.
             const fill = u.hpMax > 0 ? Math.max(0, Math.min(1, u.hp / u.hpMax)) : 0;
             if (fill !== uv.fill) {
                 uv.prefillFrom = uv.prefill;
@@ -486,7 +487,7 @@ export class BattleSceneRenderer {
                 uv.prefill = uv.prefillFrom + (uv.fill - uv.prefillFrom) * uv.prefillT;
             }
             const custom = new Map<number, (c: CanvasRenderingContext2D, m: Mat) => void>();
-            const showBar = this.inp.mode.kind !== 'pvp' && uv.kind !== 'drone' && fill < 1 && uv.hpBar >= 0;
+            const showBar = uv.kind !== 'drone' && fill < 1 && uv.hpBar >= 0;
             const skip = (i: number) => i === uv.hpBar;
             const unitItems = rigItems(rig, tex, undefined, skip, custom);
             if (uv.mount) {
