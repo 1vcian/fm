@@ -18,11 +18,16 @@ export const STAT_NAMES: Record<string, string> = {
     // Critical
     'CriticalChance': 'Crit Chance',
     'CriticalMulti': 'Crit Damage',
+    // 2026_10_27: game string Stats.CriticalDamageReduction.
+    'CriticalDamageReduction': 'Incoming Crit Damage Reduction',
 
     // Combat
     'DoubleDamageChance': 'Double Chance',
     'BlockChance': 'Block Chance',
     'AttackSpeed': 'Attack Speed',
+    // 2026_10_27: game string Stats.NthAttackDamage, "Damage on every {N}th Attack", where N is
+    // BaseConfig.NthAttackInterval.
+    'NthAttackDamageMulti': 'Damage on every Nth Attack',
 
     // Skills
     'SkillCooldownMulti': 'Skill Cooldown',

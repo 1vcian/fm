@@ -1,0 +1,202 @@
+{
+  "{'Rarity': 'Common', 'Id': 0}": {
+    "PetId": {
+      "Rarity": "Common",
+      "Id": 0
+    },
+    "Type": "Balanced",
+    "Name": "Chicken"
+  },
+  "{'Rarity': 'Common', 'Id': 1}": {
+    "PetId": {
+      "Rarity": "Common",
+      "Id": 1
+    },
+    "Type": "Damage",
+    "Name": "Dog"
+  },
+  "{'Rarity': 'Common', 'Id': 2}": {
+    "PetId": {
+      "Rarity": "Common",
+      "Id": 2
+    },
+    "Type": "Balanced",
+    "Name": "Cat"
+  },
+  "{'Rarity': 'Common', 'Id': 3}": {
+    "PetId": {
+      "Rarity": "Common",
+      "Id": 3
+    },
+    "Type": "Health",
+    "Name": "Snail"
+  },
+  "{'Rarity': 'Common', 'Id': 4}": {
+    "PetId": {
+      "Rarity": "Common",
+      "Id": 4
+    },
+    "Type": "Balanced",
+    "Name": "Mouse"
+  },
+  "{'Rarity': 'Common', 'Id': 5}": {
+    "PetId": {
+      "Rarity": "Common",
+      "Id": 5
+    },
+    "Type": "Health",
+    "Name": "Turtle"
+  },
+  "{'Rarity': 'Rare', 'Id': 0}": {
+    "PetId": {
+      "Rarity": "Rare",
+      "Id": 0
+    },
+    "Type": "Health",
+    "Name": "Hedghehog"
+  },
+  "{'Rarity': 'Rare', 'Id': 1}": {
+    "PetId": {
+      "Rarity": "Rare",
+      "Id": 1
+    },
+    "Type": "Health",
+    "Name": "Bear"
+  },
+  "{'Rarity': 'Rare', 'Id': 2}": {
+    "PetId": {
+      "Rarity": "Rare",
+      "Id": 2
+    },
+    "Type": "Balanced",
+    "Name": "Ostrich"
+  },
+  "{'Rarity': 'Rare', 'Id': 3}": {
+    "PetId": {
+      "Rarity": "Rare",
+      "Id": 3
+    },
+    "Type": "Damage",
+    "Name": "Spider"
+  },
+  "{'Rarity': 'Rare', 'Id': 4}": {
+    "PetId": {
+      "Rarity": "Rare",
+      "Id": 4
+    },
+    "Type": "Damage",
+    "Name": "Scorpion"
+  },
+  "{'Rarity': 'Epic', 'Id': 0}": {
+    "PetId": {
+      "Rarity": "Epic",
+      "Id": 0
+    },
+    "Type": "Health",
+    "Name": "Griffin"
+  },
+  "{'Rarity': 'Epic', 'Id': 1}": {
+    "PetId": {
+      "Rarity": "Epic",
+      "Id": 1
+    },
+    "Type": "Damage",
+    "Name": "SaberTooth"
+  },
+  "{'Rarity': 'Epic', 'Id': 2}": {
+    "PetId": {
+      "Rarity": "Epic",
+      "Id": 2
+    },
+    "Type": "Balanced",
+    "Name": "Unicorn"
+  },
+  "{'Rarity': 'Epic', 'Id': 3}": {
+    "PetId": {
+      "Rarity": "Epic",
+      "Id": 3
+    },
+    "Type": "Damage",
+    "Name": "Tiger"
+  },
+  "{'Rarity': 'Epic', 'Id': 4}": {
+    "PetId": {
+      "Rarity": "Epic",
+      "Id": 4
+    },
+    "Type": "Health",
+    "Name": "Panda"
+  },
+  "{'Rarity': 'Legendary', 'Id': 0}": {
+    "PetId": {
+      "Rarity": "Legendary",
+      "Id": 0
+    },
+    "Type": "Damage",
+    "Name": "Serpent"
+  },
+  "{'Rarity': 'Legendary', 'Id': 1}": {
+    "PetId": {
+      "Rarity": "Legendary",
+      "Id": 1
+    },
+    "Type": "Balanced",
+    "Name": "Cerberus"
+  },
+  "{'Rarity': 'Legendary', 'Id': 2}": {
+    "PetId": {
+      "Rarity": "Legendary",
+      "Id": 2
+    },
+    "Type": "Damage",
+    "Name": "Kitsune"
+  },
+  "{'Rarity': 'Ultimate', 'Id': 0}": {
+    "PetId": {
+      "Rarity": "Ultimate",
+      "Id": 0
+    },
+    "Type": "Damage",
+    "Name": "Electry"
+  },
+  "{'Rarity': 'Ultimate', 'Id': 1}": {
+    "PetId": {
+      "Rarity": "Ultimate",
+      "Id": 1
+    },
+    "Type": "Health",
+    "Name": "Treant"
+  },
+  "{'Rarity': 'Ultimate', 'Id': 2}": {
+    "PetId": {
+      "Rarity": "Ultimate",
+      "Id": 2
+    },
+    "Type": "Balanced",
+    "Name": "EnchantedElk"
+  },
+  "{'Rarity': 'Mythic', 'Id': 0}": {
+    "PetId": {
+      "Rarity": "Mythic",
+      "Id": 0
+    },
+    "Type": "Balanced",
+    "Name": "BabyDragon"
+  },
+  "{'Rarity': 'Mythic', 'Id': 1}": {
+    "PetId": {
+      "Rarity": "Mythic",
+      "Id": 1
+    },
+    "Type": "Health",
+    "Name": "Genie"
+  },
+  "{'Rarity': 'Mythic', 'Id': 2}": {
+    "PetId": {
+      "Rarity": "Mythic",
+      "Id": 2
+    },
+    "Type": "Damage",
+    "Name": "SpectralTiger"
+  }
+}

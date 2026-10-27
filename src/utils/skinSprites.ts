@@ -1,24 +1,17 @@
 /**
- * Utility for calculating skin sprite positions and sorting skins based on the grid layout.
- * 
- * --- HOW TO COMPLETE MANUAL SPRITE MAPPINGS FOR NEW RELEASES ---
- * For each new release of sets, the sprites in SkinsUiIcons.png are ordered as:
- * 1. Helmet and Body of the first new set, followed by Helmet and Body of the next new set
- *    (in sequential order by Set numerical ID).
- * 2. Standalone/single Helmets released in that group (some may come before the weapons
- *    and others after, following the asset sheet sequence).
- * 3. Weapons for the sets (in numerical set ID order, if present).
- * 
- * Example Layout (SkinsUiIcons.png):
- * Row 1: Santa(H,A), Snowman(H,A), Ski(H,A), Unnamed(H 100), Unnamed(H 101)
- * Row 2: Druid(H,A), Leprechaun(H,A), Flower(H,A), Unnamed(H 102), Unnamed(H 103)
- * Row 3: Druid(W), Leprechaun(W), Flower(W)
+ * Skin icon styles.
+ *
+ * When the texture folder ships SkinIcons.json (exact rects read from the APK, see skinIcons.ts)
+ * the icon is drawn from its own rect. Older folders fall back to the grid guess below, which
+ * maps each skin to a cell of the SkinsUiIcons.png sheet by hand (ManualSpriteMapping.json, then
+ * the legacy switch in getSkinSortValue).
  */
 
 export const SKIN_SPRITE_COLS = 8;
 export const SKIN_SPRITE_ROWS = 8;
 
 import { resolveTextureVersion } from './ascensionUtils';
+import { getSkinIconRect, resolveSkinIconsVersion } from './skinIcons';
 
 interface SkinId {
     Type: string;
@@ -104,6 +97,20 @@ export const getSkinSpriteStyle = (
     mapping?: Record<string, number>,
     version?: string
 ): React.CSSProperties => {
+    const rect = getSkinIconRect(skin.SkinId.Type, skin.SkinId.Idx, version);
+    if (rect) {
+        // Scale the sheet so the rect fills the box, then place it: background-position p% puts
+        // the point p% of the image on the point p% of the box.
+        const folder = resolveSkinIconsVersion(version);
+        const px = rect.texW > rect.w ? (rect.x * 100) / (rect.texW - rect.w) : 0;
+        const py = rect.texH > rect.h ? (rect.y * 100) / (rect.texH - rect.h) : 0;
+        return {
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${folder}/${rect.tex}.png)`,
+            backgroundSize: `${(rect.texW * 100) / rect.w}% ${(rect.texH * 100) / rect.h}%`,
+            backgroundPosition: `${px}% ${py}%`,
+            imageRendering: 'pixelated' as const,
+        };
+    }
     const position = getSkinSpritePosition(skin, mapping, version);
     // Grid width is a property of the atlas actually loaded, so both the URL and the
     // width check use the resolved texture folder (config-only versions ship no art).

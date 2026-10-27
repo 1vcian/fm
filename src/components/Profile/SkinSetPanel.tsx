@@ -5,6 +5,7 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { cn } from '../../lib/utils';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
+import { useSkinIcons } from '../../utils/skinIcons';
 import { FairyCard } from './FairyCard';
 import { Sparkles, Trophy } from 'lucide-react';
 
@@ -17,6 +18,8 @@ export function SkinSetPanel({ variant, title = 'Active Bonuses' }: { variant?: 
     const { sets, loading } = useSkinSets();
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { selectedVersion } = useGameDataContext();
+    // Re-render once the exact skin icon rects arrive.
+    useSkinIcons(selectedVersion);
 
     // The fairy card always renders, so the section stays even with no active skin set.
     if (loading) return null;

@@ -2,11 +2,11 @@
  * Enemy builders — the REAL scaling formulas from the binary, replacing the old engine's
  * cancelling magic numbers (x50 fixed-point patch and x0.02 "calibration").
  *
- *   main battle (MainBattleBalancing, 0x7736064):
- *     hp  = AgeScaling[age].Health * DifficultyScaling[difficultyIdx].HpMulti
- *     dmg = AgeScaling[age].Damage * DifficultyScaling[difficultyIdx].DmgMulti
+ *   main battle (MainBattleBalancing, 0x7824548 / 0x78245F0 in 2026_10_27_09_45):
+ *     hp  = AgeScaling[age].Health * pow(EnemyHpDifficultyMulti, difficultyIdx)
+ *     dmg = AgeScaling[age].Damage * pow(EnemyDmgDifficultyMulti, difficultyIdx)
  *           * (weapon.IsRanged ? EnemyRangedDamageMultiplier : 1)
- *     (before 2026_10 the multipliers were pow(Enemy*DifficultyMulti, difficultyIdx))
+ *     (2026_10_08_09_03 alone took the multipliers from a DifficultyScaling table)
  *   dungeons: flat Health/Damage straight from the level's library row (Hammer Thief: one
  *     hardcoded thief, see hammerThiefSpec).
  *   missions: ToInt64(Base * (float)HealthAndDamageLevelMultiplier^(level-1)), UnitCount clones.
@@ -106,23 +106,33 @@ export interface MainBattleConfigJson {
 }
 
 /**
- * How many main-battle difficulties a build has. From 2026_10 it is the length of
- * MainBattleConfig.DifficultyScaling (`HasDifficulty(i)` is `0 <= i < Count` in the binary);
- * older builds shipped Normal and Hard only.
+ * The highest main-battle difficulty index when the config carries no DifficultyScaling table.
+ * Build 2026_10_27_09_45 dropped the table and went back to `Pow(Enemy*DifficultyMulti, idx)`;
+ * `MainBattleBalancing.MaxDifficultyIdx` is 2 and GetNextBattleId (0x78252FC) raises the
+ * difficulty only while it is <= 1, so the reachable indices are 0..2.
+ */
+const MAX_DIFFICULTY_IDX_WITHOUT_TABLE = 2;
+
+/**
+ * How many main-battle difficulties a build has: the length of
+ * MainBattleConfig.DifficultyScaling when the build ships it (2026_10_08_09_03, `HasDifficulty(i)`
+ * is `0 <= i < Count`), otherwise MaxDifficultyIdx + 1.
  */
 export function mainBattleDifficultyCount(config: MainBattleConfigJson | null | undefined): number {
     // No config loaded: no difficulties yet (callers render nothing until it arrives).
     if (!config) return 0;
     const table = config.DifficultyScaling;
-    return table && table.length > 0 ? table.length : 2;
+    return table && table.length > 0 ? table.length : MAX_DIFFICULTY_IDX_WITHOUT_TABLE + 1;
 }
 
 /**
  * Total enemy HP/damage multipliers for a difficulty.
  *
- * From 2026_10 the binary reads them from the DifficultyScaling table, clamping the index into
- * [0, Count-1] (`MainBattleConfig.GetDifficultyScaling`). Older builds computed
- * `pow(Enemy*DifficultyMulti, idx)`, which is what the table reproduces for 0..2.
+ * Build 2026_10_08_09_03 read them from the DifficultyScaling table, clamping the index into
+ * [0, Count-1] (`MainBattleConfig.GetDifficultyScaling`). Without the table (2026_10_27_09_45 and
+ * the builds before 2026_10) the binary computes `Pow(Enemy*DifficultyMulti, idx)` in FD6
+ * (MainBattleBalancing.GetEnemyHp 0x7824548, GetEnemyDmg 0x78245F0), which the table reproduced
+ * for 0..2.
  */
 export function mainBattleDifficultyMultipliers(
     config: MainBattleConfigJson | null | undefined,

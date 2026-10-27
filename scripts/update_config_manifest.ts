@@ -232,12 +232,15 @@ async function main() {
                 texture: folders,
                 emblem: folders.filter(f => EMBLEM_SHEETS.every(s => has(f, s))),
                 battleVisuals: folders.filter(f => has(f, 'BattleVisuals.json')),
+                // SkinIcons.json: the exact atlas rect of every skin icon, read from the APK by
+                // reverseForge/extract_battle_visuals.py. Older folders fall back to the grid guess.
+                skinIcons: folders.filter(f => has(f, 'SkinIcons.json')),
             };
             const next = JSON.stringify(assetVersions, null, 2) + '\n';
             // Rewrite only on change, so the dev server does not reload for nothing.
             const prev = fs.existsSync(ASSET_VERSIONS_FILE) ? fs.readFileSync(ASSET_VERSIONS_FILE, 'utf-8') : '';
             if (prev !== next) fs.writeFileSync(ASSET_VERSIONS_FILE, next);
-            console.log(`Asset versions: ${folders.length} texture, ${assetVersions.emblem.length} emblem, ${assetVersions.battleVisuals.length} battle visuals`);
+            console.log(`Asset versions: ${folders.length} texture, ${assetVersions.emblem.length} emblem, ${assetVersions.battleVisuals.length} battle visuals, ${assetVersions.skinIcons.length} skin icons`);
         }
 
         generateDelta(versions);

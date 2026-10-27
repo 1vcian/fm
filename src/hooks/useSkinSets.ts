@@ -68,6 +68,10 @@ export function useSkinSets() {
             }
         });
 
+        // Same piece order in every set (Helmet, Armour, Weapon), whatever the library order.
+        const TYPE_ORDER: Record<string, number> = { Helmet: 0, Armour: 1, Weapon: 2 };
+        Object.values(setMap).forEach(set => set.pieces.sort((a, b) => (TYPE_ORDER[a.type] ?? 9) - (TYPE_ORDER[b.type] ?? 9)));
+
         // Calculate bonuses and completion
         return Object.values(setMap)
             .filter(set => set.totalPieces > 0) // Only sets that exist in skinsLib

@@ -4,6 +4,7 @@ import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { Shield, Sword, Heart, Zap } from 'lucide-react';
 import { getSkinSpriteStyle } from '../utils/skinSprites';
+import { useSkinIcons } from '../utils/skinIcons';
 import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
 import { useGameDataContext } from '../context/GameDataContext';
 import skinSetNames from '../data/skinSetNames.json';
@@ -58,6 +59,8 @@ function setDisplayName(setId: string): string {
 
 export default function Skins() {
     const { selectedVersion } = useGameDataContext();
+    // Re-render once the exact skin icon rects arrive.
+    useSkinIcons(selectedVersion);
     const { data: skinsData, loading: loadingSkins } = useGameData<Record<string, SkinEntry>>('SkinsLibrary.json');
     const { data: setsData, loading: loadingSets } = useGameData<Record<string, SetEntry>>('SetsLibrary.json');
     const { data: spriteMapping, loading: loadingMapping } = useGameData<any>('ManualSpriteMapping.json');
@@ -81,14 +84,12 @@ export default function Skins() {
             }
         });
 
-        // Sort skins within sets
+        // One fixed piece order in every set. The library lists pieces in the order they were
+        // added (the Santa, Ski and Snowman weapons came in 2026_10_27, after every other skin),
+        // so file order would put a weapon first, in the middle or last depending on the set.
+        const TYPE_ORDER: Record<string, number> = { Helmet: 0, Armour: 1, Weapon: 2 };
         Object.keys(sets).forEach(setId => {
-            sets[setId].sort((a, b) => {
-                // Sort by Type (Helmet first)
-                if (a.SkinId.Type === 'Helmet' && b.SkinId.Type !== 'Helmet') return -1;
-                if (a.SkinId.Type !== 'Helmet' && b.SkinId.Type === 'Helmet') return 1;
-                return 0;
-            });
+            sets[setId].sort((a, b) => (TYPE_ORDER[a.SkinId.Type] ?? 9) - (TYPE_ORDER[b.SkinId.Type] ?? 9));
         });
 
         return { sets, misc };

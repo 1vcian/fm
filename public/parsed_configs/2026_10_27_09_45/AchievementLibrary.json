@@ -1,0 +1,3698 @@
+{
+  "account_linked_01": {
+    "Id": "account_linked_01",
+    "TrackerId": "account_linked",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "AccountLinked",
+    "Type": "AccountLinked",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Link your account",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "AccountLinking"
+  },
+  "login_streak_01": {
+    "Id": "login_streak_01",
+    "TrackerId": "login_streak",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "Login",
+    "Type": "ConsecutiveLoginDays",
+    "Mode": "Streak",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 90,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Login to the game {0} days in a row",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "avatar_changes_01": {
+    "Id": "avatar_changes_01",
+    "TrackerId": "avatar_changes",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "AvatarChanged",
+    "Type": "AvatarChanges",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Change your avatar {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "offline_rewards_maxed_01": {
+    "Id": "offline_rewards_maxed_01",
+    "TrackerId": "offline_rewards_maxed",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "OfflineRewardClaimed",
+    "Type": "OfflineRewardsMaxed",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 30,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Max your Offline Rewards {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "chat_inactivity_01": {
+    "Id": "chat_inactivity_01",
+    "TrackerId": "chat_inactivity",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "NextDay",
+    "Type": "ChatInactivityDays",
+    "Mode": "Streak",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 2,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Do not use the chat for {0} days",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "Chat"
+  },
+  "open_clan_tiers_panel_01": {
+    "Id": "open_clan_tiers_panel_01",
+    "TrackerId": "open_clan_tiers_panel",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "UiInteraction",
+    "Type": "UiPanelOpened",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "ClanTiers",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Navigate and open the Clan Tiers Panel",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "open_space_helmet_drop_chance_01": {
+    "Id": "open_space_helmet_drop_chance_01",
+    "TrackerId": "open_space_helmet_drop_chance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "UiInteraction",
+    "Type": "UiPanelOpened",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "EquipmentDropChance:4_Helmet_3",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Navigate and open the Space Helmet drop chance panel",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "main_battle_reached_01": {
+    "Id": "main_battle_reached_01",
+    "TrackerId": "main_battle_reached",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "MainBattleReached",
+    "Type": "MainBattleReached",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 900,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Battle 10-1",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "main_battle_reached_02": {
+    "Id": "main_battle_reached_02",
+    "TrackerId": "main_battle_reached",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "MainBattleReached",
+    "Type": "MainBattleReached",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10900,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Battle Hard 10-1",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "main_battle_reached_03": {
+    "Id": "main_battle_reached_03",
+    "TrackerId": "main_battle_reached",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "MainBattleReached",
+    "Type": "MainBattleReached",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 20900,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Battle Extreme 10-1",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "main_battle_reached_04": {
+    "Id": "main_battle_reached_04",
+    "TrackerId": "main_battle_reached",
+    "Stage": 4,
+    "IsProgressive": true,
+    "Trigger": "MainBattleReached",
+    "Type": "MainBattleReached",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 30900,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Battle Hell 10-1",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "enemy_defeats_01": {
+    "Id": "enemy_defeats_01",
+    "TrackerId": "enemy_defeats",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "EnemyDefeated",
+    "Type": "EnemyDefeats",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat {0} enemies",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "enemy_defeats_02": {
+    "Id": "enemy_defeats_02",
+    "TrackerId": "enemy_defeats",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "EnemyDefeated",
+    "Type": "EnemyDefeats",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat {0} enemies",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "enemy_defeats_03": {
+    "Id": "enemy_defeats_03",
+    "TrackerId": "enemy_defeats",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "EnemyDefeated",
+    "Type": "EnemyDefeats",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat {0} enemies",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "enemy_defeats_04": {
+    "Id": "enemy_defeats_04",
+    "TrackerId": "enemy_defeats",
+    "Stage": 4,
+    "IsProgressive": true,
+    "Trigger": "EnemyDefeated",
+    "Type": "EnemyDefeats",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat {0} enemies",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "forge_upgrades_01": {
+    "Id": "forge_upgrades_01",
+    "TrackerId": "forge_upgrades",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "ForgeUpgraded",
+    "Type": "ForgeUpgrades",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade your forge {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "forge_upgrades_02": {
+    "Id": "forge_upgrades_02",
+    "TrackerId": "forge_upgrades",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "ForgeUpgraded",
+    "Type": "ForgeUpgrades",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 20,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade your forge {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "forge_upgrades_03": {
+    "Id": "forge_upgrades_03",
+    "TrackerId": "forge_upgrades",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "ForgeUpgraded",
+    "Type": "ForgeUpgrades",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 40,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade your forge {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "forge_upgrades_04": {
+    "Id": "forge_upgrades_04",
+    "TrackerId": "forge_upgrades",
+    "Stage": 4,
+    "IsProgressive": true,
+    "Trigger": "ForgeUpgraded",
+    "Type": "ForgeUpgrades",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 80,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade your forge {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ascensions_01": {
+    "Id": "ascensions_01",
+    "TrackerId": "ascensions",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "Ascended",
+    "Type": "Ascensions",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Ascend {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ascensions_02": {
+    "Id": "ascensions_02",
+    "TrackerId": "ascensions",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "Ascended",
+    "Type": "Ascensions",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 6,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Ascend {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ascensions_03": {
+    "Id": "ascensions_03",
+    "TrackerId": "ascensions",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "Ascended",
+    "Type": "Ascensions",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 12,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Ascend {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammers_spent_01": {
+    "Id": "hammers_spent_01",
+    "TrackerId": "hammers_spent",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "HammerSpent",
+    "Type": "HammersSpent",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Use {0} hammers",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammers_spent_02": {
+    "Id": "hammers_spent_02",
+    "TrackerId": "hammers_spent",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "HammerSpent",
+    "Type": "HammersSpent",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 5000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Use {0} hammers",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammers_spent_03": {
+    "Id": "hammers_spent_03",
+    "TrackerId": "hammers_spent",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "HammerSpent",
+    "Type": "HammersSpent",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 80000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Use {0} hammers",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammers_spent_04": {
+    "Id": "hammers_spent_04",
+    "TrackerId": "hammers_spent",
+    "Stage": 4,
+    "IsProgressive": true,
+    "Trigger": "HammerSpent",
+    "Type": "HammersSpent",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 2000000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Use {0} hammers",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammers_spent_manually_01": {
+    "Id": "hammers_spent_manually_01",
+    "TrackerId": "hammers_spent_manually",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "HammerSpent",
+    "Type": "HammersSpentManually",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 500,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Manually use {0} hammers",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammers_spent_10m_01": {
+    "Id": "hammers_spent_10m_01",
+    "TrackerId": "hammers_spent_10m",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "HammerSpent",
+    "Type": "HammersSpent",
+    "Mode": "FixedWindowCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 4000,
+    "WindowSeconds": 600,
+    "GraceSeconds": 60,
+    "TitleFormat": "Use {0} hammers in less than {1}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_balance_01": {
+    "Id": "hammer_balance_01",
+    "TrackerId": "hammer_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammers",
+    "SubjectInt": 0,
+    "Target": 200000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Hammers",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "gold_balance_01": {
+    "Id": "gold_balance_01",
+    "TrackerId": "gold_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Coins",
+    "SubjectInt": 0,
+    "Target": 20000000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Gold",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "skill_balance_01": {
+    "Id": "skill_balance_01",
+    "TrackerId": "skill_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "SkillSummonTickets",
+    "SubjectInt": 0,
+    "Target": 200000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Skill Tickets",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "eggshard_balance_01": {
+    "Id": "eggshard_balance_01",
+    "TrackerId": "eggshard_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Eggshells",
+    "SubjectInt": 0,
+    "Target": 200000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Egg Shards",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "techpotion_balance_01": {
+    "Id": "techpotion_balance_01",
+    "TrackerId": "techpotion_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "TechPotions",
+    "SubjectInt": 0,
+    "Target": 200000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Tech Potions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clockwinder_balance_01": {
+    "Id": "clockwinder_balance_01",
+    "TrackerId": "clockwinder_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "ClockWinders",
+    "SubjectInt": 0,
+    "Target": 200000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Clock Winders",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clantechpotion_balance_01": {
+    "Id": "clantechpotion_balance_01",
+    "TrackerId": "clantechpotion_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "GuildPotions",
+    "SubjectInt": 0,
+    "Target": 5000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Clan Tech Potions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "steppingstonestoken_balance_01": {
+    "Id": "steppingstonestoken_balance_01",
+    "TrackerId": "steppingstonestoken_balance",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "CurrencyChanged",
+    "Type": "CurrencyBalance",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Token",
+    "SubjectInt": 0,
+    "Target": 500,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Save up {0} Stepping Stones Tokens",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "skill_summons_01": {
+    "Id": "skill_summons_01",
+    "TrackerId": "skill_summons",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "SkillSummoned",
+    "Type": "SkillSummons",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 500,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Summon {0} skills",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "skill_summons_02": {
+    "Id": "skill_summons_02",
+    "TrackerId": "skill_summons",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "SkillSummoned",
+    "Type": "SkillSummons",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 5000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Summon {0} skills",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "skill_summons_03": {
+    "Id": "skill_summons_03",
+    "TrackerId": "skill_summons",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "SkillSummoned",
+    "Type": "SkillSummons",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 20000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Summon {0} skills",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "common_skill_level_01": {
+    "Id": "common_skill_level_01",
+    "TrackerId": "common_skill_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUpgraded",
+    "Type": "SkillLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Common",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Common Skill to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "rare_skill_level_01": {
+    "Id": "rare_skill_level_01",
+    "TrackerId": "rare_skill_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUpgraded",
+    "Type": "SkillLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Rare",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Rare Skill to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "epic_skill_level_01": {
+    "Id": "epic_skill_level_01",
+    "TrackerId": "epic_skill_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUpgraded",
+    "Type": "SkillLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Epic",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Epic Skill to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "legendary_skill_level_01": {
+    "Id": "legendary_skill_level_01",
+    "TrackerId": "legendary_skill_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUpgraded",
+    "Type": "SkillLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Legendary",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Legendary Skill to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ultimate_skill_level_01": {
+    "Id": "ultimate_skill_level_01",
+    "TrackerId": "ultimate_skill_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUpgraded",
+    "Type": "SkillLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Ultimate",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Ultimate Skill to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "mythic_skill_level_01": {
+    "Id": "mythic_skill_level_01",
+    "TrackerId": "mythic_skill_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUpgraded",
+    "Type": "SkillLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Mythic",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Mythic Skill to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "skills_at_level_100_01": {
+    "Id": "skills_at_level_100_01",
+    "TrackerId": "skills_at_level_100",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUpgraded",
+    "Type": "SkillAtLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 99,
+    "Target": 18,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade all {0} skills to Level 100",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "manual_skill_uses_01": {
+    "Id": "manual_skill_uses_01",
+    "TrackerId": "manual_skill_uses",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUsed",
+    "Type": "ManualSkillUses",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 200,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Manually use skills {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "stampede_uses_01": {
+    "Id": "stampede_uses_01",
+    "TrackerId": "stampede_uses",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkillUsed",
+    "Type": "SkillUses",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Stampede",
+    "SubjectInt": 0,
+    "Target": 500,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Use Stampede {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "common_pet_hatches_01": {
+    "Id": "common_pet_hatches_01",
+    "TrackerId": "common_pet_hatches",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "PetHatched",
+    "Type": "PetHatches",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Common",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Hatch {0} Common Pets",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "common_pet_hatches_02": {
+    "Id": "common_pet_hatches_02",
+    "TrackerId": "common_pet_hatches",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "PetHatched",
+    "Type": "PetHatches",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Common",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Hatch {0} Common Pets",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "common_pet_hatches_03": {
+    "Id": "common_pet_hatches_03",
+    "TrackerId": "common_pet_hatches",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "PetHatched",
+    "Type": "PetHatches",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Common",
+    "SubjectInt": 0,
+    "Target": 1000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Hatch {0} Common Pets",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "common_pet_level_01": {
+    "Id": "common_pet_level_01",
+    "TrackerId": "common_pet_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetUpgraded",
+    "Type": "PetLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Common",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Common Pet to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "rare_pet_level_01": {
+    "Id": "rare_pet_level_01",
+    "TrackerId": "rare_pet_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetUpgraded",
+    "Type": "PetLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Rare",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Rare Pet to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "epic_pet_level_01": {
+    "Id": "epic_pet_level_01",
+    "TrackerId": "epic_pet_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetUpgraded",
+    "Type": "PetLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Epic",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Epic Pet to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "legendary_pet_level_01": {
+    "Id": "legendary_pet_level_01",
+    "TrackerId": "legendary_pet_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetUpgraded",
+    "Type": "PetLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Legendary",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Legendary Pet to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ultimate_pet_level_01": {
+    "Id": "ultimate_pet_level_01",
+    "TrackerId": "ultimate_pet_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetUpgraded",
+    "Type": "PetLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Ultimate",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Ultimate Pet to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "mythic_pet_level_01": {
+    "Id": "mythic_pet_level_01",
+    "TrackerId": "mythic_pet_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetUpgraded",
+    "Type": "PetLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Mythic",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Mythic Pet to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "consecutive_chicken_hatches_01": {
+    "Id": "consecutive_chicken_hatches_01",
+    "TrackerId": "consecutive_chicken_hatches",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetHatched",
+    "Type": "ConsecutivePetHatches",
+    "Mode": "Streak",
+    "ScopeAggregation": "Max",
+    "Subject": "Chicken",
+    "SubjectInt": 0,
+    "Target": 2,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Hatch {0} chickens in a row",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "cat_inventory_01": {
+    "Id": "cat_inventory_01",
+    "TrackerId": "cat_inventory",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetInventoryChanged",
+    "Type": "PetInventoryCount",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Cat",
+    "SubjectInt": 0,
+    "Target": 20,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Have {0} cats in your inventory at once",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "all_pets_inventory_01": {
+    "Id": "all_pets_inventory_01",
+    "TrackerId": "all_pets_inventory",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetInventoryChanged",
+    "Type": "HasEveryPet",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Have one of each pet in your inventory at once",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "rare_pet_hatches_24h_01": {
+    "Id": "rare_pet_hatches_24h_01",
+    "TrackerId": "rare_pet_hatches_24h",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "PetHatched",
+    "Type": "PetHatches",
+    "Mode": "FixedWindowCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "Rare",
+    "SubjectInt": 0,
+    "Target": 50,
+    "WindowSeconds": 86400,
+    "GraceSeconds": 3600,
+    "TitleFormat": "Hatch {0} Rare Pets in less than {1}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "mount_summons_01": {
+    "Id": "mount_summons_01",
+    "TrackerId": "mount_summons",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "MountSummoned",
+    "Type": "MountSummons",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Summon {0} Mounts",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "mount_summons_02": {
+    "Id": "mount_summons_02",
+    "TrackerId": "mount_summons",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "MountSummoned",
+    "Type": "MountSummons",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Summon {0} Mounts",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "mount_summons_03": {
+    "Id": "mount_summons_03",
+    "TrackerId": "mount_summons",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "MountSummoned",
+    "Type": "MountSummons",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 4000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Summon {0} Mounts",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "common_mount_level_01": {
+    "Id": "common_mount_level_01",
+    "TrackerId": "common_mount_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MountUpgraded",
+    "Type": "MountLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Common",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Common Mount to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "rare_mount_level_01": {
+    "Id": "rare_mount_level_01",
+    "TrackerId": "rare_mount_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MountUpgraded",
+    "Type": "MountLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Rare",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Rare Mount to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "epic_mount_level_01": {
+    "Id": "epic_mount_level_01",
+    "TrackerId": "epic_mount_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MountUpgraded",
+    "Type": "MountLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Epic",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Epic Mount to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "legendary_mount_level_01": {
+    "Id": "legendary_mount_level_01",
+    "TrackerId": "legendary_mount_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MountUpgraded",
+    "Type": "MountLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Legendary",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Legendary Mount to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ultimate_mount_level_01": {
+    "Id": "ultimate_mount_level_01",
+    "TrackerId": "ultimate_mount_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MountUpgraded",
+    "Type": "MountLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Ultimate",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Ultimate Mount to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "mythic_mount_level_01": {
+    "Id": "mythic_mount_level_01",
+    "TrackerId": "mythic_mount_level",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MountUpgraded",
+    "Type": "MountLevel",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Mythic",
+    "SubjectInt": 0,
+    "Target": 99,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade a Mythic Mount to Level {0}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "fairy_level_twenty_01": {
+    "Id": "fairy_level_twenty_01",
+    "TrackerId": "fairy_level_twenty",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "FairyUpgraded",
+    "Type": "FairyMaxed",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Upgrade your Fairy to level 20 {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "personal_tech_tree_completion_01": {
+    "Id": "personal_tech_tree_completion_01",
+    "TrackerId": "personal_tech_tree_completion",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "PersonalTechTreeChanged",
+    "Type": "PersonalTechTreeMinimumCompletion",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Achieve {0}% completion in all personal Tech Tree Categories",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "personal_tech_tree_completion_02": {
+    "Id": "personal_tech_tree_completion_02",
+    "TrackerId": "personal_tech_tree_completion",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "PersonalTechTreeChanged",
+    "Type": "PersonalTechTreeMinimumCompletion",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 60,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Achieve {0}% completion in all personal Tech Tree Categories",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "personal_tech_tree_completion_03": {
+    "Id": "personal_tech_tree_completion_03",
+    "TrackerId": "personal_tech_tree_completion",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "PersonalTechTreeChanged",
+    "Type": "PersonalTechTreeMinimumCompletion",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Achieve {0}% completion in all personal Tech Tree Categories",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_tech_tree_half_completion_01": {
+    "Id": "clan_tech_tree_half_completion_01",
+    "TrackerId": "clan_tech_tree_half_completion",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ClanTechTreeChanged",
+    "Type": "ClanTechTreeCompletionEvents",
+    "Mode": "ScopedHighestValue",
+    "ScopeAggregation": "Sum",
+    "Subject": "",
+    "SubjectInt": 50,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Achieve 50% completion in the Clan Tech Tree {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "non_recommended_clan_tech_donations_01": {
+    "Id": "non_recommended_clan_tech_donations_01",
+    "TrackerId": "non_recommended_clan_tech_donations",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ClanTechDonation",
+    "Type": "NonRecommendedClanTechDonations",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Make {0} non-recommended Clan Tech Donations",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_tech_dungeon_category_01": {
+    "Id": "clan_tech_dungeon_category_01",
+    "TrackerId": "clan_tech_dungeon_category",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ClanTechTreeChanged",
+    "Type": "ClanTechTreeCategoryCompletion",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Dungeons",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Max the Dungeon Category in the Clan Tech Tree",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_tech_donations_24h_01": {
+    "Id": "clan_tech_donations_24h_01",
+    "TrackerId": "clan_tech_donations_24h",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ClanTechDonation",
+    "Type": "ClanTechDonations",
+    "Mode": "FixedWindowCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1000,
+    "WindowSeconds": 86400,
+    "GraceSeconds": 3600,
+    "TitleFormat": "Make {0} Clan Tech Tree Donations in less than {1}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_tech_donations_race_01": {
+    "Id": "clan_tech_donations_race_01",
+    "TrackerId": "clan_tech_donations_race",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ClanTechDonation",
+    "Type": "ClanTechDonations",
+    "Mode": "ScopedCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 2000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Make {0} Clan Tech Tree Donations in a single Clan Tech Race",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_tech_race_wins_01": {
+    "Id": "clan_tech_race_wins_01",
+    "TrackerId": "clan_tech_race_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ClanTechRaceRewardClaimed",
+    "Type": "ClanTechRaceWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win {0} Clan Tech Races",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_tech_race_win_streak_01": {
+    "Id": "clan_tech_race_win_streak_01",
+    "TrackerId": "clan_tech_race_win_streak",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ClanTechRaceRewardClaimed",
+    "Type": "ClanTechRaceWins",
+    "Mode": "Streak",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win {0} Clan Tech Races in a row",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_thief_wins_01": {
+    "Id": "hammer_thief_wins_01",
+    "TrackerId": "hammer_thief_wins",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammer",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Hammer Thief {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_thief_wins_02": {
+    "Id": "hammer_thief_wins_02",
+    "TrackerId": "hammer_thief_wins",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammer",
+    "SubjectInt": 0,
+    "Target": 50,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Hammer Thief {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_thief_wins_03": {
+    "Id": "hammer_thief_wins_03",
+    "TrackerId": "hammer_thief_wins",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammer",
+    "SubjectInt": 0,
+    "Target": 200,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Hammer Thief {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ghost_town_wins_01": {
+    "Id": "ghost_town_wins_01",
+    "TrackerId": "ghost_town_wins",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Skill",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Ghost Town {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ghost_town_wins_02": {
+    "Id": "ghost_town_wins_02",
+    "TrackerId": "ghost_town_wins",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Skill",
+    "SubjectInt": 0,
+    "Target": 50,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Ghost Town {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ghost_town_wins_03": {
+    "Id": "ghost_town_wins_03",
+    "TrackerId": "ghost_town_wins",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Skill",
+    "SubjectInt": 0,
+    "Target": 200,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Ghost Town {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "invasion_wins_01": {
+    "Id": "invasion_wins_01",
+    "TrackerId": "invasion_wins",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Pet",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Invasion {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "invasion_wins_02": {
+    "Id": "invasion_wins_02",
+    "TrackerId": "invasion_wins",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Pet",
+    "SubjectInt": 0,
+    "Target": 50,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Invasion {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "invasion_wins_03": {
+    "Id": "invasion_wins_03",
+    "TrackerId": "invasion_wins",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Pet",
+    "SubjectInt": 0,
+    "Target": 200,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Invasion {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "zombie_rush_wins_01": {
+    "Id": "zombie_rush_wins_01",
+    "TrackerId": "zombie_rush_wins",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Potion",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Zombie Rush {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "zombie_rush_wins_02": {
+    "Id": "zombie_rush_wins_02",
+    "TrackerId": "zombie_rush_wins",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Potion",
+    "SubjectInt": 0,
+    "Target": 50,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Zombie Rush {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "zombie_rush_wins_03": {
+    "Id": "zombie_rush_wins_03",
+    "TrackerId": "zombie_rush_wins",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Potion",
+    "SubjectInt": 0,
+    "Target": 200,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Zombie Rush {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_thief_1_1_wins_01": {
+    "Id": "hammer_thief_1_1_wins_01",
+    "TrackerId": "hammer_thief_1_1_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWinAtDifficulty",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammer",
+    "SubjectInt": 0,
+    "Target": 2,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Hammer Thief Difficulty 1-1 {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "dungeon_sweep_last_01": {
+    "Id": "dungeon_sweep_last_01",
+    "TrackerId": "dungeon_sweep_last",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonSweepLast",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Sweep Last in any dungeon {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "dungeon_sweep_last_02": {
+    "Id": "dungeon_sweep_last_02",
+    "TrackerId": "dungeon_sweep_last",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonSweepLast",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Sweep Last in any dungeon {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "dungeon_sweep_last_03": {
+    "Id": "dungeon_sweep_last_03",
+    "TrackerId": "dungeon_sweep_last",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonSweepLast",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 500,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Sweep Last in any dungeon {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "dungeon_wins_5m_01": {
+    "Id": "dungeon_wins_5m_01",
+    "TrackerId": "dungeon_wins_5m",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWins",
+    "Mode": "FixedWindowCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "Any",
+    "SubjectInt": 0,
+    "Target": 8,
+    "WindowSeconds": 300,
+    "GraceSeconds": 60,
+    "TitleFormat": "Beat {0} Dungeons in less than {1}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_thief_mira_wins_01": {
+    "Id": "hammer_thief_mira_wins_01",
+    "TrackerId": "hammer_thief_mira_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWinsWithFairy",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammer",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Hammer Thief {0} times with Mira",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_thief_tira_wins_01": {
+    "Id": "hammer_thief_tira_wins_01",
+    "TrackerId": "hammer_thief_tira_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWinsWithFairy",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammer",
+    "SubjectInt": 1,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Hammer Thief {0} times with Tira",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "hammer_thief_lora_wins_01": {
+    "Id": "hammer_thief_lora_wins_01",
+    "TrackerId": "hammer_thief_lora_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonWinsWithFairy",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Hammer",
+    "SubjectInt": 2,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat Hammer Thief {0} times with Lora",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "ghost_town_one_enemy_loss_01": {
+    "Id": "ghost_town_one_enemy_loss_01",
+    "TrackerId": "ghost_town_one_enemy_loss",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonLossWithOneEnemyRemaining",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Skill",
+    "SubjectInt": 1,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Lose the Ghost Town Dungeon with one enemy remaining",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "invasion_one_enemy_loss_01": {
+    "Id": "invasion_one_enemy_loss_01",
+    "TrackerId": "invasion_one_enemy_loss",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonLossWithOneEnemyRemaining",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Pet",
+    "SubjectInt": 1,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Lose the Invasion Dungeon with one enemy remaining",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "zombie_rush_one_enemy_loss_01": {
+    "Id": "zombie_rush_one_enemy_loss_01",
+    "TrackerId": "zombie_rush_one_enemy_loss",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "DungeonCompleted",
+    "Type": "DungeonLossWithOneEnemyRemaining",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Potion",
+    "SubjectInt": 1,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Lose the Zombie Rush Dungeon with one enemy remaining",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_challenges_01": {
+    "Id": "arena_challenges_01",
+    "TrackerId": "arena_challenges",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaChallenges",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 500,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Challenge {0} opponents in Arena",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_reach_gold": {
+    "Id": "arena_reach_gold",
+    "TrackerId": "arena_league_reached",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "NextDay",
+    "Type": "ArenaLeagueReached",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Gold League Arena",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_reach_d3": {
+    "Id": "arena_reach_d3",
+    "TrackerId": "arena_league_reached",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "NextDay",
+    "Type": "ArenaLeagueReached",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 7,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Diamond III League in Arena",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_same_league_weeks_01": {
+    "Id": "arena_same_league_weeks_01",
+    "TrackerId": "arena_same_league_weeks",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "NextDay",
+    "Type": "ArenaSameLeagueWeeks",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Stay in the same league in Arena for {0} weeks in a row",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_same_league_weeks_d3_01": {
+    "Id": "arena_same_league_weeks_d3_01",
+    "TrackerId": "arena_same_league_weeks_in_diamond",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "NextDay",
+    "Type": "ArenaSameLeagueWeeksInRank",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 7,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Stay in Diamond III league in Arena for {0} weeks in a row",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_top_ten_01": {
+    "Id": "arena_top_ten_01",
+    "TrackerId": "arena_top_ten",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "NextDay",
+    "Type": "ArenaTopTenFinishes",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Finish top 10 in Arena {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_same_opponent_wins_01": {
+    "Id": "arena_same_opponent_wins_01",
+    "TrackerId": "arena_same_opponent_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsAgainstSameOpponent",
+    "Mode": "ScopedCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat the same opponent in Arena {0} times in a season",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_power_ratio_win_01": {
+    "Id": "arena_power_ratio_win_01",
+    "TrackerId": "arena_power_ratio_win",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaPowerRatioWin",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat someone twice your power in the Arena",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_wins_without_skills_01": {
+    "Id": "arena_wins_without_skills_01",
+    "TrackerId": "arena_wins_without_skills",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsWithoutSkills",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat an opponent {0} times in Arena without skills",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_wins_without_pets_01": {
+    "Id": "arena_wins_without_pets_01",
+    "TrackerId": "arena_wins_without_pets",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsWithoutPets",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat an opponent {0} times in Arena without pets",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_win_three_chickens_01": {
+    "Id": "arena_win_three_chickens_01",
+    "TrackerId": "arena_win_three_chickens",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinWithPetLoadout",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "Chicken",
+    "SubjectInt": 3,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat an opponent in Arena with 3 chickens",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_mira_wins_01": {
+    "Id": "arena_mira_wins_01",
+    "TrackerId": "arena_mira_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsWithFairy",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat an opponent {0} times in Arena with Mira",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_tira_wins_01": {
+    "Id": "arena_tira_wins_01",
+    "TrackerId": "arena_tira_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsWithFairy",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 1,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat an opponent {0} times in Arena with Tira",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_lora_wins_01": {
+    "Id": "arena_lora_wins_01",
+    "TrackerId": "arena_lora_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsWithFairy",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 2,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat an opponent {0} times in Arena with Lora",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_melee_weapon_wins_01": {
+    "Id": "arena_melee_weapon_wins_01",
+    "TrackerId": "arena_melee_weapon_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsWithWeapon",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat an opponent in Arena with a melee weapon {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "arena_ranged_weapon_wins_01": {
+    "Id": "arena_ranged_weapon_wins_01",
+    "TrackerId": "arena_ranged_weapon_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ArenaChallengeCompleted",
+    "Type": "ArenaWinsWithWeapon",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 1,
+    "Target": 3,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Beat an opponent in Arena with a ranged weapon {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "owned_missions_completed_01": {
+    "Id": "owned_missions_completed_01",
+    "TrackerId": "owned_missions_completed",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "MissionResultClaimed",
+    "Type": "OwnedMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Complete {0} missions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "owned_missions_completed_02": {
+    "Id": "owned_missions_completed_02",
+    "TrackerId": "owned_missions_completed",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "MissionResultClaimed",
+    "Type": "OwnedMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 40,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Complete {0} missions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "owned_missions_completed_03": {
+    "Id": "owned_missions_completed_03",
+    "TrackerId": "owned_missions_completed",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "MissionResultClaimed",
+    "Type": "OwnedMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Complete {0} missions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "full_squad_missions_completed_01": {
+    "Id": "full_squad_missions_completed_01",
+    "TrackerId": "full_squad_missions_completed",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MissionResultClaimed",
+    "Type": "FullSquadMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Complete {0} missions with a full squad",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "joined_missions_completed_01": {
+    "Id": "joined_missions_completed_01",
+    "TrackerId": "joined_missions_completed",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "MissionResultClaimed",
+    "Type": "JoinedMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 100,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Join and complete {0} Missions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "joined_missions_completed_02": {
+    "Id": "joined_missions_completed_02",
+    "TrackerId": "joined_missions_completed",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "MissionResultClaimed",
+    "Type": "JoinedMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 200,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Join and complete {0} Missions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "joined_missions_completed_03": {
+    "Id": "joined_missions_completed_03",
+    "TrackerId": "joined_missions_completed",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "MissionResultClaimed",
+    "Type": "JoinedMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Join and complete {0} Missions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "joined_missions_completed_24h_01": {
+    "Id": "joined_missions_completed_24h_01",
+    "TrackerId": "joined_missions_completed_24h",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MissionResultClaimed",
+    "Type": "JoinedMissionsCompleted",
+    "Mode": "FixedWindowCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 50,
+    "WindowSeconds": 86400,
+    "GraceSeconds": 3600,
+    "TitleFormat": "Join and complete {0} Missions in less than {1}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "mission_gold_24h_01": {
+    "Id": "mission_gold_24h_01",
+    "TrackerId": "mission_gold_24h",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MissionResultClaimed",
+    "Type": "MissionGoldCollected",
+    "Mode": "FixedWindowCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "Coins",
+    "SubjectInt": 0,
+    "Target": 30000,
+    "WindowSeconds": 86400,
+    "GraceSeconds": 3600,
+    "TitleFormat": "Collect {0} Gold from Missions in less than {1}",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "single_resource_missions_24h_01": {
+    "Id": "single_resource_missions_24h_01",
+    "TrackerId": "single_resource_missions_24h",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MissionResultClaimed",
+    "Type": "SingleResourceMissionsCompleted",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 20,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Complete {0} missions that give only one resource",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "missions_failed_01": {
+    "Id": "missions_failed_01",
+    "TrackerId": "missions_failed",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "MissionResultClaimed",
+    "Type": "MissionsFailed",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Fail {0} missions",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_membership_days_01": {
+    "Id": "clan_membership_days_01",
+    "TrackerId": "clan_membership_days",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "NextDay",
+    "Type": "ClanMembershipDays",
+    "Mode": "ScopedHighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 90,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Stay in the same clan for longer than 90 days",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_wins_01": {
+    "Id": "clan_war_wins_01",
+    "TrackerId": "clan_war_wins",
+    "Stage": 1,
+    "IsProgressive": true,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 5,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win {0} Clan Wars",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_wins_02": {
+    "Id": "clan_war_wins_02",
+    "TrackerId": "clan_war_wins",
+    "Stage": 2,
+    "IsProgressive": true,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 20,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win {0} Clan Wars",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_wins_03": {
+    "Id": "clan_war_wins_03",
+    "TrackerId": "clan_war_wins",
+    "Stage": 3,
+    "IsProgressive": true,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 50,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win {0} Clan Wars",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_all_days_won_01": {
+    "Id": "clan_war_all_days_won_01",
+    "TrackerId": "clan_war_all_days_won",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarAllDaysWon",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 5,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win every single day of the Clan War {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_win_streak_01": {
+    "Id": "clan_war_win_streak_01",
+    "TrackerId": "clan_war_win_streak",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarWins",
+    "Mode": "Streak",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 25,
+    "Target": 2,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win {0} Clan Wars in a row in Tier-S or above",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_day_six_wins_01": {
+    "Id": "clan_war_day_six_wins_01",
+    "TrackerId": "clan_war_day_six_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarChallengeCompleted",
+    "Type": "ClanWarDaySixWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 40,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat {0} opponents on Day 6 of Clan War",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_day_six_wins_single_war_01": {
+    "Id": "clan_war_day_six_wins_single_war_01",
+    "TrackerId": "clan_war_day_six_wins_single_war",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarChallengeCompleted",
+    "Type": "ClanWarDaySixWins",
+    "Mode": "ScopedCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 5,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Defeat {0} opponents on Day 6 in a single Clan War",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_points_single_war_01": {
+    "Id": "clan_war_points_single_war_01",
+    "TrackerId": "clan_war_points_single_war",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarPoints",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 6000000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Earn {0} Clan War Points in a single War",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_points_single_day_01": {
+    "Id": "clan_war_points_single_day_01",
+    "TrackerId": "clan_war_points_single_day",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarDailyPoints",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1500000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Earn {0} Clan War Points in a single Day",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_hammer_points_01": {
+    "Id": "clan_war_hammer_points_01",
+    "TrackerId": "clan_war_hammer_points",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarPointsEarned",
+    "Type": "ClanWarPoints",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "ForgedEquipment",
+    "SubjectInt": 0,
+    "Target": 1000000,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Earn {0} Clan War points by using Hammers",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_mvps_01": {
+    "Id": "clan_war_mvps_01",
+    "TrackerId": "clan_war_mvps",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarMvps",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Earn MVP {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_mvp_days_01": {
+    "Id": "clan_war_mvp_days_01",
+    "TrackerId": "clan_war_mvp_days",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarMvpDays",
+    "Mode": "ScopedCounter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 2,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Earn MVP on {0} days of a Clan War",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_tier_s_plus_plus_01": {
+    "Id": "clan_war_tier_s_plus_plus_01",
+    "TrackerId": "clan_war_tier_s_plus_plus",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarTierReached",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "SSS",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Tier-S++ in Clan Wars",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_brawl_wins_01": {
+    "Id": "clan_war_brawl_wins_01",
+    "TrackerId": "clan_war_brawl_wins",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarBrawlWins",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win Brawl {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_brawl_loss_01": {
+    "Id": "clan_war_brawl_loss_01",
+    "TrackerId": "clan_war_brawl_loss",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarBrawlLoss",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Lose Brawl {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_brawl_loss_day_six_win_01": {
+    "Id": "clan_war_brawl_loss_day_six_win_01",
+    "TrackerId": "clan_war_brawl_loss_day_six_win",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarBrawlLossDaySixWin",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Lose the Brawl but win Day 6",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "clan_war_brawl_win_day_six_loss_01": {
+    "Id": "clan_war_brawl_win_day_six_loss_01",
+    "TrackerId": "clan_war_brawl_win_day_six_loss",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "GuildWarRewardClaimed",
+    "Type": "ClanWarBrawlWinDaySixLoss",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Win the Brawl but lose Day 6",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "stepping_stone_tile_six_manual_01": {
+    "Id": "stepping_stone_tile_six_manual_01",
+    "TrackerId": "stepping_stone_tile_six_manual",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SteppingStonesRunCompleted",
+    "Type": "SteppingStoneTileReached",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 5,
+    "Target": 10,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Reach Tile 6 in the Stepping Stones without Auto {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "stepping_stone_auto_uses_01": {
+    "Id": "stepping_stone_auto_uses_01",
+    "TrackerId": "stepping_stone_auto_uses",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SteppingStonesRunCompleted",
+    "Type": "SteppingStoneAutoUses",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 40,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Use auto in Stepping Stones {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "shop_items_claimed_01": {
+    "Id": "shop_items_claimed_01",
+    "TrackerId": "shop_items_claimed",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "ShopItemClaimed",
+    "Type": "ShopItemsClaimed",
+    "Mode": "Counter",
+    "ScopeAggregation": "Max",
+    "Subject": "",
+    "SubjectInt": 0,
+    "Target": 150,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Claim an item in the shop {0} times",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "head_skin_equipped_01": {
+    "Id": "head_skin_equipped_01",
+    "TrackerId": "head_skin_equipped",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkinEquipped",
+    "Type": "HeadSkinEquipped",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Helmet",
+    "SubjectInt": 0,
+    "Target": 1,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Equip a head skin",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  },
+  "head_skins_owned_01": {
+    "Id": "head_skins_owned_01",
+    "TrackerId": "head_skins_owned",
+    "Stage": 1,
+    "IsProgressive": false,
+    "Trigger": "SkinCollected",
+    "Type": "HeadSkinsOwned",
+    "Mode": "HighestValue",
+    "ScopeAggregation": "Max",
+    "Subject": "Helmet",
+    "SubjectInt": 0,
+    "Target": 20,
+    "WindowSeconds": 0,
+    "GraceSeconds": 0,
+    "TitleFormat": "Collect {0} head skins",
+    "Rewards": [
+      {
+        "Amount": 1,
+        "Type": "Gems",
+        "$type": "CurrencyReward"
+      }
+    ],
+    "Category": "None"
+  }
+}

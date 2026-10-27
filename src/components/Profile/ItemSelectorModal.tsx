@@ -18,6 +18,7 @@ import { getStatName } from '../../utils/statNames';
 import { OPEN_SKIN_ARCHIVE_EVENT, resolvedSkinStats, skinDisplayName } from '../../utils/skinArchive';
 import type { SavedSkin } from '../../types/Profile';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
+import { useSkinIcons } from '../../utils/skinIcons';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
@@ -108,6 +109,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     const savedItemsRef = useRef(profile.savedItems);
     savedItemsRef.current = profile.savedItems;
     const { selectedVersion } = useGameDataContext();
+    // Re-render once the exact skin icon rects arrive.
+    useSkinIcons(selectedVersion);
     const stats = useGlobalStats();
     const { data: itemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: secondaryData } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');

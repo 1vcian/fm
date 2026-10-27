@@ -1,0 +1,338 @@
+{
+  "1": {
+    "RequiredStars": 1,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "2": {
+    "RequiredStars": 2,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "3": {
+    "RequiredStars": 3,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "4": {
+    "RequiredStars": 4,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "5": {
+    "RequiredStars": 5,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "6": {
+    "RequiredStars": 6,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "7": {
+    "RequiredStars": 7,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "8": {
+    "RequiredStars": 8,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "9": {
+    "RequiredStars": 9,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "10": {
+    "RequiredStars": 10,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "11": {
+    "RequiredStars": 11,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  },
+  "12": {
+    "RequiredStars": 12,
+    "BonusStats": {
+      "Stats": [
+        {
+          "StatNode": {
+            "UniqueStat": {
+              "StatType": "Bonus",
+              "StatNature": "Multiplier"
+            },
+            "LegacyTarget": null,
+            "Layer": "None",
+            "Condition": "None",
+            "Target": {
+              "Kind": "Currency",
+              "Qualifiers": [
+                {
+                  "Type": "CurrencyType",
+                  "Value": 11
+                }
+              ]
+            }
+          },
+          "Value": 0.05000000074505806
+        }
+      ]
+    }
+  }
+}

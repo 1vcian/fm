@@ -5,6 +5,7 @@ import { ItemSlot, MountSlot, PetSlot } from '../../types/Profile';
 import { AscensionStars, ascensionTypeForSlot, useAscensionMax } from './AscensionStars';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getRarityBgStyle, getRarityBorderStyle } from '../../lib/utils';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
+import { useSkinIcons } from '../../utils/skinIcons';
 import { formatSecondaryStat } from '../../utils/statNames';
 import { formatNumber } from '../../utils/format';
 import { StatBreakdownTooltip } from './StatBreakdownTooltip';
@@ -149,6 +150,8 @@ export function ItemSelectionCard({
     artClassName,
 }: ItemSelectionCardProps) {
     const { selectedVersion } = useGameDataContext();
+    // Re-render once the exact skin icon rects arrive.
+    useSkinIcons(selectedVersion);
     const isCompact = variant === 'compact';
     const displayLevel = currentLevel ?? item?.level ?? 0;
     const starSrc = `${import.meta.env.BASE_URL}Texture2D/${(resolveTextureVersion(selectedVersion) ?? selectedVersion) ? `${resolveTextureVersion(selectedVersion) ?? selectedVersion}/` : ''}AscensionStar.png`;
@@ -629,6 +632,8 @@ function RowCard({
     // allowed to wrap so every number stays on screen.
     const artFrame = artClassName || (isCompact ? 'w-12 h-12 sm:w-14 sm:h-14' : CARD_ART_FRAME_CLASS);
     const { selectedVersion } = useGameDataContext();
+    // Re-render once the exact skin icon rects arrive.
+    useSkinIcons(selectedVersion);
 
     const ageIdx = typeof item?.age === 'number' ? (item.age as number) : null;
     const showAge = !hideAgeStyles && ageIdx !== null;

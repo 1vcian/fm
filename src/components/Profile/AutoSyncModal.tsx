@@ -22,6 +22,7 @@ import { buildSkinDict, resolveSkinForSlot, SKIN_SLOTS } from '../../utils/ocr/s
 import type { ItemSlot } from '../../types/Profile';
 import { getItemImage } from '../../utils/itemAssets';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
+import { useSkinIcons } from '../../utils/skinIcons';
 import { AGES } from '../../utils/constants';
 import { SUBSTAT_DEFS } from '../../utils/ocr/gameDictionary';
 import { getStatName } from '../../utils/statNames';
@@ -122,6 +123,8 @@ function ConfidenceChip({ c }: { c: number }) {
 export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset?: ForcedTemplate }) {
     const { profile, updateProfile } = useProfile();
     const { selectedVersion } = useGameDataContext();
+    // Re-render once the exact skin icon rects arrive.
+    useSkinIcons(selectedVersion);
 
     const { data: autoItemMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');

@@ -3,6 +3,11 @@
  * popup shows these above the config changes for the same version.
  */
 export const RELEASE_NOTES: Record<string, string[]> = {
+    '2026_10_27_09_45': [
+        'Skin icons now come from the game files, one exact picture per skin, including the new Santa, Snowboard and Snowman weapons.',
+        'New sets Crimson Faemoth, Umbral Shade and Granite Warden, and set pieces always listed as Helmet, Armour, Weapon.',
+        'Main battle shows all three difficulties again for this build.',
+    ],
     '2026_10_08_09_03': [
         'New Achievements wiki with the game\'s own titles and rewards.',
         'PvP works now, in beta test: fight a profile card screenshot, a saved profile or a fighter you build.',

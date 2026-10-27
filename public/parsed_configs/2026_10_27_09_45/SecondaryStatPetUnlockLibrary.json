@@ -1,0 +1,26 @@
+{
+  "Common": {
+    "PetRarity": "Common",
+    "NumberOfSecondStats": 1
+  },
+  "Rare": {
+    "PetRarity": "Rare",
+    "NumberOfSecondStats": 1
+  },
+  "Epic": {
+    "PetRarity": "Epic",
+    "NumberOfSecondStats": 1
+  },
+  "Legendary": {
+    "PetRarity": "Legendary",
+    "NumberOfSecondStats": 2
+  },
+  "Ultimate": {
+    "PetRarity": "Ultimate",
+    "NumberOfSecondStats": 2
+  },
+  "Mythic": {
+    "PetRarity": "Mythic",
+    "NumberOfSecondStats": 2
+  }
+}

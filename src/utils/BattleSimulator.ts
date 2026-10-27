@@ -13,7 +13,7 @@
  *    anchoring (melee waves queue up instead of all hitting at once)
  *  - real skill model: 4.0 s initial charge, cooldown from effect end, per-skill hardcoded
  *    areas/timings, buffs that raise max HP without healing per tick, the activation Hp grant
- *  - real enemy scaling: AgeScaling * DifficultyScaling[idx], no cancelling magic numbers
+ *  - real enemy scaling: AgeScaling * difficulty multiplier (src/engine/enemies.ts), no cancelling magic numbers
  *  - Monte Carlo runs are seeded (1..N), so the same inputs give the same win rate
  */
 import { AggregatedStats } from './statEngine';

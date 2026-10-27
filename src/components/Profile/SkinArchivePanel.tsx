@@ -9,6 +9,7 @@ import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { cn } from '../../lib/utils';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
+import { useSkinIcons } from '../../utils/skinIcons';
 import type { EquippedSkin, SavedSkin, UserProfile } from '../../types/Profile';
 import {
     OPEN_SKIN_ARCHIVE_EVENT, SKIN_TYPE_TO_SLOT, archivedSkin, equippedFromSaved, findSavedSkin, newSkinId,
@@ -29,6 +30,8 @@ export function SkinArchivePanel() {
     const { profile, updateProfile } = useProfile();
     const cmp = useComparison();
     const { selectedVersion } = useGameDataContext();
+    // Re-render once the exact skin icon rects arrive.
+    useSkinIcons(selectedVersion);
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: skinUpgradeLibrary } = useGameData<any>('SkinUpgradeLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');

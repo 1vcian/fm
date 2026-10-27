@@ -167,8 +167,8 @@ export function getAvailableStages(libs: LibraryData): { ageIdx: number; battleI
 }
 
 /**
- * Main-battle enemy HP at its real magnitude (MainBattleBalancing.GetEnemyHp, 0x77EA22C):
- * AgeScaling.Health x DifficultyScaling[difficultyIdx].HpMulti. Kept for old imports; the
+ * Main-battle enemy HP at its real magnitude (MainBattleBalancing.GetEnemyHp, 0x7824548):
+ * AgeScaling.Health x the difficulty multiplier (mainBattleDifficultyMultipliers). Kept for old imports; the
  * simulators use src/engine/enemies.ts (mainBattleWaveSpecs) directly.
  */
 export function calculateEnemyHp(
