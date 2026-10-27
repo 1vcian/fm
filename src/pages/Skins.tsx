@@ -6,6 +6,7 @@ import { Shield, Sword, Heart, Zap } from 'lucide-react';
 import { getSkinSpriteStyle } from '../utils/skinSprites';
 import { useSkinIcons } from '../utils/skinIcons';
 import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
+import { SetEffectButton } from '../components/Wiki/SetEffectPreview';
 import { useGameDataContext } from '../context/GameDataContext';
 import skinSetNames from '../data/skinSetNames.json';
 
@@ -235,6 +236,15 @@ export default function Skins() {
                                         <p className="text-xs text-text-muted mt-1">
                                             Collect {setInfo.BonusTiers[0]?.RequiredPieces} pieces to activate bonuses.
                                         </p>
+                                        <SetEffectButton
+                                            setId={setId}
+                                            setName={setDisplayName(setId)}
+                                            pieces={{
+                                                helmet: skins.find(s => s.SkinId.Type === 'Helmet')?.SkinId.Idx,
+                                                armour: skins.find(s => s.SkinId.Type === 'Armour')?.SkinId.Idx,
+                                                weapon: skins.find(s => s.SkinId.Type === 'Weapon')?.SkinId.Idx,
+                                            }}
+                                        />
                                     </div>
                                 </div>
 

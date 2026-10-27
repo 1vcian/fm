@@ -24,7 +24,11 @@ export interface SpriteDef {
     ow: number; oh: number; ox: number; oy: number;
 }
 
-export interface ParticleCurve { min: number; max: number; curve?: [number, number][]; minCurve?: [number, number][] | null }
+/**
+ * A MinMaxCurve. Curve keys are [time, value] or, from 2026_10_27_09_45, [time, value, inSlope,
+ * outSlope] (Hermite); `wrap` is [m_PreInfinity, m_PostInfinity] with 0 PingPong, 1 Repeat, 2 Clamp.
+ */
+export interface ParticleCurve { min: number; max: number; curve?: number[][]; minCurve?: number[][] | null; wrap?: [number, number] }
 export interface ParticleGradient { c: [number, number, number, number][]; a: [number, number][] }
 export interface ParticleColor { mode: 'color' | 'twoColors' | 'gradient' | 'twoGradients'; min?: number[]; max?: number[]; g?: ParticleGradient; g2?: ParticleGradient }
 export interface ParticleDef {
@@ -34,6 +38,10 @@ export interface ParticleDef {
     rate: ParticleCurve; bursts: { t: number; n: number; cycles: number; interval: number }[];
     shape: { on: boolean; type: number; radius: number; angle: number; arc: number; scale: [number, number]; pos: [number, number]; rot: [number, number, number] };
     sizeOverLife?: ParticleCurve; colorOverLife?: ParticleColor; rotOverLife?: ParticleCurve;
+    /** SizeModule.separateAxes: sizeOverLife is the X size and this the Y size. */
+    sizeOverLifeY?: ParticleCurve;
+    /** The system's local rotation when it turns about X or Y, which the 2D matrix cannot hold. */
+    q?: [number, number, number, number];
     velocity?: { x: ParticleCurve; y: ParticleCurve; space?: number };
     uv?: { sprites: string[] };
     renderer?: { mode: number; order: number; layer: number; material?: { tex: Record<string, string>; colors?: Record<string, number[]> } | null };
@@ -94,6 +102,11 @@ export interface BattleVisualData {
     defaultWeapon: string;
     visuals: Record<string, ItemVisual>;
     skins: { name: string; itemType: number; skinVisualId: number; main: string | null; secondary: string | null }[];
+    /**
+     * BaseSetId -> the set's effect prefabs (SetVisualConfig): `idle` plays around a unit wearing the
+     * set complete with every piece at max level, `death` where it dies (UnitSetEffectsView).
+     */
+    setEffects?: Record<string, { idle: string | null; death: string | null }>;
     skills: Record<string, { showDuration: boolean; icons: string[]; projectiles: string[]; animations: string[] }>;
     skillIds: Record<string, number>;
     pets: Record<string, { name: string; prefabs: string[] }[]>;

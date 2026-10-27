@@ -52,6 +52,16 @@ function skinPrefab(data: BattleVisualData, type: number, skinIdx: number | unde
     return name ? data.visuals[name]?.prefab ?? null : null;
 }
 
+/** The look of a bare character wearing the given skins (Skin Idx per slot), default weapon below. */
+export function lookFromSkins(data: BattleVisualData, skins: { helmet?: number; armour?: number; weapon?: number }): Look {
+    return {
+        weapon: data.visuals[data.defaultWeapon],
+        helmetPrefab: skinPrefab(data, ITEM_TYPE.Helmet, skins.helmet, false),
+        armourPrefab: skinPrefab(data, ITEM_TYPE.Armour, skins.armour, false),
+        weaponPrefab: skinPrefab(data, ITEM_TYPE.Weapon, skins.weapon, false),
+    };
+}
+
 /** A profile's look: equipped helmet / armour / weapon with skins, mount, pets and fairy. */
 export function lookFromProfile(data: BattleVisualData, profile: UserProfile | null | undefined, opts?: { weaponRanged?: boolean; noCompanions?: boolean }): Look {
     if (!profile) return { weapon: data.visuals[data.defaultWeapon] };
@@ -105,7 +115,7 @@ export function lookFromEnemy(data: BattleVisualData, u: VisualUnit, enemyLibrar
 
 // ---------------------------------------------------------------- units
 
-interface UnitView {
+export interface UnitView {
     rig: RigInstance;
     kind: 'unit' | 'thief' | 'drone';
     controller: Record<string, string> | null;
@@ -142,7 +152,7 @@ function ownClip(data: BattleVisualData, rig: RigInstance): string | null {
     return first ?? null;
 }
 
-function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['kind']): UnitView {
+export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['kind']): UnitView {
     const prefab = kind === 'thief' ? 'ThiefView' : kind === 'drone' ? 'DroneView' : 'UnitView';
     const rig = new RigInstance(data, prefab);
     let charRig = rig.find(kind === 'drone' ? 'Drone' : 'CharacterRig');

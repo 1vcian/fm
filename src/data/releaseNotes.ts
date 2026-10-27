@@ -7,6 +7,7 @@ export const RELEASE_NOTES: Record<string, string[]> = {
         'Skin icons now come from the game files, one exact picture per skin, including the new Santa, Snowboard and Snowman weapons.',
         'New sets Crimson Faemoth, Umbral Shade and Granite Warden, and set pieces always listed as Helmet, Armour, Weapon.',
         'Main battle shows all three difficulties again for this build.',
+        'Skins & Sets: every set now shows its Max set effect, animated from the game files: the effect around the character and the one on death, for a complete set at max level.',
         'Battles follow the new game rules: Incoming Crit Damage Reduction and the bonus on every 5th attack, ready for the fairies that will grant them, plus flat and uncapped fairies.',
     ],
     '2026_10_08_09_03': [

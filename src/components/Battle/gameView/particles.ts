@@ -17,17 +17,57 @@ interface Particle {
 
 const rand = (c: ParticleCurve, r: number) => c.min + (c.max - c.min) * r;
 
-function evalCurve(keys: [number, number][] | undefined, t: number): number {
+/** Unity's curve wrap outside the keys: 0 PingPong, 1 Repeat, 2 Clamp (InternalWrapMode). */
+function wrapTime(t: number, start: number, end: number, mode: number | undefined): number {
+    const len = end - start;
+    if (len <= 0 || mode === undefined || mode === 2) return Math.min(Math.max(t, start), end);
+    const u = (t - start) / len;
+    if (mode === 1) return start + (u - Math.floor(u)) * len;
+    const k = Math.floor(u);
+    const f = u - k;
+    return start + (k % 2 === 0 ? f : 1 - f) * len;
+}
+
+/** A curve value: Hermite between keys when they carry slopes, linear otherwise. */
+function evalCurve(keys: number[][] | undefined, t: number, wrap?: [number, number]): number {
     if (!keys || keys.length === 0) return 1;
-    if (t <= keys[0][0]) return keys[0][1];
+    const first = keys[0][0], last = keys[keys.length - 1][0];
+    if (t < first) t = wrapTime(t, first, last, wrap?.[0]);
+    else if (t > last) t = wrapTime(t, first, last, wrap?.[1]);
+    if (t <= first) return keys[0][1];
     for (let i = 1; i < keys.length; i++) {
         if (t <= keys[i][0]) {
-            const [t0, v0] = keys[i - 1];
-            const [t1, v1] = keys[i];
-            return v0 + ((v1 - v0) * (t - t0)) / Math.max(1e-6, t1 - t0);
+            const a = keys[i - 1], b = keys[i];
+            const dt = Math.max(1e-6, b[0] - a[0]);
+            const u = (t - a[0]) / dt;
+            if (a.length >= 4 && b.length >= 4 && isFinite(a[3]) && isFinite(b[2])) {
+                const u2 = u * u, u3 = u2 * u;
+                return (2 * u3 - 3 * u2 + 1) * a[1] + (u3 - 2 * u2 + u) * a[3] * dt
+                    + (-2 * u3 + 3 * u2) * b[1] + (u3 - u2) * b[2] * dt;
+            }
+            return a[1] + (b[1] - a[1]) * u;
         }
     }
     return keys[keys.length - 1][1];
+}
+
+/** Rotate a 3D vector by a unit quaternion [x, y, z, w]. */
+function rotQ(q: [number, number, number, number], v: [number, number, number]): [number, number, number] {
+    const [x, y, z, w] = q;
+    const m00 = 1 - 2 * (y * y + z * z), m01 = 2 * (x * y - z * w), m02 = 2 * (x * z + y * w);
+    const m10 = 2 * (x * y + z * w), m11 = 1 - 2 * (x * x + z * z), m12 = 2 * (y * z - x * w);
+    const m20 = 2 * (x * z - y * w), m21 = 2 * (y * z + x * w), m22 = 1 - 2 * (x * x + y * y);
+    return [m00 * v[0] + m01 * v[1] + m02 * v[2], m10 * v[0] + m11 * v[1] + m12 * v[2], m20 * v[0] + m21 * v[1] + m22 * v[2]];
+}
+
+/** Euler rotation of the shape (degrees), applied Z, then X, then Y as Unity does. */
+function rotEuler(e: [number, number, number], v: [number, number, number]): [number, number, number] {
+    let [x, y, z] = v;
+    const rz = (e[2] * Math.PI) / 180, rx = (e[0] * Math.PI) / 180, ry = (e[1] * Math.PI) / 180;
+    if (rz) { const c = Math.cos(rz), s = Math.sin(rz); [x, y] = [x * c - y * s, x * s + y * c]; }
+    if (rx) { const c = Math.cos(rx), s = Math.sin(rx); [y, z] = [y * c - z * s, y * s + z * c]; }
+    if (ry) { const c = Math.cos(ry), s = Math.sin(ry); [x, z] = [x * c + z * s, -x * s + z * c]; }
+    return [x, y, z];
 }
 
 function evalGradient(g: ParticleGradient | undefined, t: number): number[] {
@@ -87,6 +127,13 @@ export class Emitter {
         const mat = def.renderer?.material;
         this.texture = mat ? (mat.tex._BaseMap ?? mat.tex._MainTex ?? null) : null;
         if (emitOnce && def.bursts.length === 0 && def.rate.max <= 0) this.emit(1);
+        // ParticleSystem.prewarm: a looping system starts as if it had already run one full loop.
+        if (def.prewarm && def.loop && !emitOnce) {
+            const step = 1 / 30;
+            for (let t = 0; t < def.duration; t += step) this.update(step / (def.simSpeed || 1));
+            this.time = 0;
+            this.burstDone.clear();
+        }
     }
 
     get done(): boolean {
@@ -100,7 +147,20 @@ export class Emitter {
         for (let k = 0; k < n && this.particles.length < d.maxParticles; k++) {
             const r = this.r;
             let lx = 0, ly = 0, dx = 0, dy = 1;
-            if (sh.on) {
+            if (sh.on && sh.type === 4) {
+                // Cone in 3D: Unity emits along local +Z, within `angle` of it, from a disc of
+                // `radius`; the shape rotation and the system's own rotation turn it, and the view
+                // keeps the X and Y of the result (a cone facing the camera barely moves on screen).
+                const phi = r() * Math.PI * 2;
+                const a = ((r() * sh.angle) * Math.PI) / 180;
+                const rho = sh.radius * Math.sqrt(r());
+                const psi = r() * Math.PI * 2;
+                let p3 = rotEuler(sh.rot, [rho * Math.cos(psi), rho * Math.sin(psi), 0]);
+                let d3 = rotEuler(sh.rot, [Math.sin(a) * Math.cos(phi), Math.sin(a) * Math.sin(phi), Math.cos(a)]);
+                p3 = [p3[0] + sh.pos[0], p3[1] + sh.pos[1], p3[2]];
+                if (d.q) { p3 = rotQ(d.q, p3); d3 = rotQ(d.q, d3); }
+                lx = p3[0]; ly = p3[1]; dx = d3[0]; dy = d3[1];
+            } else if (sh.on) {
                 if (sh.type === 10 || sh.type === 11 || sh.type === 0 || sh.type === 1 || sh.type === 2) {
                     // circle / sphere family: radial direction (2D view of it)
                     const ang = ((r() * (sh.arc || 360)) * Math.PI) / 180;
@@ -127,14 +187,17 @@ export class Emitter {
                 lx += sh.pos[0]; ly += sh.pos[1];
             }
             const speed = rand(d.speed, r());
-            const wx = m[0] * lx + m[2] * ly + m[4];
-            const wy = m[1] * lx + m[3] * ly + m[5];
             const sc = Math.hypot(m[0], m[1]);
-            const vdx = m[0] * dx + m[2] * dy, vdy = m[1] * dx + m[3] * dy;
-            const vl = Math.hypot(vdx, vdy) || 1;
+            // A system turned about X / Y has a flattened 2D matrix: its rotation is in `q`, so
+            // place it with the uniform scale and the translation only.
+            const mm = d.q ? [sc, 0, 0, sc, m[4], m[5]] : m;
+            const wx = mm[0] * lx + mm[2] * ly + mm[4];
+            const wy = mm[1] * lx + mm[3] * ly + mm[5];
+            // Not renormalised: a direction pointing partly at the camera moves less on screen.
+            const vdx = mm[0] * dx + mm[2] * dy, vdy = mm[1] * dx + mm[3] * dy;
             this.particles.push({
                 x: wx, y: wy,
-                vx: (vdx / vl) * speed * sc, vy: (vdy / vl) * speed * sc,
+                vx: vdx * speed, vy: vdy * speed,
                 age: 0, life: Math.max(0.01, rand(d.lifetime, r())),
                 size: rand(d.size, r()) * sc,
                 rot: rand(d.rotation, r()),
@@ -190,19 +253,22 @@ export class Emitter {
         const d = this.def;
         for (const p of this.particles) {
             const t = p.age / p.life;
-            const sizeMul = d.sizeOverLife ? (d.sizeOverLife.curve?.length ? evalCurve(d.sizeOverLife.curve, t) : rand(d.sizeOverLife, p.seed)) : 1;
+            const sizeAt = (c: ParticleCurve | undefined) => (c ? (c.curve?.length ? evalCurve(c.curve, t, c.wrap) : rand(c, p.seed)) : 1);
+            const sizeMul = sizeAt(d.sizeOverLife);
+            const sizeMulY = d.sizeOverLifeY ? sizeAt(d.sizeOverLifeY) : sizeMul;
             const col = d.colorOverLife ? colorAt(d.colorOverLife, t, p.seed) : [1, 1, 1, 1];
             const c = [p.color[0] * col[0], p.color[1] * col[1], p.color[2] * col[2], p.color[3] * col[3]];
             if (c[3] <= 0.01) continue;
             const s = p.size * sizeMul;
-            if (s <= 0) continue;
+            const sy = p.size * sizeMulY;
+            if (s <= 0 || sy <= 0) continue;
             ctx.save();
             ctx.translate(p.x, p.y);
             if (p.rot) ctx.rotate(-p.rot);
             ctx.globalAlpha *= c[3];
             if (img) {
                 ctx.scale(1, -1);
-                ctx.drawImage(tintFn(img, c), -s / 2, -s / 2, s, s);
+                ctx.drawImage(tintFn(img, c), -s / 2, -sy / 2, s, sy);
             } else {
                 ctx.fillStyle = `rgb(${c[0] * 255},${c[1] * 255},${c[2] * 255})`;
                 ctx.beginPath();
