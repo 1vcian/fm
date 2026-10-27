@@ -377,6 +377,8 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
     const fairySeeds = (fairy: FairyName | null): Alloc[] => {
         if (!fairy) return [];
         const cfg = SEASON_STATS[fairy];
+        // A flat fairy reads nothing and an uncapped one has no fill point: no breakpoint to seed.
+        if (!cfg.requiredStat || cfg.targetStatTotalCap === null) return [];
         const id = REQUIRED_SUBSTAT[cfg.requiredStat];
         const roll = (upper.get(id) || 0) * perfection / 100;
         if (!id || roll <= 0 || !statIds.includes(id)) return [];

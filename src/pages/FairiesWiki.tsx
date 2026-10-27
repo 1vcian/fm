@@ -172,17 +172,23 @@ export default function FairiesWiki() {
                                             Gain{' '}
                                             <span className="text-text-primary font-semibold">
                                                 +{pct(perStep)} {s.targetLabel}
-                                            </span>{' '}
-                                            for every{' '}
-                                            <span className="text-text-primary font-semibold">
-                                                {sign}
-                                                {pct(s.requiredStatValueDivider)} {s.requiredLabel}
-                                            </span>{' '}
-                                            you have equipped.
+                                            </span>
+                                            {s.requiredStatValueDivider && s.requiredStat ? (
+                                                <>
+                                                    {' '}for every{' '}
+                                                    <span className="text-text-primary font-semibold">
+                                                        {sign}
+                                                        {pct(s.requiredStatValueDivider)} {s.requiredLabel}
+                                                    </span>{' '}
+                                                    you have equipped.
+                                                </>
+                                            ) : '.'}
                                         </p>
-                                        <p>
-                                            Total {s.targetLabel} is capped at +{pct(s.targetStatTotalCap)}.
-                                        </p>
+                                        {s.targetStatTotalCap !== null && (
+                                            <p>
+                                                Total {s.targetLabel} is capped at +{pct(s.targetStatTotalCap)}.
+                                            </p>
+                                        )}
                                     </div>
                                 );
                             })()}

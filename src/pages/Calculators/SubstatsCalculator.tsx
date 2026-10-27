@@ -9,7 +9,7 @@ import { RefreshCw, Sliders, Hash, Zap, TrendingUp, Wand2, Swords, Crosshair, Us
 import { getStatName } from '../../utils/statNames';
 import { cn } from '../../lib/utils';
 import { UserProfile } from '../../types/Profile';
-import { FAIRIES, SEASON_STATS, fairyRawBonus } from '../../utils/fairies';
+import { FAIRIES, SEASON_STATS, fairyRawBonus, fairyGranted } from '../../utils/fairies';
 import { applyTreeMode, useStatLibraries } from '../../hooks/useGlobalStats';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { useSubstatOptimizer } from '../../hooks/useBuildOptimizer';
@@ -357,10 +357,10 @@ export default function SubstatsCalculator() {
             if (!id) return 0;
             return (statAllocations[id] || 0) * (secondaryStatLibrary[id]?.UpperRange || 0) * (perfectionPercentage / 100);
         };
-        const required = poolOf(cfg.requiredStat);
+        const required = cfg.requiredStat ? poolOf(cfg.requiredStat) : 0;
         const targetBefore = poolOf(cfg.targetStat);
         const raw = fairyRawBonus(cfg, bestFairy.level, required);
-        const granted = raw > 0 ? Math.max(0, Math.min(targetBefore + raw, cfg.targetStatTotalCap) - targetBefore) : 0;
+        const granted = fairyGranted(cfg, raw, targetBefore);
         return { cfg, required, granted };
     }, [bestFairy, statAllocations, secondaryStatLibrary, perfectionPercentage]);
 

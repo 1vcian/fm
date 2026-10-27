@@ -5,7 +5,7 @@
 
 import { mergeClanModifiers, clanNodeValueAtLevel } from './clanTechStacking';
 import { UserProfile } from '../types/Profile';
-import { SEASON_STATS as FAIRY_SEASON_STATS, applyFairyBonus } from './fairies';
+import { SEASON_STATS as FAIRY_SEASON_STATS, applyFairyBonus, FairyTargetStat } from './fairies';
 import { attackIntervalSeconds, doubleCycleSeconds, weaponHitsPerSecond } from './constants';
 import { BUFF_SKILL_TYPES, buffActiveTicks, skillCycleTicks } from '../engine/skills';
 import { skillYieldPerCast } from '../engine/skillYield';
@@ -130,9 +130,18 @@ export interface AggregatedStats {
     blockChance: number;
     /** Only the seasonal fairy grants this today (no reflect substat exists on gear). */
     reflectChance: number;
+    /**
+     * Secondary stat CriticalDamageReduction (2026_10_27_09_45): cuts the critical hits this player
+     * takes. No gear rolls it (SecondaryStatLibrary range 0 to 0): a fairy is the only source.
+     */
+    criticalDamageReduction: number;
+    /** Secondary stat NthAttackDamageMulti (2026_10_27_09_45), same story: fairy only. */
+    nthAttackDamageMulti: number;
+    /** BaseConfig.NthAttackInterval; 0 when the config predates it. */
+    nthAttackInterval: number;
     /** The applied seasonal-fairy conversion, recorded for display (absent when no fairy). */
     fairyBonus?: {
-        target: 'criticalChance' | 'blockChance' | 'reflectChance';
+        target: FairyTargetStat;
         /** The required substat pool that fed the conversion. */
         required: number;
         /** The target pool's total before the grant (the cap clamps required + this). */
@@ -298,6 +307,9 @@ export const DEFAULT_STATS: AggregatedStats = {
     criticalDamage: 1.2,
     blockChance: 0,
     reflectChance: 0,
+    criticalDamageReduction: 0,
+    nthAttackDamageMulti: 0,
+    nthAttackInterval: 0,
     doubleDamageChance: 0,
     healthRegen: 0,
     lifeSteal: 0,
@@ -398,6 +410,8 @@ export interface LibraryData {
     petBaseConfig?: any;
     /** SkillBaseConfig.json (SkillSlotsCount: equipped skill slots). */
     skillBaseConfig?: any;
+    /** BaseConfig.json (NthAttackInterval). */
+    baseConfig?: any;
     // Missing fields from BattleHelper
     mainBattleLibrary?: any;
     enemyAgeScalingLibrary?: any;
@@ -480,6 +494,8 @@ export class StatEngine {
         skillDamageMulti: 0,
         skillHealthMulti: 0,
         moveSpeed: 0,
+        criticalDamageReduction: 0,
+        nthAttackDamageMulti: 0,
     };
 
     // Mount flat stats
@@ -648,6 +664,8 @@ export class StatEngine {
             skillDamageMulti: 0,
             skillHealthMulti: 0,
             moveSpeed: 0,
+            criticalDamageReduction: 0,
+            nthAttackDamageMulti: 0,
         };
 
         // Reset mount flat stats
@@ -1198,6 +1216,8 @@ export class StatEngine {
                 case 'SkillDamageMulti': this.secondaryStats.skillDamageMulti += val; break;
                 case 'SkillHealthMulti': this.secondaryStats.skillHealthMulti += val; break;
                 case 'MoveSpeed': this.secondaryStats.moveSpeed += val; break;
+                case 'CriticalDamageReduction': this.secondaryStats.criticalDamageReduction += val; break;
+                case 'NthAttackDamageMulti': this.secondaryStats.nthAttackDamageMulti += val; break;
             }
         };
 
@@ -1708,7 +1728,8 @@ export class StatEngine {
         this.stats.fairyBonus = undefined;
         if (fairy?.name) {
             const fairyCfg = FAIRY_SEASON_STATS[fairy.name];
-            const fairyRequired = this.secondaryStats[fairyCfg.requiredStat];
+            // A flat fairy ("Gain {0}.", RequiredStatValueDivider 0) reads no required pool.
+            const fairyRequired = fairyCfg.requiredStat ? this.secondaryStats[fairyCfg.requiredStat] : 0;
             const poolBefore = fairyCfg.targetStat === 'reflectChance'
                 ? this.stats.reflectChance || 0
                 : this.secondaryStats[fairyCfg.targetStat];
@@ -1745,6 +1766,11 @@ export class StatEngine {
         this.stats.skillHealthMultiplier = (1 + this.stats.skillHealthMultiplier)
             * (1 + this.secondaryStats.skillHealthMulti + this.secondaryStats.skillDamageMulti) - 1;
         this.stats.moveSpeed = this.combine(this.stats.moveSpeed, this.secondaryStats.moveSpeed, 'Additive');
+        // StatType 22 / 23 (Multiplier nature, default 0, Layer None): the pool total is the stat,
+        // which UpdatePlayerCombatStats hands to CombatStats as is (GetPlayerStatBonusOrZero).
+        this.stats.criticalDamageReduction = this.secondaryStats.criticalDamageReduction;
+        this.stats.nthAttackDamageMulti = this.secondaryStats.nthAttackDamageMulti;
+        this.stats.nthAttackInterval = typeof this.libs.baseConfig?.NthAttackInterval === 'number' ? this.libs.baseConfig.NthAttackInterval : 0;
 
         // Populate detailed breakdowns for secondary stats
         this.stats.skillDamageBreakdown.substats = this.secondaryStats.skillDamageMulti;

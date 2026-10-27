@@ -90,6 +90,8 @@ export class CombatScene {
             timerMicro: 0,
             state: 'idle',
             doubleAttack: false,
+            attackCount: 0,
+            nthAttackInterval: spec.nthAttackInterval ?? 0,
             sign: spec.isAlly ? 1 : -1,
             hp: spec.hp ?? spec.stats.hpMax ?? 0,
             stats: { ...defaultStats(), ...spec.stats },
@@ -381,6 +383,20 @@ export class CombatScene {
         const target = this.getUnit(u.targetId);
         if (!target) return;
         const snapshot = { ...u.stats };
+        // Nth attack (ExecuteAttack 0x782FC90, build 2026_10_27_09_45): AttackCount += 1, then when
+        // NthAttackInterval >= 1 and AttackCount % NthAttackInterval == 0 this attack's stats copy
+        // carries Dmg x (1 + NthAttackDamageMulti). The copy feeds both the melee ApplyDmg and the
+        // projectile, so ranged shots get it too.
+        u.attackCount++;
+        if (u.nthAttackInterval >= 1 && u.attackCount % u.nthAttackInterval === 0 && snapshot.nthAttackDamageMulti) {
+            const f = 1 + snapshot.nthAttackDamageMulti;
+            snapshot.dmg *= f;
+            if (snapshot.buffParts) {
+                const parts: Record<string, number> = {};
+                for (const k in snapshot.buffParts) parts[k] = snapshot.buffParts[k] * f;
+                snapshot.buffParts = parts;
+            }
+        }
         const origin: HitOrigin = u.skillId ? { source: 'skill', skillId: u.skillId } : { source: u.projectile ? 'ranged' : 'melee' };
         if (!u.projectile) {
             this.applyDmg(target, u, snapshot, origin);
@@ -451,7 +467,7 @@ export class CombatScene {
     }
 
     /**
-     * GetDamage + ApplyDmg (0x77F5220 / 0x77F4BD0, build 2026_10_08_09_03). Rolls, in order:
+     * GetDamage + ApplyDmg (0x782F53C / 0x782EED0, build 2026_10_27_09_45). Rolls, in order:
      * dodge (a dodge stops here), block, reflect, crit. The reflect roll is ALWAYS consumed but
      * only counts on a hit that was not blocked (`tbz w22` skips the compare and stores false).
      */
@@ -466,14 +482,17 @@ export class CombatScene {
         const reflectRoll = this.rng.rollLE(target.stats.reflectChance);
         const reflected = !blocked && reflectRoll;
         const critical = this.rng.rollLT(stats.criticalChance);
-        let dmg = critical ? stats.dmg * stats.criticalMulti : stats.dmg;
+        // A crit on a target with CriticalDamageReduction (GetDamage 0x782F53C, 2026_10_27_09_45):
+        // (Dmg x CriticalMulti) x (1 - Min(Max(reduction, 0), 1)). No extra roll.
+        const critKeep = critical ? 1 - Math.min(Math.max(target.stats.criticalDamageReduction || 0, 0), 1) : 1;
+        let dmg = critical ? stats.dmg * stats.criticalMulti * critKeep : stats.dmg;
         // Simulator-only test dummy: a fixed share of the target's HpMax, floored (see UnitSpec).
         const td = attacker?.testDummy;
         if (td) dmg = Math.max(0, Math.min(td.hitFraction * target.stats.hpMax, target.hp - td.floorFraction * target.stats.hpMax));
         let buffDmg: Record<string, number> | undefined;
         if (stats.buffParts) {
             buffDmg = {};
-            for (const k in stats.buffParts) buffDmg[k] = critical ? stats.buffParts[k] * stats.criticalMulti : stats.buffParts[k];
+            for (const k in stats.buffParts) buffDmg[k] = critical ? stats.buffParts[k] * stats.criticalMulti * critKeep : stats.buffParts[k];
         }
         this.emit({ targetId: target.id, attackerId: attacker?.id ?? -1, dmg, blocked, critical, reflected, buffDmg, ...origin, ...at(target) });
 

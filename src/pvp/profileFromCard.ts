@@ -55,9 +55,9 @@ export function profileFromCard(card: CardRead, libs: CardProfileLibs): { profil
     const fairyLevel = card.fairy?.level ?? 0;
     if (fairyName && SEASON_STATS[fairyName] && fairyLevel > 0) {
         const cfg = SEASON_STATS[fairyName];
-        const requiredId = POOL_TO_ID[cfg.requiredStat];
+        const requiredId = cfg.requiredStat ? POOL_TO_ID[cfg.requiredStat] : undefined;
         const targetId = POOL_TO_ID[cfg.targetStat];
-        const raw = fairyRawBonus(cfg, fairyLevel, (pool[requiredId] ?? 0) / 100) * 100;
+        const raw = fairyRawBonus(cfg, fairyLevel, requiredId ? (pool[requiredId] ?? 0) / 100 : 0) * 100;
         if (raw > 0 && pool[targetId] != null) {
             pool[targetId] = Math.max(0, pool[targetId] - raw);
             notes.push(`${fairyName} Lv.${fairyLevel} grants ${raw.toFixed(2)}% ${cfg.targetLabel}; it was taken out of the substat pool and re-applied by the fairy.`);

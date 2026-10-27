@@ -33,6 +33,18 @@ export interface CombatStatsVec {
     attackSpeedMulti: number;
     reflectChance: number;
     /**
+     * CombatStats.CriticalDamageReduction (0x190, new in 2026_10_27_09_45): a critical hit on this
+     * unit deals Dmg x CriticalMulti x (1 - clamp(this, 0, 1)) (AttacksSystem.GetDamage 0x782F53C).
+     * StatType 22, read by UpdatePlayerCombatStats through GetPlayerStatBonusOrZero.
+     */
+    criticalDamageReduction: number;
+    /**
+     * CombatStats.NthAttackDamageMulti (0x1B0, new in 2026_10_27_09_45): every
+     * BaseConfig.NthAttackInterval-th attack of this unit deals Dmg x (1 + this)
+     * (AttacksSystem.ExecuteAttack 0x782FC90). StatType 23.
+     */
+    nthAttackDamageMulti: number;
+    /**
      * Display only, never read by the combat: the part of `dmg` each active buff skill adds
      * (SkillManager.applyBuffs), so a weapon hit's damage can be attributed to its sources.
      */
@@ -55,6 +67,8 @@ export function defaultStats(): CombatStatsVec {
         doubleDamageChance: 0,
         attackSpeedMulti: 1.0,
         reflectChance: 0,
+        criticalDamageReduction: 0,
+        nthAttackDamageMulti: 0,
     };
 }
 
@@ -111,6 +125,12 @@ export interface UnitSpec {
      * HpMax but never brings it below floorFraction of HpMax, so regen and lifesteal stay visible.
      */
     testDummy?: { hitFraction: number; floorFraction: number };
+    /**
+     * BaseConfig.NthAttackInterval (5 in 2026_10_27_09_45). The game reads it from the config in
+     * ExecuteAttack; it rides on the unit here so every mode gets it with the player's stats.
+     * Absent or < 1: no attack is an Nth attack.
+     */
+    nthAttackInterval?: number;
 }
 
 export interface Unit {
@@ -151,6 +171,9 @@ export interface Unit {
     cosmeticKeys?: { helmet?: string; armour?: string };
     skillId?: string;
     testDummy?: { hitFraction: number; floorFraction: number };
+    /** UnitEntity.AttackCount (0x30C): ExecuteAttack adds 1 before the Nth-attack check. */
+    attackCount: number;
+    nthAttackInterval: number;
 }
 
 export interface Projectile {

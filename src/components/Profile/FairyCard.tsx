@@ -6,7 +6,7 @@ import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
 import { cn } from '../../lib/utils';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
-import { FAIRIES, SEASON_STATS, SeasonFairyStat, fairyPerStep, fairyRawBonus } from '../../utils/fairies';
+import { FAIRIES, SEASON_STATS, SeasonFairyStat, fairyRawBonus, fairyGranted, fairySummary } from '../../utils/fairies';
 import { AggregatedStats } from '../../utils/statEngine';
 import { Minus, Plus, Sparkles } from 'lucide-react';
 
@@ -28,7 +28,8 @@ function defaultPools(cfg: SeasonFairyStat, stats: AggregatedStats) {
     const required =
         cfg.requiredStat === 'skillDamageMulti' ? stats.skillDamageBreakdown?.substats ?? 0
         : cfg.requiredStat === 'skillCooldownMulti' ? stats.skillCooldownBreakdown?.substats ?? 0
-        : stats.secondaryHealthMulti ?? 0;
+        : cfg.requiredStat === 'healthMulti' ? stats.secondaryHealthMulti ?? 0
+        : 0; // flat fairy: nothing is read
     // Block has no breakdown pool and reflect has no substats at all, so those start at 0.
     const targetBefore = cfg.targetStat === 'criticalChance' ? stats.critChanceBreakdown?.substats ?? 0 : 0;
     return { required, targetBefore };
@@ -110,9 +111,7 @@ export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
     const targetBefore = exact ? exact.targetPoolBefore : pools?.targetBefore ?? 0;
 
     const raw = cfg ? fairyRawBonus(cfg, value.level, required) : 0;
-    const granted = cfg && raw > 0
-        ? Math.max(0, Math.min(targetBefore + raw, cfg.targetStatTotalCap) - targetBefore)
-        : 0;
+    const granted = cfg ? fairyGranted(cfg, raw, targetBefore) : 0;
 
     const texVersion = resolveTextureVersion(selectedVersion) ?? selectedVersion;
     const texture = FAIRIES.find((f) => f.name === value.name)?.texture;
@@ -126,7 +125,7 @@ export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
                     </div>
                     <div className="text-[10px] text-text-muted leading-snug">
                         {cfg
-                            ? `+${pct(fairyPerStep(cfg, value.level))} ${cfg.targetLabel} per ${cfg.requiredStatIsReduction ? '-' : '+'}${pct(cfg.requiredStatValueDivider)} ${cfg.requiredLabel} equipped, cap +${pct(cfg.targetStatTotalCap)}`
+                            ? fairySummary(cfg, value.level, pct)
                             : 'Seasonal event bonus'}
                     </div>
                 </div>

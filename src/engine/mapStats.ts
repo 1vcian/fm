@@ -32,6 +32,12 @@ export interface PlayerAggregates {
     healthRegen: number;
     moveSpeed?: number;
     reflectChance?: number;
+    /** Secondary stat CriticalDamageReduction (StatType 22): only a fairy can grant it in 2026_10_27. */
+    criticalDamageReduction?: number;
+    /** Secondary stat NthAttackDamageMulti (StatType 23): only a fairy can grant it in 2026_10_27. */
+    nthAttackDamageMulti?: number;
+    /** BaseConfig.NthAttackInterval, carried to the unit (see UnitSpec.nthAttackInterval). */
+    nthAttackInterval?: number;
     weaponAttackRange: number;
     weaponWindupTime: number;
     weaponAttackDuration: number;
@@ -113,6 +119,8 @@ export function playerCombatStats(agg: PlayerAggregates, context?: BattleContext
         doubleDamageChance: agg.doubleDamageChance,
         attackSpeedMulti: agg.attackSpeedMultiplier,
         reflectChance: agg.reflectChance ?? 0,
+        criticalDamageReduction: agg.criticalDamageReduction ?? 0,
+        nthAttackDamageMulti: agg.nthAttackDamageMulti ?? 0,
     };
 }
 
@@ -142,6 +150,7 @@ export function playerUnitSpec(agg: PlayerAggregates, pos = { x: 0, y: 0 }, cont
               }
             : undefined,
         tag: 'player',
+        nthAttackInterval: agg.nthAttackInterval,
     };
 }
 

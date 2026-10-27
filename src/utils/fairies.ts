@@ -39,19 +39,27 @@ export const FAIRIES: { name: FairyName; texture: string }[] = [
 /** Only for the screenshot card reader (ocr/cardReader.ts), which gets no configs: the top level of FairyUpgradesLibrary (levels 2..20 in 2026_10_08_09_03). UI code reads the library. */
 export const FAIRY_MAX_LEVEL = 20;
 
+/**
+ * statEngine pools a fairy can grant into (SecondaryStatType in game). The last two exist from
+ * build 2026_10_27_09_45, with the description formats FairyCritDamageReductionDescriptionFormat
+ * and FairyNthAttackDamageDescriptionFormat (Fairies localization table).
+ */
+export type FairyTargetStat = 'criticalChance' | 'blockChance' | 'reflectChance' | 'criticalDamageReduction' | 'nthAttackDamageMulti';
+
 export interface SeasonFairyStat {
     /** statEngine secondaryStats pool the fairy grants into (SecondaryStatType in game). */
-    targetStat: 'criticalChance' | 'blockChance' | 'reflectChance';
+    targetStat: FairyTargetStat;
     targetLabel: string;
     targetStatBonus: number;
     targetStatBonusPerLevel: number;
-    /** statEngine secondaryStats pool the conversion reads. */
-    requiredStat: 'skillDamageMulti' | 'skillCooldownMulti' | 'healthMulti';
+    /** statEngine secondaryStats pool the conversion reads; null for a flat fairy. */
+    requiredStat: 'skillDamageMulti' | 'skillCooldownMulti' | 'healthMulti' | null;
     requiredLabel: string;
     requiredStatValueDivider: number;
     /** Skill Cooldown substats are reductions, so their steps read as "-1%" in game. */
     requiredStatIsReduction?: boolean;
-    targetStatTotalCap: number;
+    /** FairyStatLibrary.TargetStatTotalCap is Nullable<F64>: null means no cap. */
+    targetStatTotalCap: number | null;
 }
 
 export const SEASON_STATS: Record<FairyName, SeasonFairyStat> = {
@@ -96,11 +104,35 @@ export function fairyPerStep(cfg: SeasonFairyStat, level: number): number {
 /** FairyHelpers.MultipleTolerance: Ratio1000(1), added before the floor. */
 export const FAIRY_MULTIPLE_TOLERANCE = 0.001;
 
-/** CalculateRawBonus: whole steps of the displayed required total, with the game's tolerance. */
+/**
+ * CalculateRawBonus (0x783E894 in 2026_10_27_09_45): HasRequiredStat is
+ * RequiredStatValueDivider != 0. Without it the fairy is flat ("Gain {0}."): the level's bonus,
+ * whatever is equipped (GetBonusAtLevel 0x783EAA0). With it, whole steps of the displayed
+ * required total, with the game's tolerance, and nothing when that total is 0.
+ */
 export function fairyRawBonus(cfg: SeasonFairyStat, level: number, requiredTotal: number): number {
-    if (!cfg.requiredStatValueDivider || requiredTotal === 0) return 0;
+    if (!cfg.requiredStatValueDivider) return fairyPerStep(cfg, level);
+    if (requiredTotal === 0) return 0;
     const steps = Math.abs(Math.floor(requiredTotal / cfg.requiredStatValueDivider + FAIRY_MULTIPLE_TOLERANCE));
     return steps * fairyPerStep(cfg, level);
+}
+
+/** What a raw grant actually adds to a pool at `targetBefore`, after the optional cap. */
+export function fairyGranted(cfg: SeasonFairyStat, raw: number, targetBefore: number): number {
+    if (raw <= 0) return 0;
+    const total = targetBefore + raw;
+    const after = cfg.targetStatTotalCap === null ? total : Math.min(total, cfg.targetStatTotalCap);
+    return Math.max(0, after - targetBefore);
+}
+
+/** "+X Target" (flat) or "+X Target per +Y Required equipped", plus ", cap +Z" when capped. */
+export function fairySummary(cfg: SeasonFairyStat, level: number, pct: (v: number) => string): string {
+    const gain = `+${pct(fairyPerStep(cfg, level))} ${cfg.targetLabel}`;
+    const per = cfg.requiredStatValueDivider && cfg.requiredStat
+        ? ` per ${cfg.requiredStatIsReduction ? '-' : '+'}${pct(cfg.requiredStatValueDivider)} ${cfg.requiredLabel} equipped`
+        : '';
+    const cap = cfg.targetStatTotalCap === null ? '' : `, cap +${pct(cfg.targetStatTotalCap)}`;
+    return gain + per + cap;
 }
 
 /** ApplyFairyStat: a non-zero raw grant lands in the pool, whose total is clamped to the cap. */
@@ -112,5 +144,6 @@ export function applyFairyBonus(
 ): number {
     const raw = fairyRawBonus(cfg, level, requiredTotal);
     if (raw === 0) return currentTargetTotal;
-    return Math.min(currentTargetTotal + raw, cfg.targetStatTotalCap);
+    const total = currentTargetTotal + raw;
+    return cfg.targetStatTotalCap === null ? total : Math.min(total, cfg.targetStatTotalCap);
 }

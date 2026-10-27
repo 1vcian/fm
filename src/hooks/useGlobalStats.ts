@@ -38,6 +38,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
     const { data: skillBaseConfig } = useGameData<any>('SkillBaseConfig.json');
+    const { data: baseConfig } = useGameData<any>('BaseConfig.json');
 
     // Combine into LibraryData object
     const libs: LibraryData = useMemo(() => ({
@@ -62,6 +63,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         ascensionConfigsLibrary,
         petBaseConfig,
         skillBaseConfig,
+        baseConfig,
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary,
         skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
@@ -70,7 +72,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
         skinsLibrary, setsLibrary, skinUpgradeLibrary, ascensionConfigsLibrary,
-        petBaseConfig, skillBaseConfig,
+        petBaseConfig, skillBaseConfig, baseConfig,
     ]);
 
     const ready = !!(itemBalancingConfig && itemBalancingLibrary && techTreeLibrary && techTreePositionLibrary);
