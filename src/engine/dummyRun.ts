@@ -30,8 +30,24 @@ export const WARMUP_SECONDS = 60;
 /** Length of the opening window. */
 export const OPENING_SECONDS = 60;
 
-const HUGE = 1e18;
+/**
+ * Dummy HP and the player's raised HpMax. Far beyond any damage or healing a run can add up (10^18
+ * capped the 24 h tested run at 10^18 / 86400 = 11.57T DPS and HPS), and still far from
+ * overflowing a double when a fraction of it is taken.
+ */
+const HUGE = 1e100;
 const UNIT_RADIUS = 0.35;
+
+/**
+ * Dummies are refilled after every tick, so no damage total can ever kill them: a dead dummy is
+ * swept and stops taking hits while the run keeps counting seconds.
+ */
+function keepAlive(units: { hp: number; killed: boolean }[]) {
+    for (const u of units) {
+        u.hp = HUGE;
+        u.killed = false;
+    }
+}
 
 function dummySpec(x: number, y: number): UnitSpec {
     return {
@@ -70,7 +86,8 @@ export function steadyStateRun(unit: UnitSpec, skills: SkillSpec[], targets: num
     const player = addGrossPlayer(scene, unit);
     const distance = 2 * UNIT_RADIUS + Math.max(0, unit.attackRange) - 1e-3;
     const ids = new Set<number>();
-    for (const f of mainBattleFormation(Math.max(1, targets))) ids.add(scene.addUnit(dummySpec(distance + f.x, f.y)).id);
+    const dummies = mainBattleFormation(Math.max(1, targets)).map((f) => scene.addUnit(dummySpec(distance + f.x, f.y)));
+    for (const d of dummies) ids.add(d.id);
 
     const warm = Math.round(WARMUP_SECONDS * 10);
     const ticks = Math.max(warm + 10, Math.round(seconds * 10));
@@ -79,6 +96,7 @@ export function steadyStateRun(unit: UnitSpec, skills: SkillSpec[], targets: num
     for (let t = 0; t < ticks; t++) {
         if (t === warm) hp0 = player.hp;
         scene.tick();
+        keepAlive(dummies);
         if (t >= warm) {
             for (const e of scene.tickEvents) if (!e.heal && !e.dodged && ids.has(e.targetId)) dmg += e.dmg;
         }
@@ -130,7 +148,8 @@ export function testedRun(
     const scene = new CombatScene({ seed, skillSystem: (s) => sm.execute(s) });
     const player = addGrossPlayer(scene, unit);
     const distance = 2 * UNIT_RADIUS + Math.max(0, unit.attackRange) - 1e-3;
-    const dummyId = scene.addUnit(dummySpec(distance, 0)).id;
+    const dummy = scene.addUnit(dummySpec(distance, 0));
+    const dummyId = dummy.id;
 
     const warm = Math.round(WARMUP_SECONDS * 10);
     const ticks = warm + Math.max(10, Math.round(seconds * 10));
@@ -141,6 +160,7 @@ export function testedRun(
     for (let t = 0; t < ticks; t++) {
         if (t === warm) hp0 = player.hp;
         scene.tick();
+        keepAlive([dummy]);
         // Activations land in this tick's events too (a buff's Health grant), so count after it.
         sm.tryAutoActivate(scene, true);
         if (t >= warm) {
@@ -313,6 +333,7 @@ export function pvpSkillRun(loadout: PvpLoadout, skills: SkillSpec[], cfg: PvpHp
     const byId = new Map(traces.map(t => [t.id, t]));
     for (let t = 0; t < frames; t++) {
         scene.tick();
+        keepAlive([target]);
         for (const e of scene.tickEvents) {
             if (e.heal || e.dodged || e.targetId !== target.id) continue;
             if (e.source === 'skill' && e.skillId) {
