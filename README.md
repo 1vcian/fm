@@ -93,7 +93,7 @@ npm run dev
 | `npm run lint` | Runs ESLint. |
 | `npx tsx scripts/build_presets.ts` | Regenerates the Preset Builds for the latest game data. |
 
-**Accounts, clans and push notifications are optional.** Without any configuration the app runs fully in the browser. To try them against your own Supabase project, copy [`.env.example`](./.env.example) to `.env.local`: every variable is explained there.
+**Accounts, clans and push notifications need the project's backend**, which is not part of this repository. Without it the app runs fully in the browser, with profiles saved locally: everything else works the same.
 
 ## How it is built
 
@@ -102,7 +102,7 @@ npm run dev
 - **Combat engine** ([`src/engine/`](./src/engine)): one engine for every battle, with the game code it follows cited in its comments.
 - **Heavy work in web workers**: battle searches, preset variants and the shop value maths never block the page.
 - **Screenshot reading** with Tesseract and an ONNX model, entirely on your device.
-- **Optional backend** on Supabase for accounts, profile sync and clans.
+- **Optional backend** on Supabase for accounts, profile sync and clans (the server side is not published here).
 
 ## Contributing
 
@@ -117,7 +117,11 @@ Contributions are welcome: bug reports, game data corrections and pull requests.
 
 Made with ❤️ by **[1vcian](https://github.com/1vcian)**, with the help of the community.
 
-Special thanks to **Timbo** for his invaluable help with debugging, development and community support, and to everyone who contributed code: **Athos**, **[Simon Mignot](https://github.com/Simon-Mignot)**, **Magnus Jensen**, **[Rusty Bower](https://github.com/RustyBower)** and **[Demian Myers](https://github.com/murkyknight)**.
+Special thanks to **Timbo** for his invaluable help with debugging, development and community support, and to everyone who contributed code:
+
+<a href="https://github.com/1vcian/fm/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=1vcian/fm" alt="Contributors" />
+</a>
 
 Questions or feedback: [medrihanlucian@gmail.com](mailto:medrihanlucian@gmail.com) or the [Forge Master Discord](https://discord.gg/forgemaster).
 
@@ -127,8 +131,8 @@ If the tool helps you, you can [buy me a coffee](https://www.buymeacoffee.com/1v
 
 The **source code** is released under the [MIT License](./LICENSE) (see also [NOTICE](./NOTICE)).
 
-Forge Master's **images, sprites, textures, texts and game data** in this repository belong to their respective owners and are used with their permission. They are **not** covered by the MIT License: please do not reuse them in other projects without the owners' permission.
+Forge Master's **images, sprites, textures, texts and game data** in this repository belong to their respective owners. They are **not** covered by the MIT License.
 
 ---
 
-<sub>Forge Master Calculator is a community project, made with the permission of the game's developers. Game names, images and data belong to their respective owners.</sub>
+<sub>Forge Master Calculator is a community project. Game names, images and data belong to their respective owners.</sub>
