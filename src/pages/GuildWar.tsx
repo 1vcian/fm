@@ -4,7 +4,8 @@ import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
 import { getWarDayIndex, getWarDayName, computeWarDaysMap, type WarCategory } from '../utils/guildWarUtils';
-import { Trophy, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { EggIcon } from '../components/UI/EggIcon';
 import { cn } from '../lib/utils';
 import { GameAssetIcon, type GameAsset } from '../components/UI/GameAssetIcon';
 
@@ -35,12 +36,13 @@ export default function GuildWar() {
     const { data: dayConfig, loading: l1 } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: passConfig, loading: l2 } = useGameData<any>('GuildWarProgressPassLibrary.json');
     const { data: warConfig, loading: l3 } = useGameData<any>('GuildWarConfig.json');
-    const { data: tierConfig, loading: l4 } = useGameData<any>('GuildTierConfig.json');
     const { data: baseConfig, loading: l5 } = useGameData<any>('GuildBaseConfig.json');
+    const { data: sprites } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
 
     const [activeDay, setActiveDay] = useState(getInitialDay());
 
-    const loading = l1 || l2 || l3 || l4 || l5;
+    const loading = l1 || l2 || l3 || l5;
     const warDays = useMemo(() => computeWarDaysMap(dayConfig), [dayConfig]);
 
     // Process tasks for the active day
@@ -68,14 +70,6 @@ export default function GuildWar() {
             .sort((a, b) => a.points - b.points);
     }, [passConfig]);
 
-    // Process Tiers (S to E)
-    const tiers = useMemo(() => {
-        if (!tierConfig) return [];
-        return Object.values(tierConfig).sort((a: any, b: any) => {
-            const order = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'];
-            return order.indexOf(a.Tier) - order.indexOf(b.Tier);
-        });
-    }, [tierConfig]);
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
@@ -188,7 +182,7 @@ export default function GuildWar() {
 
                                             <div className="flex items-start gap-3 relative z-10">
                                                 <div className="p-2 bg-bg-secondary/50 rounded-lg border border-border shrink-0">
-                                                    <GameIcon name={getTaskIcon(task.Task)} size={32} />
+                                                    <TaskIcon task={task.Task} size={32} sprites={sprites} skillLibrary={skillLibrary} />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <h3 className="text-sm font-bold text-text-primary mb-1 line-clamp-1">
@@ -256,7 +250,7 @@ export default function GuildWar() {
                         {/* Right Column: Progress Pass */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 mb-4">
-                                <Trophy className="w-5 h-5 text-yellow-500" />
+                                <GameAssetIcon asset={{ icon: 'WarTicket' }} size={22} />
                                 <h2 className="text-xl font-bold italic tracking-tight">Progress Pass</h2>
                             </div>
 
@@ -271,7 +265,7 @@ export default function GuildWar() {
                                         <div className="relative z-10 flex gap-4">
                                             <div className="shrink-0">
                                                 <div className="w-12 h-12 rounded-2xl bg-bg-input border-2 border-border flex items-center justify-center font-bold text-sm shadow-lg group-hover:border-accent-primary/50 transition-colors">
-                                                    <Trophy className={cn("w-5 h-5", idx === 0 ? "text-bronze" : idx === 1 ? "text-silver" : "text-yellow-500")} />
+                                                    <GameAssetIcon asset={{ icon: idx === 0 ? 'BronzeShield' : idx === 1 ? 'SilverShield' : 'GoldShield' }} size={28} />
                                                 </div>
                                             </div>
 
@@ -304,80 +298,18 @@ export default function GuildWar() {
                         </div>
                     </div>
 
-                    {/* Clan Tiers & War Rewards Section */}
-                    <div className="col-span-1 lg:col-span-3 space-y-6">
-                        <div className="flex items-center gap-2">
-                            <GameAssetIcon asset={{ icon: 'GoldShield' }} size={24} />
-                            <h2 className="text-2xl font-black italic uppercase tracking-tighter">Clan Tiers & War Rewards</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {tiers.map((tier: any) => (
-                                <Card key={tier.Tier} className="overflow-hidden border-t-4 flex flex-col" style={{ borderTopColor: getTierColor(tier.Tier) }}>
-                                    <div className="p-4 bg-bg-secondary/20 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shadow-lg border" style={{ backgroundColor: getTierColor(tier.Tier) + '20', color: getTierColor(tier.Tier), borderColor: getTierColor(tier.Tier) + '40' }}>
-                                                {tier.Tier}
-                                            </div>
-                                            <div>
-                                                <div className="text-xs font-bold text-text-muted uppercase tracking-widest">Required Points</div>
-                                                <div className="font-mono font-black text-sm">{tier.RequiredPoints.toLocaleString()}</div>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-[10px] font-bold text-text-muted uppercase mb-1">War Points Gained</div>
-                                            <div className="flex gap-2 justify-end">
-                                                <span className="text-green-400 font-bold text-xs">{tier.TierPointsOnWin} Win</span>
-                                                <span className={cn(
-                                                    "font-bold text-xs",
-                                                    tier.TierPointsOnLose < 0 ? "text-red-400" : "text-blue-400"
-                                                )}>
-                                                    {tier.TierPointsOnLose} Lose
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 grid grid-cols-2 gap-4 flex-1">
-                                        {/* Win Rewards */}
-                                        <div className="space-y-2">
-                                            <div className="text-[10px] font-black uppercase text-green-500 flex items-center gap-1">
-                                                <GameAssetIcon asset={{ icon: 'crown0' }} size={12} /> Victory Rewards
-                                            </div>
-                                            <div className="space-y-1">
-                                                {tier.WarWonRewards.map((rew: any, rIdx: number) => (
-                                                    <div key={rIdx} className="flex items-center justify-between bg-black/20 px-2 py-1 rounded border border-white/5 text-[10px]">
-                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                            <GameIcon name={mapRewardType(rew.Type)} size={14} className="shrink-0" />
-                                                            <span className="whitespace-nowrap overflow-hidden text-clip opacity-70">{rew.Type}</span>
-                                                        </div>
-                                                        <span className="font-mono font-black ml-1 shrink-0">{rew.Amount.toLocaleString()}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Lose Rewards */}
-                                        <div className="space-y-2 border-l border-border/50 pl-4">
-                                            <div className="text-[10px] font-black uppercase text-red-500 flex items-center gap-1">
-                                                <GameAssetIcon asset={{ icon: 'Skull' }} size={12} /> Defeat Rewards
-                                            </div>
-                                            <div className="space-y-1">
-                                                {tier.WarLostRewards.map((rew: any, rIdx: number) => (
-                                                    <div key={rIdx} className="flex items-center justify-between bg-black/10 px-2 py-1 rounded border border-white/5 text-[10px] opacity-60">
-                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                            <GameIcon name={mapRewardType(rew.Type)} size={14} className="shrink-0" />
-                                                            <span className="whitespace-nowrap overflow-hidden text-clip opacity-70">{rew.Type}</span>
-                                                        </div>
-                                                        <span className="font-mono font-black ml-1 shrink-0">{rew.Amount.toLocaleString()}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
+                    {/* Clan tiers and war rewards: worked out in the War Prizes calculator */}
+                    <div className="col-span-1 lg:col-span-3">
+                        <Link to="/calculators/war-prizes" className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-400/10 to-transparent p-5 hover:border-amber-400/60 transition-colors">
+                            <GameAssetIcon asset={{ icon: 'GoldShield' }} size={40} />
+                            <div className="flex-1">
+                                <h2 className="text-xl font-black italic uppercase tracking-tighter">Clan Tiers & War Rewards</h2>
+                                <p className="text-sm text-text-secondary">Every tier's required points, the points a won or lost war gives, and what each member gets: open the War Prizes calculator.</p>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl bg-amber-400 text-black group-hover:brightness-110">
+                                Open the calculator <GameAssetIcon asset={{ icon: 'crown0' }} size={16} />
+                            </span>
+                        </Link>
                     </div>
 
                     {/* Guild Base Rules Summary */}
@@ -402,7 +334,7 @@ export default function GuildWar() {
                                             <div className="space-y-1">
                                                 <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Creation Cost</div>
                                                 <div className="text-xl font-black text-yellow-500 flex items-center justify-center md:justify-start gap-1">
-                                                    <GameIcon name="Gem" size={24} />
+                                                    <GameIcon name="GemSquare" size={24} />
                                                     {baseConfig.GuildCreateCost}
                                                 </div>
                                             </div>
@@ -433,39 +365,55 @@ export default function GuildWar() {
 }
 
 // Helpers
-function getTierColor(tier: string): string {
-    const colors: Record<string, string> = {
-        'SSS': '#D946EF', // Fuchsia
-        'SS': '#EF4444',  // Red
-        'S': '#FACC15',   // Yellow
-        'A': '#22C55E',   // Green
-        'B': '#06B6D4',   // Cyan
-        'C': '#FFFFFF',   // White
-        'D': '#FFFFFF',   // White
-        'E': '#FFFFFF',   // White
-    };
-    return colors[tier] || '#ffffff';
+/** The dungeon whose key a UseXDungeonKey task spends, and that key's icon (as on the Battle Predictor tabs). */
+const DUNGEON_KEY_ICON: Record<string, string> = {
+    HammerThief: 'HammerKey', GhostTown: 'SkillKey', Invasion: 'PetKey', ZombieInvasion: 'PotionKey',
+};
+
+/** The sprite index of the first pet or mount (id 0) of a rarity, from ManualSpriteMapping. */
+function rarityIndex(sheet: any, rarity: string): number | null {
+    const rows = Object.entries<any>(sheet?.mapping ?? {}).filter(([, v]) => v.rarity === rarity).sort((a, b) => a[1].id - b[1].id || Number(a[0]) - Number(b[0]));
+    return rows.length ? Number(rows[0][0]) : null;
 }
 
-function getTaskIcon(taskType: string): string {
-    const t = taskType.toLowerCase();
-    if (t.includes('forge')) return 'Hammer';
-    if (t.includes('summon') && t.includes('skill')) return 'SkillTicket';
-    if (t.includes('summon') && t.includes('mount')) return 'MountKey';
-    if (t.includes('upgrade') && t.includes('skill')) return 'SkillTicket';
-    if (t.includes('hatch')) return 'Egg';
-    if (t.includes('merge') && t.includes('pet')) return 'PetKey';
-    if (t.includes('merge') && t.includes('mount')) return 'MountKey';
-    if (t.includes('spendcoins')) return 'Coin';
-    if (t.includes('spendgem')) return 'Gem';
-    if (t.includes('dungeon')) return 'HammerKey'; // Generic dungeon key
-    if (t.includes('techtree')) return 'Potion';
-    return 'Star';
+/** A war task's icon, from the game's own assets: what the task makes the player spend or get. */
+function TaskIcon({ task, size, sprites, skillLibrary }: { task: string; size: number; sprites: any; skillLibrary: any }) {
+    const hatch = task.match(/^Hatch(\w+)Egg$/);
+    if (hatch) return <EggIcon rarity={hatch[1]} size={size} />;
+    const key = task.match(/^Use(\w+)DungeonKey$/);
+    if (key) return <GameIcon name={DUNGEON_KEY_ICON[key[1]] ?? 'UnknownKey'} size={size} />;
+    if (task.startsWith('Forge')) return <GameAssetIcon asset={{ icon: 'Anvil' }} size={size} />;
+    // Pets and mounts of the task's rarity.
+    const pet = task.match(/^Merge(\w+)Pet$/);
+    if (pet) {
+        const i = rarityIndex(sprites?.pets, pet[1]);
+        if (i !== null) return <GameAssetIcon asset={{ sheet: 'Pets', index: i }} size={size} />;
+    }
+    const mount = task.match(/^(?:Merge|Summon)(\w+)Mount$/);
+    if (mount) {
+        const i = rarityIndex(sprites?.mounts, mount[1]);
+        if (i !== null) return <GameAssetIcon asset={{ sheet: 'MountIcons', index: i }} size={size} />;
+        return <GameIcon name="MountKey" size={size} />;
+    }
+    // A skill of the task's rarity (SkillLibrary order), drawn from the skill icon sheet.
+    const skill = task.match(/^(?:Summon|Upgrade)(\w+)Skill$/);
+    if (skill) {
+        const row = Object.values<any>(skillLibrary ?? {}).find(r => r.Rarity === skill[1]);
+        const e = row ? Object.entries<any>(sprites?.skills?.mapping ?? {}).find(([, v]) => v.name === row.Type) : null;
+        if (e) return <GameAssetIcon asset={{ sheet: 'SkillIcons', index: Number(e[0]) }} size={size} />;
+        return <GameIcon name="SkillTicket" size={size} />;
+    }
+    if (/TechTreeUpgrade$/.test(task)) return <GameIcon name="Potion" size={size} />;
+    if (task === 'SpendCoinsOnForge') return <GameIcon name="Coin" size={size} />;
+    if (task === 'SpendGemOnForge') return <GameIcon name="GemSquare" size={size} />;
+    return <GameIcon name="Star" size={size} />;
 }
 
 function formatTaskName(task: string): string {
     // Convert CamelCase to spaced words
-    const spaced = task.replace(/([A-Z])/g, ' $1').trim();
+    // Words split at a lower-to-upper change, and an upper-case run (a Roman numeral) kept whole:
+    // FinishIITechTreeUpgrade -> Finish II Tech Tree Upgrade.
+    const spaced = task.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').trim();
     // Specialized rewrites
     return spaced
         .replace('Summon', 'Summon x1')

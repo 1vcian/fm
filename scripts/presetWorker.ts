@@ -42,10 +42,7 @@ parentPort!.on('message', (m: PoolMessage) => {
     try {
         if (t.kind === 'survival') out = core.survival(t.defender, profiles.get(t.attacker)!, t.seconds, t.from, t.to);
         else if (t.kind === 'arena') out = core.arena(t.me, t.field.map(id => profiles.get(id)!), t.perSide, t.from, t.to);
-        else {
-            const w = core.quest(t.p, t.battle, t.from, t.to);
-            out = w < 0 ? [0, 1] : [w, 0];
-        }
+        else out = core.quest(t.p, t.battle, t.from, t.to);
     } catch (e) {
         console.error(e);
         out = [NaN, NaN];

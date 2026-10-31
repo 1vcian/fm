@@ -68,9 +68,9 @@ export function CharacterMaker() {
     const version = selectedVersion ?? undefined;
     const textureBase = `${import.meta.env.BASE_URL}Texture2D/${resolveTextureVersion(version) ?? version ?? ''}/`;
 
-    const [pieces, setPieces] = useState<Record<GearSlot, Piece>>({
-        Helmet: { age: 0, idx: 0, skin: null }, Body: { age: 0, idx: 0, skin: null }, Weapon: { age: 0, idx: 0, skin: null },
-    });
+    // A slot can be empty (null): the maker starts with nothing on, and clicking a selected item
+    // again takes it off.
+    const [pieces, setPieces] = useState<Record<GearSlot, Piece | null>>({ Helmet: null, Body: null, Weapon: null });
     const [mount, setMount] = useState<Pick>(null);
     const [pets, setPets] = useState<Pick[]>([null, null, null]);
     const [fairy, setFairy] = useState<FairyName | null>(null);
@@ -137,7 +137,11 @@ export function CharacterMaker() {
     const skinIcon = (slot: GearSlot, idx: number) => (
         <div className="w-11 h-11" style={getSkinSpriteStyle({ SkinId: { Idx: idx, Type: SLOT_TYPE[slot] } }, sprites?.skins?.mapping, version)} />
     );
-    const pieceIcon = (slot: GearSlot) => (pieces[slot].skin !== null ? skinIcon(slot, pieces[slot].skin!) : itemIcon(slot, pieces[slot].age, pieces[slot].idx));
+    const pieceIcon = (slot: GearSlot) => {
+        const p = pieces[slot];
+        if (!p) return <X className="w-6 h-6 text-text-muted" />;
+        return p.skin !== null ? skinIcon(slot, p.skin) : itemIcon(slot, p.age, p.idx);
+    };
     const pickIcon = (group: 'mounts' | 'pets', p: Pick) => {
         if (!p) return <X className="w-6 h-6 text-text-muted" />;
         const row = (group === 'mounts' ? mounts : petRows).find(r => r.rarity === p.rarity && r.id === p.id);
@@ -152,7 +156,7 @@ export function CharacterMaker() {
     const setId = useMemo(() => {
         if (!aura || !skinsLib) return null;
         const ids = GEAR.map(s => {
-            const idx = pieces[s].skin;
+            const idx = pieces[s]?.skin ?? null;
             if (idx === null) return null;
             return Object.values<any>(skinsLib).find(r => r.SkinId.Type === SLOT_TYPE[s] && r.SkinId.Idx === idx)?.BaseSetId ?? null;
         });
@@ -161,8 +165,9 @@ export function CharacterMaker() {
 
     const companions = !!mount || pets.some(Boolean) || !!fairy;
     const look: UserProfile = useMemo(() => {
-        const item = (s: GearSlot): ItemSlot => {
+        const item = (s: GearSlot): ItemSlot | null => {
             const p = pieces[s];
+            if (!p) return null;
             const type = SLOT_TYPE[s];
             return {
                 age: p.age, idx: p.idx, level: 1, rarity: 'Common', secondaryStats: [],
@@ -179,16 +184,18 @@ export function CharacterMaker() {
         };
     }, [pieces, mount, pets, fairy, petAscension, mountAscension, skinUpgradeLib]);
     const background = bgKind === 'map' ? maps.find(m => m.id === mapId)?.bg ?? null : null;
-    const weaponRanged = pieces.Weapon.skin !== null ? skinRanged : isRangedWeapon(look, weaponLibrary);
+    // As in game and on the Profile: the weapon under a skin is a real weapon, and its IsRanged
+    // picks the skin's melee or ranged variant (GetSkinnedItemId), animation and parts included.
+    const weaponRanged = isRangedWeapon(look, weaponLibrary);
     const unitsTall = companions ? 6.4 : 3.6;
 
     // ---------------------------------------------------------------- actions
     const fromProfile = () => {
         const it = profile.items;
-        const piece = (s: GearSlot): Piece => {
+        const piece = (s: GearSlot): Piece | null => {
             const i = it[s];
             const hidden = s === 'Weapon' ? profile.misc.useSkinWindup === false : profile.misc.skinVisible?.[s as 'Helmet' | 'Body'] === false;
-            return i ? { age: i.age, idx: i.idx, skin: i.skin && !hidden ? i.skin.idx : null } : { age: 0, idx: 0, skin: null };
+            return i ? { age: i.age, idx: i.idx, skin: i.skin && !hidden ? i.skin.idx : null } : null;
         };
         setPieces({ Helmet: piece('Helmet'), Body: piece('Body'), Weapon: piece('Weapon') });
         setSkinRanged(isRangedWeapon(profile, weaponLibrary));
@@ -247,6 +254,24 @@ export function CharacterMaker() {
     const pause = () => { setFrame(liveFrame.current); setPlaying(false); };
     const stepFrame = (d: number) => { const f = Math.max(0, (playing ? liveFrame.current : frame) + d); setPlaying(false); setFrame(f); };
 
+    /** A weapon of the given kind (WeaponLibrary.IsRanged), from `age` when it has one. */
+    const weaponOfKind = (ranged: boolean, age: number): { age: number; idx: number } | null => {
+        const all = (itemsOf[SLOT_TYPE.Weapon] ?? []).filter(i => (weaponLibrary?.[`{'Age': ${i.age}, 'Type': 'Weapon', 'Idx': ${i.idx}}`]?.IsRanged === true) === ranged);
+        return all.find(i => i.age === age) ?? all[0] ?? null;
+    };
+    /** A weapon skin over a weapon of the chosen kind: the item under it changes kind if needed. */
+    const withWeaponKind = (p: Piece | null, ranged: boolean): Piece | null => {
+        if (!p) return p;
+        const isRanged = weaponLibrary?.[`{'Age': ${p.age}, 'Type': 'Weapon', 'Idx': ${p.idx}}`]?.IsRanged === true;
+        if (isRanged === ranged) return p;
+        const w = weaponOfKind(ranged, p.age);
+        return w ? { ...p, age: w.age, idx: w.idx } : p;
+    };
+    const chooseSkinKind = (ranged: boolean) => {
+        setSkinRanged(ranged);
+        setPieces(p => ({ ...p, Weapon: withWeaponKind(p.Weapon, ranged) }));
+    };
+
     // ---------------------------------------------------------------- picker panel
     const picker = (() => {
         if (!open) return null;
@@ -260,8 +285,8 @@ export function CharacterMaker() {
                         <div className="flex items-center gap-2 text-[11px] text-text-secondary">
                             Skin variant
                             {([false, true] as const).map(r => (
-                                <button key={String(r)} onClick={() => setSkinRanged(r)}
-                                    className={cn('px-2 py-0.5 rounded-md font-bold', skinRanged === r ? 'bg-accent-primary text-white' : 'bg-bg-input hover:text-text-primary')}>
+                                <button key={String(r)} onClick={() => chooseSkinKind(r)}
+                                    className={cn('px-2 py-0.5 rounded-md font-bold', (pieces.Weapon ? weaponRanged : skinRanged) === r ? 'bg-accent-primary text-white' : 'bg-bg-input hover:text-text-primary')}>
                                     {r ? 'Ranged' : 'Melee'}
                                 </button>
                             ))}
@@ -278,13 +303,22 @@ export function CharacterMaker() {
                     <div className="grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-8 gap-1.5 max-h-72 overflow-y-auto pr-1">
                         {gearTab === 'skins'
                             ? (skinsOf[type] ?? []).map(idx => (
-                                <Tile key={idx} label={skinDisplayName(skinsLib, type, idx)} selected={pieces[slot].skin === idx}
-                                    onClick={() => setPieces(p => ({ ...p, [slot]: { ...p[slot], skin: idx } }))}>{skinIcon(slot, idx)}</Tile>
+                                <Tile key={idx} label={skinDisplayName(skinsLib, type, idx)} selected={pieces[slot]?.skin === idx}
+                                    // Again on the worn skin: off, the item under it stays.
+                                    onClick={() => setPieces(p => {
+                                        const next: Piece = { ...(p[slot] ?? { age: 0, idx: 0 }), skin: p[slot]?.skin === idx ? null : idx };
+                                        return { ...p, [slot]: slot === 'Weapon' ? withWeaponKind(next, skinRanged) : next };
+                                    })}>{skinIcon(slot, idx)}</Tile>
                             ))
                             : (itemsOf[type] ?? []).filter(i => i.age === gearTab).map(i => (
                                 <Tile key={`${i.age}_${i.idx}`} label={getItemName(AGES[i.age], slot, i.idx, autoMapping) ?? `${GEAR_LABEL[slot]} ${i.idx + 1}`}
-                                    selected={pieces[slot].skin === null && pieces[slot].age === i.age && pieces[slot].idx === i.idx}
-                                    onClick={() => setPieces(p => ({ ...p, [slot]: { age: i.age, idx: i.idx, skin: null } }))}>{itemIcon(slot, i.age, i.idx)}</Tile>
+                                    selected={pieces[slot]?.skin === null && pieces[slot]?.age === i.age && pieces[slot]?.idx === i.idx}
+                                    // Again on the worn item (no skin on it): the slot is emptied.
+                                    onClick={() => setPieces(p => {
+                                        const cur = p[slot];
+                                        const same = !!cur && cur.skin === null && cur.age === i.age && cur.idx === i.idx;
+                                        return { ...p, [slot]: same ? null : { age: i.age, idx: i.idx, skin: null } };
+                                    })}>{itemIcon(slot, i.age, i.idx)}</Tile>
                             ))}
                     </div>
                 </div>
@@ -300,7 +334,7 @@ export function CharacterMaker() {
                     <Tile label="None" selected={!current} onClick={() => set(null)}><X className="w-6 h-6 text-text-muted" /></Tile>
                     {rows.map(r => (
                         <Tile key={`${r.rarity}_${r.id}`} label={`${r.name} (${r.rarity})`} selected={!!current && current.rarity === r.rarity && current.id === r.id}
-                            onClick={() => set({ rarity: r.rarity, id: r.id })}>{sheetIcon(isMount ? 'mounts' : 'pets', r.index)}</Tile>
+                            onClick={() => set(current && current.rarity === r.rarity && current.id === r.id ? null : { rarity: r.rarity, id: r.id })}>{sheetIcon(isMount ? 'mounts' : 'pets', r.index)}</Tile>
                     ))}
                 </div>
             );
@@ -309,7 +343,7 @@ export function CharacterMaker() {
             return (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                     {[null, ...FAIRIES.map(f => f.name)].map(n => (
-                        <Tile key={n ?? 'none'} label={n ?? 'None'} selected={fairy === n} onClick={() => setFairy(n)}>{fairyIcon(n)}</Tile>
+                        <Tile key={n ?? 'none'} label={n ?? 'None'} selected={fairy === n} onClick={() => setFairy(fairy === n ? null : n)}>{fairyIcon(n)}</Tile>
                     ))}
                 </div>
             );
@@ -324,7 +358,11 @@ export function CharacterMaker() {
                         <div className="w-11 h-11 rounded-lg border border-white/20" style={{ background: bgColor }} />
                     </Tile>
                     {maps.map(m => (
-                        <Tile key={m.id} label={m.label} selected={bgKind === 'map' && mapId === m.id} onClick={() => { setBgKind('map'); setMapId(m.id); }}>
+                        <Tile key={m.id} label={m.label} selected={bgKind === 'map' && mapId === m.id} onClick={() => {
+                            // Again on the chosen map: back to a transparent background.
+                            if (bgKind === 'map' && mapId === m.id) { setBgKind('transparent'); return; }
+                            setBgKind('map'); setMapId(m.id);
+                        }}>
                             <div className="w-11 h-11 rounded-lg border border-white/20" style={{ background: `rgb(${m.bg.ground.slice(0, 3).map(v => Math.round(v * 255)).join(',')})` }} />
                         </Tile>
                     ))}

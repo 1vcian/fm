@@ -2,7 +2,7 @@
  * Raise it to show the update popup once more to everyone, even to those who already saw the
  * current game data's popup (the app changed, not the data).
  */
-export const RELEASE_NOTES_REVISION = '2026_10_31';
+export const RELEASE_NOTES_REVISION = '2026_10_31_shop';
 
 /**
  * What changed in the app itself (not the game data) alongside a game data version. The update
@@ -12,6 +12,7 @@ export const RELEASE_NOTES: Record<string, string[]> = {
     '2026_10_27_09_45': [
         'Now you can drag and hide the Buy Me a Coffee button under the header!',
         'New Preset Builds page: the strongest builds the game allows for power, DPS and HPS (melee and ranged), the main quest and the arena, with their exact equivalents and an arena tournament. Calculate your best variants with only the skins you own, fight against every build with your profile to see where you rank, and add any build to your profiles as your own copy.',
+        'Shop predictor: the daily deals of today and the next days, the same for every player, and the next sets that come after buying all three. Every pack shows what a dollar buys in it and the best one for each resource, the Progress Pass included.',
         'New Images Maker page: build a character with any items, skins, mount, pets and fairy, next to the clan emblem designer, and export it as a PNG or a looping GIF.',
         'Graphic improvements: game icons across the whole app, exact skin icons, animated Max set effects, characters drawn as in battle, and late age item backgrounds drawn with the game\'s own shaders.',
     ],

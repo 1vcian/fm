@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { TrendingUp } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { AGES } from '../utils/constants';
 import { difficultyName } from '../utils/difficulty';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
@@ -50,6 +49,81 @@ function getRewardIcon(reward: Reward): string {
     return type;
 }
 
+/** One reward kind (its $type and Type), and how many of it the free and the premium tracks give. */
+interface RewardSum { key: string; sample: Reward; free: number; premium: number }
+
+/** Sums every reward of the tiers by kind: Rewards[0] is the free track, Rewards[1] the premium one. */
+function sumRewards(tiers: PassTier[]): RewardSum[] {
+    const out = new Map<string, RewardSum>();
+    for (const t of tiers) {
+        t.Rewards.forEach((track, i) => {
+            for (const r of track.Rewards ?? []) {
+                const key = `${r.$type}:${r.Type}`;
+                const row = out.get(key) ?? { key, sample: r, free: 0, premium: 0 };
+                if (i === 0) row.free += r.Amount; else row.premium += r.Amount;
+                out.set(key, row);
+            }
+        });
+    }
+    return [...out.values()].sort((a, b) => a.key.localeCompare(b.key));
+}
+
+/** The words a player reads for these resources (Profile/ResourcesEditor, as in ClanTierPanel). */
+const REWARD_WORDS: Record<string, string> = {
+    Hammers: 'Hammers', Coins: 'Coins', Gems: 'Gems', SkillSummonTickets: 'Skill Tickets',
+    TechPotions: 'Tech Potions', ClockWinders: 'Clock Winders', Eggshells: 'Eggshells', GuildPotions: 'Guild Potions',
+};
+const rewardWord = (r: Reward) => (r.$type === 'DungeonKeyReward' ? `${r.Type} keys` : REWARD_WORDS[r.Type] ?? r.Type);
+
+const fmt = (n: number) => (n ? n.toLocaleString() : '-');
+
+/** The totals of the open difficulty and of every difficulty together, per reward kind. */
+function RewardTotals({ current, all, difficultyLabel }: { current: RewardSum[]; all: RewardSum[]; difficultyLabel: string }) {
+    const byKey = new Map(current.map(r => [r.key, r]));
+    return (
+        <Card className="overflow-x-auto border-border/30">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+                        <th rowSpan={2} className="text-left px-4 py-2">Totals</th>
+                        <th colSpan={3} className="px-2 pt-2 text-center text-accent-primary">{difficultyLabel}</th>
+                        <th colSpan={3} className="px-2 pt-2 text-center text-white">All difficulties</th>
+                    </tr>
+                    <tr className="text-[10px] font-black uppercase tracking-widest text-text-muted border-b border-border/50">
+                        {[0, 1].map(g => (
+                            <Fragment key={g}>
+                                <th className={cn('px-2 pb-2 text-right', g === 1 && 'border-l border-border/30')}>Free</th>
+                                <th className="px-2 pb-2 text-right text-accent-secondary">Premium</th>
+                                <th className="px-2 pb-2 text-right">Both</th>
+                            </Fragment>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {all.map(r => {
+                        const c = byKey.get(r.key);
+                        return (
+                            <tr key={r.key} className="border-b border-border/20 last:border-0 font-mono">
+                                <td className="px-4 py-1.5">
+                                    <span className="inline-flex items-center gap-2 font-sans font-semibold">
+                                        <GameIcon name={getRewardIcon(r.sample)} className="w-5 h-5" /> {rewardWord(r.sample)}
+                                    </span>
+                                </td>
+                                <td className="px-2 text-right">{fmt(c?.free ?? 0)}</td>
+                                <td className="px-2 text-right text-accent-secondary">{fmt(c?.premium ?? 0)}</td>
+                                <td className="px-2 text-right font-bold">{fmt((c?.free ?? 0) + (c?.premium ?? 0))}</td>
+                                <td className="px-2 text-right border-l border-border/30">{fmt(r.free)}</td>
+                                <td className="px-2 text-right text-accent-secondary">{fmt(r.premium)}</td>
+                                <td className="px-2 pr-4 text-right font-bold">{fmt(r.free + r.premium)}</td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </Card>
+    );
+}
+
 export default function ProgressPassWiki() {
     const [difficulty, setDifficulty] = useState<number>(0);
     const { data: passData } = useGameData<Record<string, PassTier>>('MainGameProgressPassLibrary.json');
@@ -74,6 +148,9 @@ export default function ProgressPassWiki() {
             return battleA - battleB;
         });
     }, [passData, difficulty]);
+
+    const totalsAll = useMemo(() => sumRewards(Object.values(passData ?? {})), [passData]);
+    const totalsCurrent = useMemo(() => sumRewards(sortedTiers), [sortedTiers]);
 
     if (!passData) {
         return (
@@ -121,6 +198,8 @@ export default function ProgressPassWiki() {
                 ))}
             </div>
 
+            <RewardTotals current={totalsCurrent} all={totalsAll} difficultyLabel={difficultyName(difficulty)} />
+
             {/* List */}
             <div className="space-y-4">
                 <div className="hidden sm:grid grid-cols-12 gap-4 px-6 text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
@@ -135,7 +214,8 @@ export default function ProgressPassWiki() {
                     const freeRewards = tier.Rewards[0]?.Rewards || [];
                     const premiumRewards = tier.Rewards[1]?.Rewards || [];
                     const { AgeIdx, BattleIdx } = tier.ProgressKey.MainBattleId;
-                    const ageName = AGES[AgeIdx] || `Age ${AgeIdx + 1}`;
+                    // The game names a battle by numbers only (FormatBattleNumber: difficulty, age + 1, battle + 1).
+                    const difficultyLabel = difficultyName(tier.ProgressKey.MainBattleId.DifficultyIdx ?? 0);
                     
                     return (
                         <Card key={idx} className="overflow-hidden border-border/30 hover:border-accent-primary/30 transition-colors group">
@@ -144,10 +224,10 @@ export default function ProgressPassWiki() {
                                 <div className="col-span-4 bg-bg-secondary/40 p-4 sm:p-6 flex items-center sm:border-r border-border/50">
                                     <div className="flex flex-col gap-1">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-accent-primary">
-                                            {ageName}
+                                            {difficultyLabel}
                                         </span>
                                         <span className="text-xl font-bold text-white uppercase tracking-tight">
-                                            Stage {AgeIdx + 1}-{BattleIdx + 1}
+                                            {AgeIdx + 1}-{BattleIdx + 1}
                                         </span>
                                     </div>
                                 </div>

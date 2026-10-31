@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { LossProgressBar } from '../components/Battle/LossProgressBar';
 import { useGameData } from '../hooks/useGameData';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
 import { useTreeLimits } from '../hooks/useTreeLimits';
@@ -823,6 +824,9 @@ export default function MissionSolo() {
                                                 <span>Win Rate: {missionResults[battle.MissionId].winProbability.toFixed(1)}%</span>
                                                 <span>{missionResults[battle.MissionId].winProbability > 50 ? 'Likely Victory' : 'Likely Defeat'}</span>
                                             </div>
+                                        )}
+                                        {missionResults[battle.MissionId]?.lossProgress !== undefined && (
+                                            <LossProgressBar value={missionResults[battle.MissionId].lossProgress!} compact className="px-1" />
                                         )}
 
                                         <div className="flex flex-col gap-1.5 mb-2">

@@ -1,5 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Shield, Flame, Play, Target, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Play, Target, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LossProgressBar } from '../components/Battle/LossProgressBar';
+import { BattlePool } from '../progress/battlePool';
+import { searchFrontier } from '../progress/frontierSearch';
+import type { BattleTarget } from '../progress/battleWorker';
+import type { UserProfile } from '../types/Profile';
 import { useBattleSimulation } from '../hooks/useBattleSimulation';
 import { BattleResult } from '../utils/BattleSimulator';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
@@ -42,6 +47,57 @@ const TABS: TabConfig[] = [
     { id: 'egg', label: FEATURE_NAMES.PetDungeon, icon: 'PetKey', type: 'sprite' },
     { id: 'potion', label: FEATURE_NAMES.PotionDungeon, icon: 'PotionKey', type: 'sprite' },
 ];
+
+/**
+ * Grid updates from the workers, flushed together every FLUSH_MS: one render for many battles
+ * instead of one per battle.
+ */
+const FLUSH_MS = 150;
+function batchedStatuses<K>(setWin: (f: (m: Map<K, number>) => Map<K, number>) => void, setLoss: (f: (m: Map<K, number>) => Map<K, number>) => void) {
+    let win: [K, number][] = [], loss: [K, number][] = [], timer: number | null = null;
+    const flush = () => {
+        timer = null;
+        const w = win, l = loss;
+        win = []; loss = [];
+        if (w.length) setWin(prev => { const m = new Map(prev); for (const [k, v] of w) m.set(k, v); return m; });
+        if (l.length) setLoss(prev => { const m = new Map(prev); for (const [k, v] of l) m.set(k, v); return m; });
+    };
+    return {
+        add(key: K, winPct: number, lossProgress: number | null) {
+            win.push([key, winPct]);
+            if (lossProgress !== null) loss.push([key, lossProgress]);
+            if (timer === null) timer = window.setTimeout(flush, FLUSH_MS);
+        },
+        flush() { if (timer !== null) window.clearTimeout(timer); flush(); },
+        cancel() { if (timer !== null) window.clearTimeout(timer); timer = null; win = []; loss = []; },
+    };
+}
+
+/** Where the last search for this profile ended (index in its battle line), to start the next one there. */
+const hintKey = (profile: UserProfile, mode: string) => `fm.progressHint.${profile.id}.${mode}`;
+function readHint(profile: UserProfile, mode: string): number {
+    try { return Math.max(0, Number(localStorage.getItem(hintKey(profile, mode))) || 0); } catch { return 0; }
+}
+function saveHint(profile: UserProfile, mode: string, index: number) {
+    try { localStorage.setItem(hintKey(profile, mode), String(Math.max(0, index))); } catch { /* storage blocked */ }
+}
+
+/** A cell's lost-run progress: a thin bar under the number (see LossProgressBar). */
+const CellLossBar = ({ value }: { value: number | undefined }) => (value === undefined ? null : (
+    <span className="absolute left-1 right-1 bottom-1 h-1 rounded-full bg-black/40 overflow-hidden pointer-events-none">
+        <span className="block h-full bg-gradient-to-r from-red-500 to-amber-400" style={{ width: `${Math.min(100, value * 100)}%` }} />
+    </span>
+));
+
+/** A difficulty's mark, from the game's own icons: crossed swords for the first, then one skull more per step. */
+function DifficultyIcon({ idx, size = 16 }: { idx: number; size?: number }) {
+    if (idx <= 0) return <GameAssetIcon asset={{ icon: 'Battle' }} size={size} />;
+    return (
+        <span className="inline-flex items-center -space-x-1">
+            {Array.from({ length: Math.min(idx, 3) }, (_, i) => <GameAssetIcon key={i} asset={{ icon: 'Skull' }} size={size} />)}
+        </span>
+    );
+}
 
 // Helper to get color scale for 0-100% progress (10 steps)
 // 0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80-89, 90-99, 100
@@ -161,7 +217,8 @@ function WaveBreakdownCompact({ result }: { result: BattleResult }) {
 
 function MainBattleView({
     simulate,
-    findMaxBeatable,
+    profile,
+    libs,
     playerStats,
     isDebugMode,
     onDebug,
@@ -177,7 +234,8 @@ function MainBattleView({
     resultsCache
 }: {
     simulate: any;
-    findMaxBeatable: any;
+    profile: UserProfile;
+    libs: any;
     playerStats: any;
     isDebugMode?: boolean;
     onDebug?: (age: number, battle: number, diff: number) => void;
@@ -200,20 +258,11 @@ function MainBattleView({
     const [autoScrollDone, setAutoScrollDone] = useState(false);
     const [isRecalculating, setIsRecalculating] = useState(false);
     const [levelStatuses, setLevelStatuses] = useState<Map<string, number>>(new Map());
+    /** Mean enemy HP share removed in the lost runs, per battle. */
+    const [lossStatuses, setLossStatuses] = useState<Map<string, number>>(new Map());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    // Calculate Global Max Beatable (Furthest Progress).
-    // Any stage on a higher difficulty is further than every stage below it (Hard 1-1 > Normal
-    // 10-10), so walk the difficulties from the top and keep the first one with any progress.
-    useEffect(() => {
-        for (let d = difficultyCount - 1; d >= 0; d--) {
-            const max = findMaxBeatable(50, d);
-            if (max) {
-                setMaxBeatable({ ...max, difficulty: d });
-                return;
-            }
-        }
-    }, [findMaxBeatable, difficultyCount]);
+    // Once the player picks a difficulty or a level, the page stops following the frontier.
+    const userPicked = useRef(false);
 
     // Auto-Scroll to Max Progress on Load
     useEffect(() => {
@@ -237,6 +286,32 @@ function MainBattleView({
         }
     }, [maxBeatable, autoScrollDone]);
 
+    // Where the player really gets: the battles are played in order (every age of a difficulty,
+    // then the next difficulty), so it is the last stage cleared (win rate at least 50%) before
+    // the first one that is not, or that the batch did not reach. Once the batch is done it
+    // replaces the first estimate, unless the player has picked something meanwhile.
+    const frontier = useMemo(() => {
+        let best: { ageIdx: number; battleIdx: number; difficulty: number } | null = null;
+        for (let d = 0; d < difficultyCount; d++) {
+            for (let a = 0; a <= maxAgeIdx; a++) {
+                for (let l = 0; l < getBattleCountForAge(a); l++) {
+                    const prob = levelStatuses.get(`${a}-${l}-${d}`);
+                    if (prob === undefined || prob < 50) return best;
+                    best = { ageIdx: a, battleIdx: l, difficulty: d };
+                }
+            }
+        }
+        return best;
+    }, [levelStatuses, difficultyCount, maxAgeIdx, getBattleCountForAge]);
+    const reached = (!isSimulating && frontier) || maxBeatable;
+    useEffect(() => {
+        if (isSimulating || !frontier || userPicked.current) return;
+        setDifficulty(frontier.difficulty);
+        setSelectedAge(frontier.ageIdx);
+        setSelectedLevel(frontier.battleIdx);
+        setTimeout(() => document.getElementById(`level-btn-${frontier.difficulty}-${frontier.ageIdx}-${frontier.battleIdx}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }, [isSimulating, frontier]);
+
     // 1. Single Level Result (Right Panel Update)
     useEffect(() => {
         if (playerStats) {
@@ -255,142 +330,42 @@ function MainBattleView({
         }
     }, [selectedAge, selectedLevel, difficulty, simulate, playerStats, debugConfig, recalcTrigger]);
 
-    // 2. Batch Grid Coloring (Global Sim - Chunked)
-    // 2. Batch Grid Coloring (Global Sim - Chunked) with PROGRESSIVE simulation strategy
-    // 2. Batch Grid Coloring (Global Sim - Chunked with Progressive Refinement)
-    // 2. Batch Grid Coloring (Global Sim - Sequential Smart Logic)
+    // 2. The grid: the battles measured on workers (src/progress), searching where the build gets
+    // (from where it got last time, up or down) and verifying every battle before it.
     useEffect(() => {
-        let isCancelled = false;
-
-        const runSimulations = async () => {
-            if (!playerStats) return;
-
-            // Generate all tasks first
-            const tasks: { age: number; level: number; diff: number }[] = [];
-
+        if (!playerStats || maxAgeIdx < 0) return;
+        const line: Extract<BattleTarget, { mode: 'main' }>[] = [];
+        for (let d = 0; d < difficultyCount; d++) {
             for (let a = 0; a <= maxAgeIdx; a++) {
-                const count = getBattleCountForAge(a);
-                for (let d = 0; d < difficultyCount; d++) {
-                    for (let l = 0; l < count; l++) tasks.push({ age: a, level: l, diff: d });
-                }
+                for (let l = 0; l < getBattleCountForAge(a); l++) line.push({ mode: 'main', difficulty: d, ageIdx: a, battleIdx: l });
             }
-
-            // Sort: process each difficulty fully (Age 0..10) before the next one
-            tasks.sort((a, b) => {
-                if (a.diff !== b.diff) return a.diff - b.diff; // Normal first
-                if (a.age !== b.age) return a.age - b.age;
-                return a.level - b.level;
-            });
-
-            // Clear previous state before starting new simulations
-            resultsCache.current.clear();
-            setLevelStatuses(new Map());
-            setSimProgress({ current: 0, total: tasks.length });
-            
-            // Allow UI to mount and animation to start
-            await new Promise(r => setTimeout(r, 100));
-
-
-            // Tracking consecutive failures for Early Stop
-            let consecutiveFailures = 0;
-            let currentDiff = -1;
-
-            const updateStatus = (key: string, prob: number) => {
-                setLevelStatuses(prev => {
-                    const next = new Map(prev);
-                    next.set(key, prob);
-                    return next;
-                });
-            };
-
-            for (const task of tasks) {
-                if (isCancelled) return;
-                setSimProgress({ current: tasks.indexOf(task) + 1, total: tasks.length });
-
-                // Reset failure count if difficulty changes (each difficulty is a separate run)
-                if (task.diff !== currentDiff) {
-                    currentDiff = task.diff;
-                    consecutiveFailures = 0;
-                }
-
-                // If 3 consecutive failures at max depth, skip remaining in this difficulty
-                if (consecutiveFailures >= 3) {
-                    continue; // Skip this task
-                }
-
-                const key = `${task.age}-${task.level}-${task.diff}`;
-
-
-
-                // Smart Logic:
-                // 1. Easy Check (2 runs)
-                const res2 = simulate(task.age, task.level, task.diff, 2, debugConfig);
-
-
-                if (!res2) continue; // Should not happen
-
-                if (res2.winProbability >= 100) {
-                    const cacheKey = `main-${task.diff}-${task.age}-${task.level}`;
-                    resultsCache.current.set(cacheKey, res2);
-
-                    updateStatus(key, 100);
-                    consecutiveFailures = 0; // Reset failures on win
-                    await new Promise(r => setTimeout(r, 0)); // Yield
-                    continue; // Stop, 100%
-                }
-
-                // If not 100%, we are in "Frontier" -> Deepening Search
-                // Step 1: 10 runs
-                const res10 = simulate(task.age, task.level, task.diff, 10, debugConfig);
-                if (res10 && res10.winProbability > 0) {
-                    const cacheKey = `main-${task.diff}-${task.age}-${task.level}`;
-                    resultsCache.current.set(cacheKey, res10);
-
-                    updateStatus(key, res10.winProbability);
-                    consecutiveFailures = 0;
-                    await new Promise(r => setTimeout(r, 0));
-                    continue; // Found win, Stop
-                }
-
-                // Step 2: 100 runs
-                const res100 = simulate(task.age, task.level, task.diff, 100, debugConfig);
-                if (res100 && res100.winProbability > 0) {
-                    const cacheKey = `main-${task.diff}-${task.age}-${task.level}`;
-                    resultsCache.current.set(cacheKey, res100);
-
-                    updateStatus(key, res100.winProbability);
-                    consecutiveFailures = 0;
-                    await new Promise(r => setTimeout(r, 0));
-                    continue;
-                }
-
-                // Step 3: 1000 runs (Final)
-                const res1000 = simulate(task.age, task.level, task.diff, 1000, debugConfig);
-                if (res1000) {
-                    const cacheKey = `main-${task.diff}-${task.age}-${task.level}`;
-                    resultsCache.current.set(cacheKey, res1000);
-
-                    updateStatus(key, res1000.winProbability);
-                    if (res1000.winProbability <= 0) {
-                        consecutiveFailures++;
-                    } else {
-                        consecutiveFailures = 0;
-                    }
-                }
-
-                await new Promise(r => setTimeout(r, 0));
-            }
-
-            if (!isCancelled) {
-                setIsSimulating(false);
-            }
-        };
-
+        }
+        const pool = new BattlePool({ type: 'init', stats: playerStats, profile, libs, debugConfig });
+        let cancelled = false, measured = 0;
+        const grid = batchedStatuses<string>(setLevelStatuses, setLossStatuses);
+        resultsCache.current.clear();
+        setLevelStatuses(new Map());
+        setLossStatuses(new Map());
         setIsSimulating(true);
-        runSimulations();
-
-        return () => { isCancelled = true; setIsSimulating(false); };
-    }, [simulate, playerStats, getBattleCountForAge, debugConfig, recalcTrigger, difficultyCount]);
+        setSimProgress({ current: 0, total: 0 });
+        searchFrontier(line.length, readHint(profile, 'main'), pool.size, i => pool.run(line[i]), {
+            cancelled: () => cancelled,
+            onResult: (i, o) => {
+                if (!o) return;
+                const t = line[i];
+                grid.add(`${t.ageIdx}-${t.battleIdx}-${t.difficulty}`, o.winRate * 100, o.lossProgress);
+                if (++measured % 10 === 0) setSimProgress({ current: measured, total: measured });
+            },
+            onEstimate: f => setMaxBeatable(f >= 0 ? { ageIdx: line[f].ageIdx, battleIdx: line[f].battleIdx, difficulty: line[f].difficulty } : null),
+        }).then(f => {
+            if (cancelled) return;
+            grid.flush();
+            setSimProgress({ current: measured, total: measured });
+            saveHint(profile, 'main', f);
+            setIsSimulating(false);
+        }).catch(e => { if (!(e instanceof Error && e.message === 'stopped')) console.error('progress search failed', e); }).finally(() => pool.dispose());
+        return () => { cancelled = true; grid.cancel(); pool.dispose(); setIsSimulating(false); };
+    }, [playerStats, profile, libs, getBattleCountForAge, debugConfig, recalcTrigger, difficultyCount, maxAgeIdx]);
     // Clear cache when stats change
     // Merged into main effect
 
@@ -436,7 +411,7 @@ function MainBattleView({
             <div key={`${modeDiff}-${ageIdx}`} className={`p-4 rounded-xl border bg-black/20 ${colorClass} mb-4`}>
                 <div className="flex items-center gap-3 mb-3">
                     <div className={`p-2 rounded-lg ${style.chip}`}>
-                        {modeDiff > 0 ? <Flame className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
+                        <DifficultyIcon idx={modeDiff} size={20} />
                     </div>
                     <div>
                         <div className="font-bold text-lg">{modeName} - Age {ageNum}</div>
@@ -448,6 +423,7 @@ function MainBattleView({
                     {Array.from({ length: levels }, (_, l) => {
                         const statusKey = `${ageIdx}-${l}-${modeDiff}`;
                         const progress = levelStatuses.get(statusKey);
+                        const loss = progress !== undefined && progress < 50 ? lossStatuses.get(statusKey) : undefined;
                         const isSelected = selectedAge === ageIdx && selectedLevel === l && difficulty === modeDiff;
 
                         // Style based on progress
@@ -463,6 +439,7 @@ function MainBattleView({
                                 key={btnId}
                                 id={btnId}
                                 onClick={() => {
+                                    userPicked.current = true;
                                     setDifficulty(modeDiff);
                                     setSelectedAge(ageIdx);
                                     setSelectedLevel(l);
@@ -473,8 +450,10 @@ function MainBattleView({
                                     ${style.bg} ${style.text} ${style.border}
                                     ${isSelected ? 'ring-2 ring-white scale-110 z-10 shadow-xl' : 'hover:brightness-125'}
                                 `}
+                                title={progress === undefined ? undefined : `${progress.toFixed(0)}% wins${loss !== undefined ? `, losses remove ${(loss * 100).toFixed(0)}% of the enemy HP` : ''}`}
                             >
                                 {l + 1}
+                                <CellLossBar value={loss} />
                             </button>
                         );
                     })}
@@ -491,38 +470,42 @@ function MainBattleView({
                 {/* Header */}
                 <div className="p-4 border-b border-gray-800 bg-[#16161e] flex justify-between items-center z-10 shadow-md">
                     <h2 className="text-xl font-bold flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-accent-primary" />
+                        <GameAssetIcon asset={{ icon: 'Battle' }} size={20} />
                         Full Progression Path
                     </h2>
                     <div className="flex items-center gap-4">
                         {isSimulating && (
                             <div className="flex items-center gap-2 text-[10px] text-accent-primary animate-pulse bg-surface-secondary px-2 py-1 rounded-full border border-accent-primary/20">
                                 <div className="w-2 h-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                                {Math.round((simProgress.current / simProgress.total) * 100)}%
+                                {simProgress.current} battles
                             </div>
                         )}
                         <div className="text-xs text-gray-400">
-                            {maxBeatable ? `Max: ${difficultyName(maxBeatable.difficulty)} ${maxBeatable.ageIdx + 1}-${maxBeatable.battleIdx + 1}` : 'Calculating'}
+                            {reached ? `Max: ${difficultyName(reached.difficulty)} ${reached.ageIdx + 1}-${reached.battleIdx + 1}` : 'Calculating'}
                         </div>
                     </div>
                 </div>
 
-                {/* Scrollable Content */}
-                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2 relative">
-                    {/* One timeline per difficulty */}
+                {/* One tab per difficulty; the one the player has reached carries a marker */}
+                <div className="flex gap-1 px-3 pt-3 border-b border-gray-800 bg-[#121218] overflow-x-auto">
                     {Array.from({ length: difficultyCount }, (_, d) => {
                         const style = difficultyStyle(d);
+                        const here = reached?.difficulty === d;
                         return (
-                            <div key={`timeline-${d}`}>
-                                <div className={`sticky top-0 z-0 ${d === 0 ? 'py-2' : 'py-6'} mb-2 flex items-center gap-4 opacity-50 pointer-events-none`}>
-                                    <div className={`h-[1px] ${style.line} flex-1`}></div>
-                                    <span className={`${style.text} font-bold tracking-widest text-xs uppercase`}>{difficultyName(d)} Timeline</span>
-                                    <div className={`h-[1px] ${style.line} flex-1`}></div>
-                                </div>
-                                {Array.from({ length: maxAgeIdx + 1 }, (_, i) => renderAgeBlock(i, d))}
-                            </div>
+                            <button key={`tab-${d}`}
+                                onClick={() => { userPicked.current = true; setDifficulty(d); scrollContainerRef.current?.scrollTo({ top: 0 }); }}
+                                className={`px-4 py-2 -mb-px rounded-t-lg border border-b-0 text-sm font-bold whitespace-nowrap flex items-center gap-1.5 transition-colors ${difficulty === d ? `bg-[#0f0f13] border-gray-700 ${style.text}` : 'border-transparent text-text-muted hover:text-text-secondary'}`}>
+                                <DifficultyIcon idx={d} />
+                                {difficultyName(d)}
+                                {here && <span title="You get this far" className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]" />}
+                            </button>
                         );
                     })}
+                </div>
+
+                {/* Scrollable Content: the ages of the open difficulty */}
+                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2 relative">
+                    {Array.from({ length: maxAgeIdx + 1 }, (_, i) => renderAgeBlock(i, difficulty))}
 
                     {/* End Padding */}
                     <div className="h-20 flex items-center justify-center text-gray-600 text-sm">
@@ -564,7 +547,8 @@ function MainBattleView({
 function DungeonView({
     dungeonType,
     simulateDungeon,
-    findMaxBeatableDungeon,
+    profile,
+    libs,
     playerStats,
     isDebugMode,
     onDebug,
@@ -573,12 +557,14 @@ function DungeonView({
     maxDungeonLevel,
     isSimulating,
     setIsSimulating,
+    simProgress,
     setSimProgress,
     resultsCache
 }: {
     dungeonType: 'hammer' | 'skill' | 'egg' | 'potion';
     simulateDungeon: any;
-    findMaxBeatableDungeon: any;
+    profile: UserProfile;
+    libs: any;
     playerStats: any;
     isDebugMode?: boolean;
     onDebug?: (level: number) => void;
@@ -587,6 +573,7 @@ function DungeonView({
     maxDungeonLevel: number;
     isSimulating: boolean;
     setIsSimulating: (s: boolean) => void;
+    simProgress: { current: number; total: number };
     setSimProgress: (p: { current: number; total: number }) => void;
     resultsCache: React.MutableRefObject<Map<string, BattleResult>>;
 }) {
@@ -597,122 +584,45 @@ function DungeonView({
     const [levelStatuses, setLevelStatuses] = useState<Map<number, number>>(new Map()); // Level -> Progress %
     const [isRecalculating, setIsRecalculating] = useState(false);
 
-    // Find max level on mount
-    // In DungeonView, find this useEffect and replace it:
-
-    // Find max level on mount
+    // The levels measured on workers (src/progress): where the build gets in this dungeon, from
+    // where it got last time (up or down), then every level before it and a few after.
+    const userPicked = useRef(false);
+    const [lossStatuses, setLossStatuses] = useState<Map<number, number>>(new Map());
     useEffect(() => {
-        let isCancelled = false;
-
-        const max = findMaxBeatableDungeon(dungeonType);
-        if (!isCancelled) {
-            setMaxLevel(max);
-            if (max >= 0) {
-                setSelectedLevel(max);
-            }
-        }
-    }, [dungeonType, findMaxBeatableDungeon]);
-
-    // Batch calculate progress for all 100 levels with SMART strategy (Sequential for early stop)
-    useEffect(() => {
-        let isCancelled = false;
-
-        // Reset state on new dungeon type
+        if (!playerStats) return;
+        const line: Extract<BattleTarget, { mode: 'dungeon' }>[] = Array.from({ length: totalLevels }, (_, level) => ({ mode: 'dungeon', dungeon: dungeonType, level }));
+        const pool = new BattlePool({ type: 'init', stats: playerStats, profile, libs, debugConfig });
+        const mode = `dungeon-${dungeonType}`;
+        let cancelled = false, measured = 0;
+        const grid = batchedStatuses<number>(setLevelStatuses, setLossStatuses);
+        userPicked.current = false;
         setLevelStatuses(new Map());
+        setLossStatuses(new Map());
+        setMaxLevel(-1);
         setIsSimulating(true);
-
-        const runSimulations = async () => {
-            let consecutiveFailures = 0;
-
-            const updateStatus = (lvl: number, prob: number) => {
-                setLevelStatuses(prev => {
-                    const next = new Map(prev);
-                    next.set(lvl, prob);
-                    return next;
-                });
-            };
-
-            setSimProgress({ current: 0, total: totalLevels });
-            // Allow UI to mount
-            await new Promise(r => setTimeout(r, 100));
-
-            for (let l = 0; l < totalLevels; l++) {
-                if (isCancelled) break;
-                setSimProgress({ current: l + 1, total: totalLevels });
-
-                // Early Stop Check
-                if (consecutiveFailures >= 3) {
-                    // Optionally mark remaining as 0 or just stop
-                    break;
-                }
-
-                // 1. Easy Check (2 runs)
-                const res2 = simulateDungeon(dungeonType, l, 2, debugConfig);
-                if (!res2) continue;
-
-                if (res2.winProbability >= 100) {
-                    const cacheKey = `${dungeonType}-${l}`;
-                    resultsCache.current.set(cacheKey, res2);
-
-                    updateStatus(l, 100);
-                    consecutiveFailures = 0;
-                    await new Promise(r => setTimeout(r, 0));
-                    continue; // Stop, 100%
-                }
-
-                // Frontier Logic
-                // Step 1: 10 runs
-                const res10 = simulateDungeon(dungeonType, l, 10, debugConfig);
-                if (res10 && res10.winProbability > 0) {
-                    const cacheKey = `${dungeonType}-${l}`;
-                    resultsCache.current.set(cacheKey, res10);
-
-                    updateStatus(l, res10.winProbability);
-                    consecutiveFailures = 0;
-                    setSimProgress({ current: l + 1, total: totalLevels });
-                    await new Promise(r => setTimeout(r, 0));
-                    continue;
-                }
-
-                // Step 2: 100 runs
-                const res100 = simulateDungeon(dungeonType, l, 100, debugConfig);
-                if (res100 && res100.winProbability > 0) {
-                    const cacheKey = `${dungeonType}-${l}`;
-                    resultsCache.current.set(cacheKey, res100);
-
-                    updateStatus(l, res100.winProbability);
-                    consecutiveFailures = 0;
-                    setSimProgress({ current: l + 1, total: totalLevels });
-                    await new Promise(r => setTimeout(r, 0));
-                    continue;
-                }
-
-                // Step 3: 1000 runs (Final)
-                const res1000 = simulateDungeon(dungeonType, l, 1000, debugConfig);
-                if (res1000) {
-                    const cacheKey = `${dungeonType}-${l}`;
-                    resultsCache.current.set(cacheKey, res1000);
-
-                    updateStatus(l, res1000.winProbability);
-                    if (res1000.winProbability <= 0) {
-                        consecutiveFailures++;
-                    } else {
-                        consecutiveFailures = 0;
-                    }
-                }
-
-                await new Promise(r => setTimeout(r, 0));
-            }
-
-            if (!isCancelled) {
-                setIsSimulating(false);
-            }
+        setSimProgress({ current: 0, total: 0 });
+        const follow = (f: number) => {
+            setMaxLevel(f);
+            if (f >= 0 && !userPicked.current) setSelectedLevel(f);
         };
-
-        runSimulations();
-
-        return () => { isCancelled = true; setIsSimulating(false); };
-    }, [dungeonType, simulateDungeon, playerStats, findMaxBeatableDungeon, debugConfig, recalcTrigger]);
+        searchFrontier(line.length, readHint(profile, mode), pool.size, i => pool.run(line[i]), {
+            cancelled: () => cancelled,
+            onResult: (i, o) => {
+                if (!o) return;
+                grid.add(i, o.winRate * 100, o.lossProgress);
+                if (++measured % 10 === 0) setSimProgress({ current: measured, total: measured });
+            },
+            onEstimate: follow,
+        }).then(f => {
+            if (cancelled) return;
+            grid.flush();
+            setSimProgress({ current: measured, total: measured });
+            follow(f);
+            saveHint(profile, mode, f);
+            setIsSimulating(false);
+        }).catch(e => { if (!(e instanceof Error && e.message === 'stopped')) console.error('progress search failed', e); }).finally(() => pool.dispose());
+        return () => { cancelled = true; grid.cancel(); pool.dispose(); setIsSimulating(false); };
+    }, [dungeonType, playerStats, profile, libs, debugConfig, recalcTrigger, totalLevels]);
     // Simulate selected level
     useEffect(() => {
         if (playerStats) {
@@ -789,7 +699,7 @@ function DungeonView({
                             {isSimulating && (
                                 <div className="flex items-center gap-2 text-[10px] text-accent-primary animate-pulse bg-surface-secondary px-2 py-1 rounded-full border border-accent-primary/20">
                                     <div className="w-2 h-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                                    Simulating 1,000+ battles
+                                    {simProgress.current} levels measured
                                 </div>
                             )}
                             <button onClick={() => setSelectedLevel(maxLevel)} className="text-sm text-accent-primary hover:underline flex items-center gap-1">
@@ -812,12 +722,14 @@ function DungeonView({
                                     const isSelected = selectedLevel === lvl;
                                     const isMax = maxLevel === lvl;
                                     const progress = levelStatuses.get(lvl);
+                                    const loss = progress !== undefined && progress < 50 ? lossStatuses.get(lvl) : undefined;
                                     const style = getProgressColor(progress ?? -1, isSelected);
 
                                     return (
                                         <button
                                             key={lvl}
-                                            onClick={() => setSelectedLevel(lvl)}
+                                            onClick={() => { userPicked.current = true; setSelectedLevel(lvl); }}
+                                            title={progress === undefined ? undefined : `${progress.toFixed(0)}% wins${loss !== undefined ? `, losses remove ${(loss * 100).toFixed(0)}% of the enemy HP` : ''}`}
                                             className={`h-8 rounded text-[10px] font-medium transition-all relative flex items-center justify-center
                                                 ${style.bg} ${style.text} ${style.border}
                                                 ${isSelected ? 'shadow-md ring-2 ring-accent-primary ring-offset-2 ring-offset-surface-secondary' : 'hover:brightness-110'}
@@ -825,6 +737,7 @@ function DungeonView({
                                             `}
                                         >
                                             {stageIdx + 1}
+                                            <CellLossBar value={loss} />
                                         </button>
                                     );
                                 })}
@@ -934,6 +847,9 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
                     Wave Progress ({result.waves.length} waves)
                 </h3>
                 <WaveBreakdownCompact result={result} />
+                {/* How far the lost runs get: the share of the whole battle's enemy HP they remove
+                    (waves not reached count as untouched). */}
+                {result.lossProgress !== undefined && <LossProgressBar value={result.lossProgress} className="mt-4 pt-3 border-t border-border" />}
             </div>
 
             {/* Combat stats */}
@@ -967,7 +883,7 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
 
 export default function ProgressPrediction() {
     const { selectedVersion } = useGameDataContext();
-    const { simulate, simulateDungeon, findMaxBeatable, findMaxBeatableDungeon, playerStats, isLoading, libs, profile, getBattleCountForAge, maxDungeonLevel, maxAgeIdx, difficultyCount } = useBattleSimulation();
+    const { simulate, simulateDungeon, playerStats, isLoading, libs, profile, getBattleCountForAge, maxDungeonLevel, maxAgeIdx, difficultyCount } = useBattleSimulation();
     const [activeTab, setActiveTab] = useState('main');
     const [isDebugMode, setIsDebugMode] = useState(false);
     const [visualizerOpen, setVisualizerOpen] = useState(false);
@@ -1164,7 +1080,7 @@ export default function ProgressPrediction() {
                                 <div className="relative">
                                     <div className="w-10 h-10 rounded-full border-4 border-accent-primary/30 border-t-accent-primary animate-spin" />
                                     <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-accent-primary">
-                                        {Math.round((simProgress.current / simProgress.total) * 100)}%
+                                        {simProgress.current}
                                     </div>
                                 </div>
                                 <div className="flex flex-col">
@@ -1173,13 +1089,12 @@ export default function ProgressPrediction() {
                                     </div>
                                     <div className="w-64 h-2 bg-surface-tertiary rounded-full mt-2 overflow-hidden border border-white/5">
                                         <div 
-                                            className="h-full bg-gradient-to-r from-accent-primary to-accent-secondary transition-all duration-300"
-                                            style={{ width: `${(simProgress.current / simProgress.total) * 100}%` }}
+                                            className="h-full w-full bg-gradient-to-r from-accent-primary to-accent-secondary animate-pulse"
                                         />
                                     </div>
                                     <div className="text-[10px] text-text-muted mt-1.5 uppercase font-bold tracking-widest flex justify-between">
-                                        <span>Analyzing strategy</span>
-                                        <span>{simProgress.current} / {simProgress.total}</span>
+                                        <span>Finding where you get, then checking every battle before it</span>
+                                        <span>{simProgress.current} measured</span>
                                     </div>
                                 </div>
                             </div>
@@ -1239,7 +1154,8 @@ export default function ProgressPrediction() {
             {activeTab === 'main' ? (
                 <MainBattleView
                     simulate={simulate}
-                    findMaxBeatable={findMaxBeatable}
+                    profile={profile}
+                    libs={libs}
                     playerStats={playerStats}
                     isDebugMode={isDebugMode}
                     onDebug={(age, battle, diff) => handleDebugRequest(age, battle, diff)}
@@ -1260,7 +1176,8 @@ export default function ProgressPrediction() {
                 <DungeonView
                     dungeonType={activeTab as any}
                     simulateDungeon={simulateDungeon}
-                    findMaxBeatableDungeon={findMaxBeatableDungeon}
+                    profile={profile}
+                    libs={libs}
                     playerStats={playerStats}
                     isDebugMode={isDebugMode}
                     onDebug={(lvl) => handleDebugRequest(0, lvl, 0, activeTab)}
@@ -1269,6 +1186,7 @@ export default function ProgressPrediction() {
                     maxDungeonLevel={maxDungeonLevel}
                     isSimulating={isSimulating}
                     setIsSimulating={setIsSimulating}
+                    simProgress={simProgress}
                     setSimProgress={setSimProgress}
                     resultsCache={resultsCache}
                 />

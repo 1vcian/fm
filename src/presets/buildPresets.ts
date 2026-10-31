@@ -79,6 +79,8 @@ export interface PresetMetrics {
         winRate: number;
         nextLabel: string;
         nextWinRate: number;
+        /** Mean share of the next battle's enemy HP removed in its lost runs (missing in older files). */
+        nextLossProgress?: number;
         runs: number;
     };
 }
@@ -588,7 +590,7 @@ function metricsMaker(libs: LibraryData, cfg: ConfigFiles, o: Required<PresetOpt
             quest: {
                 index: q.index, total: q.total, label: questBattleLabel(q.battle), winRate: q.winRate,
                 nextLabel: q.index + 1 < q.total ? questBattleLabel(questFinal.line[q.index + 1]) : 'end of the quest',
-                nextWinRate: q.nextWinRate, runs: o.questFinalRuns,
+                nextWinRate: q.nextWinRate, nextLossProgress: q.nextLossProgress, runs: o.questFinalRuns,
             },
         };
     };

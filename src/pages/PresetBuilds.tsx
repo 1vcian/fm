@@ -38,6 +38,8 @@ import { AGES } from '../utils/constants';
 
 const pct = (v: number) => `${(v * 100).toFixed(v * 100 >= 100 ? 0 : 1)}%`;
 const camel = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2');
+/** How far into the main quest: battles cleared, then how close to the next (win rate, losses by enemy HP removed). */
+const questRank = (q: ProfilePreset['metrics']['quest']) => q.index + q.nextWinRate + (1 - q.nextWinRate) * (q.nextLossProgress ?? 0);
 
 /** The number a build's category is about. */
 function headline(p: ProfilePreset): { label: string; value: string; raw: number } {
@@ -46,7 +48,7 @@ function headline(p: ProfilePreset): { label: string; value: string; raw: number
         case 'power': return { label: 'Power', value: formatCompactNumber(m.power), raw: m.power };
         case 'dpsMelee': case 'dpsRanged': return { label: 'DPS (24 h test)', value: formatCompactNumber(m.testedDps), raw: m.testedDps };
         case 'hpsMelee': case 'hpsRanged': return { label: 'HPS (24 h test)', value: formatCompactNumber(m.testedHps), raw: m.testedHps };
-        case 'quest': return { label: 'Main quest', value: m.quest.label, raw: m.quest.index + m.quest.nextWinRate };
+        case 'quest': return { label: 'Main quest', value: m.quest.label, raw: questRank(m.quest) };
         case 'lab': return { label: 'Arena vs the builds', value: pct(p.lab?.arenaWinRate ?? 0), raw: p.lab?.arenaWinRate ?? 0 };
     }
 }
@@ -187,7 +189,10 @@ function Details({ preset, stats, mapping }: { preset: ProfilePreset; stats: Agg
         <div className="text-[11px] text-text-secondary space-y-1">
             <div>Power {formatCompactNumber(m.power)}, damage {formatCompactNumber(m.totalDamage)}, health {formatCompactNumber(m.totalHealth)}</div>
             <div>DPS {formatCompactNumber(m.testedDps)}, HPS {formatCompactNumber(m.testedHps)} (24 h test), block {pct(stats.blockChance || 0)}</div>
-            <div>Main quest: clears {m.quest.label} ({pct(m.quest.winRate)}), next {m.quest.nextLabel} {pct(m.quest.nextWinRate)}</div>
+            <div>
+                Main quest: clears {m.quest.label} ({pct(m.quest.winRate)}), next {m.quest.nextLabel} {pct(m.quest.nextWinRate)}
+                {m.quest.nextLossProgress !== undefined && m.quest.nextWinRate < 1 && `, its lost runs still remove ${pct(m.quest.nextLossProgress)} of the enemy HP`}
+            </div>
             <div>Attack: {stats.isRangedWeapon ? 'ranged' : 'melee'}, {animationText(preset, mapping)}</div>
             <div>Skills: {preset.profile.skills.equipped.map(s => camel(s.id)).join(', ')}</div>
             <div>Fairy: {preset.profile.misc.fairy?.name ?? 'none'}</div>
@@ -841,7 +846,7 @@ const COLUMNS: Column[] = [
     { label: 'HPS', value: p => p.metrics.testedHps, show: p => formatCompactNumber(p.metrics.testedHps) },
     { label: 'Windup', value: p => -p.animation.windup, show: p => `${p.animation.windup.toFixed(2)} s` },
     { label: 'Block', value: (_, s) => s.blockChance || 0, show: (_, s) => pct(s.blockChance || 0) },
-    { label: 'Main quest', value: p => p.metrics.quest.index + p.metrics.quest.nextWinRate, show: p => `${p.metrics.quest.index + 1}/${p.metrics.quest.total}` },
+    { label: 'Main quest', value: p => questRank(p.metrics.quest), show: p => `${p.metrics.quest.index + 1}/${p.metrics.quest.total}` },
 ];
 
 /** The last "my best variants" result, per game version, in this browser. */

@@ -9,7 +9,7 @@
 import os from 'node:os';
 import { Worker } from 'node:worker_threads';
 import type { UserProfile } from '../src/types/Profile';
-import type { EvalPool, ScoreTask } from '../src/presets/evalPool';
+import { questOutcomeOf, type EvalPool, type ScoreTask } from '../src/presets/evalPool';
 import type { QuestBattle } from '../src/presets/mainProgress';
 
 export type PoolTask =
@@ -101,9 +101,10 @@ export function workerPool(version: string, size = Math.max(1, os.availableParal
             const [points, margin] = run(n, 0, (from, to) => ({ kind: 'arena', me, field: f, perSide, from, to }));
             return points / (2 * n) + (margin / (2 * n)) * 1e-3;
         },
-        questWinRate(p, battle, runs) {
-            const [wins, missing] = run(runs, 1, (from, to) => ({ kind: 'quest', p, battle, from, to }));
-            return missing > 0 ? null : wins / runs;
+        questOutcome(p, battle, runs) {
+            // A battle without waves answers -1 wins on every range.
+            const [wins, lost] = run(runs, 1, (from, to) => ({ kind: 'quest', p, battle, from, to }));
+            return wins < 0 ? null : questOutcomeOf(wins, lost, runs);
         },
         many(tasks: ScoreTask[]) {
             if (!tasks.length) return [];

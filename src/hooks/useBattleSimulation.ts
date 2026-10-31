@@ -163,8 +163,8 @@ export function useBattleSimulation() {
         return result ? result.winProbability : 0;
     }, [simulate]);
 
-    // Find the highest beatable stage (win prob > 50%)
-    const findMaxBeatable = useCallback((_minWinProb: number = 50, difficultyMode: number = 0) => {
+    // Find the highest beatable stage: won in at least minWinProb% of the runs, walking from the first stage.
+    const findMaxBeatable = useCallback((minWinProb: number = 50, difficultyMode: number = 0) => {
         if (!libs.mainBattleLibrary) return null;
 
         const stages = getStagesFromUtils(libs);
@@ -176,10 +176,10 @@ export function useBattleSimulation() {
         for (let i = 0; i < Math.min(stages.length, searchLimit); i++) {
             const stage = stages[i];
 
-            // The simulation is already averaged (30 runs), so we trust it.
+            // BattleResult.victory only says that some run was won: the win rate decides.
             const result = simulate(stage.ageIdx, stage.battleIdx, difficultyMode);
 
-            if (result && result.victory) {
+            if (result && result.winProbability >= minWinProb) {
                 maxBeatable = stage;
             } else {
                 // If even the averaged simulation fails, we stop searching.

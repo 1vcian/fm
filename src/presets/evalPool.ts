@@ -1,7 +1,7 @@
 /**
  * The expensive measurements of the preset search (survival duels, arena battles, main quest
  * battles). Two ways to spread them over threads: one measurement cut into seed ranges
- * (survival, arena, questWinRate), or many whole measurements of different builds at once (many),
+ * (survival, arena, questOutcome), or many whole measurements of different builds at once (many),
  * which is what the search mostly needs: it knows every candidate of a step in advance.
  *
  * EvalCore runs the work; EvalPool is what the search calls. localPool runs everything in this
@@ -16,7 +16,7 @@ import { fighterFromProfile, type PvpFighter } from '../pvp/fighter';
 import { PvpBattle } from '../pvp/simulate';
 import type { PvpHpConfig } from '../engine';
 import { survivalDuel } from './survivalDuel';
-import { QuestMeter, type QuestBattle } from './mainProgress';
+import { QuestMeter, type QuestBattle, type QuestOutcome } from './mainProgress';
 
 /** One whole measurement of one build, for EvalPool.many. */
 export type ScoreTask =
@@ -35,8 +35,8 @@ export interface EvalPool {
      * 0.5, plus the mean HP margin x 1e-3 as a tiebreak.
      */
     arena(me: UserProfile, field: UserProfile[], perSide: number): number;
-    /** Win rate (0..1) of a main quest battle over seeds 1..runs; null when the battle has no waves. */
-    questWinRate(p: UserProfile, battle: QuestBattle, runs: number): number | null;
+    /** Win rate and loss progress of a main quest battle over seeds 1..runs; null when the battle has no waves. */
+    questOutcome(p: UserProfile, battle: QuestBattle, runs: number): QuestOutcome | null;
     /** Many measurements at once, in order. */
     many(tasks: ScoreTask[]): number[];
 }
@@ -102,12 +102,21 @@ export class EvalCore {
         return m.measure(t.p, t.hint).score;
     }
 
-    /** Wins of a main quest battle over seeds from..to, -1 when the battle has no waves. */
-    quest(p: UserProfile, b: QuestBattle, from: number, to: number): number {
-        const w = mainBattleWins(calculateStats(p, this.questLibs), p, b.ageIdx, b.battleIdx, b.difficulty, this.questLibs, from, to);
-        return w ?? -1;
+    /**
+     * Wins of a main quest battle over seeds from..to and the summed enemy HP share removed in the
+     * lost ones; wins -1 when the battle has no waves.
+     */
+    quest(p: UserProfile, b: QuestBattle, from: number, to: number): [number, number] {
+        const r = mainBattleWins(calculateStats(p, this.questLibs), p, b.ageIdx, b.battleIdx, b.difficulty, this.questLibs, from, to);
+        return r ? [r.wins, r.lostProgress] : [-1, 0];
     }
 }
+
+/** Win rate, and the mean enemy HP share removed over the lost runs (0 when none was lost). */
+export const questOutcomeOf = (wins: number, lostProgress: number, runs: number): QuestOutcome => ({
+    win: wins / runs,
+    lossProgress: runs > wins ? lostProgress / (runs - wins) : 0,
+});
 
 /** Every range in this thread. */
 export function localPool(core: EvalCore): EvalPool {
@@ -121,9 +130,9 @@ export function localPool(core: EvalCore): EvalPool {
             const [points, margin] = core.arena(me, field, perSide, 0, n - 1);
             return points / (2 * n) + (margin / (2 * n)) * 1e-3;
         },
-        questWinRate(p, b, runs) {
-            const w = core.quest(p, b, 1, runs);
-            return w < 0 ? null : w / runs;
+        questOutcome(p, b, runs) {
+            const [wins, lost] = core.quest(p, b, 1, runs);
+            return wins < 0 ? null : questOutcomeOf(wins, lost, runs);
         },
         many(tasks) {
             return tasks.map(t => core.score(t));

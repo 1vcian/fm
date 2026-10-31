@@ -9,18 +9,19 @@
  * (mainBattleDifficultyCount). A battle counts as cleared when the build wins at least half of
  * its seeded runs.
  *
- * Score: (index of the furthest cleared battle + 1) + the win rate of the battle after it, so a
- * build that is closer to clearing the next battle ranks above one that is not. The search walks
+ * Score: (index of the furthest cleared battle + 1) + how close the build gets to the battle after
+ * it: its win rate plus, for the runs it loses, the mean share of the battle's enemy HP removed
+ * (win + (1 - win) x lossProgress, below 1). Two builds that both lose every run there are still
+ * told apart by how far into the enemy HP they get. The search walks
  * from a hint (the last result) instead of scanning from the start: later battles are harder
  * (enemy stats grow with the age and the difficulty), so the frontier is found in a few steps.
  */
 import type { UserProfile } from '../types/Profile';
 import { calculateStats } from '../utils/statEngine';
-import { simulateBattleMulti } from '../utils/BattleSimulator';
+import { mainBattleWins } from '../utils/BattleSimulator';
 import { getAvailableStages } from '../utils/BattleHelper';
 import { mainBattleDifficultyCount } from '../engine/enemies';
 import { difficultyName } from '../utils/difficulty';
-import { AGES } from '../utils/constants';
 import type { EvalPool } from './evalPool';
 
 export interface QuestBattle {
@@ -28,6 +29,15 @@ export interface QuestBattle {
     ageIdx: number;
     battleIdx: number;
 }
+
+/** One battle measured: win rate (0..1) and the mean enemy HP share removed in the lost runs (0..1). */
+export interface QuestOutcome {
+    win: number;
+    lossProgress: number;
+}
+
+/** How close a battle's outcome is to a clear, 0..1: the win rate, and the losses by enemy HP removed. */
+export const questReach = (o: QuestOutcome) => o.win + (1 - o.win) * o.lossProgress;
 
 export interface QuestProgress {
     /** Index of the furthest cleared battle in the quest line, -1 when none. */
@@ -37,6 +47,8 @@ export interface QuestProgress {
     winRate: number;
     /** Win rate of the battle after it (0..1), 0 at the end of the quest. */
     nextWinRate: number;
+    /** Mean share of the next battle's enemy HP removed in its lost runs (0..1), 0 at the end. */
+    nextLossProgress: number;
     /** Battles in the quest line. */
     total: number;
     score: number;
@@ -52,9 +64,14 @@ export function questLine(libs: any): QuestBattle[] {
     return out;
 }
 
+/**
+ * A battle as the game names it: GameContextExtensions.FormatBattleNumber (0x402C334 in
+ * 2026_10_27_09_45) formats the difficulty's text with ageIdx + 1 and battleIdx + 1, numbers
+ * only, no age name ("Hard 11-15").
+ */
 export function questBattleLabel(b: QuestBattle | null): string {
     if (!b) return 'none';
-    return `${difficultyName(b.difficulty)} ${AGES[b.ageIdx] ?? `Age ${b.ageIdx + 1}`} ${b.battleIdx + 1}`;
+    return `${difficultyName(b.difficulty)} ${b.ageIdx + 1}-${b.battleIdx + 1}`;
 }
 
 export class QuestMeter {
@@ -74,19 +91,24 @@ export class QuestMeter {
     measure(p: UserProfile, hint?: number): QuestProgress {
         let s: ReturnType<typeof calculateStats> | null = null;
         const stats = () => (s ??= calculateStats(p, this.libs));
-        const cache = new Map<number, number>();
-        const win = (i: number): number => {
-            if (i < 0) return 1;
-            if (i >= this.line.length) return 0;
-            let w = cache.get(i);
-            if (w === undefined) {
+        const cache = new Map<number, QuestOutcome>();
+        const outcome = (i: number): QuestOutcome => {
+            if (i < 0) return { win: 1, lossProgress: 0 };
+            if (i >= this.line.length) return { win: 0, lossProgress: 0 };
+            let o = cache.get(i);
+            if (o === undefined) {
                 const b = this.line[i];
-                if (this.pool) w = this.pool.questWinRate(p, b, this.runs) ?? 0;
-                else w = (simulateBattleMulti(stats(), p, b.ageIdx, b.battleIdx, b.difficulty, this.libs, this.runs)?.winProbability ?? 0) / 100;
-                cache.set(i, w);
+                if (this.pool) o = this.pool.questOutcome(p, b, this.runs) ?? { win: 0, lossProgress: 0 };
+                else {
+                    // The same seeds 1..runs as simulateBattleMulti.
+                    const r = mainBattleWins(stats(), p, b.ageIdx, b.battleIdx, b.difficulty, this.libs, 1, this.runs);
+                    o = r ? { win: r.wins / this.runs, lossProgress: this.runs > r.wins ? r.lostProgress / (this.runs - r.wins) : 0 } : { win: 0, lossProgress: 0 };
+                }
+                cache.set(i, o);
             }
-            return w;
+            return o;
         };
+        const win = (i: number) => outcome(i).win;
         let i = Math.min(Math.max(hint ?? this.hint, 0), this.line.length - 1);
         if (win(i) >= 0.5) {
             while (i + 1 < this.line.length && win(i + 1) >= 0.5) i++;
@@ -94,14 +116,16 @@ export class QuestMeter {
             while (i >= 0 && win(i) < 0.5) i--;
         }
         this.hint = Math.max(0, i);
-        const next = win(i + 1);
+        const atEnd = i + 1 >= this.line.length;
+        const next = outcome(i + 1);
         return {
             index: i,
             battle: i >= 0 ? this.line[i] : null,
             winRate: i >= 0 ? win(i) : 0,
-            nextWinRate: i + 1 < this.line.length ? next : 0,
+            nextWinRate: atEnd ? 0 : next.win,
+            nextLossProgress: atEnd ? 0 : next.lossProgress,
             total: this.line.length,
-            score: i + 1 + (i + 1 < this.line.length ? next : 0),
+            score: i + 1 + (atEnd ? 0 : questReach(next)),
         };
     }
 }

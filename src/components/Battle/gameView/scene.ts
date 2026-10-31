@@ -69,10 +69,10 @@ export function lookFromSkins(data: BattleVisualData, skins: { helmet?: number; 
     const a = skinVisual(data, ITEM_TYPE.Armour, skins.armour, false);
     const w = skinVisual(data, ITEM_TYPE.Weapon, skins.weapon, false);
     return {
-        weapon: data.visuals[data.defaultWeapon],
+        // A weapon skin is a whole weapon visual (its secondary part, controller and projectile too).
+        weapon: w ?? data.visuals[data.defaultWeapon],
         helmetPrefab: h?.prefab ?? null,
         armourPrefab: a?.prefab ?? null,
-        weaponPrefab: w?.prefab ?? null,
         turnOff: turnOffOf([h, a, w]),
     };
 }
@@ -93,8 +93,12 @@ export function lookFromProfile(data: BattleVisualData, profile: UserProfile | n
         look.armourPrefab = skinPrefab(data, ITEM_TYPE.Armour, shown(profile.misc?.skinVisible?.Body, it.Body.skin?.idx), false);
     }
     if (it.Weapon) {
-        look.weapon = visualFor(data, it.Weapon.age, ITEM_TYPE.Weapon, it.Weapon.idx);
-        look.weaponPrefab = skinPrefab(data, ITEM_TYPE.Weapon, shown(profile.misc?.useSkinWindup, it.Weapon.skin?.idx), !!opts?.weaponRanged);
+        // A shown weapon skin replaces the whole weapon visual, not only its main prefab: its
+        // secondary part, animation controller and projectile come with it (the Santa sack is the
+        // skin's secondary part over an empty main prefab; the Cat paw runs CatPaw_controller).
+        // Which variant shows follows the weapon underneath: -1001 for a ranged one (GetSkinnedItemId).
+        look.weapon = skinVisual(data, ITEM_TYPE.Weapon, shown(profile.misc?.useSkinWindup, it.Weapon.skin?.idx), !!opts?.weaponRanged)
+            ?? visualFor(data, it.Weapon.age, ITEM_TYPE.Weapon, it.Weapon.idx);
     } else {
         look.weapon = data.visuals[data.defaultWeapon];
     }

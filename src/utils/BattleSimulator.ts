@@ -320,7 +320,9 @@ export function simulateBattleMulti(
 
 /**
  * Wins of the main battle over the seeds seedFrom..seedTo (inclusive), the same runs
- * simulateBattleMulti makes: lets a caller split one measurement's seeds across threads.
+ * simulateBattleMulti makes: lets a caller split one measurement's seeds across threads. Also the
+ * sum, over the lost runs, of the share of the battle's enemy HP removed (WaveRunner
+ * enemyProgress), so a caller can average it over all the lost runs.
  */
 export function mainBattleWins(
     playerStats: AggregatedStats,
@@ -331,14 +333,45 @@ export function mainBattleWins(
     libs: LibraryData,
     seedFrom: number,
     seedTo: number,
-): number | null {
+    debugConfig?: DebugConfig,
+): { wins: number; lostProgress: number } | null {
     const waves = mainWaves(ageIdx, battleIdx, difficultyMode, libs);
     if (!waves) return null;
-    let wins = 0;
+    let wins = 0, lostProgress = 0;
     for (let seed = seedFrom; seed <= seedTo; seed++) {
-        if (runOnce(playerStats, profile, libs, waves, runSeed(seed), undefined, DEFAULT_MAX_TICKS, 'main').victory) wins++;
+        const r = runOnce(playerStats, profile, libs, waves, runSeed(seed), debugConfig, DEFAULT_MAX_TICKS, 'main');
+        if (r.victory) wins++;
+        else lostProgress += r.progress ?? 0;
     }
-    return wins;
+    return { wins, lostProgress };
+}
+
+/** mainBattleWins for a dungeon level: the same runs simulateDungeonBattleMulti makes. */
+export function dungeonBattleWins(
+    playerStats: AggregatedStats,
+    profile: UserProfile | null,
+    dungeonType: 'hammer' | 'skill' | 'egg' | 'potion',
+    level: number,
+    libs: LibraryData,
+    seedFrom: number,
+    seedTo: number,
+    debugConfig?: DebugConfig,
+): { wins: number; lostProgress: number } | null {
+    const row = dungeonLibraryFor(dungeonType, libs)?.[String(level)] as DungeonLevelConfig | undefined;
+    if (!row) return null;
+    const waves = dungeonWaveSpecs(row, {
+        enemyLibrary: libs.enemyLibrary as never,
+        weaponLibrary: libs.weaponLibrary as never,
+        projectilesLibrary: libs.projectilesLibrary as never,
+        itemBalancingConfig: libs.itemBalancingConfig,
+    });
+    let wins = 0, lostProgress = 0;
+    for (let seed = seedFrom; seed <= seedTo; seed++) {
+        const r = runOnce(playerStats, profile, libs, waves, runSeed(seed), debugConfig, DEFAULT_MAX_TICKS, `dungeon:${dungeonType}` as BattleContext, 'dungeon');
+        if (r.victory) wins++;
+        else lostProgress += r.progress ?? 0;
+    }
+    return { wins, lostProgress };
 }
 
 export function simulateDungeonBattle(

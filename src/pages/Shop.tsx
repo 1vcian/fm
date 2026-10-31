@@ -6,6 +6,7 @@ import { useFeatureUnlocks, type FeatureUnlock } from '../hooks/useFeatureUnlock
 import { cn } from '../lib/utils';
 import { getItemImage, getItemName } from '../utils/itemAssets';
 import { useGameDataContext } from '../context/GameDataContext';
+import type { DailyDealRow } from '../utils/dailyDeals';
 
 interface Reward {
     Amount: number;
@@ -104,10 +105,14 @@ function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any, ve
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { DailyDealsTab } from '../components/Shop/DailyDealsTab';
+import { EggIcon } from '../components/UI/EggIcon';
+import { CurrencyTab, SpecialTab } from '../components/Shop/ShopValueTabs';
+import { bestDailyRates, type Reward as ValueReward } from '../components/Shop/shopValue';
 
 export default function Shop() {
     const { selectedVersion } = useGameDataContext();
-    const { data: dailyDeals } = useGameData<Record<string, DailyDeal>>('DailyDealLibrary.json');
+    const { data: dailyDeals } = useGameData<Record<string, DailyDealRow>>('DailyDealLibrary.json');
     const { data: iapProducts } = useGameData<Record<string, IAPProduct>>('InAppProducts.json');
     // Feature gates come through this hook rather than straight from a config file: the game moved
     // the table from UnlockConditions.json into PlayerSegments.json, and reading the retired name
@@ -116,6 +121,21 @@ export default function Shop() {
     const { data: shopResources } = useGameData<any>('ShopResourcesLibrary.json');
     const { data: guildWarConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
+    const { data: passLibrary } = useGameData<Record<string, any>>('MainGameProgressPassLibrary.json');
+
+    // Per resource, the most a dollar buys of it in any daily deal (the yardstick of every tab).
+    const bestDaily = useMemo(() => bestDailyRates(dailyDeals, iapProducts ? Object.values(iapProducts) : []), [dailyDeals, iapProducts]);
+    // The Progress Pass's premium track (Rewards[1]) over every difficulty, summed by resource.
+    const passPremium = useMemo(() => {
+        const m = new Map<string, ValueReward>();
+        for (const tier of Object.values(passLibrary ?? {})) {
+            for (const r of tier.Rewards?.[1]?.Rewards ?? []) {
+                const k = `${r.$type}:${r.Type}`;
+                m.set(k, { ...r, Amount: (m.get(k)?.Amount ?? 0) + r.Amount });
+            }
+        }
+        return [...m.values()];
+    }, [passLibrary]);
 
     const [activeTab, setActiveTab] = usePersistentState<'daily' | 'iap' | 'offers'>('shop_active_tab', 'daily');
     const [searchQuery, setSearchQuery] = useState('');
@@ -145,34 +165,12 @@ export default function Shop() {
         return (guildWarConfig[getUTCDayInfo.currentIdx]?.Tasks?.length ?? 0) > 0;
     }, [guildWarConfig, getUTCDayInfo.currentIdx]);
 
-    // The shop activation logic is not yet defined by a configuration file.
-    // We will show all deals as available for now.
-    const dynamicAvailability = useMemo(() => {
-        return {};
-    }, []);
-
-    const filteredDailyDeals = useMemo(() => {
-        if (!dailyDeals) return [];
-
-        return Object.entries(dailyDeals).map(([key, value]) => {
-            return {
-                type: key,
-                schedule: [],
-                isActive: true,
-                msUntilReset: 0,
-                ...value
-            };
-        }).filter(deal =>
-            deal.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            deal.Size.some(s => s.Rewards.some(r => r.Type.toLowerCase().includes(searchQuery.toLowerCase())))
-        );
-    }, [dailyDeals, dynamicAvailability, getUTCDayInfo, searchQuery]);
 
     const products = useMemo(() => {
         if (!iapProducts) return [];
         return Object.values(iapProducts).filter(p => {
             return p.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                p.Rewards.some(r => r.Type.toLowerCase().includes(searchQuery.toLowerCase()));
+                p.Rewards.some(r => (r.Type ?? '').toLowerCase().includes(searchQuery.toLowerCase()));
         });
     }, [iapProducts, searchQuery]);
 
@@ -230,13 +228,10 @@ export default function Shop() {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-3 relative z-10">
+                        {/* A battle as the game names it: numbers only (FormatBattleNumber). */}
                         <div className="bg-bg-primary/50 backdrop-blur-md px-5 py-3 rounded-xl border border-white/5 shadow-xl">
-                            <div className="text-[10px] uppercase font-black text-accent-primary tracking-widest mb-1">Age Required</div>
-                            <div className="text-lg font-bold text-white">{AGES[shopUnlock.ageIdx!] || `Age ${shopUnlock.ageIdx! + 1}`}</div>
-                        </div>
-                        <div className="bg-bg-primary/50 backdrop-blur-md px-5 py-3 rounded-xl border border-white/5 shadow-xl">
-                            <div className="text-[10px] uppercase font-black text-accent-secondary tracking-widest mb-1">Stage Required</div>
-                            <div className="text-lg font-bold text-white">Stage {shopUnlock.ageIdx! + 1}-{(shopUnlock.battleIdx ?? 0) + 1}</div>
+                            <div className="text-[10px] uppercase font-black text-accent-primary tracking-widest mb-1">Unlocks after battle</div>
+                            <div className="text-lg font-bold text-white">{shopUnlock.ageIdx! + 1}-{(shopUnlock.battleIdx ?? 0) + 1}</div>
                         </div>
                     </div>
                 </div>
@@ -281,187 +276,20 @@ export default function Shop() {
 
             {/* Content Rendering */}
             <div className="space-y-12">
-                {activeTab === 'daily' && (
-                    <div className="space-y-10">
-                        {filteredDailyDeals.map((deal) => {
-                            const categoryIcon = {
-                                'Dungeon': 'Daily_Deal_0',
-                                'Pet': 'Daily_Deal_1',
-                                'Tech': 'Daily_Deal_2',
-                                'Skill': 'Daily_Deal_3',
-                                'Resource': 'Daily_Deal_4',
-                                'Mount': 'Daily_Deal_5'
-                            }[deal.type] || 'Package';
-
-                            return (
-                                <div key={deal.type} className="bg-bg-secondary/10 border border-border/30 rounded-2xl p-5 space-y-4">
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-24 h-24 rounded-2xl bg-bg-secondary border-2 border-border flex items-center justify-center shadow-inner overflow-hidden">      <GameIcon name={categoryIcon} className="w-full h-full" />
-                                        </div>
-                                        <h2 className="text-xl font-black uppercase tracking-tight text-white">{deal.type} Deals</h2>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {deal.Size.map((size) => {
-                                            // Map to IAP Product to get price
-                                            const iapProduct = iapProducts ? Object.values(iapProducts).find(p => p.ProductId === `DailyDeal${size.SizeId}`) : null;
-                                            const price = iapProduct?.Price ?? 0;
-
-                                            return (
-                                                <Card key={size.SizeId} className="group hover:border-accent-primary/50 transition-all duration-300 bg-bg-primary/40">
-                                                    <CardContent className="p-3.5 space-y-3">
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="flex flex-col gap-1 items-start">
-                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-accent-primary/10 text-accent-primary">
-                                                                    Size {size.SizeId}
-                                                                </span>
-                                                                <span className={cn(
-                                                                    "text-[9px] font-black px-1.5 py-0.5 rounded border leading-none",
-                                                                    price === 0
-                                                                        ? "text-green-500 bg-green-500/10 border-green-500/20"
-                                                                        : "text-accent-secondary bg-accent-secondary/10 border-accent-secondary/20 uppercase"
-                                                                )}>
-                                                                    {price === 0 ? "FREE" : `$${price.toFixed(2)}`}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex -space-x-1">
-                                                                {size.Rewards.slice(0, 3).map((r, i) => (
-                                                                    <div key={i} className="w-6 h-6 rounded-full border border-bg-primary bg-bg-secondary flex items-center justify-center overflow-hidden shadow-md">
-                                                                        <GameIcon name={getShopIcon(r, undefined, autoMapping, selectedVersion)} className="w-full h-full p-1" />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-1.5">
-                                                            {size.Rewards.map((reward, i) => (
-                                                                <div key={i} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0 group-hover:border-accent-primary/10 transition-colors">
-                                                                    <div className="flex items-center gap-2 max-w-[70%]">
-                                                                        <div className="w-5 h-5 flex-shrink-0">
-                                                                            <GameIcon name={getShopIcon(reward, undefined, autoMapping, selectedVersion)} className="w-full h-full opacity-80" />
-                                                                        </div>
-                                                                        <span className="text-text-secondary font-semibold whitespace-nowrap overflow-hidden text-clip text-[10px] uppercase tracking-tighter">{reward.Type}</span>
-                                                                    </div>
-                                                                    <span className="font-mono font-black text-white text-[10px]">
-                                                                        +{reward.Amount.toLocaleString()}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                {activeTab === 'daily' && dailyDeals && (
+                    <DailyDealsTab library={dailyDeals} products={iapProducts ? Object.values(iapProducts) : []} />
                 )}
 
                 {activeTab === 'iap' && (
-                    <div className="space-y-12">
-                        {/* Gem Packs */}
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-2.5 px-2">
-                                <GameIcon name="GemIcon" size={20} />
-                                <h2 className="text-xl font-black uppercase tracking-tight">Gem Packages</h2>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {products.filter(p => p.ProductId.includes('GemPack')).map((p) => (
-                                    <ProductCard key={p.ProductId} product={p} variant="secondary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <hr className="border-border/40 mx-2" />
-
-                        {/* Token Packs */}
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-2.5 px-2">
-                                <GameIcon name="SteppingStone" size={20} />
-                                <h2 className="text-xl font-black uppercase tracking-tight">Token Packages</h2>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {products.filter(p => p.ProductId.includes('TokenPack')).map((p) => (
-                                    <ProductCard key={p.ProductId} product={p} variant="primary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} />
-                                ))}
-                                {/* Add TokenPack0 from ShopResources if it exists and matches search */}
-                                {shopResources?.TokenPack0 && isWarActive && shopResources.TokenPack0.Id.toLowerCase().includes(searchQuery.toLowerCase()) && (
-                                    <ProductCard
-                                        product={{
-                                            ProductId: 'TokenPack0',
-                                            Name: 'Daily Token Pack',
-                                            Price: 0,
-                                            Rewards: [shopResources.TokenPack0.Reward],
-                                            Type: 'Free Daily'
-                                        }}
-                                        variant="primary"
-                                        unlockData={unlockData}
-                                        autoMapping={autoMapping}
-                                        isWarActive={isWarActive}
-                                        version={selectedVersion}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    <CurrencyTab products={products} bestDaily={bestDaily}
+                        freeTokens={shopResources?.TokenPack0?.Reward ?? null}
+                        unlockLabel={unlockData['SteppingStones'] && unlockData['SteppingStones'].ageIdx !== null
+                            ? `${unlockData['SteppingStones'].ageIdx + 1}-${(unlockData['SteppingStones'].battleIdx ?? 0) + 1}` : null} />
                 )}
 
                 {activeTab === 'offers' && (
-                    <div className="space-y-12">
-                        {/* Starter Offers */}
-                        <div className="p-6 rounded-2xl bg-bg-secondary/20 border border-border/50 relative overflow-hidden group/offer">
-                            <div className="absolute top-0 right-0 -mr-16 -mt-16 opacity-[0.03] transition-transform group-hover/offer:scale-110 duration-700">
-                                <GameAssetIcon asset={{ icon: 'Sparkle' }} size={320} />
-                            </div>
-                            <h2 className="text-xl font-black uppercase tracking-tight px-1 flex items-center gap-3 mb-8 relative z-10">
-                                <GameAssetIcon asset={{ icon: 'Sparkle' }} size={20} />
-                                Starter Packages
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-                                {products.filter(p => p.ProductId.includes('StarterOffer')).map((p) => (
-                                    <ProductCard key={p.ProductId} product={p} variant="primary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <hr className="border-border/40" />
-
-                        {/* Progress Passes */}
-                        <div className="p-6 rounded-2xl bg-bg-secondary/20 border border-accent-secondary/30 relative overflow-hidden group/offer shadow-2xl shadow-accent-secondary/5">
-                            <div className="absolute top-0 right-0 -mr-16 -mt-16 opacity-[0.05] transition-transform group-hover/offer:scale-110 duration-700 text-accent-secondary">
-                                <GameAssetIcon asset={{ icon: 'MainProgressPassIcon' }} size={320} />
-                            </div>
-                            <h2 className="text-xl font-black uppercase tracking-tight px-1 flex items-center gap-3 mb-8 relative z-10">
-                                <GameAssetIcon asset={{ icon: 'MainProgressPassIcon' }} size={20} />
-                                Progress Passes
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-                                {products.filter(p => p.ProductId.includes('ProgressPass')).map((p) => (
-                                    <ProductCard key={p.ProductId} product={p} variant="secondary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Other Proposals */}
-                        {products.filter(p => !['GemPack', 'TokenPack', 'StarterOffer', 'ProgressPass', 'DailyDeal'].some(key => p.ProductId.includes(key))).length > 0 && (
-                            <>
-                                <hr className="border-border/40" />
-                                <div className="p-6 rounded-2xl bg-bg-secondary/20 border border-border/50 relative overflow-hidden group/offer">
-                                    <h2 className="text-xl font-black uppercase tracking-tight px-1 flex items-center gap-3 mb-8 relative z-10">
-                                        <GameAssetIcon asset={{ icon: 'CommonChest' }} size={20} />
-                                        Special Proposals
-                                    </h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-                                        {products.filter(p => !['GemPack', 'TokenPack', 'StarterOffer', 'ProgressPass', 'DailyDeal'].some(key => p.ProductId.includes(key))).map((p) => (
-                                            <ProductCard key={p.ProductId} product={p} variant="primary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} version={selectedVersion} />
-                                        ))}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    <SpecialTab products={products} bestDaily={bestDaily} passPremium={passPremium}
+                        renderProduct={p => <ProductCard key={p.ProductId} product={p} variant="primary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} version={selectedVersion} />} />
                 )}
             </div>
         </div>
@@ -501,14 +329,16 @@ function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, v
     }, [product.Rewards]);
 
     // Resolved Item Name
+    const eggReward = product.Rewards?.find((r: any) => r.$type === 'EggStarterOfferPackageReward');
     const displayName = useMemo(() => {
+        if (eggReward) return `${eggReward.Amount} ${eggReward.Rarity} Eggs`;
         if (starterReward && starterReward.ItemId) {
             const ageName = AGES[starterReward.ItemId.Age];
             const name = getItemName(ageName, starterReward.ItemId.Type, starterReward.ItemId.Idx, autoMapping);
             return name || product.Name;
         }
         return product.Name;
-    }, [starterReward, product.Name, autoMapping]);
+    }, [starterReward, eggReward, product.Name, autoMapping]);
 
     return (
         <Card className={cn(
@@ -530,10 +360,13 @@ function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, v
                         "relative w-full h-full rounded-2xl bg-bg-primary border flex items-center justify-center p-4 shadow-xl transition-all duration-500 group-hover:scale-105 group-hover:-translate-y-1",
                         variant === 'primary' ? "border-accent-primary/20" : "border-accent-secondary/20"
                     )}>
-                        <GameIcon
-                            name={getShopIcon(product.Rewards?.[0], product, autoMapping, version)}
-                            className="w-full h-full drop-shadow-lg"
-                        />
+                        {/* EggStarterOfferPackageReward: Amount eggs of a Rarity, drawn as that egg. */}
+                        {product.Rewards?.[0]?.$type === 'EggStarterOfferPackageReward'
+                            ? <EggIcon rarity={product.Rewards[0].Rarity} size={64} className="drop-shadow-lg" />
+                            : <GameIcon
+                                name={getShopIcon(product.Rewards?.[0], product, autoMapping, version)}
+                                className="w-full h-full drop-shadow-lg"
+                            />}
                     </div>
                     {product.Rewards?.[0]?.Amount !== undefined && (
                         <div className={cn(
