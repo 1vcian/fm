@@ -11,7 +11,8 @@
  * battles on a tiny stat change and gives no usable rate: +15% health moved it by 6 battles while
  * +5% moved it by 0.03. Instead it is the sum of questReach over the same WINDOW battles either
  * side of the current frontier, which moves smoothly. Measured on a mid-game build, rates taken
- * this way predict full sims of pet, mount and +15% stat changes to within about 30%.
+ * this way predict full sims of +15% stat changes to within about 10% and small changes (pet and
+ * mount levels, +2% stats) to within about 55%, close enough to rank upgrades.
  */
 import { calculateStats, type AggregatedStats, type LibraryData } from '../utils/statEngine';
 import { questLine, questReach, type QuestBattle } from '../presets/mainProgress';
