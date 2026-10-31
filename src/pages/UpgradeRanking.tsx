@@ -1,39 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useBattleSimulation } from '../hooks/useBattleSimulation';
 import { useGameData } from '../hooks/useGameData';
-import { useTreeModeProfile } from '../hooks/useGlobalStats';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
-import { BattlePool } from '../progress/battlePool';
-import { readHint, saveHint, searchFrontier } from '../progress/frontierSearch';
-import type { LevelOutcome } from '../progress/adaptive';
 import type { BattleTarget } from '../progress/battleWorker';
-import { questBattleLabel } from '../presets/mainProgress';
-import { calculateStats, type LibraryData } from '../utils/statEngine';
+import { calculateStats } from '../utils/statEngine';
 import { cn } from '../lib/utils';
 import { upgradeCandidates, type UpgradeCandidate, type UpgradeKind } from '../upgrades/candidates';
 import {
-    bound, estimate, measureRates, modeLine, MODE_NAMES, pricedStats, RANK_MODES, WINDOW,
+    battleName, bound, estimate, MODE_NAMES, pricedStats, RANK_MODES, WINDOW,
     type Estimate, type RankMode, type RateKey, type Rates,
 } from '../upgrades/ranking';
+import { useBuildLab, useRates, type BuildLab, type Reached } from '../upgrades/useBuildLab';
+import { FocusChips, Gain, useFocus, Waiting } from '../upgrades/ui';
 
-/** Where the build gets in a mode: the last battle cleared in order, and the one after it (null: the line is finished). */
-interface Reached { cleared: number; next: LevelOutcome | null }
-
-const FOCUS_KEY = 'fm.upgradeFocus';
 const KIND_LABEL: Record<UpgradeKind, string> = { tech: 'Tech', pet: 'Pet', mount: 'Mount', skill: 'Skill' };
 const SHOWN = 15;
-
-function readFocus(): RankMode[] {
-    try {
-        const saved = JSON.parse(localStorage.getItem(FOCUS_KEY) ?? 'null');
-        const modes = Array.isArray(saved) ? RANK_MODES.filter(m => saved.includes(m)) : [];
-        if (modes.length) return modes;
-    } catch { /* storage blocked or a bad value: the default */ }
-    return RANK_MODES;
-}
-
-const battleName = (t: BattleTarget | undefined) => !t ? 'none' : t.mode === 'main' ? questBattleLabel(t) : `Level ${t.level + 1}`;
 
 const formatCost = (n: number) => n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n);
 
@@ -42,67 +23,15 @@ function formatDuration(seconds: number): string {
     return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
 }
 
-const Gain = ({ value, className }: { value: number; className?: string }) => (
-    <span className={cn('font-mono tabular-nums', value > 0.0005 ? 'text-green-400' : 'text-text-muted', className)}>
-        {value > 0.0005 ? `+${value.toFixed(value < 0.1 ? 3 : 2)}` : '±0'}
-    </span>
-);
-
-const Waiting = ({ label }: { label: string }) => (
-    <span className="inline-flex items-center gap-2 text-sm text-text-secondary"><Loader2 className="w-4 h-4 animate-spin" />{label}</span>
-);
-
-/** Where the build gets, then what each stat is worth there, then every upgrade priced. */
-function useRanking() {
-    const { libs: battleLibs, isLoading, maxDungeonLevel } = useBattleSimulation();
-    const { profile, libs, ready } = useTreeModeProfile();
+/** Every upgrade priced at the build's rates. */
+function usePriced(lab: BuildLab, rates: Rates | null) {
     const { data: upgradeLib } = useGameData<any>('TechTreeUpgradeLibrary.json');
     const { data: sprites } = useGameData<any>('ManualSpriteMapping.json');
-    const [reached, setReached] = useState<Partial<Record<RankMode, Reached>>>({});
-    const [rates, setRates] = useState<Rates | null>(null);
-    const [priced, setPriced] = useState<{ c: UpgradeCandidate; est: Estimate }[] | null>(null);
-    const [failed, setFailed] = useState<string | null>(null);
-
-    const lines = useMemo(() => {
-        if (isLoading || !battleLibs.mainBattleLibrary || maxDungeonLevel === null) return null;
-        return Object.fromEntries(RANK_MODES.map(m => [m, modeLine(m, battleLibs, maxDungeonLevel)])) as Record<RankMode, BattleTarget[]>;
-    }, [battleLibs, isLoading, maxDungeonLevel]);
-
-    useEffect(() => {
-        if (!ready || !lines || !upgradeLib || !sprites) return;
-        const stats = calculateStats(profile, libs as LibraryData);
-        const base = { stats, profile };
-        const pool = new BattlePool({ type: 'init', stats, profile, libs: battleLibs });
-        let cancelled = false;
-        setReached({}); setRates(null); setPriced(null); setFailed(null);
-
-        (async () => {
-            const entries = await Promise.all(RANK_MODES.map(async m => {
-                const hintMode = m === 'main' ? 'main' : `dungeon-${m}`;
-                const line = lines[m];
-                const seen = new Map<number, LevelOutcome | null>();
-                const frontier = await searchFrontier(line.length, readHint(profile, hintMode), pool.size, i => pool.run(line[i]), {
-                    cancelled: () => cancelled, onResult: (i, o) => seen.set(i, o), onEstimate: () => { },
-                });
-                if (cancelled) return [m, frontier] as const;
-                saveHint(profile, hintMode, frontier);
-                setReached(s => ({ ...s, [m]: { cleared: frontier, next: seen.get(frontier + 1) ?? null } }));
-                return [m, frontier] as const;
-            }));
-            if (cancelled) return;
-            const r = await measureRates(pool, lines, base, Object.fromEntries(entries) as Record<RankMode, number>, libs as LibraryData);
-            if (cancelled) return;
-            if (!r) { setFailed('Add at least one item to your profile first.'); return; }
-            setRates(r);
-            setPriced(upgradeCandidates(profile, libs as LibraryData, upgradeLib, sprites)
-                .map(c => ({ c, est: estimate(r, pricedStats(calculateStats(c.profile, libs as LibraryData))) })));
-        })().catch(e => {
-            if (!cancelled && !(e instanceof Error && e.message === 'stopped')) setFailed(String(e?.message ?? e));
-        }).finally(() => pool.dispose());
-        return () => { cancelled = true; pool.dispose(); };
-    }, [profile, libs, ready, lines, battleLibs, upgradeLib, sprites]);
-
-    return { lines, reached, rates, priced, failed };
+    return useMemo(() => {
+        if (!rates || !upgradeLib || !sprites) return null;
+        return upgradeCandidates(lab.profile, lab.libs, upgradeLib, sprites)
+            .map(c => ({ c, est: estimate(rates, pricedStats(calculateStats(c.profile, lab.libs))) }));
+    }, [rates, upgradeLib, sprites, lab.profile, lab.libs]);
 }
 
 function ModeCard({ mode, score, line }: { mode: RankMode; score: Reached | undefined; line: BattleTarget[] | undefined }) {
@@ -150,17 +79,13 @@ function Diagnosis({ rates, focus }: { rates: Rates; focus: RankMode[] }) {
 }
 
 export default function UpgradeRanking() {
-    const { lines, reached, rates, priced, failed } = useRanking();
-    const [focus, setFocusState] = useState<RankMode[]>(readFocus);
+    const lab = useBuildLab();
+    const { lines, reached } = lab;
+    const { rates, failed } = useRates(lab);
+    const priced = usePriced(lab, rates);
+    const [focus, setFocus] = useFocus();
     const [kind, setKind] = useState<'all' | UpgradeKind>('all');
     const [perPotion, setPerPotion] = useState(false);
-
-    const toggle = (m: RankMode) => {
-        const next = focus.includes(m) ? focus.filter(x => x !== m) : [...focus, m];
-        const value = next.length ? RANK_MODES.filter(x => next.includes(x)) : RANK_MODES;
-        setFocusState(value);
-        try { localStorage.setItem(FOCUS_KEY, JSON.stringify(value)); } catch { /* per-device preference */ }
-    };
 
     const rows = useMemo(() => (priced ?? [])
         .map(p => ({ ...p, gain: focus.reduce((a, m) => a + (p.est.perMode[m] ?? 0), 0) }))
@@ -180,15 +105,7 @@ export default function UpgradeRanking() {
                 {RANK_MODES.map(m => <ModeCard key={m} mode={m} score={reached[m]} line={lines?.[m]} />)}
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-text-muted mr-1">Rank for</span>
-                {RANK_MODES.map(m => (
-                    <button key={m} onClick={() => toggle(m)} aria-pressed={focus.includes(m)}
-                        className={cn('px-2.5 py-1 rounded-full text-xs border transition-colors', focus.includes(m) ? 'border-accent-primary/50 bg-accent-primary/10 text-text-primary' : 'border-border text-text-muted')}>
-                        {MODE_NAMES[m]}
-                    </button>
-                ))}
-            </div>
+            <FocusChips focus={focus} onChange={setFocus} />
 
             {failed && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3">{failed}</div>}
             {!failed && !rates && <Waiting label="Measuring what each stat is worth…" />}

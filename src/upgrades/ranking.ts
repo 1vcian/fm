@@ -15,7 +15,7 @@
  * mount levels, +2% stats) to within about 55%, close enough to rank upgrades.
  */
 import { calculateStats, type AggregatedStats, type LibraryData } from '../utils/statEngine';
-import { questLine, questReach, type QuestBattle } from '../presets/mainProgress';
+import { questBattleLabel, questLine, questReach, type QuestBattle } from '../presets/mainProgress';
 import type { BattlePool } from '../progress/battlePool';
 import type { LevelOutcome } from '../progress/adaptive';
 import type { BattleTarget } from '../progress/battleWorker';
@@ -38,6 +38,9 @@ export function modeLine(mode: RankMode, battleLibs: any, maxDungeonLevel: numbe
     return Array.from({ length: maxDungeonLevel + 1 }, (_, level) => ({ mode: 'dungeon', dungeon: mode, level }));
 }
 
+/** A battle as the game names it. */
+export const battleName = (t: BattleTarget | undefined) => !t ? 'none' : t.mode === 'main' ? questBattleLabel(t) : `Level ${t.level + 1}`;
+
 export interface Build { stats: AggregatedStats; profile: UserProfile }
 
 /** How close a build gets to winning each battle around `frontier`, summed. Comparable only at the same frontier. */
@@ -45,6 +48,17 @@ export async function windowScore(pool: BattlePool, line: BattleTarget[], build:
     const from = Math.max(0, frontier - WINDOW), to = Math.min(line.length - 1, frontier + WINDOW);
     const measured = await Promise.all(line.slice(from, to + 1).map(t => pool.run(t, { build, runs: RUNS })));
     return measured.reduce((sum, o) => sum + (o ? questReach({ win: o.winRate, lossProgress: o.lossProgress ?? 0 }) : 0), 0);
+}
+
+/** A build's score in every mode, around the given frontiers. */
+export async function modeScores(
+    pool: BattlePool,
+    lines: Record<RankMode, BattleTarget[]>,
+    build: Build,
+    frontiers: Record<RankMode, number>,
+): Promise<Record<RankMode, number>> {
+    return Object.fromEntries(await Promise.all(RANK_MODES.map(async m =>
+        [m, await windowScore(pool, lines[m], build, frontiers[m])] as const))) as Record<RankMode, number>;
 }
 
 // ---- the stats an upgrade is priced by -------------------------------------------------------
@@ -90,8 +104,7 @@ export async function measureRates(
     frontiers: Record<RankMode, number>,
     libs: LibraryData,
 ): Promise<Rates | null> {
-    const scores = async (build: Build) => Object.fromEntries(await Promise.all(RANK_MODES.map(async m =>
-        [m, await windowScore(pool, lines[m], build, frontiers[m])] as const))) as Record<RankMode, number>;
+    const scores = (build: Build) => modeScores(pool, lines, build, frontiers);
     const probe = async (statId: string, value: number) => {
         const profile = withSubstat(base.profile, statId, value);
         if (!profile) return null;

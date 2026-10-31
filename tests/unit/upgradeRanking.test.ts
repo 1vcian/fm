@@ -20,7 +20,7 @@ vi.mock('../../src/utils/statEngine', () => ({
 }));
 
 const {
-    bound, estimate, measureRates, modeLine, pricedStats, RANK_MODES, RUNS, WINDOW, windowScore, withSubstat,
+    battleName, bound, estimate, measureRates, modeLine, modeScores, pricedStats, RANK_MODES, RUNS, WINDOW, windowScore, withSubstat,
 } = await import('../../src/upgrades/ranking');
 
 const stats = (o: Partial<{ realTotalDps: number; totalHealth: number; blockChance: number; realTotalHps: number }>) => o as never;
@@ -91,6 +91,27 @@ describe('windowScore', () => {
         const b = fakePool(t => outcome((rates[(t as { level: number }).level % 6] ?? 0) + 0.02));
         const gain = await windowScore(b.pool, line(100), build, 50) - await windowScore(a.pool, line(100), build, 50);
         expect(gain).toBeCloseTo((WINDOW * 2 + 1) * 0.02);
+    });
+});
+
+describe('modeScores', () => {
+    it('scores every mode around its own frontier', async () => {
+        const { pool, calls } = fakePool(() => outcome(1, null));
+        const lines = Object.fromEntries(RANK_MODES.map(m => [m, line(100)])) as Record<(typeof RANK_MODES)[number], BattleTarget[]>;
+        const frontiers = { main: 50, hammer: 0, skill: 50, egg: 50, potion: 50 };
+        const scores = await modeScores(pool, lines, { stats: stats({}), profile: profile() }, frontiers);
+        expect(Object.keys(scores)).toEqual(RANK_MODES);
+        expect(scores.main).toBe(WINDOW * 2 + 1);
+        expect(scores.hammer).toBe(WINDOW + 1);
+        expect(calls).toHaveLength((WINDOW * 2 + 1) * 4 + WINDOW + 1);
+    });
+});
+
+describe('battleName', () => {
+    it('names battles as the game does', () => {
+        expect(battleName({ mode: 'main', difficulty: 1, ageIdx: 10, battleIdx: 14 })).toBe('Hard 11-15');
+        expect(battleName({ mode: 'dungeon', dungeon: 'egg', level: 0 })).toBe('Level 1');
+        expect(battleName(undefined)).toBe('none');
     });
 });
 
