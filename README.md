@@ -125,7 +125,7 @@ If the tool helps you, you can [buy me a coffee](https://www.buymeacoffee.com/1v
 
 ## License and game assets
 
-The **source code** is released under the [MIT License](./LICENSE).
+The **source code** is released under the [MIT License](./LICENSE) (see also [NOTICE](./NOTICE)).
 
 Forge Master's **images, sprites, textures, texts and game data** in this repository belong to their respective owners and are used with their permission. They are **not** covered by the MIT License: please do not reuse them in other projects without the owners' permission.
 
