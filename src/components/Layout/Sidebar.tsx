@@ -80,6 +80,7 @@ const NAV = {
     clan: gameIcon({ icon: 'RallyIcon' }),
     progress: gameIcon({ icon: 'MainGameProgressPassSwordIcon' }),
     upgrades: gameIcon({ icon: 'UpgradeArrow' }),
+    forgeCheck: gameIcon({ icon: 'Anvil' }),
     missionCalc: gameIcon({ sheet: 'ClanTechTreeIcons', index: 23 }),
     pvp: gameIcon({ icon: 'Battle' }),
     images: gameIcon({ icon: 'Pen' }),
@@ -168,6 +169,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Clan', path: '/clan', icon: NAV.clan },
                 { name: 'Progress Prediction', path: '/progress-prediction', icon: NAV.progress },
                 { name: 'Upgrade Ranking', path: '/upgrades', icon: NAV.upgrades },
+                { name: 'Forge Check', path: '/forge-check', icon: NAV.forgeCheck },
                 { name: 'Mission Calculator', path: '/solo-mission', icon: NAV.missionCalc },
                 { name: 'PVP Simulator (Beta)', path: '/pvp-arena', icon: NAV.pvp },
                 // Colors is hidden while the game has no chat embeds to colour; the route still works.

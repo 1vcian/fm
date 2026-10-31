@@ -13,6 +13,7 @@ import type { BattlePool } from '../../src/progress/battlePool';
 import type { BattleTarget, TaskOptions } from '../../src/progress/battleWorker';
 import type { UserProfile } from '../../src/types/Profile';
 import { upgradeCandidates } from '../../src/upgrades/candidates';
+import { forgeVerdict, withItem } from '../../src/upgrades/forge';
 import {
     estimate, measureRates, modeLine, pricedStats, RANK_MODES, windowScore, withSubstat, type RankMode, type Rates,
 } from '../../src/upgrades/ranking';
@@ -121,6 +122,19 @@ describe('ranking on the real engine', () => {
         const actual = await actualGain(p);
         expect(actual).toBeGreaterThan(0);
         expect(Math.abs(predictedGain(p) - actual) / actual).toBeLessThan(0.5);
+    }, 60_000);
+
+    it('calls one age higher a clear gain and a gutted item a clear loss', async () => {
+        const slot = 'Weapon';
+        const worn = profile.items[slot]!;
+        const better = await actualGain(withItem(profile, slot, { ...worn, age: worn.age + 1, idx: 0 }));
+        expect(forgeVerdict(better, [better]).verdict).toBe('equip');
+        const worse = await actualGain(withItem(profile, slot, { ...worn, age: 0, level: 1, secondaryStats: [] }));
+        expect(forgeVerdict(worse, [worse]).verdict).toBe('keep');
+    }, 60_000);
+
+    it('sees no change from the same item', async () => {
+        expect(await actualGain(withItem(profile, 'Weapon', profile.items.Weapon))).toBeCloseTo(0, 9);
     }, 60_000);
 
     it('never prices an available upgrade as a loss', () => {
