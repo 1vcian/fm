@@ -12,7 +12,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/1vcian/fm)
 [![Buy Me a Coffee](https://img.shields.io/badge/support-buy%20me%20a%20coffee-ffdd00?style=for-the-badge&logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/1vcian)
 
-[Open the app](https://1vcian.me/fm) · [Report a bug](https://github.com/1vcian/fm/issues) · [Ask the AI DeepWiki](https://deepwiki.com/1vcian/fm)
+[Open the app](https://1vcian.me/fm) · [Report a bug](https://github.com/1vcian/fm/issues)
 
 </div>
 
