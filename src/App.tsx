@@ -29,6 +29,7 @@ import FAQ from './pages/FAQ';
 import Profile from './pages/Profile';
 import ProgressPrediction from './pages/ProgressPrediction';
 import UpgradeRanking from './pages/UpgradeRanking';
+import LoadoutSearch from './pages/LoadoutSearch';
 import PvpArena from './pages/PvpArena';
 import SubstatsCalculator from './pages/Calculators/SubstatsCalculator';
 import ForgeCalculator from './pages/Calculators/ForgeCalculator';
@@ -73,6 +74,7 @@ function App() {
                                     <Route index element={<Profile />} />
                                     <Route path="progress-prediction" element={<ProgressPrediction />} />
                                     <Route path="upgrades" element={<UpgradeRanking />} />
+                                    <Route path="loadout-search" element={<LoadoutSearch />} />
                                     {/* pages/Home.tsx was a legacy copy of the forge calculator: send its old URL there. */}
                                     <Route path="home" element={<Navigate to="/calculators/forge" replace />} />
                                     <Route path="configs" element={<Configs />} />
