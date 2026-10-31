@@ -14,7 +14,7 @@ export interface VariantsRun {
     cancel: () => void;
 }
 
-export function runMyVariants(version: string, saved: SavedSkin[], onLog: (msg: string) => void): VariantsRun {
+export function runMyVariants(version: string, saved: SavedSkin[], onLog: (msg: string) => void, excludeWeaponSets?: string[]): VariantsRun {
     const worker = new Worker(new URL('./presetsWorker.ts', import.meta.url), { type: 'module' });
     let reject: (e: Error) => void = () => {};
     const promise = new Promise<ProfilePresetsFile>((resolve, rej) => {
@@ -26,7 +26,7 @@ export function runMyVariants(version: string, saved: SavedSkin[], onLog: (msg: 
             else resolve(d.result);
         };
         worker.onerror = ev => rej(new Error(ev.message || 'worker failed'));
-        worker.postMessage({ version, saved: JSON.parse(JSON.stringify(saved)) } satisfies VariantsRequest);
+        worker.postMessage({ version, saved: JSON.parse(JSON.stringify(saved)), excludeWeaponSets } satisfies VariantsRequest);
     }).finally(() => worker.terminate());
     return { promise, cancel: () => { worker.terminate(); reject(new Error('stopped')); } };
 }

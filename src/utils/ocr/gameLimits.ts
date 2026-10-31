@@ -63,7 +63,12 @@ export function limitsReady(cfg: GameLimitConfigs): boolean {
 export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
     const baseItemMax = Number(cfg.itemBalancingConfig?.ItemBaseMaxLevel) + 1;
     const itemBonus: Record<string, number> = {};
-    for (const tree of Object.values<any>(cfg.techTreePositionLibrary || {})) {
+    // The personal trees only. PlayerTechTreePositionLibrary also carries a "Clan" layout with
+    // *LevelUp nodes, but the clan tree a player levels is the guild one (GuildTechTreePosition /
+    // UpgradeLibrary, as statEngine reads it), which has no item level node: counting that layout
+    // put every item 10 levels past the real top (159 instead of 149 in 2026_10_27_09_45).
+    for (const [name, tree] of Object.entries<any>(cfg.techTreePositionLibrary || {})) {
+        if (name === 'Clan') continue;
         for (const node of tree?.Nodes || []) {
             const slot = LEVEL_UP_SLOT[node?.Type];
             if (!slot) continue;

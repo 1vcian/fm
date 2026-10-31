@@ -17,7 +17,7 @@ import {
     CATEGORIES, PRESETS_PER_CATEGORY, battleLibsOf, presetMetrics, testedOf,
     type ConfigFiles, type PresetAnimation, type PresetCategory, type ProfilePreset, type ProfilePresetsFile, type StatCategory,
 } from './buildPresets';
-import { applyBestSkins, ownedPieces, wearSkins } from './skinsApply';
+import { applyBestSkins, ownedPieces, wearSkins, type SkinPiece } from './skinsApply';
 import type { AnimationSwap } from './equivalents';
 import { QuestMeter } from './mainProgress';
 import { EvalCore, localPool } from './evalPool';
@@ -32,6 +32,12 @@ export interface OwnedOptions {
     labBattles: number;
     tournamentBattles: number;
     log: (msg: string) => void;
+    /** The pieces to dress with instead of the saved skins (e.g. every set at its top but some weapons). */
+    pieces?: SkinPiece[];
+    /** Appended to every build's description: what the skins were. */
+    skinsNote?: string;
+    /** Where the quest and arena battles run (default: this thread). */
+    pool?: import('./evalPool').EvalPool;
 }
 
 const STAT_CATEGORIES: { key: StatCategory; metric: 'dps' | 'hps' }[] = [
@@ -40,7 +46,8 @@ const STAT_CATEGORIES: { key: StatCategory; metric: 'dps' | 'hps' }[] = [
 
 export function buildOwnedPresets(site: ProfilePresetsFile, saved: SavedSkin[], libs: LibraryData, cfg: ConfigFiles, opts: OwnedOptions): ProfilePresetsFile {
     if (!site.variants) throw new Error('the preset builds of this version have no variants to start from');
-    const pieces = ownedPieces(saved, libs.skinsLibrary);
+    const pieces = opts.pieces ?? ownedPieces(saved, libs.skinsLibrary);
+    const note = opts.skinsNote ?? 'With your own skins only.';
     const ownedWeaponSets = new Set(pieces.filter(p => p.type === 'Weapon').map(p => p.setId));
     const formula = (metric: 'dps' | 'hps' | 'power') => (p: UserProfile) => {
         const s = calculateStats(p, libs, metric === 'power');
@@ -90,7 +97,7 @@ export function buildOwnedPresets(site: ProfilePresetsFile, saved: SavedSkin[], 
 
     // ---- main quest: every build above, walked from where the best DPS builds get
     const core = new EvalCore(libs, battleLibsOf(libs, cfg), pvpConfigFromJson(cfg.PvpBaseConfig));
-    const pool = localPool(core);
+    const pool = opts.pool ?? localPool(core);
     const questSearch = new QuestMeter(battleLibsOf(libs, cfg), opts.questSearchRuns, pool);
     const all = STAT_CATEGORIES.flatMap(({ key }) => built.get(key)!);
     for (const c of [built.get('dpsMelee')![0], built.get('dpsRanged')![0]]) if (c) questSearch.measure(c.p);
@@ -117,7 +124,7 @@ export function buildOwnedPresets(site: ProfilePresetsFile, saved: SavedSkin[], 
             const ranged = (libs.weaponLibrary as any)?.[`{'Age': ${p.items.Weapon!.age}, 'Type': 'Weapon', 'Idx': ${p.items.Weapon!.idx}}`]?.IsRanged === true;
             presets.push({
                 key: `${category}${i + 1}`, category, rank: i + 1, name, goal: c.goal, weapons: category === 'quest' ? 'any' : ranged ? 'ranged' : 'melee',
-                description: `${c.description} With your own skins only.`, animation: animationOf(w),
+                description: `${c.description} ${note}`, animation: animationOf(w),
                 profile: { ...p, id: '', name, isShared: undefined }, metrics: metricsOf(p),
             });
         });
@@ -133,13 +140,18 @@ export function buildOwnedPresets(site: ProfilePresetsFile, saved: SavedSkin[], 
         const field = presets.filter(p => p.rank === 1).map(p => p.profile);
         const labInfo = info.get('lab')!;
         site.presets.filter(p => p.category === 'lab').forEach(lp => {
-            const w = usableSwap(lp.animation) ?? { source: 'weapon' as const, weaponIdx: lp.animation.weaponIdx, setId: null, windup: lp.animation.windup };
+            const usable = usableSwap(lp.animation);
+            // A lab find whose point was a skin's attack the player cannot use has nothing of its
+            // own left: only the Arena Champion stays, with its weapon's own attack.
+            if (!usable && lp.rank !== 1 && lp.animation.source === 'skin') return;
+            const ownWindup = (libs.weaponLibrary as any)?.[`{'Age': ${lp.profile.items.Weapon!.age}, 'Type': 'Weapon', 'Idx': ${lp.animation.weaponIdx}}`]?.WindupTime;
+            const w = usable ?? { source: 'weapon' as const, weaponIdx: lp.animation.weaponIdx, setId: null, windup: typeof ownWindup === 'number' ? ownWindup : lp.animation.windup };
             // Never the lab's own (maxed) skins: without a usable piece it wears none.
             const p = applyBestSkins(lp.profile, w, pieces, formula('dps')) ?? wearSkins(lp.profile, w, {});
             const rate = pool.arena(p, field, opts.labBattles);
             presets.push({
                 ...lp, profile: { ...p, id: '', name: lp.name, isShared: undefined }, animation: animationOf(w), metrics: metricsOf(p), equivalents: undefined,
-                description: `${labInfo.description} With your own skins it wins ${(rate * 100).toFixed(1)}% of its arena battles against your category builds.`,
+                description: `${labInfo.description} ${note} It wins ${(rate * 100).toFixed(1)}% of its arena battles against these category builds.`,
                 lab: { arenaWinRate: rate, unusual: lp.lab?.unusual ?? '' },
             });
         });

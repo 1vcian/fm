@@ -6,9 +6,14 @@
 import type { ConfigFiles, ProfilePresetsFile } from './buildPresets';
 import { presetLibsFrom, PRESET_CONFIG_FILES } from './presetLibs';
 import { buildOwnedPresets } from './ownedVariants';
+import { topPieces } from './skinsApply';
 import type { SavedSkin } from '../types/Profile';
 
-export type VariantsRequest = { version: string; saved: SavedSkin[] };
+/**
+ * saved: the player's skins ("my best variants"). excludeWeaponSets instead: every set at its
+ * top, but without these sets' weapon skins (their attack animation and their weapon piece).
+ */
+export type VariantsRequest = { version: string; saved: SavedSkin[]; excludeWeaponSets?: string[] };
 
 export type VariantsReply =
     | { type: 'log'; msg: string }
@@ -21,7 +26,7 @@ const BROWSER_OPTIONS = { questSearchRuns: 4, questFinalRuns: 24, labBattles: 4,
 const post = (m: VariantsReply) => (self as unknown as DedicatedWorkerGlobalScope).postMessage(m);
 
 self.onmessage = async (e: MessageEvent<VariantsRequest>) => {
-    const { version, saved } = e.data;
+    const { version, saved, excludeWeaponSets } = e.data;
     try {
         const base = `${import.meta.env.BASE_URL}parsed_configs/${version}/`;
         const cfg: ConfigFiles = {};
@@ -34,7 +39,16 @@ self.onmessage = async (e: MessageEvent<VariantsRequest>) => {
             return r.json() as Promise<ProfilePresetsFile>;
         });
         const libs = presetLibsFrom(version, cfg);
-        const result = buildOwnedPresets(site, saved, libs, cfg, { ...BROWSER_OPTIONS, log: msg => post({ type: 'log', msg }) });
+        let extra = {};
+        if (excludeWeaponSets) {
+            const out = new Set(excludeWeaponSets);
+            const sets = new Set(Object.values<any>(libs.skinsLibrary ?? {}).map(r => r.BaseSetId).filter(Boolean));
+            extra = {
+                pieces: topPieces(libs.skinsLibrary, libs.skinUpgradeLibrary, sets).filter(p => !(p.type === 'Weapon' && out.has(p.setId))),
+                skinsNote: 'Every skin at its top except the left out weapon skins.',
+            };
+        }
+        const result = buildOwnedPresets(site, saved, libs, cfg, { ...BROWSER_OPTIONS, ...extra, log: msg => post({ type: 'log', msg }) });
         post({ type: 'done', result });
     } catch (err) {
         post({ type: 'error', message: err instanceof Error ? err.message : String(err) });

@@ -55,6 +55,7 @@ import { pvpConfigFromJson } from '../pvp/simulate';
 import { EvalCore, localPool, type EvalPool } from './evalPool';
 import type { AnimationSwap } from './equivalents';
 import { applyBestSkins, topPieces } from './skinsApply';
+import { buildOwnedPresets } from './ownedVariants';
 
 export type PresetCategory = 'power' | 'dpsMelee' | 'dpsRanged' | 'hpsMelee' | 'hpsRanged' | 'quest' | 'lab';
 
@@ -161,6 +162,8 @@ export interface ProfilePresetsFile {
     variants?: Partial<Record<StatCategory, PresetVariant[]>>;
     /** Arena round robin between every published build (scripts/build_presets.ts, src/presets/tournament.ts). */
     tournament?: import('./tournament').TournamentResult;
+    /** The same categories, lab and tournament built without any skin: what every player can build (F2P). */
+    noSkins?: ProfilePresetsFile;
 }
 
 /** Raw parsed configs of one version, by file name without ".json". */
@@ -179,10 +182,22 @@ export interface PresetOptions {
     labFinalBattles?: number;
 }
 
+/** No skins (F2P): arena battles per pair and side of its tournament, as the published one. */
+const F2P_TOURNAMENT_BATTLES = 100;
+
 /** Build lab: arena seeds per side and opponent while ranking and for the published rate, extra builds. */
 const LAB_BATTLES = 4;
-const LAB_FINAL_BATTLES = 10;
+const LAB_FINAL_BATTLES = 50;
 const LAB_UNEXPECTED = 4;
+/** Build lab: how many of the best candidates play again with every attack animation of their kind. */
+const LAB_ANIMATION_RETRY = 8;
+/**
+ * Build lab: the best candidates of the quick ranking (LAB_BATTLES seeds per side) measured again
+ * on LAB_CONFIRM_BATTLES seeds before the Arena Champion is picked. With 4 seeds a side a lucky
+ * candidate tops 132 others (a 99% that is 93% on 50 seeds), so the pick needs the long run.
+ */
+const LAB_CONFIRM = 16;
+const LAB_CONFIRM_BATTLES = 50;
 
 /** Builds shown per category. */
 export const PRESETS_PER_CATEGORY = 5;
@@ -709,7 +724,7 @@ export function presetContext(version: string, libs: LibraryData, cfg: ConfigFil
         }
         return { bare: best!, top: top.map(t => t.p), variants: variants.map(v => v.p) };
     };
-    return { version, libs, cfg, o, space, base, petLevel, anims, defaultSet, startFor, all, dpsOf, hpsOf, refineSubstats, withAnimation, animLabel, weaponStarts, statCategory };
+    return { version, libs, cfg, o, space, base, petLevel, anims, defaultSet, startFor, all, dpsOf, hpsOf, refineSubstats, withAnimation, animLabel, weaponStarts, statCategory, sitePieces, swapOf };
 }
 export type PresetContext = ReturnType<typeof presetContext>;
 
@@ -730,7 +745,7 @@ export function buildKindPresets(ctx: PresetContext, kind: 'melee' | 'ranged'): 
 
 /** Most Power, main quest, the published builds and the build lab, from both kinds' categories. */
 export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: KindPresets): ProfilePresetsFile {
-    const { version, libs, cfg, o, space, base, petLevel, anims } = ctx;
+    const { version, libs, cfg, o, space, base, petLevel, anims, sitePieces, swapOf, dpsOf } = ctx;
     const dpsMelee = melee.dps, hpsMelee = melee.hps, dpsRanged = ranged.dps, hpsRanged = ranged.hps;
 
     // ---------------------------------------------------------------- Most Power
@@ -867,7 +882,21 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
             ...field.flatMap(p => multisets(space.petIds, p.pets.active.length).map(ids => withPets(p, ids))),
         ];
         const labScores = arenaOf.many!(labCandidates);
-        const labRanked = labCandidates.map((p, i) => ({ profile: p, value: labScores[i] })).sort((x, y) => y.value - x.value);
+        const firstRanked = labCandidates.map((p, i) => ({ profile: p, value: labScores[i] })).sort((x, y) => y.value - x.value);
+        // A fairy or a pet change keeps the animation its candidate started from, and the attack
+        // timing decides arena fights the 24 h DPS cannot tell apart (the same AttackDuration,
+        // another windup). So the best candidates play again with every animation of their kind:
+        // each weapon's own with the skin hidden and each set's skin, best skins on top.
+        const kindOf = (p: UserProfile): 'melee' | 'ranged' => (space.rangedIdxs.has(p.items.Weapon!.idx) ? 'ranged' : 'melee');
+        const retried = firstRanked.slice(0, LAB_ANIMATION_RETRY).flatMap(m => anims[kindOf(m.profile)]
+            .map(a => applyBestSkins(m.profile, swapOf(a), sitePieces, dpsOf))
+            .filter((x): x is UserProfile => !!x));
+        const retryScores = arenaOf.many!(retried);
+        const quick = [...firstRanked, ...retried.map((p, i) => ({ profile: p, value: retryScores[i] }))].sort((x, y) => y.value - x.value);
+        const confirmScores = arenaWith(LAB_CONFIRM_BATTLES).many!(quick.slice(0, LAB_CONFIRM).map(m => m.profile));
+        const confirmed = quick.slice(0, LAB_CONFIRM).map((m, i) => ({ profile: m.profile, value: confirmScores[i] })).sort((x, y) => y.value - x.value);
+        const labRanked = [...confirmed, ...quick.slice(LAB_CONFIRM)];
+        o.log(`lab: ${retried.length} animation retries of the best ${LAB_ANIMATION_RETRY}, the best ${LAB_CONFIRM} confirmed on ${LAB_CONFIRM_BATTLES} seeds a side (top ${(confirmed[0].value * 100).toFixed(1)}%)`);
         o.log(`lab: ${labCandidates.length} candidates, best ${(labRanked[0].value * 100).toFixed(1)}%`);
         const lab = { best: labRanked[0].profile, met: { list: () => labRanked } };
         const traitOf = (p: UserProfile) => ({
@@ -925,7 +954,23 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     const bare = { dpsMelee: dpsMelee.bare, dpsRanged: dpsRanged.bare, hpsMelee: hpsMelee.bare, hpsRanged: hpsRanged.bare };
     const variants = Object.fromEntries(([['dpsMelee', dpsMelee], ['dpsRanged', dpsRanged], ['hpsMelee', hpsMelee], ['hpsRanged', hpsRanged]] as const)
         .map(([k, c]) => [k, c.variants.map(p => ({ animation: animationOf(p), profile: p }))]));
-    return { version, categories: CATEGORIES, presets, bare, variants };
+    const file: ProfilePresetsFile = { version, categories: CATEGORIES, presets, bare, variants };
+
+    // The same builds without any skin (every weapon's own attack, no skin stats): what every
+    // player can build. Their equivalents are the ones reachable without skins: weapons with the
+    // very same own attack and items with the same stats (no skin swap, no set).
+    o.log('no skins (F2P)');
+    const noSkins = buildOwnedPresets(file, [], libs, cfg, {
+        questSearchRuns: o.questSearchRuns, questFinalRuns: o.questFinalRuns, labBattles: o.labFinalBattles, tournamentBattles: F2P_TOURNAMENT_BATTLES,
+        pieces: [], skinsNote: 'Without any skin: every player can build it.', pool: o.pool, log: o.log,
+    });
+    for (const np of noSkins.presets) {
+        const eq = equivalentsOf(np.profile);
+        np.equivalents = { animations: eq.animations.filter(w => w.source === 'weapon'), items: eq.items, sets: [] };
+    }
+    noSkins.tournament?.standings.slice(0, 5).forEach((st, i) => o.log(`F2P #${i + 1} ${st.name}: ${(st.winRate * 100).toFixed(1)}%`));
+    file.noSkins = noSkins;
+    return file;
 }
 
 export function buildProfilePresets(version: string, libs: LibraryData, cfg: ConfigFiles, opts: PresetOptions = {}): ProfilePresetsFile {

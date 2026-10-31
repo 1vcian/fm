@@ -1706,20 +1706,9 @@ export class StatEngine {
 
         this.debugLogs.push(`Flat Stats: Damage=${flatDamageWithMelee.toFixed(0)} (skillPassive: ${this.stats.skillPassiveDamage.toFixed(0)}, mount: ${this.mountDamage.toFixed(0)}), Health=${flatHealth.toFixed(0)} (skillPassive: ${this.stats.skillPassiveHealth.toFixed(0)}, mount: ${this.mountHealth.toFixed(0)})`);
 
-        // 4. Multiplier Layers
-        // - Global/Common Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
-        // NEW-STATS TOGGLE (excludeSubstats): the item DMG%/HP% (and Melee/Ranged) substats are
-        // excluded from POWER ONLY. The Damage/Health readouts ALWAYS include them, so flipping
-        // the toggle changes Power alone and never the displayed damage/health.
-        const itemDmgMulti = this.secondaryStats.damageMulti;
-        const itemHpMulti = this.secondaryStats.healthMulti;
-        const commonDamageMulti = this.stats.damageMultiplier + itemDmgMulti;
-        const commonHealthMulti = this.stats.healthMultiplier + itemHpMulti;
-        // Power-only variant of the same layer
-        const commonDamageMultiPow = this.stats.damageMultiplier + (this.excludeSubstats ? 0 : itemDmgMulti);
-        const commonHealthMultiPow = this.stats.healthMultiplier + (this.excludeSubstats ? 0 : itemHpMulti);
-
-        // Seasonal fairy: converts one equipped substat pool into another. Semantics from
+        // Seasonal fairy: converts one equipped substat pool into another. It runs before the
+        // multiplier layers read the pools: ApplyFairyStat writes the SecondaryStatType aggregate
+        // those layers read. Semantics from
         // FairyHelpers in the binary (see src/utils/fairies.ts): whole steps of the required
         // pool, and the cap clamps the target pool's total rather than the grant. Applied on
         // the secondary pools so the grant merges through the same additive path as substats;
@@ -1746,6 +1735,19 @@ export class StatEngine {
                 granted: poolAfter - poolBefore,
             };
         }
+
+        // 4. Multiplier Layers
+        // - Global/Common Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
+        // NEW-STATS TOGGLE (excludeSubstats): the item DMG%/HP% (and Melee/Ranged) substats are
+        // excluded from POWER ONLY. The Damage/Health readouts ALWAYS include them, so flipping
+        // the toggle changes Power alone and never the displayed damage/health.
+        const itemDmgMulti = this.secondaryStats.damageMulti;
+        const itemHpMulti = this.secondaryStats.healthMulti;
+        const commonDamageMulti = this.stats.damageMultiplier + itemDmgMulti;
+        const commonHealthMulti = this.stats.healthMultiplier + itemHpMulti;
+        // Power-only variant of the same layer
+        const commonDamageMultiPow = this.stats.damageMultiplier + (this.excludeSubstats ? 0 : itemDmgMulti);
+        const commonHealthMultiPow = this.stats.healthMultiplier + (this.excludeSubstats ? 0 : itemHpMulti);
 
         // Merge other secondary stats into final results (summing Tech Tree + Items/Pets)
         this.stats.criticalChance = this.combine(this.stats.criticalChance, this.secondaryStats.criticalChance, 'Additive');
@@ -2189,14 +2191,20 @@ export class StatEngine {
             });
         }
 
+        // Nth attack (2026_10_27_09_45, ExecuteAttack 0x782FC90): every NthAttackInterval-th
+        // attack's stats copy deals Dmg x (1 + NthAttackDamageMulti), buffs included, so on
+        // average a weapon hit deals x (1 + multi / interval). The battle engine applies it per
+        // attack (scene.ts); this keeps the formula that ranks builds in step with it.
+        const nthFactor = this.stats.nthAttackInterval >= 1 ? 1 + (this.stats.nthAttackDamageMulti || 0) / this.stats.nthAttackInterval : 1;
+
         // AVERAGE WEAPON DPS (Theoretical - used for simple summary)
-        this.stats.weaponDps = this.stats.totalDamage * theoHitsPerSecond * critMult;
-        this.stats.realWeaponDps = this.stats.totalDamage * weightedAps * critMult;
+        this.stats.weaponDps = this.stats.totalDamage * theoHitsPerSecond * critMult * nthFactor;
+        this.stats.realWeaponDps = this.stats.totalDamage * weightedAps * critMult * nthFactor;
 
         for (const e of this.stats.skillBreakdown) {
             if (e.isBuff) {
-                e.dps = e.damage * weightedAps * critMult * e.uptime;
-                e.theoreticalDps = e.damage * theoHitsPerSecond * critMult * e.uptime;
+                e.dps = e.damage * weightedAps * critMult * nthFactor * e.uptime;
+                e.theoreticalDps = e.damage * theoHitsPerSecond * critMult * nthFactor * e.uptime;
                 this.stats.skillBuffDps += e.dps;
                 this.stats.theoreticalSkillBuffDps += e.theoreticalDps;
             } else {

@@ -181,6 +181,53 @@ function Icons({ preset, sprites, version }: { preset: ProfilePreset; sprites: a
     );
 }
 
+/** The whole build as plain text, for the Copy button (everything Details shows). */
+function buildAsText(preset: ProfilePreset, stats: AggregatedStats, mapping: any, libs: any, sprites: any): string {
+    const p = preset.profile, m = preset.metrics, a = preset.animation;
+    const lines: string[] = [];
+    lines.push(`${preset.name} (${stats.isRangedWeapon ? 'ranged' : 'melee'}), Forge Master Calculator preset build`);
+    lines.push(`Power ${formatCompactNumber(m.power)}, damage ${formatCompactNumber(m.totalDamage)}, health ${formatCompactNumber(m.totalHealth)}`);
+    lines.push(`DPS ${formatCompactNumber(m.testedDps)}, HPS ${formatCompactNumber(m.testedHps)} (24 h test)`);
+    lines.push(`Main quest: clears ${m.quest.label}, next ${m.quest.nextLabel} ${pct(m.quest.nextWinRate)}`);
+    if (preset.lab) lines.push(`Arena: wins ${pct(preset.lab.arenaWinRate)} against the category builds`);
+    lines.push('');
+    lines.push(a.source === 'skin'
+        ? `Attack: ${setDisplayName(a.setId)} weapon skin, skin animation ON (${secs(a.windup)} windup)`
+        : `Attack: ${weaponName(preset, mapping)}'s own attack, skin animation OFF (${secs(a.windup)} windup): any skin at its top works`);
+    lines.push('');
+    lines.push('Gear:');
+    for (const slot of GEAR_SLOTS) {
+        const it = p.items[slot];
+        if (!it) continue;
+        const sub = substatText((it as any).secondaryStats);
+        let line = `- ${SLOT_LABEL[slot] ?? slot}: ${itemNameOf(mapping, it.age, slot, it.idx)}, level ${it.level}${sub ? `, ${sub}` : ''}`;
+        if (it.skin) {
+            const type = SKIN_TYPE_OF[slot];
+            const setId = skinRow(libs?.skinsLibrary, it.skin.type ?? type, it.skin.idx)?.BaseSetId;
+            const st = Object.entries(resolvedSkinStats(it.skin, libs?.skinUpgradeLibrary, type)).map(([k, v]) => `+${(v * 100).toFixed(1)}% ${getStatName(k)}`).join(', ');
+            line += ` | skin ${setDisplayName(setId)}, level ${it.skin.level ?? 0}${st ? `, ${st}` : ''}`;
+        }
+        lines.push(line);
+    }
+    lines.push('Pets:');
+    for (const pet of p.pets?.active ?? []) {
+        const sub = substatText(pet.secondaryStats);
+        lines.push(`- ${companionName(sprites, 'pet', pet.rarity, pet.id)} (${pet.rarity}), level ${pet.level}${sub ? `, ${sub}` : ''}`);
+    }
+    const mt = p.mount?.active;
+    if (mt) {
+        const sub = substatText(mt.secondaryStats);
+        lines.push(`Mount: ${companionName(sprites, 'mount', mt.rarity, mt.id)} (${mt.rarity}), level ${mt.level}${sub ? `, ${sub}` : ''}`);
+    }
+    lines.push(`Skills: ${p.skills.equipped.map(sk => `${camel(sk.id)} ${sk.level}`).join(', ')}`);
+    lines.push(`Fairy: ${p.misc.fairy?.name ? `${p.misc.fairy.name} level ${p.misc.fairy.level}` : 'none'}`);
+    const alloc = Object.entries(currentAlloc(p)).sort((x, y) => y[1] - x[1]);
+    lines.push(`Substat lines: ${alloc.map(([id, n]) => `${getStatName(id)} x${n}`).join(', ')}`);
+    lines.push('');
+    lines.push('https://1vcian.me/fm/#/presets');
+    return lines.join('\n');
+}
+
 /** Every number of a build, for its details. */
 function Details({ preset, stats, mapping }: { preset: ProfilePreset; stats: AggregatedStats; mapping: any }) {
     const m = preset.metrics;
@@ -282,8 +329,66 @@ function AnimationNote({ preset, mapping, libs }: { preset: ProfilePreset; mappi
 }
 
 /** The build's gear: every item, the skin on it with its level and stats, and the attack. */
+/** A pet's or a mount's icon from its sprite sheet (at the profile's ascension). */
+function CompanionThumb({ kind, rarity, id, sprites, version, ascension, title }: {
+    kind: 'pet' | 'mount'; rarity: string; id: number; sprites: any; version: string | null; ascension: number; title: string;
+}) {
+    const sheet = kind === 'pet' ? sprites?.pets : sprites?.mounts;
+    const e = sheet?.mapping ? Object.entries<any>(sheet.mapping).find(([, v]) => v.id === id && v.rarity === rarity) : null;
+    return (
+        <div title={title} className="w-9 h-9 shrink-0 rounded-lg bg-bg-input/70 border border-border/60 flex items-center justify-center overflow-hidden">
+            {e ? (
+                <SpriteSheetIcon textureSrc={getAscensionTexturePath(kind === 'pet' ? 'Pets' : 'MountIcons', ascension, version ?? undefined)}
+                    spriteWidth={sheet.sprite_size.width} spriteHeight={sheet.sprite_size.height} sheetWidth={sheet.texture_size.width} sheetHeight={sheet.texture_size.height}
+                    iconIndex={parseInt(e[0])} className="w-8 h-8" smooth />
+            ) : <span className="text-[8px] text-text-muted">{title}</span>}
+        </div>
+    );
+}
+const companionName = (sprites: any, kind: 'pet' | 'mount', rarity: string, id: number) => {
+    const sheet = kind === 'pet' ? sprites?.pets : sprites?.mounts;
+    const v = sheet?.mapping ? Object.values<any>(sheet.mapping).find(x => x.id === id && x.rarity === rarity) : null;
+    return v?.name ? camel(v.name) : `${rarity} ${kind} ${id + 1}`;
+};
+/** Substats as the game lists them: "+80% Crit Damage". */
+const substatText = (stats: { statId: string; value: number }[] | undefined) =>
+    (stats ?? []).map(s => `+${+s.value.toFixed(2)}% ${getStatName(s.statId)}`).join(', ');
+
+/**
+ * Pets and mounts that change no number of the build (config): a pet's stats come from its
+ * rarity and type (PetLibrary.Type), a mount's from its rarity, and in battle its body too
+ * (MountLibrary ColliderRadius, CenterOfMass, UnitOffset).
+ */
+function companionEquivalents(p: UserProfile, libs: any) {
+    const pets = (p.pets?.active ?? []).map((pet, slot) => {
+        const row = Object.values<any>(libs?.petLibrary ?? {}).find(r => r.PetId?.Rarity === pet.rarity && r.PetId?.Id === pet.id);
+        const alts = row ? Object.values<any>(libs.petLibrary).filter(r => r.PetId.Rarity === pet.rarity && r.Type === row.Type && r.PetId.Id !== pet.id).map(r => r.PetId.Id as number) : [];
+        return { slot, rarity: pet.rarity, id: pet.id, type: row?.Type as string | undefined, alts };
+    }).filter(x => x.alts.length);
+    const m = p.mount?.active;
+    const body = (r: any) => JSON.stringify([r.ColliderRadius, r.CenterOfMass, r.UnitOffset]);
+    const mrow = m ? Object.values<any>(libs?.mountLibrary ?? {}).find(r => r.MountId?.Rarity === m.rarity && r.MountId?.Id === m.id) : null;
+    const mountAlts = m && mrow ? Object.values<any>(libs.mountLibrary).filter(r => r.MountId.Rarity === m.rarity && r.MountId.Id !== m.id && body(r) === body(mrow)).map(r => r.MountId.Id as number) : [];
+    return { pets, mount: m && mountAlts.length ? { rarity: m.rarity, id: m.id, alts: mountAlts } : null };
+}
+
 function Gear({ preset, mapping, sprites, version, libs }: { preset: ProfilePreset; mapping: any; sprites: any; version: string | null; libs: any }) {
     const p = preset.profile;
+    // With the weapon's own attack the weapon skin is hidden: only its stats count, and every set's
+    // pieces carry the same stats, so any skin at its top does the same. A complete set's bonus
+    // still needs all three pieces of one set: then any complete set does.
+    const animOff = preset.animation.source === 'weapon';
+    const setOf3 = (['Weapon', 'Helmet', 'Body'] as const).map(sl => {
+        const sk = p.items[sl]?.skin;
+        return sk ? skinRow(libs?.skinsLibrary, sk.type ?? SKIN_TYPE_OF[sl], sk.idx)?.BaseSetId ?? null : null;
+    });
+    const fullSet = !!setOf3[0] && setOf3.every(x => x === setOf3[0]);
+    const anyNote = (slot: string) => {
+        if (!animOff) return null;
+        if (fullSet && (slot === 'Weapon' || slot === 'Helmet' || slot === 'Body')) return 'Any complete set at its top (all three pieces of one set): the weapon skin is hidden, only the stats and the set bonus count.';
+        if (slot === 'Weapon') return 'Any weapon skin at its top with the same stat: it is hidden, only its stats count.';
+        return null;
+    };
     return (
         <div className="space-y-1.5">
             <AnimationNote preset={preset} mapping={mapping} libs={libs} />
@@ -304,6 +409,7 @@ function Gear({ preset, mapping, sprites, version, libs }: { preset: ProfilePres
                                     <span className="font-semibold">{itemNameOf(mapping, it.age, slot, it.idx)}</span>
                                     {slot === 'Weapon' && <span className="text-text-muted">own attack {secs(weaponWindup(libs, it.age, it.idx))}</span>}
                                 </div>
+                                {(it as any).secondaryStats?.length > 0 && <div className="text-[10px] text-text-muted">{substatText((it as any).secondaryStats)}</div>}
                                 {skin && (
                                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                                         <SourceTag source="skin" />
@@ -311,21 +417,49 @@ function Gear({ preset, mapping, sprites, version, libs }: { preset: ProfilePres
                                         <span className="text-text-muted">{skinStats.map(([k, v]) => `+${(v * 100).toFixed(1)}% ${getStatName(k)}`).join(', ')}</span>
                                     </div>
                                 )}
+                                {skin && anyNote(slot) && <div className="text-[10px] font-semibold text-lime-200/90 mt-0.5">{anyNote(slot)}</div>}
                             </div>
                             {skin && <SkinThumb type={type} idx={skin.idx} sprites={sprites} version={version} title={`${setDisplayName(setId)} skin`} />}
                         </div>
                     );
                 })}
+                {(p.pets?.active ?? []).map((pet, i) => (
+                    <div key={`pet-${i}`} className="flex items-center gap-2 rounded-lg bg-bg-input/40 p-1 pr-2 text-[11px]">
+                        <CompanionThumb kind="pet" rarity={pet.rarity} id={pet.id} sprites={sprites} version={version} ascension={p.misc.petAscensionLevel ?? 0} title={companionName(sprites, 'pet', pet.rarity, pet.id)} />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">Pet</span>
+                                <span className="font-semibold">{companionName(sprites, 'pet', pet.rarity, pet.id)}</span>
+                                <span className="text-text-muted">{pet.rarity}, level {pet.level}</span>
+                            </div>
+                            {pet.secondaryStats?.length ? <div className="text-[10px] text-text-muted">{substatText(pet.secondaryStats)}</div> : null}
+                        </div>
+                    </div>
+                ))}
+                {p.mount?.active && (
+                    <div className="flex items-center gap-2 rounded-lg bg-bg-input/40 p-1 pr-2 text-[11px]">
+                        <CompanionThumb kind="mount" rarity={p.mount.active.rarity} id={p.mount.active.id} sprites={sprites} version={version} ascension={p.misc.mountAscensionLevel ?? 0} title={companionName(sprites, 'mount', p.mount.active.rarity, p.mount.active.id)} />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200">Mount</span>
+                                <span className="font-semibold">{companionName(sprites, 'mount', p.mount.active.rarity, p.mount.active.id)}</span>
+                                <span className="text-text-muted">{p.mount.active.rarity}, level {p.mount.active.level}</span>
+                            </div>
+                            {p.mount.active.secondaryStats?.length ? <div className="text-[10px] text-text-muted">{substatText(p.mount.active.secondaryStats)}</div> : null}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
 /** Swaps the Equivalents list shows. */
-const equivalentCount = (p: ProfilePreset) => {
+const equivalentCount = (p: ProfilePreset, libs?: any) => {
+    const c = libs ? companionEquivalents(p.profile, libs) : { pets: [], mount: null };
     const eq = p.equivalents;
-    if (!eq) return 0;
-    return eq.animations.length + Object.values(eq.items).filter(x => x.length).length + (eq.sets.length ? 1 : 0);
+    const own = eq ? eq.animations.length + Object.values(eq.items).filter(x => x.length).length + (eq.sets.length ? 1 : 0) : 0;
+    return own + c.pets.length + (c.mount ? 1 : 0);
 };
 
 /**
@@ -336,8 +470,12 @@ const equivalentCount = (p: ProfilePreset) => {
 function Equivalents({ preset, mapping, sprites, version, libs, ranged, onAddEquivalent }: {
     preset: ProfilePreset; mapping: any; sprites: any; version: string | null; libs: any; ranged: boolean; onAddEquivalent: (w: AnimationSwap) => void;
 }) {
-    const eq = preset.equivalents;
-    if (!eq || !equivalentCount(preset)) return <p className="text-[11px] text-text-muted">No exact equivalent: every other choice changes a number of this build.</p>;
+    const eq = preset.equivalents ?? { animations: [], items: {}, sets: [] };
+    const comp = companionEquivalents(preset.profile, libs);
+    // The set the build wears (with the weapon's own attack the animation names no set).
+    const wornHelmet = preset.profile.items.Helmet?.skin;
+    const wornSet = preset.animation.setId ?? (wornHelmet ? skinRow(libs?.skinsLibrary, wornHelmet.type ?? 'Helmet', wornHelmet.idx)?.BaseSetId ?? null : null);
+    if (!equivalentCount(preset, libs)) return <p className="text-[11px] text-text-muted">No exact equivalent: every other choice changes a number of this build.</p>;
     const a = preset.animation;
     const on = a.source === 'skin';
     const kind = ranged ? 'ranged' : 'melee';
@@ -414,7 +552,7 @@ function Equivalents({ preset, mapping, sprites, version, libs, ranged, onAddEqu
             )}
             {eq.sets.length > 0 && (
                 <div className="space-y-1">
-                    <div className="font-bold text-text-secondary">Instead of the {setDisplayName(a.setId)} set (all three pieces)</div>
+                    <div className="font-bold text-text-secondary">Instead of the {setDisplayName(wornSet)} set (all three pieces)</div>
                     <div className="flex flex-wrap gap-1.5">
                         {eq.sets.map(id => (
                             <div key={id} className="flex items-center gap-1.5 rounded-lg bg-bg-input/40 pr-2">
@@ -429,6 +567,45 @@ function Equivalents({ preset, mapping, sprites, version, libs, ranged, onAddEqu
                             ? 'Same piece stats and set bonus, and its weapon skin has the same attack: keep the skin animation ON.'
                             : 'Same piece stats and set bonus. The skin animation stays OFF, so the skin attack does not matter.'}
                     </div>
+                </div>
+            )}
+            {(comp.pets.length > 0 || comp.mount) && (
+                <div className="space-y-1.5">
+                    <div className="font-bold text-text-secondary">Pets and mount with the same stats</div>
+                    {comp.pets.map(c => (
+                        <div key={`pet-${c.slot}`} className="rounded-lg bg-bg-input/30 p-1.5 space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-text-muted">Instead of</span>
+                                <CompanionThumb kind="pet" rarity={c.rarity} id={c.id} sprites={sprites} version={version} ascension={preset.profile.misc.petAscensionLevel ?? 0} title={companionName(sprites, 'pet', c.rarity, c.id)} />
+                                <span className="font-semibold">{companionName(sprites, 'pet', c.rarity, c.id)}</span>
+                                <span className="text-text-muted">use</span>
+                                {c.alts.map(id => (
+                                    <span key={id} className="inline-flex items-center gap-1.5 rounded-lg bg-bg-input/50 pr-2">
+                                        <CompanionThumb kind="pet" rarity={c.rarity} id={id} sprites={sprites} version={version} ascension={preset.profile.misc.petAscensionLevel ?? 0} title={companionName(sprites, 'pet', c.rarity, id)} />
+                                        <span className="font-semibold">{companionName(sprites, 'pet', c.rarity, id)}</span>
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="text-[10px] text-text-muted">Same rarity ({c.rarity}) and type ({c.type}): the same stats. Keep its substats.</div>
+                        </div>
+                    ))}
+                    {comp.mount && (
+                        <div className="rounded-lg bg-bg-input/30 p-1.5 space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-text-muted">Instead of</span>
+                                <CompanionThumb kind="mount" rarity={comp.mount.rarity} id={comp.mount.id} sprites={sprites} version={version} ascension={preset.profile.misc.mountAscensionLevel ?? 0} title={companionName(sprites, 'mount', comp.mount.rarity, comp.mount.id)} />
+                                <span className="font-semibold">{companionName(sprites, 'mount', comp.mount.rarity, comp.mount.id)}</span>
+                                <span className="text-text-muted">use</span>
+                                {comp.mount.alts.map(id => (
+                                    <span key={id} className="inline-flex items-center gap-1.5 rounded-lg bg-bg-input/50 pr-2">
+                                        <CompanionThumb kind="mount" rarity={comp.mount!.rarity} id={id} sprites={sprites} version={version} ascension={preset.profile.misc.mountAscensionLevel ?? 0} title={companionName(sprites, 'mount', comp.mount!.rarity, id)} />
+                                        <span className="font-semibold">{companionName(sprites, 'mount', comp.mount!.rarity, id)}</span>
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="text-[10px] text-text-muted">Same rarity ({comp.mount.rarity}) and the same body in battle (collider and center of mass): the same stats and reach. Keep its substats.</div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -482,7 +659,7 @@ function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAd
     const glow = medal ? medal.glow : isLab ? 'from-purple-500/15' : 'from-accent-primary/10';
     const flip = (to: 'details' | 'equivalents') => { setShownBack(to); setBack(to); };
     const ranged = !!stats.isRangedWeapon;
-    const eqCount = equivalentCount(preset);
+    const eqCount = equivalentCount(preset, libs);
     return (
         <div ref={cardRef} className={cn('[perspective:1600px] rounded-2xl transition-shadow duration-500 scroll-mt-24', CARD_HEIGHT, flash && 'ring-4 ring-amber-300 shadow-[0_0_40px_rgba(251,191,36,0.5)]')}>
             <div className={cn('grid h-full transition-transform duration-700 ease-in-out [transform-style:preserve-3d]', back && '[transform:rotateY(180deg)]')}>
@@ -558,6 +735,12 @@ function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAd
                     </div>
                     <div className="flex gap-2 p-4 pt-3 border-t border-border shrink-0">
                         <AddButton onAdd={onAdd} />
+                        <button onClick={() => {
+                            navigator.clipboard.writeText(buildAsText(preset, stats, mapping, libs, sprites))
+                                .then(() => toast.success('Build copied as text'), () => toast.error('Could not copy: the browser blocked the clipboard'));
+                        }} title="Copy the whole build as text" className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl border border-border text-text-secondary hover:bg-bg-input">
+                            <GameAssetIcon asset={{ icon: 'Pen' }} size={14} /> Copy
+                        </button>
                         <FlipButton onClick={() => setBack(null)}>Back</FlipButton>
                     </div>
                 </div>
@@ -580,7 +763,7 @@ function CompactRow({ preset, stats, sprites, mapping, version, libs, onAdd, onA
     const b = headline(best);
     const gap = preset.category !== 'quest' && b.raw > 0 ? (h.raw / b.raw - 1) * 100 : null;
     const ranged = !!stats.isRangedWeapon;
-    const eqCount = equivalentCount(preset);
+    const eqCount = equivalentCount(preset, libs);
     return (
         <div ref={rowRef} className={cn('rounded-xl border border-border bg-bg-secondary/30 overflow-hidden transition-shadow duration-500', flash && 'ring-2 ring-amber-300')}>
             <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-bg-input/40">
@@ -662,11 +845,16 @@ function RankingList({ standings, byKey, highlight, className }: { standings: To
                     const same = sameNames(st, byKey);
                     return (
                         <li key={st.key} onClick={st.key === highlight ? undefined : () => goTo(st.key)} title={st.key === highlight ? undefined : 'Show this build'}
-                            className={cn('flex items-center gap-3 rounded-xl px-3 py-1.5 text-xs', st.key === highlight ? 'bg-red-500/20 border border-red-400/50' : 'bg-white/[0.03] cursor-pointer hover:bg-white/[0.08]')}>
+                            className={cn('flex items-center gap-3 rounded-xl px-3 py-1.5 text-xs', st.key === highlight ? 'bg-red-500/20 border border-red-400/50' : 'bg-white/[0.03] cursor-pointer hover:bg-white/[0.08]', byKey.get(st.key)?.animation.source === 'weapon' && 'border border-lime-400/40')}>
                             <span className="w-7 font-black text-text-muted">{placeText(places[i])}</span>
                             <span className="flex-1 min-w-0">
                                 <span className="font-semibold">{st.key === highlight ? `${st.name} (you)` : st.name}</span>
                                 {same.length > 0 && <span className="block text-[10px] text-text-muted">same build as {same.join(', ')}</span>}
+                                {byKey.get(st.key)?.animation.source === 'weapon' && (
+                                    <span className="inline-block mt-0.5 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-lime-400/15 text-lime-200" title="It attacks with the weapon's own animation: any skin at its top gives the same result, so every player can build it">
+                                        No skin needed
+                                    </span>
+                                )}
                             </span>
                             <span className="font-mono text-text-muted">{st.wins}-{st.draws}-{st.losses}</span>
                             <span className="font-mono font-bold w-14 text-right">{pct(st.winRate)}</span>
@@ -716,7 +904,11 @@ function PodiumStep({ place, group, byKey, block, tone, size }: {
 }
 
 /** The arena round robin between every build: podium, then the full table on demand. */
-function Podium({ standings, byKey, battlesPerSide }: { standings: TournamentStanding[]; byKey: Map<string, ProfilePreset>; battlesPerSide: number }) {
+function Podium({ standings, byKey, battlesPerSide, skins }: {
+    standings: TournamentStanding[]; byKey: Map<string, ProfilePreset>; battlesPerSide: number;
+    /** With and without skins, when both are published: the toggle in the header. */
+    skins?: { f2p: boolean; set: (f2p: boolean) => void };
+}) {
     const [open, setOpen] = useState(false);
     const noise = noiseOf(standings);
     const places = sharedRanks(standings);
@@ -725,6 +917,15 @@ function Podium({ standings, byKey, battlesPerSide }: { standings: TournamentSta
             <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_at_top,rgba(251,191,36,0.25),transparent_70%)] pointer-events-none" />
             <div className="relative text-center">
                 <div className="inline-flex items-center gap-2 text-amber-300 font-black tracking-widest uppercase text-sm"><GameAssetIcon asset={{ icon: 'PotionsRace' }} size={16} /> Arena tournament</div>
+                {skins && (
+                    <div className="mt-3 flex justify-center">
+                        <div className="inline-flex rounded-xl border border-amber-500/40 overflow-hidden text-xs font-bold">
+                            <button onClick={() => skins.set(false)} className={cn('px-4 py-1.5', !skins.f2p ? 'bg-amber-400 text-black' : 'text-amber-200 hover:bg-amber-400/10')}>With skins</button>
+                            <button onClick={() => skins.set(true)} className={cn('px-4 py-1.5', skins.f2p ? 'bg-amber-400 text-black' : 'text-amber-200 hover:bg-amber-400/10')}>No skins (F2P)</button>
+                        </div>
+                    </div>
+                )}
+                {skins?.f2p && <div className="text-[11px] text-lime-200 mt-2">Builds without any skin: every weapon's own attack, no skin stats. Every player can build them.</div>}
                 <div className="text-[11px] text-text-muted mt-1">
                     Every build above against every other, game PvP rules, {battlesPerSide * 2} battles per pair (half with each build as Player 1, on the same seeds); builds that are the same fighter play once.
                     Win rate is (wins + draws / 2) over all battles, good to about ±{pct(noise)}: closer than that is a tie, shown as the same place (=1).
@@ -860,6 +1061,41 @@ function loadMine(version: string | null): MineSaved | null {
         return raw ? (JSON.parse(raw) as MineSaved) : null;
     } catch { return null; }
 }
+/** Weapon skins left out of the attack animations, and the last result without them, per game version. */
+const LEFT_OUT_KEY = 'fm.presetLeftOutAttackSkins';
+const WITHOUT_KEY = (version: string) => `fm.presetsWithout.${version}`;
+interface WithoutSaved { key: string; file: ProfilePresetsFile }
+function loadJson<T>(key: string): T | null {
+    try { const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
+}
+function saveJson(key: string, v: unknown) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* storage full or blocked: kept on screen only */ }
+}
+
+/**
+ * One toggle per weapon skin: a skin turned off is left out as an attack animation (and as a
+ * weapon piece). The builds without them are calculated on the device from the published
+ * variants, like "my best variants" with every other skin at its top.
+ */
+function AttackSkinToggles({ sets, leftOut, onToggle, sprites, version, skinsLibrary }: {
+    sets: string[]; leftOut: Set<string>; onToggle: (setId: string) => void; sprites: any; version: string | null; skinsLibrary: any;
+}) {
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {sets.map(id => {
+                const off = leftOut.has(id);
+                return (
+                    <button key={id} onClick={() => onToggle(id)} title={off ? `${setDisplayName(id)}: left out, click to use it again` : `${setDisplayName(id)}: click to leave it out`}
+                        className={cn('flex items-center gap-1.5 rounded-lg border pr-2 text-[11px] font-bold transition-all', off ? 'border-red-500/40 bg-red-500/10 text-red-300 opacity-60 grayscale' : 'border-border bg-bg-input/40 text-text-secondary hover:border-accent-primary/50')}>
+                        <SkinThumb type="Weapon" idx={setWeaponIdx(skinsLibrary, id)} sprites={sprites} version={version} title={setDisplayName(id)} />
+                        <span className={cn(off && 'line-through')}>{setDisplayName(id)}</span>
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
 function saveMine(version: string, m: MineSaved) {
     try { localStorage.setItem(MINE_KEY(version), JSON.stringify(m)); } catch { /* storage full or blocked: the result stays on screen only */ }
 }
@@ -873,10 +1109,32 @@ export default function PresetBuilds() {
     // Results depend on the real rolls and levels too.
     const ownedKey = useMemo(() => (profile.skins?.saved ?? []).map(s => `${s.type}:${s.idx}:${s.level}:${JSON.stringify(s.stats)}`).sort().join(','), [profile.skins]);
     const [mine, setMine] = useState<MineSaved | null>(() => loadMine(version));
-    const [view, setView] = useState<'site' | 'mine'>('site');
+    const [view, setView] = useState<'site' | 'f2p' | 'mine' | 'without'>('site');
+    const [leftOut, setLeftOut] = useState<Set<string>>(() => new Set(loadJson<string[]>(LEFT_OUT_KEY) ?? []));
+    const toggleLeftOut = (id: string) => setLeftOut(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        saveJson(LEFT_OUT_KEY, [...next]);
+        return next;
+    });
+    const leftOutKey = [...leftOut].sort().join(',');
+    const [without, setWithout] = useState<WithoutSaved | null>(() => (version ? loadJson<WithoutSaved>(WITHOUT_KEY(version)) : null));
     const [run, setRun] = useState<{ cancel: () => void; log: string; started: number } | null>(null);
     const [runError, setRunError] = useState<string | null>(null);
-    useEffect(() => { setMine(loadMine(version)); }, [version]);
+    useEffect(() => { setMine(loadMine(version)); setWithout(version ? loadJson<WithoutSaved>(WITHOUT_KEY(version)) : null); }, [version]);
+    const calculateWithout = () => {
+        if (!version || run || !leftOut.size) return;
+        setRunError(null);
+        setView('without');
+        const key = leftOutKey;
+        const r = runMyVariants(version, [], msg => setRun(cur => (cur ? { ...cur, log: msg } : cur)), [...leftOut]);
+        setRun({ cancel: r.cancel, log: 'starting', started: Date.now() });
+        r.promise.then(result => {
+            const w = { key, file: result };
+            setWithout(w);
+            saveJson(WITHOUT_KEY(version), w);
+        }).catch(e => setRunError(e instanceof Error && e.message === 'stopped' ? null : String(e))).finally(() => setRun(null));
+    };
     const calculate = () => {
         if (!version || run) return;
         setRunError(null);
@@ -889,14 +1147,21 @@ export default function PresetBuilds() {
             saveMine(version, m);
         }).catch(e => setRunError(e instanceof Error && e.message === 'stopped' ? null : String(e))).finally(() => setRun(null));
     };
-    const file = view === 'mine' ? (mine?.file ?? null) : siteFile;
+    const file = view === 'mine' ? (mine?.file ?? null) : view === 'without' ? (without?.file ?? null) : view === 'f2p' ? (siteFile?.noSkins ?? null) : siteFile;
     const { data: sprites } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const { libs, ready } = useStatLibraries();
+    const { data: mountLibrary } = useGameData<any>('MountLibrary.json');
+    // The cards also read MountLibrary (mount equivalents: same rarity and the same body).
+    const cardLibs = useMemo(() => ({ ...libs, mountLibrary }), [libs, mountLibrary]);
     const { addPresetProfile } = useProfile();
     const selectedVersion = version;
     const navigate = useNavigate();
     const [tableOpen, setTableOpen] = useState(false);
+    // Every set with a weapon skin: the attack animations that can be left out.
+    const attackSkinSets = useMemo(() => [...new Set(Object.values<any>(libs.skinsLibrary ?? {})
+        .filter(r => r.SkinId?.Type === 'Weapon' && r.BaseSetId).map(r => r.BaseSetId as string))]
+        .sort((a, b) => setDisplayName(a).localeCompare(setDisplayName(b))), [libs.skinsLibrary]);
 
     // A file from before the categories (no `categories`) is shown as missing, not half drawn.
     const valid = !!file?.categories && file.presets.every(p => p.category && p.animation);
@@ -933,7 +1198,7 @@ export default function PresetBuilds() {
         add({ ...p, name: `${p.name} (${swapLabel(w, age, mapping)})`, profile: applyAnimation(p.profile, w, libs.skinsLibrary, libs.skinUpgradeLibrary) });
     };
     const cardFor = (p: ProfilePreset): CardProps => ({
-        preset: p, stats: stats.get(p.key)!, sprites, mapping, version: selectedVersion, libs, onAdd: () => add(p), onAddEquivalent: w => addEquivalent(p, w),
+        preset: p, stats: stats.get(p.key)!, sprites, mapping, version: selectedVersion, libs: cardLibs, onAdd: () => add(p), onAddEquivalent: w => addEquivalent(p, w),
     });
 
     const [focus, setFocus] = useState<{ key: string; n: number } | null>(null);
@@ -955,10 +1220,18 @@ export default function PresetBuilds() {
             <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex rounded-xl border border-border overflow-hidden text-xs font-bold">
                     <button onClick={() => setView('site')} className={cn('px-3 py-2', view === 'site' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>Best builds (every skin)</button>
+                    {siteFile?.noSkins && (
+                        <button onClick={() => setView('f2p')} className={cn('px-3 py-2', view === 'f2p' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>No skins (F2P)</button>
+                    )}
+                    <button onClick={() => setView('without')} className={cn('px-3 py-2', view === 'without' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>Without some attack skins</button>
                     <button onClick={() => setView('mine')} className={cn('px-3 py-2', view === 'mine' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>My best variants</button>
                 </div>
                 {run ? (
                     <button onClick={() => run.cancel()} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl border border-red-500/50 text-red-300 hover:bg-red-500/10">Stop</button>
+                ) : view === 'without' ? (
+                    <button onClick={calculateWithout} disabled={!version || !leftOut.size} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 disabled:opacity-50">
+                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} /> {without ? 'Recalculate without them' : 'Calculate without them'}
+                    </button>
                 ) : (
                     <button onClick={calculate} disabled={!version} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 disabled:opacity-50">
                         <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} /> {mine ? 'Recalculate my best variants' : 'Calculate my best variants'}
@@ -987,10 +1260,27 @@ export default function PresetBuilds() {
                 </div>
             )}
 
+            {view === 'without' && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-xs text-text-secondary space-y-2">
+                    <div>
+                        Turn off the weapon skins whose attack you do not want: the builds are calculated again without them (their attack animation and their weapon piece),
+                        with every other skin at its top and every weapon's own animation. Useful when one skin would win almost everything.
+                    </div>
+                    <AttackSkinToggles sets={attackSkinSets} leftOut={leftOut} onToggle={toggleLeftOut} sprites={sprites} version={selectedVersion} skinsLibrary={libs.skinsLibrary} />
+                    {!leftOut.size && <div className="text-amber-300">Turn off at least one skin.</div>}
+                    {without && without.key !== leftOutKey && !run && leftOut.size > 0 && (
+                        <div className="text-amber-300">These results were calculated without {without.key.split(',').map(setDisplayName).join(', ')}: recalculate for the skins turned off now.</div>
+                    )}
+                    {run && <div className="text-amber-300">Calculating on your device ({Math.round((Date.now() - run.started) / 1000)} s): {run.log}</div>}
+                    {runError && <div className="text-red-300">Something went wrong: {runError}</div>}
+                </div>
+            )}
+
             {view === 'site' && !valid && (error || file) && <div className="text-sm text-text-muted">No preset builds for this game version yet.</div>}
 
             {valid && ready && file!.tournament && file!.tournament.standings.length >= 3 && (
-                <Podium standings={file!.tournament.standings} byKey={byKey} battlesPerSide={file!.tournament.battlesPerSide} />
+                <Podium standings={file!.tournament.standings} byKey={byKey} battlesPerSide={file!.tournament.battlesPerSide}
+                    skins={siteFile?.noSkins && (view === 'site' || view === 'f2p') ? { f2p: view === 'f2p', set: f2p => setView(f2p ? 'f2p' : 'site') } : undefined} />
             )}
             {view === 'site' && valid && version && file!.tournament && (
                 <FightAgainst version={version} profile={profile} total={file!.tournament.standings.length} battlesPerSide={file!.tournament.battlesPerSide} byKey={byKey} />
