@@ -1,65 +1,134 @@
-# Forge Master Wiki & Calculator (FM)
+<div align="center">
 
-![Forge Master Logo](./public/icons/hammer.png)
+<img src="./public/icons/hammer.png" alt="Forge Master Calculator" width="96" />
 
-A comprehensive, **100% Fanmade** toolkit and encyclopedia for Forge Master players. This project provides real-time calculators, a persistent profile system, and an exhaustive database sourced directly from the game's official configuration files.
+# Forge Master Calculator & Wiki
 
-## 🚀 Project Links
-- **Live Tool**: [1vcian.me/fm](https://1vcian.me/fm)
-- **AI DeepWiki of the repo**:[DeepWiki](https://deepwiki.com/1vcian/fm)
-- **GitHub Repository**: [1vcian/fm](https://github.com/1vcian/fm)
-- **Support the Project**: [Buy Me a Coffee](https://www.buymeacoffee.com/1vcian)
+**The fan-made companion for Forge Master: plan your build, simulate every battle, and look up anything in the game.**
 
----
+[![Live site](https://img.shields.io/badge/live-1vcian.me%2Ffm-f59e0b?style=for-the-badge)](https://1vcian.me/fm)
+[![GitHub stars](https://img.shields.io/github/stars/1vcian/fm?style=for-the-badge&color=f59e0b)](https://github.com/1vcian/fm/stargazers)
+[![License: MIT](https://img.shields.io/badge/code%20license-MIT-3b82f6?style=for-the-badge)](./LICENSE)
+[![Buy Me a Coffee](https://img.shields.io/badge/support-buy%20me%20a%20coffee-ffdd00?style=for-the-badge&logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/1vcian)
 
-## 📂 Features Overview
+[Open the app](https://1vcian.me/fm) · [Report a bug](https://github.com/1vcian/fm/issues) · [Ask the AI DeepWiki](https://deepwiki.com/1vcian/fm)
 
-The application is divided into four main sections within the sidebar, each designed to optimize your gameplay and progression strategy.
-
-### 👤 Profile Management
-*Manage your game state and test "what-if" scenarios.*
-- **My Profile**: The central hub where you define your current level, equipment, and research. Supports creating multiple profiles, cloning them, and sharing them via compressed URL strings.
-- **Progress Prediction**: Uses your current stats to forecast future growth and resource accumulation over time.
-- **PVP Simulator**: Build custom opponents and simulate combat encounters to test the effectiveness of different skill sets and equipment combinations.
-
-### 🧮 Calculators
-*Crunch the numbers for maximum efficiency.*
-- **Offline Calculator**: Estimates your Coin and Hammer earnings while away. It automatically integrates bonuses from your Tech Tree and profile modifiers.
-- **Dungeons**: Calculate completion requirements and rewards for various dungeon tiers including Hammer Thief, Ghost Town, and Invasion.
-- **Forge Calculator**: A precise simulator for equipment production. Predict costs and success rates for different forging levels.
-- **Tech Tree Simulator**: A powerful planning tool. Mock-research nodes to see their impact on your global stats. Features dependency validation (you can't skip prerequisites) and recursive pruning (resetting a parent resets its children).
-- **Eggs & Pets**: Odds calculator for hatching and planning pet collection strategies.
-- **Skills & Mounts**: Analyze the combat impact of leveling up specific skills or mount rarities.
-
-### 📚 Wiki (Encyclopedia)
-*The ultimate database for Forge Master mechanics.*
-- **Items**: View base stats, attack ranges, and projectile speeds for all weapons and armor. Includes technical data often hidden in-game.
-- **Pets & Mounts**: A complete library of every companion, including their secondary skills, base health/damage scaling, and rarity-based unlocks.
-- **Skills**: Detailed descriptions and scaling factors for every active and passive skill.
-- **Tech Tree**: A browseable database of all research nodes across all ages (Primitive to Divine).
-- **Arena**: A guide to league tiers (Bronze to Master) including point requirements and ranking rewards.
-- **Guild War**: A dynamic day-by-day guide (Monday–Saturday) showing daily preparation tasks, personal WarPoints, and the strategic Victory Points for each guild battle.
-
-### ℹ️ Info & Project Meta
-- **Unlocks**: A progression timeline showing exactly when game features (Auto Forge, Arena, Pets, etc.) become available based on your Age and Stage.
-- **Colors**: A reference guide for the game's UI and rarity color palette.
-- **Configs**: A raw, technical view of the parsed JSON files that power this entire tool.
-- **Project Information**: Credits, developer contact for bug reporting (`medrihanlucian@gmail.com`), and special thanks to contributors.
+</div>
 
 ---
 
-## 🛠 Technical Details
-- **Framework**: Built with **React** and **Vite** for lightning-fast performance.
-- **Styling**: Modern, premium UI utilizing **Tailwind CSS** and glassmorphism effects.
-- **Data Source**: This tool parses the game's official `.json` configs to ensure 100% data accuracy.
-- **Persistence**: Your profiles are saved locally in your browser and can be exported/shared via **LZ-String** compressed links.
-- **Mobile Optimized**: Every page is designed with a "Mobile-First" approach, featuring responsive headers, detailed overlays, and touch-friendly controls.
+<table>
+  <tr>
+    <td width="50%"><img src="./.github/readme/presets.jpg" alt="Preset Builds: the strongest builds and their arena tournament" /></td>
+    <td width="50%"><img src="./.github/readme/predictor.jpg" alt="Battle Predictor: where your build gets in the main quest" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Preset Builds</b><br/><sub>The strongest builds the game allows, ranked in an arena tournament</sub></td>
+    <td align="center"><b>Battle Predictor</b><br/><sub>How far your build gets in the main quest and every dungeon</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="./.github/readme/profile.jpg" alt="Profile: equipment, skins and the character as it looks in battle" /></td>
+    <td width="50%"><img src="./.github/readme/shop.jpg" alt="Shop predictor: today's daily deals and the best value per resource" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Your profile</b><br/><sub>Every item, skin, pet and mount, drawn as in battle</sub></td>
+    <td align="center"><b>Shop predictor</b><br/><sub>Today's daily deals and what a dollar buys in each pack</sub></td>
+  </tr>
+</table>
 
-## 🤝 Credits & Contribution
-Developed with ❤️ by **1vcian**.
+## Why this tool
 
-Special thanks to **Timbo** for his invaluable contribution to debugging, technical development, and community support that helped shape this tool into what it is today.
+- **Straight from the game files.** Every number comes from the game's own configuration, parsed for every game version since January 2026. When the game updates, the app follows, and the Configs page shows what changed between versions.
+- **A battle engine checked against the game.** Main quest, dungeons, missions and PvP run on one combat engine, rebuilt from the game's compiled code: timings, collisions, skills, projectiles and damage formulas.
+- **Nothing to install, nothing to sign up for.** It runs in your browser and keeps your profiles there. An account is optional and only syncs your profiles across devices and enables clans.
+
+## Features
+
+### Your build
+
+- **Profile**: equipment with substats, skins and sets, pets, mount, skills, tech trees, fairy and ascensions, with the character drawn as it looks in battle. Keep several profiles, clone them and share them as a link.
+- **AutoSync**: upload your in-game screenshots and the app reads your gear, pets, mount and resources, letting you review every change.
+- **Compare Build**: try a different setup side by side and see what changes in every stat.
+- **AUTO BEST** and **Substats Calculator**: search the best skills, pets, mount, fairy, skins and substats for damage or for simulated PvP.
+- **Test against dummy** and **DPS breakdown**: your real damage and healing per second, measured by the combat engine.
+
+### Simulators
+
+- **Preset Builds**: the strongest builds for power, DPS, HPS and the main quest, with their exact equivalents. Calculate your best variants with only the skins you own, fight against every build in an arena tournament, and add any of them to your profiles.
+- **Battle Predictor**: where your build really gets in the main quest (every difficulty) and in each dungeon, with how close you get on the battles you lose. Runs in parallel in the background and picks up where you were last time.
+- **Mission Calculator** and **PvP Simulator**: missions with their timer, and arena fights against a saved profile or one rebuilt from a profile card screenshot.
+- **Battle replays**: watch any battle drawn with the game's own sprites, skills and effects.
+
+### Calculators
+
+Forge (costs and odds), Offline earnings, Dungeons, Tech Tree planner, Eggs, Summons (eggs, mounts and skills), War Prizes and Substats.
+
+### Wiki
+
+Items, Skins and sets, Pets, Mounts, Skills, Fairies, Secondary stats, Base drop odds, Forge, Tech Tree, Arena, Guild War, Missions, **Shop** (with the daily deal predictor), Progress Pass, Unlocks and Achievements, plus a Texture Gallery and the raw game configs.
+
+### Clans
+
+Create or join a clan, share your build with your clanmates, keep the clan tech tree in sync and plan who attacks whom in the guild war, with push notifications.
+
+### Images Maker
+
+Design your clan emblem, or dress up a character with any item, skin, mount, pets and fairy and export it as a PNG or a looping GIF.
+
+## Run it locally
+
+You need [Node.js](https://nodejs.org) 18 or newer.
+
+```bash
+git clone https://github.com/1vcian/fm.git
+cd fm
+npm install
+npm run dev
+```
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Starts the dev server (it refreshes the game data manifest first). |
+| `npm run build` | Type checks and builds the site into `dist/`. |
+| `npm run lint` | Runs ESLint. |
+| `npx tsx scripts/build_presets.ts` | Regenerates the Preset Builds for the latest game data. |
+
+**Accounts, clans and push notifications are optional.** Without any configuration the app runs fully in the browser. To try them against your own Supabase project, copy [`.env.example`](./.env.example) to `.env.local`: every variable is explained there.
+
+## How it is built
+
+- **React 18, TypeScript and Vite**, styled with **Tailwind CSS**.
+- **Game data**: `public/parsed_configs/<version>/` holds the parsed configuration of each game version; `public/Texture2D/<version>/` holds the sprites and battle visuals.
+- **Combat engine** ([`src/engine/`](./src/engine)): one engine for every battle, with the game code it follows cited in its comments.
+- **Heavy work in web workers**: battle searches, preset variants and the shop value maths never block the page.
+- **Screenshot reading** with Tesseract and an ONNX model, entirely on your device.
+- **Optional backend** on Supabase for accounts, profile sync and clans.
+
+## Contributing
+
+Contributions are welcome: bug reports, game data corrections and pull requests.
+
+- **Bugs**: open an [issue](https://github.com/1vcian/fm/issues) with what you expected, what you saw and, if you can, a screenshot or your shared profile link.
+- **Bigger features**: open an issue first so we can agree on the direction before you spend time on it.
+- **Game mechanics**: every rule in the app comes from the game files or the game's code, never from guesses. If you know a mechanic works differently, an in-game screenshot or video is the best proof.
+- **Pull requests**: keep them focused, in English, and make sure `npx tsc -b` passes.
+
+## Credits
+
+Made with ❤️ by **[1vcian](https://github.com/1vcian)**, with the help of the community.
+
+Special thanks to **Timbo** for his invaluable help with debugging, development and community support, and to everyone who contributed code: **Athos**, **[Simon Mignot](https://github.com/Simon-Mignot)**, **Magnus Jensen**, **[Rusty Bower](https://github.com/RustyBower)** and **[Demian Myers](https://github.com/murkyknight)**.
+
+Questions or feedback: [medrihanlucian@gmail.com](mailto:medrihanlucian@gmail.com) or the [Forge Master Discord](https://discord.gg/forgemaster).
+
+If the tool helps you, you can [buy me a coffee](https://www.buymeacoffee.com/1vcian) ☕
+
+## License and game assets
+
+The **source code** is released under the [MIT License](./LICENSE).
+
+Forge Master's **images, sprites, textures, texts and game data** in this repository belong to their respective owners and are used with their permission. They are **not** covered by the MIT License: please do not reuse them in other projects without the owners' permission.
 
 ---
 
-*Disclaimer: This project is not affiliated with the official developers of Forge Master. It is a community-driven initiative.*
+<sub>Forge Master Calculator is a community project, made with the permission of the game's developers. Game names, images and data belong to their respective owners.</sub>
