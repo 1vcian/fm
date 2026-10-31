@@ -14,6 +14,16 @@
  * "Cleared" is a win rate of at least 50% (LevelOutcome from src/progress/adaptive.ts).
  */
 import type { LevelOutcome } from './adaptive';
+import type { UserProfile } from '../types/Profile';
+
+/** Where the last search for this profile ended (index in its battle line), to start the next one there. */
+const hintKey = (profile: UserProfile, mode: string) => `fm.progressHint.${profile.id}.${mode}`;
+export function readHint(profile: UserProfile, mode: string): number {
+    try { return Math.max(0, Number(localStorage.getItem(hintKey(profile, mode))) || 0); } catch { return 0; }
+}
+export function saveHint(profile: UserProfile, mode: string, index: number) {
+    try { localStorage.setItem(hintKey(profile, mode), String(Math.max(0, index))); } catch { /* storage blocked */ }
+}
 
 const LOOKAHEAD_ZEROS = 3;
 const LOOKAHEAD_MAX = 12;

@@ -28,6 +28,7 @@ import ImagesMaker from './pages/ImagesMaker';
 import FAQ from './pages/FAQ';
 import Profile from './pages/Profile';
 import ProgressPrediction from './pages/ProgressPrediction';
+import UpgradeRanking from './pages/UpgradeRanking';
 import PvpArena from './pages/PvpArena';
 import SubstatsCalculator from './pages/Calculators/SubstatsCalculator';
 import ForgeCalculator from './pages/Calculators/ForgeCalculator';
@@ -71,6 +72,7 @@ function App() {
                                 <Route path="/" element={<AppShell />}>
                                     <Route index element={<Profile />} />
                                     <Route path="progress-prediction" element={<ProgressPrediction />} />
+                                    <Route path="upgrades" element={<UpgradeRanking />} />
                                     {/* pages/Home.tsx was a legacy copy of the forge calculator: send its old URL there. */}
                                     <Route path="home" element={<Navigate to="/calculators/forge" replace />} />
                                     <Route path="configs" element={<Configs />} />
