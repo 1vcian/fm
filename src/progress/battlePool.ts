@@ -4,13 +4,13 @@
  * everything and rejects what is still pending.
  */
 import type { LevelOutcome } from './adaptive';
-import type { BattleTarget, WorkerIn, WorkerOut } from './battleWorker';
+import type { BattleTarget, TaskOptions, WorkerIn, WorkerOut } from './battleWorker';
 
 export class BattlePool {
     readonly size: number;
     private readonly workers: Worker[];
     private readonly idle: Worker[];
-    private readonly queue: { id: number; target: BattleTarget }[] = [];
+    private readonly queue: { id: number; target: BattleTarget; options?: TaskOptions }[] = [];
     private readonly pending = new Map<number, { resolve: (o: LevelOutcome | null) => void; reject: (e: Error) => void }>();
     private nextId = 1;
     private disposed = false;
@@ -30,13 +30,13 @@ export class BattlePool {
         this.idle = [...this.workers];
     }
 
-    /** One battle measured (adaptive runs); null when the battle does not exist. */
-    run(target: BattleTarget): Promise<LevelOutcome | null> {
+    /** One battle measured (adaptive runs unless `options` says otherwise); null when the battle does not exist. */
+    run(target: BattleTarget, options?: TaskOptions): Promise<LevelOutcome | null> {
         if (this.disposed) return Promise.reject(new Error('stopped'));
         const id = this.nextId++;
         return new Promise((resolve, reject) => {
             this.pending.set(id, { resolve, reject });
-            this.queue.push({ id, target });
+            this.queue.push({ id, target, options });
             this.pump();
         });
     }
@@ -51,8 +51,7 @@ export class BattlePool {
     private pump(): void {
         while (this.idle.length && this.queue.length) {
             const w = this.idle.pop()!;
-            const { id, target } = this.queue.shift()!;
-            w.postMessage({ type: 'task', id, target } satisfies WorkerIn);
+            w.postMessage({ type: 'task', ...this.queue.shift()! } satisfies WorkerIn);
         }
     }
 
