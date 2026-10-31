@@ -68,7 +68,7 @@ export function upgradeCandidates(profile: UserProfile, libs: LibraryData, upgra
         out.push({
             key: `pet:${i}`, kind: 'pet', profile: p,
             label: unitName(sprites, 'pets', pet.rarity, pet.id) ?? `Pet ${i + 1}`,
-            detail: `${pet.rarity}, level ${pet.level} → ${pet.level + 1}`,
+            detail: `${pet.rarity}, slot ${i + 1}, level ${pet.level} → ${pet.level + 1}`,
         });
     });
 
