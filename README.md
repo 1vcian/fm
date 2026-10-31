@@ -9,6 +9,7 @@
 [![Live site](https://img.shields.io/badge/live-1vcian.me%2Ffm-f59e0b?style=for-the-badge)](https://1vcian.me/fm)
 [![GitHub stars](https://img.shields.io/github/stars/1vcian/fm?style=for-the-badge&color=f59e0b)](https://github.com/1vcian/fm/stargazers)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-3b82f6?style=for-the-badge)](./LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/1vcian/fm)
 [![Buy Me a Coffee](https://img.shields.io/badge/support-buy%20me%20a%20coffee-ffdd00?style=for-the-badge&logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/1vcian)
 
 [Open the app](https://1vcian.me/fm) · [Report a bug](https://github.com/1vcian/fm/issues) · [Ask the AI DeepWiki](https://deepwiki.com/1vcian/fm)
