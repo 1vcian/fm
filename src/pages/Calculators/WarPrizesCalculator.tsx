@@ -7,8 +7,8 @@ import { useTreeLimits } from '../../hooks/useTreeLimits';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
-import { Trophy, Swords } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 
 interface CurrencyReward { Amount: number; Type: string; $type: string; }
 interface TierConfig {
@@ -164,7 +164,7 @@ export default function WarPrizesCalculator() {
         <div className="space-y-6 animate-fade-in pb-20 max-w-5xl mx-auto">
             <div className="text-center space-y-2 mb-2">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                    <Trophy size={32} className="text-accent-primary" />
+                    <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 19 }} size={32} />
                     War Prizes Calculator
                 </h1>
                 <p className="text-text-secondary">Guild War win/lose rewards per tier, boosted by your clan tech tree.</p>
@@ -242,7 +242,7 @@ export default function WarPrizesCalculator() {
                     <Card className="p-6 border-emerald-500/20">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-emerald-300">
-                                <Trophy size={18} /> War Won
+                                <GameAssetIcon asset={{ icon: 'crown0' }} size={22} /> War Won
                                 {winBonus > 0 && <span className="text-[11px] font-mono text-purple-300">+{(winBonus * 100).toFixed(1)}%</span>}
                             </CardTitle>
                         </CardHeader>
@@ -255,7 +255,7 @@ export default function WarPrizesCalculator() {
                     <Card className="p-6 border-red-500/20">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-red-300">
-                                <Swords size={18} /> War Lost
+                                <GameAssetIcon asset={{ icon: 'Skull' }} size={20} /> War Lost
                                 {loseBonus > 0 && <span className="text-[11px] font-mono text-purple-300">+{(loseBonus * 100).toFixed(1)}%</span>}
                             </CardTitle>
                         </CardHeader>

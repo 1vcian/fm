@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../UI/Button';
-import { X, Heart, Hash, HelpCircle } from 'lucide-react';
+import { X, Hash } from 'lucide-react';
 import { AggregatedStats } from '../../utils/statEngine';
 import { UserProfile } from '../../types/Profile';
 import { formatPercent } from '../../utils/statsCalculator';
@@ -11,6 +11,7 @@ import { formatNumber } from '../../utils/format';
 import { EngineCheckSection } from './EngineCheckSection';
 import { useEngineCheck } from '../../hooks/useEngineCheck';
 import { TESTED_SECONDS } from '../../engine/dummyRun';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 interface LifestealBreakdownModalProps {
     isOpen: boolean;
@@ -50,7 +51,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<Lifes
                 {/* Header */}
                 <div className="flex items-center justify-between p-3 md:p-4 border-b border-border bg-bg-secondary/40 gap-4">
                     <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                        <Heart className="w-5 h-5 md:w-6 md:h-6 text-pink-400 shrink-0" />
+                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={24} />
                         <div className="min-w-0">
                             <h3 className="text-base md:text-xl font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-clip">HPS Breakdown</h3>
                             <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden text-clip">Weapon formula and 24 h test</p>
@@ -79,7 +80,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<Lifes
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-10 custom-scrollbar bg-bg-primary font-sans">
                     <div className="bg-bg-input/60 rounded-xl p-3 md:p-4 border border-dashed border-white/10 flex gap-3" data-testid="hps-explainer">
-                        <HelpCircle className="w-5 h-5 text-pink-300 shrink-0 mt-0.5" />
+                        <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={20} className="mt-0.5" />
                         <div className="text-[10px] md:text-[11px] text-white/60 leading-relaxed space-y-1.5">
                             <p><strong className="text-pink-300">Weapon HPS (theoretical)</strong> is a formula without skills: health regen plus lifesteal on your weapon's own hits, at the weapon DPS of the DPS breakdown.</p>
                             <p><strong className="text-pink-300">Tested HPS ({TESTED_SECONDS / 3600} h simulation)</strong> is measured by the combat engine over {TESTED_SECONDS / 3600} hours of game time against a dummy with infinite health: it adds the heals of your skills, lifesteal on the damage buffs add to your hits, and the extra regen while health buffs are up.</p>
@@ -89,7 +90,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<Lifes
 
                     <section className="space-y-4 md:space-y-6">
                         <div className="flex items-center gap-3 text-pink-400 font-bold uppercase text-[10px] md:text-[11px] tracking-[0.2em] border-b border-pink-500/20 pb-3 font-sans">
-                            <Heart className="w-4 h-4 md:w-5 md:h-5" />
+                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={18} />
                             Weapon HPS (theoretical)
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">

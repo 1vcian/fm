@@ -16,7 +16,8 @@
  * been.
  */
 
-import { Check, Cloud, CloudOff, HardDrive, Loader2, AlertTriangle, GitBranch } from 'lucide-react';
+import { Cloud, CloudOff, HardDrive, Loader2, GitBranch } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import type { SyncStatus } from '../../services/profileStore';
 import { cn } from '../../lib/utils';
 
@@ -63,7 +64,7 @@ export function SyncIndicator({
         },
         synced: {
             label: 'Synced',
-            icon: <Check className="w-3.5 h-3.5" />,
+            icon: <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={14} />,
             tone: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400',
             hint: lastSyncedAt ? `Last synced ${relative(lastSyncedAt)}.` : 'This browser and the server agree.',
         },
@@ -81,7 +82,7 @@ export function SyncIndicator({
         },
         error: {
             label: 'Sync problem',
-            icon: <AlertTriangle className="w-3.5 h-3.5" />,
+            icon: <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} />,
             tone: 'border-accent-secondary/40 bg-accent-secondary/10 text-accent-secondary',
             hint: 'Could not sync. Your data is still safe in this browser.',
         },

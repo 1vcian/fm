@@ -50,7 +50,8 @@
  */
 
 import { useMemo, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, Minus, ShieldQuestion, Swords, Trophy } from 'lucide-react';
+import { ArrowDown, ArrowUp, Minus, ShieldQuestion } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { useClan } from '../../context/ClanContext';
 import { useGameData } from '../../hooks/useGameData';
@@ -423,14 +424,14 @@ function SwingRow({
     return (
         <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border p-2.5', tone)}>
             <span className="flex shrink-0 items-center gap-1.5 text-xs font-black uppercase tracking-wider text-text-secondary">
-                {outcome === 'win' ? <Trophy className="h-3.5 w-3.5" /> : <Swords className="h-3.5 w-3.5" />}
+                {outcome === 'win' ? <GameAssetIcon asset={{ icon: 'crown0' }} size={14} /> : <GameAssetIcon asset={{ icon: 'Skull' }} size={14} />}
                 {outcome === 'win' ? 'War won' : 'War lost'}
             </span>
             <span className={cn('flex shrink-0 items-center gap-1 font-mono text-xl font-black tabular-nums', digits)}>
                 {points === null ? null : negative ? (
-                    <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                    <GameAssetIcon asset={{ icon: 'ArrowDown' }} size={16} />
                 ) : positive ? (
-                    <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                    <GameAssetIcon asset={{ icon: 'ArrowUp' }} size={16} />
                 ) : (
                     <Minus className="h-4 w-4" aria-hidden="true" />
                 )}
@@ -605,13 +606,13 @@ export function ClanTierPanel({ action, className }: ClanTierPanelProps) {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/5 p-3">
                         <div className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-300">
-                            <Trophy className="h-3.5 w-3.5" /> If you win
+                            <GameAssetIcon asset={{ icon: 'crown0' }} size={14} /> If you win
                         </div>
                         <RewardList rewards={current.won} tone="win" />
                     </div>
                     <div className="rounded-lg border border-red-500/25 bg-red-500/5 p-3">
                         <div className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-red-300">
-                            <Swords className="h-3.5 w-3.5" /> If you lose
+                            <GameAssetIcon asset={{ icon: 'Skull' }} size={14} /> If you lose
                         </div>
                         <RewardList rewards={current.lost} tone="lose" />
                     </div>
@@ -688,7 +689,7 @@ export function ClanTierPanel({ action, className }: ClanTierPanelProps) {
                                 of bigger numbers. */}
                             {lossTurnsSour ? (
                                 <p className="mt-2 flex items-start gap-1.5 rounded border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-200">
-                                    <ArrowDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                    <GameAssetIcon asset={{ icon: 'ArrowDown' }} size={14} className="mt-0.5" />
                                     <span>
                                         Careful: at tier {next.key} a defeat starts COSTING you{' '}
                                         {Math.abs(next.pointsOnLose ?? 0)} tier point

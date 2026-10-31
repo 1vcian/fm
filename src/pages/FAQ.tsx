@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
-import { HelpCircle, Heart, Zap, Coffee, Globe, ExternalLink, MessageCircle, Star, Quote, Users, Github, PlusCircle, MinusCircle } from 'lucide-react';
+import { HelpCircle, Heart, Coffee, Globe, ExternalLink, Quote, Users, Github, PlusCircle, MinusCircle } from 'lucide-react';
 import contributorsStats from '../data/contributors_stats.json';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 /** Background colours of Buy Me a Coffee's default avatars, as they appear in the dp URLs of supporters.json. */
 const AVATAR_COLORS = ['FFB3A0', 'EC9689', 'FFD8CF', '80BEAF', 'B6CDBD', 'E3CBF4', 'FAC799', 'FFABD0', 'B3DDD1'];
@@ -57,7 +58,7 @@ export default function FAQ() {
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
             {/* Header */}
             <div className="flex items-center gap-4 border-b border-border pb-6">
-                <HelpCircle className="w-10 h-10 text-accent-primary" />
+                <GameAssetIcon asset={{ icon: 'RoleInfoIcon' }} size={40} />
                 <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
                         Project Information
@@ -94,7 +95,7 @@ export default function FAQ() {
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-input border border-border hover:border-accent-primary transition-all text-xs font-bold text-indigo-400 hover:text-indigo-300"
                                     >
-                                        <MessageCircle className="w-4 h-4" /> DISCORD
+                                        <GameAssetIcon asset={{ icon: 'Discord-Symbol-Blurple' }} size={16} /> DISCORD
                                     </a>
                                     <a
                                         href="mailto:medrihanlucian@gmail.com"
@@ -123,7 +124,7 @@ export default function FAQ() {
 
                         <div className="pt-4 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-2 text-sm font-medium text-text-muted">
-                                <Zap className="w-4 h-4 text-yellow-500" />
+                                <GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />
                                 Like the tool? Consider supporting the project!
                             </div>
                             <a
@@ -196,7 +197,7 @@ export default function FAQ() {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-2">
-                            <Star className="w-6 h-6 text-yellow-500 fill-current" />
+                            <GameAssetIcon asset={{ icon: 'Star' }} size={24} />
                             Supporters Hall of Fame
                         </h2>
                         {!loading && supporters.length > 0 && (

@@ -7,7 +7,7 @@ import { cn } from '../../lib/utils';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
 import { useSkinIcons } from '../../utils/skinIcons';
 import { FairyCard } from './FairyCard';
-import { Sparkles, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 /**
  * In compare mode the Profile page renders this twice (variant "original"/"test") side by

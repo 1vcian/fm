@@ -1,8 +1,8 @@
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
-import { Swords, Trophy, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 // Constants
 // 2.8.2 split the Diamond tier into Diamond 1/2/3 (Diamond 3 = highest league).
@@ -56,7 +56,7 @@ export default function Arena() {
     return (
         <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 animate-fade-in pb-12 px-4 sm:px-0">
             <div className="flex items-center gap-4 border-b border-border pb-6">
-                <Swords className="w-10 h-10 text-accent-primary" />
+                <GameAssetIcon asset={{ icon: 'ArenaTabIcon' }} size={40} />
                 <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
                         Arena Leagues
@@ -113,7 +113,7 @@ export default function Arena() {
                                 <div className="space-y-2 mb-6">
                                     <div className="flex justify-between items-center bg-bg-primary/40 p-2 rounded">
                                         <span className="text-sm text-text-muted flex items-center gap-1">
-                                            <ArrowUp className="w-4 h-4 text-green-400" /> Promotion
+                                            <GameAssetIcon asset={{ icon: 'ArrowUp' }} size={16} /> Promotion
                                         </span>
                                         <span className="font-bold text-sm">
                                             {thresholds.p > 0 ? `Top ${thresholds.p}` : 'None'}
@@ -121,7 +121,7 @@ export default function Arena() {
                                     </div>
                                     <div className="flex justify-between items-center bg-bg-primary/40 p-2 rounded">
                                         <span className="text-sm text-text-muted flex items-center gap-1">
-                                            <ArrowDown className="w-4 h-4 text-red-400" /> Demotion
+                                            <GameAssetIcon asset={{ icon: 'ArrowDown' }} size={16} /> Demotion
                                         </span>
                                         <span className="font-bold text-sm">
                                             {/* DemotionStart is a 0-based rank index, like FromRank/ToRank. */}
@@ -133,7 +133,7 @@ export default function Arena() {
                                 {/* Rewards */}
                                 <div className="border-t border-border/50 pt-4">
                                     <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-1">
-                                        <Trophy className="w-3 h-3" /> Rewards
+                                        <GameAssetIcon asset={{ icon: 'EpicChest' }} size={12} /> Rewards
                                     </h3>
 
                                     <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">

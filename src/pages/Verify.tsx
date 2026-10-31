@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 import { useGameData as useGameDataHook } from '../hooks/useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { UserProfile } from '../types/Profile';
@@ -469,29 +470,29 @@ const Verify: React.FC = () => {
 
     return (
         <div className="p-4 bg-gray-900 text-white min-h-screen">
-            <h1 className="text-3xl font-bold mb-6 text-amber-400">🎮 Game Simulator - Stat Breakdown (v2 Dynamic)</h1>
+            <h1 className="text-3xl font-bold mb-6 text-amber-400"><span className="inline-flex items-center gap-2"><GameAssetIcon asset={{ icon: 'Battle' }} size={28} /> Game Simulator - Stat Breakdown (v2 Dynamic)</span></h1>
 
             {/* Final Stats Comparison */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className={`p-4 rounded-lg ${pctMatch(breakdown.finalDamage, TARGET.damage) ? 'bg-green-900' : 'bg-red-900'}`}>
-                    <h3 className="text-lg font-bold">⚔️ Damage</h3>
+                    <h3 className="text-lg font-bold inline-flex items-center gap-2"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={18} /> Damage</h3>
                     <p className="text-2xl">{formatNum(breakdown.finalDamage)}</p>
                     <p className="text-sm text-gray-400">Target: {formatNum(TARGET.damage)}</p>
                 </div>
                 <div className={`p-4 rounded-lg ${pctMatch(breakdown.finalHealth, TARGET.health) ? 'bg-green-900' : 'bg-red-900'}`}>
-                    <h3 className="text-lg font-bold">❤️ Health</h3>
+                    <h3 className="text-lg font-bold inline-flex items-center gap-2"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={18} /> Health</h3>
                     <p className="text-2xl">{formatNum(breakdown.finalHealth)}</p>
                     <p className="text-sm text-gray-400">Target: {formatNum(TARGET.health)}</p>
                 </div>
                 <div className={`p-4 rounded-lg bg-gray-800`}>
-                    <h3 className="text-lg font-bold">💪 Power Formulas (Ghidra RE)</h3>
+                    <h3 className="text-lg font-bold inline-flex items-center gap-2"><GameAssetIcon asset={{ icon: 'TechTreePower' }} size={18} /> Power Formulas (Ghidra RE)</h3>
                     <div className="flex flex-col gap-1 text-sm mt-2">
                         <div className="flex justify-between">
-                            <span>🎯 Ghidra: (D-10)×8 + (H-80)×8:</span>
+                            <span className="inline-flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={14} /> Ghidra: (D-10)×8 + (H-80)×8:</span>
                             <span className="font-bold text-green-400">{formatNum(breakdown.statsPower)}</span>
                         </div>
                         <div className="flex justify-between border-t border-gray-700 pt-1 mt-1">
-                            <span>⚠️ Old: (D+H)×8:</span>
+                            <span className="inline-flex items-center gap-1"><GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} /> Old: (D+H)×8:</span>
                             <span className="font-bold text-yellow-400">{formatNum(breakdown.oldFormulaPower)}</span>
                         </div>
                         <div className="flex justify-between border-t border-gray-700 pt-1 mt-1">
@@ -505,7 +506,7 @@ const Verify: React.FC = () => {
                     </div>
                 </div>
                 <div className="p-4 rounded-lg bg-gray-800">
-                    <h3 className="text-lg font-bold">🎯 Target Power</h3>
+                    <h3 className="text-lg font-bold inline-flex items-center gap-2"><GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={18} /> Target Power</h3>
                     <p className="text-2xl">{formatNum(TARGET.power)}</p>
                 </div>
             </div>
@@ -533,7 +534,7 @@ const Verify: React.FC = () => {
 
             {/* Debug Logs */}
             <div className="mt-8">
-                <h2 className="text-xl font-bold mb-2">🔍 Debug Logs</h2>
+                <h2 className="text-xl font-bold mb-2 inline-flex items-center gap-2"><GameAssetIcon asset={{ icon: 'SearchIcon' }} size={20} /> Debug Logs</h2>
                 <pre className="text-xs bg-black p-4 rounded overflow-auto h-96">
                     {breakdown.debugLogs.join('\n')}
                 </pre>

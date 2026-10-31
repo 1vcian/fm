@@ -3,10 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Card } from '../components/UI/Card';
 import { cn, getAgeIconStyle, getRarityBorderStyle } from '../lib/utils';
 import { formatVersion } from '../lib/formatVersion';
-import { HelpCircle, RefreshCw, ArrowRight, TrendingUp, TrendingDown, Sigma } from 'lucide-react';
+import { RefreshCw, ArrowRight, TrendingUp, TrendingDown, Sigma } from 'lucide-react';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { Button } from '../components/UI/Button';
 import { AGES, RARITIES } from '../utils/constants';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 type TabType = 'forge' | 'eggs' | 'mounts' | 'skills';
 const TABS: TabType[] = ['forge', 'eggs', 'mounts', 'skills'];
@@ -348,7 +349,7 @@ export default function BaseDrops() {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
                 <div className="w-full">
                     <h1 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-primary bg-animate-gradient bg-clip-text text-transparent mb-2 flex items-center gap-3 sm:gap-4">
-                        <HelpCircle className="w-10 h-10 sm:w-12 h-12 text-accent-primary" />
+                        <GameAssetIcon asset={{ icon: 'CommonChest' }} size={48} />
                         BASE DROPS WIKI
                     </h1>
                     <p className="text-text-secondary max-w-2xl font-medium">

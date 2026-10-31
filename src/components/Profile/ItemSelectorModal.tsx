@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark, Shield, Calendar, Pencil } from 'lucide-react';
+import { X, Plus, Trash2, Grid, Settings, Bookmark, Shield, Calendar } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -22,6 +22,7 @@ import { useSkinIcons } from '../../utils/skinIcons';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 interface ItemSelectorModalProps {
     isOpen: boolean;
@@ -796,7 +797,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             placeholder="Set a custom name"
                             className="bg-bg-input/50 border-border focus:border-accent-primary h-9 text-sm"
                         />
-                        <Pencil className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted opacity-50" />
+                        <GameAssetIcon asset={{ icon: 'Pen' }} size={12} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50" />
                     </div>
                 </div>
             )}
@@ -808,11 +809,11 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 <div className="text-xs font-bold text-text-muted">BASE STATS</div>
                 <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
-                        <Sword className="w-4 h-4 text-red-400" />
+                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />
                         <span className="font-mono text-sm">{baseStats.damage.toFixed(0)}</span>
                     </div>
                     <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
-                        <Heart className="w-4 h-4 text-green-400" />
+                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />
                         <span className="font-mono text-sm">{baseStats.health.toFixed(0)}</span>
                     </div>
                 </div>
@@ -829,7 +830,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 "font-bold px-2 py-0.5 rounded text-xs",
                                 weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
                             )}>
-                                {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
+                                {weaponInfo.isRanged ? <><GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={14} className="inline-block align-middle mr-1" />RANGED</> : <><GameAssetIcon asset={{ icon: 'Battle' }} size={14} className="inline-block align-middle mr-1" />MELEE</>}
                             </span>
                             {skinIdx !== null && (
                                 <span className="text-[10px] text-text-muted flex items-center">
@@ -841,7 +842,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                     <div className="grid grid-cols-1 gap-2 text-xs">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-text-muted" />
+                                <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                                 <span className="text-text-muted">Windup:</span>
                             </div>
                             <div className="font-mono">
@@ -853,7 +854,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                                <Target className="w-3 h-3 text-text-muted" />
+                                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                 <span className="text-text-muted">Range:</span>
                             </div>
                             <div className="font-mono">
@@ -865,7 +866,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                                <Target className="w-3 h-3 text-text-muted" />
+                                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                 <span className="text-text-muted">Is Aiming:</span>
                             </div>
                             <div className="font-mono">
@@ -879,7 +880,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             <>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1">
-                                        <Target className="w-3 h-3 text-text-muted" />
+                                        <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                         <span className="text-text-muted">Proj Speed:</span>
                                     </div>
                                     <div className="font-mono">
@@ -891,7 +892,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1">
-                                        <Target className="w-3 h-3 text-text-muted" />
+                                        <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                         <span className="text-text-muted">Proj Radius:</span>
                                     </div>
                                     <div className="font-mono">
@@ -903,7 +904,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1">
-                                        <Target className="w-3 h-3 text-text-muted" />
+                                        <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                         <span className="text-text-muted">Affected By Gravity:</span>
                                     </div>
                                     <div className="font-mono">
@@ -1012,7 +1013,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             : "bg-bg-input text-text-muted border border-border hover:bg-bg-input/80"
                     )}
                 >
-                    <Unlock className="w-3 h-3" />
+                    <GameAssetIcon asset={{ icon: 'Unlocked Lock Icon' }} size={12} />
                     {unlockAll ? 'All' : 'Unlock All'}
                 </button>
             </div>
@@ -1100,7 +1101,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                             <div className="relative flex-1">
-                                <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                                <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-1/2 -translate-y-1/2" />
                                 <Input
                                     placeholder="Search presets"
                                     value={savedSearchQuery}
@@ -1373,7 +1374,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 : "border-transparent text-text-muted hover:text-text-primary"
                         )}
                     >
-                        <Settings className="w-4 h-4" />
+                        <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={16} />
                         Config
                     </button>
                 </div>
@@ -1401,7 +1402,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             : "bg-bg-input text-text-muted border border-border hover:bg-bg-input/80"
                                     )}
                                 >
-                                    <Unlock className="w-3 h-3" />
+                                    <GameAssetIcon asset={{ icon: 'Unlocked Lock Icon' }} size={12} />
                                     {unlockAll ? 'All' : 'Unlock'}
                                 </button>
                             </div>
@@ -1633,11 +1634,11 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             <div className="text-xs font-bold text-text-muted">BASE STATS</div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
-                                    <Sword className="w-4 h-4 text-red-400" />
+                                    <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />
                                     <span className="font-mono text-sm">{baseStats.damage.toFixed(0)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 p-2 bg-bg-input/50 rounded">
-                                    <Heart className="w-4 h-4 text-green-400" />
+                                    <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />
                                     <span className="font-mono text-sm">{baseStats.health.toFixed(0)}</span>
                                 </div>
                             </div>
@@ -1653,7 +1654,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             "font-bold px-2 py-0.5 rounded text-xs",
                                             weaponInfo.isRanged ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"
                                         )}>
-                                            {weaponInfo.isRanged ? '🏹 RANGED' : '⚔️ MELEE'}
+                                            {weaponInfo.isRanged ? <><GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={14} className="inline-block align-middle mr-1" />RANGED</> : <><GameAssetIcon asset={{ icon: 'Battle' }} size={14} className="inline-block align-middle mr-1" />MELEE</>}
                                         </span>
                                         {skinIdx !== null && (
                                             <span className="text-[10px] text-text-muted flex items-center">
@@ -1665,7 +1666,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 <div className="grid grid-cols-1 gap-2 text-xs">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-1">
-                                            <Clock className="w-3 h-3 text-text-muted" />
+                                            <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                                             <span className="text-text-muted">Windup:</span>
                                         </div>
                                         <div className="font-mono">
@@ -1677,7 +1678,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-1">
-                                            <Target className="w-3 h-3 text-text-muted" />
+                                            <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                             <span className="text-text-muted">Range:</span>
                                         </div>
                                         <div className="font-mono">
@@ -1689,7 +1690,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-1">
-                                            <Target className="w-3 h-3 text-text-muted" />
+                                            <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                             <span className="text-text-muted">Is Aiming:</span>
                                         </div>
                                         <div className="font-mono">
@@ -1703,7 +1704,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         <>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-1">
-                                                    <Target className="w-3 h-3 text-text-muted" />
+                                                    <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                                     <span className="text-text-muted">Proj Speed:</span>
                                                 </div>
                                                 <div className="font-mono">
@@ -1715,7 +1716,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-1">
-                                                    <Target className="w-3 h-3 text-text-muted" />
+                                                    <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                                     <span className="text-text-muted">Proj Radius:</span>
                                                 </div>
                                                 <div className="font-mono">
@@ -1727,7 +1728,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-1">
-                                                    <Target className="w-3 h-3 text-text-muted" />
+                                                    <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} />
                                                     <span className="text-text-muted">Affected By Gravity:</span>
                                                 </div>
                                                 <div className="font-mono">

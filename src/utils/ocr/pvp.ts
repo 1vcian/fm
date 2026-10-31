@@ -3,6 +3,7 @@
 // against the opponent's screenshot totals is the real, fair matchup — no need to know the
 // opponent's tree separately, since it's already baked into their total damage/health.
 
+import { runSeed } from '../../engine/rng';
 import type { DetAggregate } from './extract';
 import { CombatScene } from '../../engine';
 
@@ -57,7 +58,7 @@ export function simulateDuel(a: DuelStats, b: DuelStats, maxSeconds = 120): Duel
     let repr: { ah: number; bh: number; t: number } | null = null;
 
     for (let seed = 1; seed <= RUNS; seed++) {
-        const scene = new CombatScene({ seed });
+        const scene = new CombatScene({ seed: runSeed(seed) });
         const mk = (s: DuelStats, isAlly: boolean, x: number) =>
             scene.addUnit({
                 isAlly,

@@ -24,7 +24,8 @@
  */
 
 import { useState } from 'react';
-import { Loader2, Users, X, ArrowDownToLine, AlertTriangle } from 'lucide-react';
+import { Loader2, X, ArrowDownToLine } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Card } from '../UI/Card';
 import { useAuth } from '../../context/AuthContext';
 import { useClan } from '../../context/ClanContext';
@@ -91,7 +92,7 @@ export function ClanSyncPanel() {
         >
             <div className="flex items-start gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-bg-input flex items-center justify-center shrink-0">
-                    <Users className={cn('w-4 h-4', on ? 'text-accent-primary' : 'text-text-muted')} />
+                    <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={16} className={on ? '' : 'opacity-50 grayscale'} />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -215,7 +216,7 @@ export function ClanSyncPanel() {
                             role="status"
                             className="mt-2 flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-2 text-[11px] text-red-200"
                         >
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                             <span>
                                 Clan sync is off in this browser, but the summary already on the server could not
                                 be cleared, so your clan can still read the last one. It is cleared automatically

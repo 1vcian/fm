@@ -4,8 +4,9 @@ import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
 import { getWarDayIndex, getWarDayName, computeWarDaysMap, type WarCategory } from '../utils/guildWarUtils';
-import { Shield, Swords, Calendar, Trophy, Zap, ChevronRight, Info, X, Egg, type LucideIcon } from 'lucide-react';
+import { Trophy, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { GameAssetIcon, type GameAsset } from '../components/UI/GameAssetIcon';
 
 const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -13,13 +14,13 @@ const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
  * Calculators worth opening on a war day. Which days they show on is never written here: it comes
  * from the task categories each day carries in GuildWarDayConfigLibrary.json (computeWarDaysMap).
  */
-const RECOMMENDED_TOOLS: { to: string; label: string; icon: LucideIcon; categories: WarCategory[] }[] = [
-    { to: '/calculators/forge', label: 'Forge Calculator', icon: Shield, categories: ['forge', 'forgeSpend'] },
-    { to: '/calculators/summons?tab=skills', label: 'Skill Summons', icon: Zap, categories: ['skills'] },
-    { to: '/calculators/summons?tab=mounts', label: 'Mount Trainer', icon: Shield, categories: ['mounts'] },
-    { to: '/calculators/summons?tab=eggs', label: 'Eggs and Pets', icon: Egg, categories: ['eggs', 'pets'] },
-    { to: '/calculators/tree', label: 'Tree Optimizer', icon: Zap, categories: ['tech'] },
-    { to: '/dungeons', label: 'Dungeon Analyzer', icon: Shield, categories: ['dungeons'] },
+const RECOMMENDED_TOOLS: { to: string; label: string; icon: GameAsset; categories: WarCategory[] }[] = [
+    { to: '/calculators/forge', label: 'Forge Calculator', icon: { icon: 'Anvil' }, categories: ['forge', 'forgeSpend'] },
+    { to: '/calculators/summons?tab=skills', label: 'Skill Summons', icon: { icon: 'SkillTicket' }, categories: ['skills'] },
+    { to: '/calculators/summons?tab=mounts', label: 'Mount Trainer', icon: { sheet: 'MountIcons', index: 1 }, categories: ['mounts'] },
+    { to: '/calculators/summons?tab=eggs', label: 'Eggs and Pets', icon: { icon: 'Egg' }, categories: ['eggs', 'pets'] },
+    { to: '/calculators/tree', label: 'Tree Optimizer', icon: { sheet: 'ClanTechTreeIcons', index: 3 }, categories: ['tech'] },
+    { to: '/dungeons', label: 'Dungeon Analyzer', icon: { icon: 'DungeonTabIcon' }, categories: ['dungeons'] },
 ];
 
 const getTodayIdx = () => {
@@ -82,7 +83,7 @@ export default function GuildWar() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border pb-8">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-accent-primary/10 rounded-2xl border border-accent-primary/20">
-                        <Shield className="w-10 h-10 text-accent-primary" />
+                        <GameAssetIcon asset={{ icon: 'WarTicket' }} size={40} />
                     </div>
                     <div>
                         <h1 className="text-4xl font-black bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent uppercase tracking-tighter italic">
@@ -94,7 +95,7 @@ export default function GuildWar() {
 
                 <div className="flex flex-col items-end gap-2">
                     <div className="flex items-center gap-2 text-[10px] font-black text-text-muted uppercase tracking-[0.2em] bg-bg-secondary/50 px-3 py-1 rounded-full border border-white/5">
-                        <Calendar className="w-3 h-3 text-accent-primary" />
+                        <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 10 }} size={12} />
                         Today: {getWarDayName(getWarDayIndex())} (UTC Reset)
                     </div>
                     {/* Day Selector */}
@@ -137,7 +138,7 @@ export default function GuildWar() {
                             {/* Recommended Tools */}
                             <div className="space-y-4">
                                 <h2 className="text-sm font-black text-text-muted uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Zap className="w-4 h-4 text-accent-primary" />
+                                    <GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />
                                     Recommended Calculators
                                 </h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -146,11 +147,10 @@ export default function GuildWar() {
                                     )}
                                     {RECOMMENDED_TOOLS.filter(tool => tool.categories.some(c => warDays[c]?.includes(activeDay))).map(tool => {
                                         const days = Array.from(new Set(tool.categories.flatMap(c => warDays[c] || []))).sort((a, b) => a - b);
-                                        const Icon = tool.icon;
                                         return (
                                             <Link key={tool.to} to={tool.to} className="flex items-center gap-3 p-3 bg-bg-secondary/40 border border-white/5 rounded-xl hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group shadow-sm hover:shadow-accent-primary/5">
                                                 <div className="p-2 bg-bg-tertiary rounded-lg group-hover:scale-110 transition-transform">
-                                                    <Icon className="w-5 h-5 text-accent-primary" />
+                                                    <GameAssetIcon asset={tool.icon} size={20} />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-clip">{tool.label}</div>
@@ -165,12 +165,12 @@ export default function GuildWar() {
                             <div className="space-y-6">
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
                                     <h2 className="text-xl font-bold flex items-center gap-2">
-                                        <Calendar className="w-5 h-5 text-accent-primary" />
+                                        <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 10 + activeDay }} size={20} />
                                         {DAYS[activeDay]} Preparation Tasks
                                     </h2>
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-1.5 rounded-xl font-bold text-xs border border-blue-500/20 shadow-lg shadow-blue-500/5">
-                                            <Trophy className="w-4 h-4" />
+                                            <GameAssetIcon asset={{ sheet: 'ArenaRankIcons', index: 0 }} size={16} />
                                             Guild Win: <span className="text-blue-200">{dayVictoryPoints} Victory Points</span>
                                         </div>
                                         <div className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold uppercase tracking-widest border border-accent-primary/20">
@@ -183,7 +183,7 @@ export default function GuildWar() {
                                     {dayTasks.map((task: any, idx: number) => (
                                         <Card key={idx} className="p-4 hover:border-accent-primary/50 transition-all group relative overflow-hidden">
                                             <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                                                <Zap className="w-12 h-12 text-accent-primary" />
+                                                <GameAssetIcon asset={{ icon: 'Lightning' }} size={48} />
                                             </div>
 
                                             <div className="flex items-start gap-3 relative z-10">
@@ -196,7 +196,7 @@ export default function GuildWar() {
                                                     </h3>
                                                     <div className="flex items-center gap-1.5 mt-2">
                                                         <div className="flex items-center gap-1 bg-accent-primary/20 px-2 py-0.5 rounded text-[10px] font-bold text-accent-primary border border-accent-primary/30 uppercase tracking-tighter">
-                                                            <Zap className="w-3 h-3" />
+                                                            <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                                                             +{task.Rewards?.[0]?.Amount} Points
                                                         </div>
                                                     </div>
@@ -206,7 +206,7 @@ export default function GuildWar() {
                                     ))}
                                     {dayTasks.length === 0 && (
                                         <div className="sm:col-span-2 flex flex-col items-center justify-center p-12 bg-bg-secondary/20 rounded-2xl border-2 border-dashed border-border text-text-muted">
-                                            <Info className="w-8 h-8 mb-2 opacity-20" />
+                                            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={32} className="mb-2 opacity-20" />
                                             <span className="font-bold uppercase tracking-widest text-xs">No preparation tasks for this day</span>
                                         </div>
                                     )}
@@ -216,7 +216,7 @@ export default function GuildWar() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                     <Card className="p-5 border-l-4 border-l-blue-500">
                                         <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-4 flex items-center gap-2">
-                                            <Calendar className="w-4 h-4" /> Weekly Schedule
+                                            <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 10 }} size={16} /> Weekly Schedule
                                         </h3>
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-3">
@@ -232,7 +232,7 @@ export default function GuildWar() {
 
                                     <Card className="p-5 border-l-4 border-l-red-500">
                                         <h3 className="font-black text-xs uppercase tracking-widest text-red-500 mb-4 flex items-center gap-2">
-                                            <Swords className="w-4 h-4" /> Attack Rules
+                                            <GameAssetIcon asset={{ icon: 'Battle' }} size={16} /> Attack Rules
                                         </h3>
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
@@ -307,7 +307,7 @@ export default function GuildWar() {
                     {/* Clan Tiers & War Rewards Section */}
                     <div className="col-span-1 lg:col-span-3 space-y-6">
                         <div className="flex items-center gap-2">
-                            <Trophy className="w-6 h-6 text-yellow-500" />
+                            <GameAssetIcon asset={{ icon: 'GoldShield' }} size={24} />
                             <h2 className="text-2xl font-black italic uppercase tracking-tighter">Clan Tiers & War Rewards</h2>
                         </div>
 
@@ -342,7 +342,7 @@ export default function GuildWar() {
                                         {/* Win Rewards */}
                                         <div className="space-y-2">
                                             <div className="text-[10px] font-black uppercase text-green-500 flex items-center gap-1">
-                                                <Shield className="w-3 h-3" /> Victory Rewards
+                                                <GameAssetIcon asset={{ icon: 'crown0' }} size={12} /> Victory Rewards
                                             </div>
                                             <div className="space-y-1">
                                                 {tier.WarWonRewards.map((rew: any, rIdx: number) => (
@@ -360,7 +360,7 @@ export default function GuildWar() {
                                         {/* Lose Rewards */}
                                         <div className="space-y-2 border-l border-border/50 pl-4">
                                             <div className="text-[10px] font-black uppercase text-red-500 flex items-center gap-1">
-                                                <X className="w-3 h-3" /> Defeat Rewards
+                                                <GameAssetIcon asset={{ icon: 'Skull' }} size={12} /> Defeat Rewards
                                             </div>
                                             <div className="space-y-1">
                                                 {tier.WarLostRewards.map((rew: any, rIdx: number) => (
@@ -386,7 +386,7 @@ export default function GuildWar() {
                             <Card className="p-6 bg-gradient-to-br from-bg-secondary/40 to-bg-secondary/10 border-accent-primary/10">
                                 <div className="flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
                                     <div className="p-4 bg-accent-primary/10 rounded-3xl border border-accent-primary/20 shrink-0">
-                                        <Shield className="w-12 h-12 text-accent-primary" />
+                                        <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={48} />
                                     </div>
                                     <div className="space-y-6 flex-1">
                                         <div>

@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useForgeUpgradeStats, forgeGemSkipCost } from '../../hooks/useForgeCalculator';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { SpriteIcon } from '../UI/SpriteIcon';
-import { Plus, Minus, Sparkles, Coins, ChevronDown, GitBranch } from 'lucide-react';
+import { Plus, Minus, ChevronDown, GitBranch } from 'lucide-react';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAnvilTexturePath, resolveTextureVersion } from '../../utils/ascensionUtils';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -245,7 +246,7 @@ export function MiscPanel() {
                                             </div>
                                         );
                                     }
-                                    return <div className="text-center text-xs text-text-muted py-2">Forge Maxed Out ✨</div>;
+                                    return <div className="text-center text-xs text-text-muted py-2"><span className="inline-flex items-center gap-1">Forge Maxed Out <GameAssetIcon asset={{ icon: 'Sparkle' }} size={14} /></span></div>;
                                 })()
                             ) : (
                                 <div className="text-center text-xs text-text-muted py-2">Max Level Reached</div>
@@ -292,7 +293,7 @@ export function MiscPanel() {
                     <Card className="p-4 bg-bg-secondary/40 border-border/50">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1 shrink-0">
-                                <Sparkles className="w-5 h-5 text-accent-primary" />
+                                <GameAssetIcon asset={{ icon: 'Sparkle' }} size={20} />
                             </div>
                             <div className="min-w-0">
                                 <div className="font-bold">Avg Perfection</div>
@@ -360,7 +361,7 @@ export function MiscPanel() {
                     className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-input/40 transition"
                 >
                     <span className="flex items-center gap-2 font-bold">
-                        <Coins className="w-4 h-4 text-accent-primary" /> Resources
+                        <GameAssetIcon asset={{ icon: 'Coin' }} size={16} /> Resources
                         <span className="text-[10px] font-normal text-text-muted hidden sm:inline">coins · gems · eggs · keys </span>
                     </span>
                     <ChevronDown className={cn('w-4 h-4 text-text-muted transition-transform', resourcesOpen && 'rotate-180')} />

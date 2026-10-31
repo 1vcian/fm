@@ -16,7 +16,8 @@
  */
 
 import { useState } from 'react';
-import { Mail, Loader2, AlertTriangle, Clock, MailCheck, ArrowLeft } from 'lucide-react';
+import { Mail, Loader2, MailCheck, ArrowLeft } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Button } from '../UI/Button';
 import { useAuth } from '../../context/AuthContext';
 
@@ -107,8 +108,8 @@ export function SignInForm() {
                     }`}
                 >
                     {auth.rateLimited
-                        ? <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-                        : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-accent-secondary" />}
+                        ? <GameAssetIcon asset={{ icon: 'Timer' }} size={16} className="mt-0.5" />
+                        : <GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} className="mt-0.5" />}
                     <div className="min-w-0">
                         <p className="break-words">{auth.error}</p>
                         {auth.rateLimited && auth.retryAfterSeconds !== null && (

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import type { EntityState, VisualProjectile as Projectile, DebugConfig } from '../../utils/VisualBattleEngine';
 import { VisualBattleEngine } from '../../utils/VisualBattleEngine';
@@ -22,7 +23,7 @@ import { BattleHud } from './gameView/BattleHud';
 import { lookFromProfile, type SceneMode } from './gameView/scene';
 import type { BattleVisualData } from './gameView/visualData';
 import type { SceneVisuals } from '../../engine/visualSnapshot';
-import { Play, Pause, X, Zap, Heart, Sword, Shield, Clock, Users } from 'lucide-react';
+import { Play, Pause, X, Sword, Shield, Users } from 'lucide-react';
 
 const basePath = import.meta.env.BASE_URL;
 /** 1.69 -> "1.69", 4658.5 -> "4,658.5": multipliers here span from ~1 to thousands (skill ascension). */
@@ -553,12 +554,12 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                         <h2 className="text-base sm:text-lg font-bold text-white truncate sm:text-clip" title={getTitle()}>{getTitle()}</h2>
                         <div className="text-[10px] sm:text-xs text-gray-400 flex gap-2 sm:gap-3 flex-wrap">
                             <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
+                                <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                                 {(time || 0).toFixed(1)}s
                             </span>
                             {pvp ? (
                                 <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
+                                    <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                                     <span className="hidden sm:inline">Timer {pvp.cfg.PvpMatchTimerSeconds}s, shared HP</span>
                                     <span className="sm:hidden">{pvp.cfg.PvpMatchTimerSeconds}s, HP</span>
                                     {' '}x{Number((snapshot.player?.maxHealth / Math.max(1e-9, pvp.p1.loadout.health)).toFixed(2))}
@@ -570,7 +571,9 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             </span>
                             )}
                             <span className={isEngaged ? "text-red-400 font-semibold" : "text-blue-400"}>
-                                {isEngaged ? "⚔️ Combat" : `🏃 ${(engagementTime - waveEngagementTimer).toFixed(1)}s`}
+                                {isEngaged
+                    ? <span className="inline-flex items-center gap-1"><GameAssetIcon asset={{ icon: 'Battle' }} size={14} /> Combat</span>
+                    : <span className="inline-flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 24 }} size={14} /> {(engagementTime - waveEngagementTimer).toFixed(1)}s</span>}
                             </span>
                         </div>
                     </div>
@@ -729,7 +732,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     <div className={`px-3 py-2 border-b border-gray-800 bg-[#0a0a12] ${mobileTab === 'log' ? 'hidden sm:block' : ''}`}>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs justify-center">
                             <div className="flex items-center gap-1">
-                                <Sword className="w-3 h-3 text-orange-400" />
+                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />
                                 <span className="text-gray-400">Player Damage:</span>
                                 <span className="text-orange-300 font-bold">{fmt(combatStats.playerDamageBase)}</span>
                                 {combatStats.buffDamage > 0 && (
@@ -746,7 +749,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             </div>
                             {ageIdx !== -2 && (
                                 <div className="flex items-center gap-1">
-                                    <Zap className="w-3 h-3 text-purple-400" />
+                                    <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 35 }} size={12} />
                                     <span className="text-gray-400">Skill Dmg:</span>
                                     <span className="text-purple-300 font-bold">x{formatMultiplier(1 + combatStats.skillDmgMultiTotal / 100)}</span>
                                     {(() => {
@@ -770,7 +773,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                         : (skill.hits > 1 ? skill.damage / skill.hits : skill.damage);
                                     return (
                                         <div key={skill.id} className="flex items-center gap-1">
-                                            <Zap className="w-3 h-3 text-yellow-400" />
+                                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 35 }} size={12} />
                                             <span className="text-gray-400">{skill.id}:</span>
                                             <span className="text-yellow-300 font-bold">{fmt(perHitDamage)}</span>
                                             {skill.hits > 1 && <span className="text-gray-500">×{skill.hits}</span>}
@@ -1007,19 +1010,19 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                         <div className="grid grid-cols-3 gap-2 text-center">
                             {/* Row 1: Offensive Basics */}
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-500" /> Crit %</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} /> Crit %</div>
                                 <div className="text-xs font-bold text-yellow-400">{((snapshot.playerStats?.criticalChance || 0) * 100).toFixed(0)}%</div>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3 text-red-500" /> Crit Dmg</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={12} /> Crit Dmg</div>
                                 <div className="text-xs font-bold text-red-400">x{(snapshot.playerStats?.criticalDamage || 1).toFixed(1)}</div>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Sword className="w-3 h-3 text-orange-500" /> Double</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} /> Double</div>
                                 <div className="text-xs font-bold text-orange-400">{((snapshot.playerStats?.doubleDamageChance || 0) * 100).toFixed(0)}%</div>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Clock className="w-3 h-3 text-blue-300" /> Atk Spd</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ icon: 'Timer' }} size={12} /> Atk Spd</div>
                                 <div className="text-xs font-bold text-blue-300">x{(snapshot.playerStats?.attackSpeedMultiplier || 1).toFixed(2)}</div>
                             </div>
 
@@ -1029,19 +1032,19 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                 <div className="text-xs font-bold text-blue-400">{((snapshot.playerStats?.blockChance || 0) * 100).toFixed(0)}%</div>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Heart className="w-3 h-3 text-pink-500" /> Steal</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} /> Steal</div>
                                 <div className="text-xs font-bold text-pink-400">{((snapshot.playerStats?.lifeSteal || 0) * 100).toFixed(1)}%</div>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Heart className="w-3 h-3 text-green-500" /> Regen</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} /> Regen</div>
                                 <div className="text-xs font-bold text-green-400">{((snapshot.playerStats?.healthRegen || 0) * 100).toFixed(1)}%</div>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3 text-purple-400" /> Skill Dmg</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 35 }} size={12} /> Skill Dmg</div>
                                 <div className="text-xs font-bold text-purple-400">x{formatMultiplier(snapshot.playerStats?.skillDamageMultiplier || 1)}</div>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><Clock className="w-3 h-3 text-purple-400" /> Skill CD</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-1"><GameAssetIcon asset={{ icon: 'Timer' }} size={12} /> Skill CD</div>
                                 <div className="text-xs font-bold text-purple-400">-{((snapshot.playerStats?.skillCooldownReduction || 0) * 100).toFixed(0)}%</div>
                             </div>
                         </div>

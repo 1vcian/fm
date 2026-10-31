@@ -25,11 +25,10 @@ import {
     ChevronUp,
     UploadCloud,
     GitBranch,
-    Info,
     LogOut,
-    RefreshCw,
     UserCircle2,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Button } from '../UI/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
@@ -147,7 +146,7 @@ export function AccountPanel() {
                                 disabled={sync.busy}
                                 title="Re-read your account and compare"
                             >
-                                <RefreshCw className={`w-4 h-4 ${sync.busy ? 'animate-spin' : ''}`} />
+                                <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} className={sync.busy ? 'animate-spin' : ''} />
                             </Button>
                             <Button variant="ghost" size="sm" onClick={() => void auth.signOut()} title="Sign out">
                                 <LogOut className="w-4 h-4" />
@@ -164,7 +163,7 @@ export function AccountPanel() {
                 {/* A sign-in attempt that came back from the mail client with a problem. */}
                 {auth.notice && (
                     <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
-                        <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+                        <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} className="mt-0.5" />
                         <p className="min-w-0 break-words">{auth.notice}</p>
                         <button
                             onClick={auth.dismissMessages}

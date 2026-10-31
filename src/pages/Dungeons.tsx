@@ -8,7 +8,8 @@ import { useTreeLimits } from '../hooks/useTreeLimits';
 import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
 import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { cn } from '../lib/utils';
-import { Sword, Heart, Trophy, Play, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
 import { useProfile } from '../context/ProfileContext';
 import { useBattleSimulation } from '../hooks/useBattleSimulation';
@@ -533,11 +534,11 @@ export default function Dungeons() {
                                                 {/* Stats */}
                                                 <div className="flex flex-wrap gap-2 mt-2">
                                                     <div className="flex items-center gap-1.5 text-xs text-red-300 bg-red-500/5 px-2 py-1 rounded grow-0 shrink-1">
-                                                        <Sword className="w-3 h-3 shrink-0" />
+                                                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />
                                                         <span className="font-mono whitespace-nowrap overflow-hidden text-clip">{Math.round(dungeonLevelData?.Damage || 0).toLocaleString()}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1.5 text-xs text-green-300 bg-green-500/5 px-2 py-1 rounded grow-0 shrink-1">
-                                                        <Heart className="w-3 h-3 shrink-0" />
+                                                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} />
                                                         <span className="font-mono whitespace-nowrap overflow-hidden text-clip">{Math.round(dungeonLevelData?.Health || 0).toLocaleString()}</span>
                                                     </div>
                                                 </div>
@@ -583,7 +584,7 @@ export default function Dungeons() {
 
                         {!waveDetails.length && (
                             <Card className="p-8 text-center border-dashed border-white/10 bg-transparent">
-                                <AlertTriangle className="w-12 h-12 text-text-muted mx-auto mb-4 opacity-50" />
+                                <GameAssetIcon asset={{ icon: 'WarningSign' }} size={48} className="block mx-auto mb-4 opacity-50" />
                                 <div className="text-text-muted">No wave data available for this stage.</div>
                             </Card>
                         )}
@@ -597,7 +598,7 @@ export default function Dungeons() {
 
                         <div className="relative z-10 flex-1">
                             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                <Trophy className="w-6 h-6 text-yellow-500" />
+                                <GameAssetIcon asset={{ icon: 'CommonChest' }} size={24} />
                                 Stage Rewards
                                 <span className={cn("text-xs px-2 py-0.5 rounded font-mono ml-auto", treeMode === 'max' ? "bg-green-500/20 text-green-400" : treeMode === 'empty' ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400")}>
                                     {treeMode === 'max' ? 'MAX TREE' : treeMode === 'empty' ? 'NO TREE' : 'MY TREE'}
@@ -635,7 +636,7 @@ export default function Dungeons() {
                                 onClick={() => setShowDebug(true)}
                                 className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-bold border border-red-500/30 transition-all flex items-center justify-center gap-2 group"
                             >
-                                <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                <GameAssetIcon asset={{ icon: 'Battle' }} size={16} className="group-hover:scale-110 transition-transform" />
                                 Simulate Battle
                             </button>
                         </div>

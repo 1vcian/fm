@@ -1,14 +1,19 @@
 /**
+ * Raise it to show the update popup once more to everyone, even to those who already saw the
+ * current game data's popup (the app changed, not the data).
+ */
+export const RELEASE_NOTES_REVISION = '2026_10_31';
+
+/**
  * What changed in the app itself (not the game data) alongside a game data version. The update
  * popup shows these above the config changes for the same version.
  */
 export const RELEASE_NOTES: Record<string, string[]> = {
     '2026_10_27_09_45': [
-        'Skin icons now come from the game files, one exact picture per skin, including the new Santa, Snowboard and Snowman weapons.',
-        'New sets Crimson Faemoth, Umbral Shade and Granite Warden, and set pieces always listed as Helmet, Armour, Weapon.',
-        'Main battle shows all three difficulties again for this build.',
-        'Skins & Sets: every set now shows its Max set effect, animated from the game files: the effect around the character and the one on death, for a complete set at max level.',
-        'Battles follow the new game rules: Incoming Crit Damage Reduction and the bonus on every 5th attack, ready for the fairies that will grant them, plus flat and uncapped fairies.',
+        'Now you can drag and hide the Buy Me a Coffee button under the header!',
+        'New Preset Builds page: the strongest builds the game allows for power, DPS and HPS (melee and ranged), the main quest and the arena, with their exact equivalents and an arena tournament. Calculate your best variants with only the skins you own, fight against every build with your profile to see where you rank, and add any build to your profiles as your own copy.',
+        'New Images Maker page: build a character with any items, skins, mount, pets and fairy, next to the clan emblem designer, and export it as a PNG or a looping GIF.',
+        'Graphic improvements: game icons across the whole app, exact skin icons, animated Max set effects, characters drawn as in battle, and late age item backgrounds drawn with the game\'s own shaders.',
     ],
     '2026_10_08_09_03': [
         'New Achievements wiki with the game\'s own titles and rewards.',

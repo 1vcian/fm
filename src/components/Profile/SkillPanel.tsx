@@ -4,7 +4,7 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
-import { Flame, Plus, Sword, RotateCcw } from 'lucide-react';
+import { Plus, RotateCcw } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
 import { SkillSlot } from '../../types/Profile';
@@ -29,6 +29,7 @@ import { formatNumber } from '../../utils/format';
 import { StatBreakdownTooltip } from '../UI/StatBreakdownTooltip';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { personalTechShare } from '../../utils/clanTechStacking';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 // Using global formatNumber from ../../utils/format
 
@@ -327,7 +328,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                             disabled={!isReady || !skillLibrary || Object.keys(skillLibrary).length < 1}
                             title="Select best 3 active skills for Max DPS"
                         >
-                            <Sword className="w-3 h-3" />
+                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />
                             AUTO DPS
                         </Button>
                         {previousSkills && (
@@ -412,7 +413,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                                         smooth
                                     />
                                 ) : (
-                                    <Flame className={cn("w-10 h-10", `text-rarity-${skill.rarity.toLowerCase()}`)} />
+                                    <GameAssetIcon asset={{ sheet: 'SkillIcons', index: 14 }} size={40} />
                                 )
                             )}
                             stats={{

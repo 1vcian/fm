@@ -78,6 +78,12 @@ export interface UserProfile {
     iconIndex: number; // Index in CardIcons.png spritesheet (8x8 = 64 icons)
     version: number;
     isShared?: boolean;
+    /**
+     * A preset profile (Profiles > Presets), loaded from parsed_configs/<version>/ProfilePresets.json:
+     * read-only (ProfileContext ignores every edit), never synced to the account. A clone is a
+     * normal profile.
+     */
+    preset?: { key: string; version: string };
     /** Last time any tech tree (Forge/Power/SkillsPetTech/Clan) was edited — stamped centrally in
      *  ProfileContext so the Profile tree spoiler can flag stale (>2d) tree data. */
     techTreeUpdatedAt?: number;
@@ -190,6 +196,11 @@ export interface UserProfile {
         plannerMinWaitBetweenNodes?: number;
         techPlanMetadata?: { isAuto: boolean; config?: any };
         useSkinWindup?: boolean;
+        /**
+         * Helmet and armour skin visibility (the game's per-type SkinVisibility, absent = shown):
+         * only the look changes. The weapon's is useSkinWindup, which also picks the attack row.
+         */
+        skinVisible?: { Helmet?: boolean; Body?: boolean };
     };
 }
 

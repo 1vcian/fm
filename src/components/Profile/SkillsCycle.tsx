@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronRight, Loader2, Timer, X } from 'lucide-react';
+import { ChevronRight, Loader2, X } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { SkillSlot } from '../../types/Profile';
@@ -10,6 +10,7 @@ import { BUFF_SKILL_TYPES, SKILL_EPICENTER, playerUnitSpec, pvpSkillRun, skillSp
 import { pvpConfigFromJson } from '../../pvp/simulate';
 import { formatCompactNumber } from '../../utils/statsCalculator';
 import { CooldownBreakpoints } from './CooldownBreakpoints';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 /**
  * Skills cycle, measured by the combat engine: a PvP battle against a dummy (src/engine/dummyRun.ts
@@ -112,7 +113,7 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
             >
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 shrink-0 rounded-lg bg-accent-primary/15 border border-accent-primary/30 flex items-center justify-center">
-                        <Timer className="w-4 h-4 text-accent-primary" />
+                        <GameAssetIcon asset={{ icon: 'Timer' }} size={16} />
                     </div>
                     <div className="min-w-0">
                         <div className="text-xs font-bold text-text-primary uppercase tracking-wide">Skills Cycle</div>
@@ -150,7 +151,7 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
                         <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-gradient-to-r from-accent-primary/15 via-bg-secondary/40 to-bg-secondary/40">
                             <div className="flex items-center gap-2.5 min-w-0">
                                 <div className="w-9 h-9 shrink-0 rounded-xl bg-accent-primary/20 border border-accent-primary/40 flex items-center justify-center">
-                                    <Timer className="w-5 h-5 text-accent-primary" />
+                                    <GameAssetIcon asset={{ icon: 'Timer' }} size={20} />
                                 </div>
                                 <div className="min-w-0">
                                     <div className="text-sm font-bold text-text-primary">Skills cycle simulation</div>

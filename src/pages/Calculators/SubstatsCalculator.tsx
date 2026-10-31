@@ -5,23 +5,19 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison, FairySelection } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
 import { StatsSummaryPanel } from '../../components/Profile/StatsSummaryPanel';
-import { RefreshCw, Sliders, Hash, Zap, TrendingUp, Wand2, Swords, Crosshair, User, Trophy, Heart, Square, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { RefreshCw, Hash, User, Check } from 'lucide-react';
 import { getStatName } from '../../utils/statNames';
 import { cn } from '../../lib/utils';
 import { UserProfile } from '../../types/Profile';
 import { FAIRIES, SEASON_STATS, fairyRawBonus, fairyGranted } from '../../utils/fairies';
-import { applyTreeMode, useStatLibraries } from '../../hooks/useGlobalStats';
-import { useTreeMode } from '../../context/TreeModeContext';
-import { useSubstatOptimizer } from '../../hooks/useBuildOptimizer';
-import { pvpConfigFromJson } from '../../pvp/simulate';
-import { formatCompactNumber } from '../../utils/statsCalculator';
-import {
-    allocKey, distribute,
-    type SubstatBody, type SubstatCandidate, type SubstatObjective, type SubstatOptimizerInput,
-} from '../../optimizer/substatOptimizer';
+import { useStatLibraries } from '../../hooks/useGlobalStats';
+import { distribute, placedCounts, currentAlloc, type SubstatBody } from '../../optimizer/substatOptimizer';
+import type { ProfilePreset, ProfilePresetsFile } from '../../presets/buildPresets';
+import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 
 /**
- * Substats Calculator: finds the best gear substat combination for the profile.
+ * Substats Calculator: tries gear substat combinations on the profile, against the profile.
  *
  * The allocatable list is ONLY what can actually roll on gear: SecondaryStatLibrary rows
  * with UpperRange > 0. The library also carries tree-only stats (MoveSpeed, AttackRange,
@@ -34,13 +30,12 @@ import {
  *   mount  -> same rarity rule (mounts share the Rarity enum; no separate library ships)
  * A body can hold each substat once, so a stat's cap is the number of bodies with a slot.
  *
- * The optimizer (src/optimizer/substatOptimizer.ts, in a worker) also DECIDES the fairy: no
- * fairy plus each of the season's three at max level. Objectives are numbers the game runs on:
- * real-time DPS and HPS (the stat engine, within 1% of the combat engine), Damage, Health, and
- * "Best build (simulated)", which fights a shortlist of allocations against a reference in
- * simulated arena battles. Power is not an objective: in game it is computed with every
+ * Nothing is searched on this page: the best allocations are searched once per game version
+ * with the preset builds (scripts/build_presets.ts, src/presets/buildPresets.ts) and loaded from
+ * ProfilePresets.json. Loading one sets the sliders (its roll counts laid onto this build's slots),
+ * its fairy, its weapon kind and 100% perfection; the sliders, the fairy picker and the comparison
+ * strip then work as before. Power never changes with substats: in game it is computed with every
  * substat removed (CalculatePower 0x785E258 -> Stats.WithoutSecondaryStats 0x785E500).
- * The melee/ranged weapon choice stays a manual scenario input.
  */
 
 const ITEM_SLOTS: (keyof UserProfile['items'])[] = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
@@ -56,21 +51,6 @@ const POOL_TO_SUBSTAT: Record<string, string> = {
 
 type Body = SubstatBody;
 
-/** Battles per side for "Best build (simulated)": each candidate fights twice this many. */
-const BATTLES_PER_SIDE = 100;
-
-const candidateKey = (c: SubstatCandidate) => `${c.isCurrent ? 'current' : c.fairy}|${allocKey(c.alloc)}`;
-
-const OBJECTIVES: { id: Exclude<SubstatObjective, 'simulated'>; label: string; icon: JSX.Element; tone: string }[] = [
-    { id: 'dps', label: 'DPS', icon: <Zap className="w-4 h-4" />, tone: 'border-orange-500/30 hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-400' },
-    { id: 'hps', label: 'HPS', icon: <TrendingUp className="w-4 h-4" />, tone: 'border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-400' },
-    { id: 'damage', label: 'Damage', icon: <Swords className="w-4 h-4" />, tone: 'border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400' },
-    { id: 'health', label: 'Health', icon: <Heart className="w-4 h-4" />, tone: 'border-green-500/30 hover:bg-green-500/10 hover:border-green-500/50 hover:text-green-400' },
-];
-const OBJECTIVE_LABEL: Record<SubstatObjective, string> = {
-    dps: 'DPS', hps: 'HPS', damage: 'Damage', health: 'Health', simulated: 'Best build (simulated)',
-};
-
 export default function SubstatsCalculator() {
     const { profile } = useProfile();
     const {
@@ -83,29 +63,23 @@ export default function SubstatsCalculator() {
         updateTestFairy,
     } = useComparison();
 
-    // Same libraries and tree mode as the header and the comparison strip (useGlobalStats).
-    const { libs: statLibs, ready: statsReady } = useStatLibraries();
-    const { treeMode } = useTreeMode();
-    const { profiles, activeProfileId } = useProfile();
+    // Same libraries as the header and the comparison strip (useGlobalStats).
+    const { libs: statLibs } = useStatLibraries();
     const secondaryStatLibrary = (statLibs as any).secondaryStatLibrary;
     const weaponLibrary = (statLibs as any).weaponLibrary;
     const { data: itemUnlockLibrary } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');
     const { data: petUnlockLibrary } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: fairyUpgrades } = useGameData<any>('FairyUpgradesLibrary.json');
-    const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
-    const pvpConfig = useMemo(() => pvpConfigFromJson(pvpBaseConfig), [pvpBaseConfig]);
 
     const [slotMode, setSlotMode] = useState<'profile' | 'max'>('profile');
     const [weaponType, setWeaponType] = useState<'profile' | 'melee' | 'ranged'>('profile');
-    // Output of the optimizer, not an input: which fairy (at max level) won the search.
+    // The fairy on the Test side: picked here or loaded from a preset.
     // `level: null` = the top level of FairyUpgradesLibrary, resolved below once it loads.
     const [bestFairyPick, setBestFairy] = useState<{ name: FairySelection['name']; level: number | null }>(
         () => ({ name: profile.misc.fairy?.name ?? null, level: null })
     );
     const [statAllocations, setStatAllocations] = useState<Record<string, number>>({});
-    const [includeSkills, setIncludeSkills] = useState(true);
     const [perfectionPercentage, setPerfectionPercentage] = useState(100);
-    const [referenceId, setReferenceId] = useState<string>('mirror');
 
     useEffect(() => {
         enterCompareMode();
@@ -202,15 +176,6 @@ export default function SubstatsCalculator() {
             return isRanged !== (weaponType === 'ranged');
         })();
 
-    /** Applies the weapon scenario onto a cloned profile. */
-    const applyWeapon = useCallback((p: any) => {
-        if (weaponOverride && p.items.Weapon) {
-            p.items.Weapon.idx = weaponOverride.idx;
-            // The skin would keep overriding the weapon's data, defeating the swap.
-            delete p.items.Weapon.skin;
-        }
-    }, [weaponOverride]);
-
     const handleResetToProfile = useCallback(() => {
         const initialAllocations: Record<string, number> = {};
         const addAlloc = (statId: string) => {
@@ -239,68 +204,22 @@ export default function SubstatsCalculator() {
         if (isComparing) updateTestFairy({ ...bestFairy });
     }, [isComparing, bestFairy, updateTestFairy]);
 
-    // ------------------------------------------------------------------ optimizer (worker)
-    const runOpt = useSubstatOptimizer();
-    const [lastObjective, setLastObjective] = useState<SubstatObjective | null>(null);
-    const [lastRunWithSkills, setLastRunWithSkills] = useState(true);
-    const [appliedKey, setAppliedKey] = useState<string | null>(null);
-    const otherProfiles = profiles.filter((p) => p.id !== activeProfileId);
-    const canOptimize = statsReady && !!pvpConfig && !!fairyUpgrades && rollableStats.length > 0 && totalAvailablePool > 0;
+    // ------------------------------------------------------------------ preset builds
+    // The best allocations are searched once per game version (scripts/build_presets.ts) and
+    // published with the presets; loading one puts its rolls on the sliders, laid onto this
+    // build's own slots (placedCounts: the stats with the most rolls first when slots run short).
+    const { data: presetFile } = useGameData<ProfilePresetsFile>('ProfilePresets.json');
+    // The best build of each category (the file also holds the runners-up).
+    const presets = (presetFile?.presets ?? []).filter(p => (p.rank ?? 1) === 1);
+    const [loadedPreset, setLoadedPreset] = useState<string | null>(null);
 
-    /** The scenario build: header tree mode + the weapon type. The current build has no weapon swap. */
-    const scenarioProfiles = useCallback(() => {
-        const current = applyTreeMode(profile, treeMode, statLibs);
-        const base = JSON.parse(JSON.stringify(current));
-        applyWeapon(base);
-        return { current, base };
-    }, [profile, treeMode, statLibs, applyWeapon]);
-
-    const optimize = useCallback((objective: SubstatObjective) => {
-        if (!canOptimize || !pvpConfig) return;
-        const { current, base } = scenarioProfiles();
-        const ref = referenceId === 'mirror' ? null : profiles.find((p) => p.id === referenceId) ?? null;
-        const input: SubstatOptimizerInput = {
-            base,
-            current,
-            reference: ref ?? current,
-            referenceName: ref ? (ref.name || 'Saved profile') : 'Mirror of your build',
-            objective,
-            withSkills: includeSkills,
-            stats: rollableStats.map((id) => ({ id, upper: secondaryStatLibrary[id]?.UpperRange || 0 })),
-            bodies,
-            perfection: perfectionPercentage,
-            fairies: [null, ...FAIRIES.map((f) => f.name)],
-            fairyLevel: maxFairyLevel,
-            extra: currentAllocated > 0 ? { alloc: { ...statAllocations }, fairy: bestFairy.name } : null,
-            pvpConfig,
-            battlesPerSide: BATTLES_PER_SIDE,
-            keep: 12,
-        };
-        setLastObjective(objective);
-        setLastRunWithSkills(includeSkills);
-        setAppliedKey(null);
-        runOpt.run(input, statLibs);
-    }, [canOptimize, pvpConfig, scenarioProfiles, referenceId, profiles, includeSkills, rollableStats, secondaryStatLibrary, bodies,
-        perfectionPercentage, maxFairyLevel, currentAllocated, statAllocations, bestFairy.name, runOpt, statLibs]);
-
-    const applyCandidate = useCallback((c: SubstatCandidate) => {
-        if (c.isCurrent) {
-            handleResetToProfile();
-            setBestFairy({ name: profile.misc.fairy?.name ?? null, level: profile.misc.fairy?.level ?? maxFairyLevel });
-        } else {
-            setStatAllocations({ ...c.alloc });
-            setBestFairy({ name: c.fairy, level: maxFairyLevel });
-        }
-        setAppliedKey(candidateKey(c));
-    }, [handleResetToProfile, profile.misc.fairy, maxFairyLevel]);
-
-    // A single-objective run applies its answer straight away, like before.
-    const result = runOpt.result;
-    useEffect(() => {
-        if (runOpt.status !== 'done' || !result || result.objective === 'simulated') return;
-        applyCandidate(result.best);
-        // Only when a new result lands (applyCandidate is stable enough not to re-fire it).
-    }, [result]); // eslint-disable-line
+    const loadPreset = useCallback((preset: ProfilePreset) => {
+        setStatAllocations(placedCounts(currentAlloc(preset.profile), bodies));
+        setBestFairy({ name: (preset.profile.misc.fairy?.name ?? null) as FairySelection['name'], level: maxFairyLevel });
+        setPerfectionPercentage(100);
+        setWeaponType(preset.weapons === 'any' ? 'profile' : preset.weapons);
+        setLoadedPreset(preset.key);
+    }, [bodies, maxFairyLevel]);
 
     /** The per-body layout of the current allocation: what to roll where. */
     const layout = useMemo(() => distribute(statAllocations, bodies), [statAllocations, bodies]);
@@ -364,34 +283,6 @@ export default function SubstatsCalculator() {
         return { cfg, required, granted };
     }, [bestFairy, statAllocations, secondaryStatLibrary, perfectionPercentage]);
 
-    const running = runOpt.status === 'running';
-    const ranked = result?.objective === 'simulated' ? result.ranked : [];
-    const includeSkillsOfResult = lastRunWithSkills;
-    const topTied = ranked.length > 1 && ranked[0].winRate >= 0.99 && ranked[1].winRate >= 0.99;
-    const pct = running && runOpt.total > 0
-        ? (lastObjective === 'simulated' ? (runOpt.stage === 1 ? 0 : 60) + (runOpt.done / runOpt.total) * (runOpt.stage === 1 ? 60 : 40) : (runOpt.done / runOpt.total) * 100)
-        : runOpt.status === 'done' ? 100 : 0;
-    const statusText = (() => {
-        if (!canOptimize) return totalAvailablePool === 0 ? 'No substat slots on this build' : 'Loading game data';
-        if (running) {
-            if (runOpt.stage === 2) return `Stage 2: arena battles (${runOpt.done} / ${runOpt.total} builds)`;
-            return lastObjective === 'simulated'
-                ? `Stage 1: searching allocations${runOpt.total ? ` (${runOpt.done} / ${runOpt.total})` : ''}`
-                : `Searching the best ${OBJECTIVE_LABEL[lastObjective ?? 'dps']} allocation`;
-        }
-        if (runOpt.status === 'cancelled') return 'Cancelled';
-        if (runOpt.status === 'error') return `Failed: ${runOpt.error}`;
-        if (runOpt.status === 'done' && result && runOpt.wallMs !== null) {
-            const secs = `${(runOpt.wallMs / 1000).toFixed(1)} s`;
-            if (result.objective === 'simulated') {
-                return `${result.scored.toLocaleString()} allocations scored, ${result.battles.toLocaleString()} battles vs ${result.referenceName}, ${secs}`;
-            }
-            const b = result.best;
-            const value = { dps: b.dps, hps: b.hps, damage: b.damage, health: b.health }[result.objective as Exclude<SubstatObjective, 'simulated'>];
-            return `Best ${OBJECTIVE_LABEL[result.objective]}: ${formatCompactNumber(value)} (${b.fairy ?? 'no fairy'}), applied. ${result.scored.toLocaleString()} allocations scored, ${secs}`;
-        }
-        return 'Ready';
-    })();
 
     if (!secondaryStatLibrary || !itemUnlockLibrary || !petUnlockLibrary) {
         return (
@@ -409,13 +300,13 @@ export default function SubstatsCalculator() {
             <div className="flex flex-col md:flex-row justify-between items-start gap-6 border-b border-border pb-6">
                 <div>
                     <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent flex items-center gap-3">
-                        <Sliders className="w-8 h-8 text-accent-primary" />
+                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 14 }} size={32} />
                         Substats Calculator
                     </h1>
                     <p className="text-text-secondary max-w-2xl mt-2 font-medium">
-                        Find the best substat combination for your build. Slots follow the game's unlock
-                        rules for your gear, tree-only stats never take a slot, and the fairy conversion
-                        and weapon type shift the optimum exactly like in game.
+                        Try substat combinations on your build, or load the best ones of a preset build. Slots
+                        follow the game's unlock rules for your gear, tree-only stats never take a slot, and the
+                        fairy conversion and weapon type work exactly like in game.
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -446,8 +337,8 @@ export default function SubstatsCalculator() {
                         <div className="flex bg-bg-secondary border border-border/50 rounded-lg p-1 mb-1">
                             {([
                                 { id: 'profile', label: 'Profile', icon: <User className="w-3.5 h-3.5" /> },
-                                { id: 'melee', label: 'Melee', icon: <Swords className="w-3.5 h-3.5" /> },
-                                { id: 'ranged', label: 'Ranged', icon: <Crosshair className="w-3.5 h-3.5" /> },
+                                { id: 'melee', label: 'Melee', icon: <GameAssetIcon asset={{ icon: 'Battle' }} size={14} /> },
+                                { id: 'ranged', label: 'Ranged', icon: <GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={14} /> },
                             ] as const).map((opt) => (
                                 <button
                                     key={opt.id}
@@ -468,41 +359,40 @@ export default function SubstatsCalculator() {
                         )}
                     </Card>
 
-                    {/* Auto-Optimizer */}
-                    <Card className="p-4 border-orange-500/30 bg-orange-500/5" data-testid="substats-optimizer">
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-orange-400">
-                            <Wand2 className="w-5 h-5" /> Auto-Optimizer
+                    {/* Preset builds */}
+                    <Card className="p-4 border-orange-500/30 bg-orange-500/5" data-testid="substats-presets">
+                        <h3 className="text-lg font-bold mb-1 flex items-center gap-2 text-orange-400">
+                            <GameAssetIcon asset={{ sheet: 'ArenaRankIcons', index: 0 }} size={20} /> Best substats
                         </h3>
-
-                        <div className="mb-1 text-xs font-bold uppercase tracking-wider text-text-muted">Skills</div>
-                        <div className="flex bg-bg-secondary border border-border/50 rounded-lg p-1 mb-1" role="radiogroup" aria-label="Skills">
-                            {([
-                                { on: true, label: 'With skills' },
-                                { on: false, label: 'Without skills' },
-                            ] as const).map((opt) => (
-                                <button
-                                    key={opt.label}
-                                    role="radio"
-                                    aria-checked={includeSkills === opt.on}
-                                    data-testid={opt.on ? 'substats-with-skills' : 'substats-without-skills'}
-                                    disabled={running}
-                                    onClick={() => setIncludeSkills(opt.on)}
-                                    className={cn(
-                                        "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all",
-                                        includeSkills === opt.on ? "bg-orange-500 text-white shadow" : "text-text-muted hover:text-text-primary"
-                                    )}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
-                        <p className="text-[10px] text-text-muted leading-snug mb-4">
-                            {includeSkills
-                                ? 'Your equipped skills count in DPS and HPS, and they fight in the simulated battles.'
-                                : 'Weapon only. In the simulated battles both you and the opponent fight without skills (skills also raise arena HP, so both sides drop them).'}
+                        <p className="text-[11px] text-text-muted leading-snug mb-3">
+                            The best allocations of every <Link to="/presets" className="text-accent-primary hover:underline">preset build</Link>,
+                            searched for this game version. Load one to put its rolls and fairy on the sliders (only substats and
+                            fairy: your gear, levels and trees stay yours) and compare it with your build.
                         </p>
+                        {presets.length === 0 ? (
+                            <div className="text-xs text-text-muted">No preset builds for this game version yet.</div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-1.5">
+                                {presets.map((p) => (
+                                    <button
+                                        key={p.key}
+                                        onClick={() => loadPreset(p)}
+                                        data-testid={`substats-preset-${p.key}`}
+                                        className={cn(
+                                            'text-left px-2.5 py-1.5 rounded-lg border transition-colors',
+                                            loadedPreset === p.key ? 'border-orange-400 bg-orange-500/15' : 'border-border bg-bg-input/40 hover:bg-orange-500/10',
+                                        )}
+                                    >
+                                        <div className="text-xs font-bold flex items-center gap-1">
+                                            {loadedPreset === p.key && <Check className="w-3 h-3 text-orange-400" />}{p.name}
+                                        </div>
+                                        <div className="text-[10px] text-text-muted">{p.goal}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
-                        <div className="bg-bg-input/30 p-3 rounded-lg border border-border/30 mb-4">
+                        <div className="bg-bg-input/30 p-3 rounded-lg border border-border/30 mt-4">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-sm font-medium">Substats Perfection</span>
                                 <span className="text-xs font-bold text-accent-primary">{perfectionPercentage}%</span>
@@ -512,140 +402,49 @@ export default function SubstatsCalculator() {
                                 min="1"
                                 max="100"
                                 value={perfectionPercentage}
-                                disabled={running}
                                 onChange={(e) => setPerfectionPercentage(Number(e.target.value))}
                                 className="w-full accent-accent-primary"
                             />
                         </div>
-
-                        <div className="mb-1 text-xs font-bold uppercase tracking-wider text-text-muted">Maximize</div>
-                        <div className="grid grid-cols-2 gap-2">
-                            {OBJECTIVES.map((o) => (
-                                <Button
-                                    key={o.id}
-                                    variant="outline"
-                                    data-testid={`substats-opt-${o.id}`}
-                                    aria-label={`Maximize ${o.label}`}
-                                    disabled={!canOptimize || running}
-                                    className={cn("w-full flex justify-start items-center gap-2 bg-bg-input/50 text-xs px-2", o.tone)}
-                                    onClick={() => optimize(o.id)}
-                                >
-                                    {o.icon} <span>{o.label}</span>
-                                </Button>
-                            ))}
-                        </div>
-
-                        <div className="mt-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
-                            <Button
-                                variant="outline"
-                                data-testid="substats-opt-simulated"
-                                disabled={!canOptimize || running}
-                                className="w-full flex justify-start items-center gap-2 bg-bg-input/50 border-yellow-500/40 hover:bg-yellow-500/10 hover:text-yellow-300"
-                                onClick={() => optimize('simulated')}
-                            >
-                                <Trophy className="w-4 h-4 text-yellow-400" /> Best build (simulated)
-                            </Button>
-                            <label className="flex items-center justify-between gap-2 text-[11px] text-text-secondary">
-                                <span>Opponent</span>
-                                <select
-                                    value={referenceId}
-                                    onChange={(e) => setReferenceId(e.target.value)}
-                                    disabled={running}
-                                    data-testid="substats-opponent"
-                                    className="max-w-[65%] min-w-0 px-2 py-0.5 rounded bg-bg-input border border-border text-text-primary"
-                                >
-                                    <option value="mirror">Mirror of your build</option>
-                                    {otherProfiles.map((p) => <option key={p.id} value={p.id}>{p.name || 'Saved profile'}</option>)}
-                                </select>
-                            </label>
-                            <p className="text-[10px] text-text-muted leading-snug">
-                                Shortlists the best DPS, HPS, Damage and Health allocations and blends between DPS and HPS, for no
-                                fairy and each fairy, then each one fights {BATTLES_PER_SIDE * 2} arena battles (the same {BATTLES_PER_SIDE} seeds
-                                as Player 1 and as Player 2). Ranked by win rate, then HP margin.
-                            </p>
-                        </div>
-
-                        <div className="mt-4 flex items-center gap-2">
-                            {running && (
-                                <button
-                                    onClick={runOpt.cancel}
-                                    data-testid="substats-cancel"
-                                    className="flex items-center gap-1 px-2 py-1 rounded-md border border-red-500/50 text-red-400 text-[11px] font-bold hover:bg-red-500/10 shrink-0"
-                                >
-                                    <Square className="w-3 h-3" /> Cancel
-                                </button>
-                            )}
-                            <div className="flex-1 min-w-0">
-                                <div className="h-1.5 rounded-full bg-bg-input overflow-hidden">
-                                    <div className="h-full bg-orange-500 transition-all" style={{ width: `${pct}%` }} />
-                                </div>
-                                <div className="text-[10px] text-text-muted mt-0.5 break-words" data-testid="substats-status">{statusText}</div>
-                            </div>
-                        </div>
-
-                        <p className="text-[10px] text-text-muted mt-3 leading-snug">
-                            Scores are the profile's real-time DPS and HPS, the same numbers as the header (within 1% of the combat
-                            engine). Power is not an option: the game computes Power with every substat removed, so no allocation
-                            changes it.
-                        </p>
                     </Card>
 
-                    {lastObjective === 'simulated' && ranked.length > 0 && (
-                        <Card className="p-0 border-yellow-500/30 overflow-hidden" data-testid="substats-ranking">
-                            <div className="px-4 py-3 border-b border-border bg-bg-secondary/40">
-                                <div className="text-sm font-bold flex items-center gap-2"><Trophy className="w-4 h-4 text-yellow-400" /> Best builds vs {result?.referenceName}</div>
-                                <div className="text-[10px] text-text-muted">
-                                    {includeSkillsOfResult ? 'With skills' : 'Without skills, on both sides'}. Apply a row to load it into the sliders and the Test side.
+                    {/* Fairy */}
+                    <Card className="p-4 border-accent-primary/20 bg-accent-primary/5" data-testid="substats-fairy">
+                        <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                            <GameAssetIcon asset={{ icon: 'FairyIconLora' }} size={20} /> Fairy
+                        </h3>
+                        <div className="flex flex-wrap gap-1.5">
+                            {([null, ...FAIRIES.map((f) => f.name)] as FairySelection['name'][]).map((name) => (
+                                <button
+                                    key={name ?? 'none'}
+                                    onClick={() => setBestFairy({ name, level: bestFairy.level || maxFairyLevel })}
+                                    className={cn(
+                                        'px-2.5 py-1 rounded-lg border text-xs font-bold',
+                                        bestFairy.name === name ? 'border-accent-primary bg-accent-primary/15 text-accent-primary' : 'border-border text-text-secondary hover:bg-bg-input',
+                                    )}
+                                >
+                                    {name ?? 'None'}
+                                </button>
+                            ))}
+                        </div>
+                        {bestFairy.name && (
+                            <div className="mt-3">
+                                <div className="flex justify-between items-center mb-1 text-xs">
+                                    <span className="text-text-secondary">Level</span>
+                                    <span className="font-mono font-bold text-accent-primary">{bestFairy.level} / {maxFairyLevel}</span>
                                 </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max={Math.max(1, maxFairyLevel)}
+                                    value={bestFairy.level}
+                                    onChange={(e) => setBestFairy({ name: bestFairy.name, level: Number(e.target.value) })}
+                                    className="w-full accent-accent-primary"
+                                />
+                                <p className="text-[10px] text-text-muted mt-1 leading-snug">{SEASON_STATS[bestFairy.name].targetLabel} from {SEASON_STATS[bestFairy.name].requiredLabel}{SEASON_STATS[bestFairy.name].targetStatTotalCap !== null ? `, up to ${pctLabel(SEASON_STATS[bestFairy.name].targetStatTotalCap!)} in total` : ''}.</p>
                             </div>
-                            <ol className="divide-y divide-border/60">
-                                {ranked.map((c, i) => {
-                                    const applied = appliedKey === candidateKey(c);
-                                    return (
-                                        <li key={candidateKey(c)} className={cn('px-4 py-2.5 space-y-1', applied && 'bg-accent-primary/10')} data-testid="substats-row">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex items-start gap-2 min-w-0">
-                                                    <span className="w-5 shrink-0 text-[11px] font-bold text-text-muted">{i + 1}</span>
-                                                    <span className="text-[11px] font-bold text-text-primary break-words">
-                                                        {c.tags.join(' | ')}
-                                                    </span>
-                                                </div>
-                                                <span className={cn('shrink-0 text-[12px] font-mono font-bold', i === 0 ? 'text-green-400' : 'text-text-primary')} data-testid="substats-winrate">
-                                                    {(c.winRate * 100).toFixed(1)}% <span className="text-[10px] text-text-muted font-normal">± {(c.winRateSe * 100).toFixed(1)}</span>
-                                                </span>
-                                            </div>
-                                            <div className="pl-7 text-[10px] text-text-secondary break-words">
-                                                {Object.entries(c.alloc).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])
-                                                    .map(([id, n]) => `${getStatName(id)} x${n}`).join(', ') || 'No substats'}
-                                            </div>
-                                            <div className="pl-7 flex items-center justify-between gap-2">
-                                                <span className="text-[10px] font-mono text-text-muted min-w-0 break-words">
-                                                    {c.fairy ? `${c.fairy}` : 'No fairy'}, {formatCompactNumber(c.dps)} DPS, {formatCompactNumber(c.hps)} HPS,
-                                                    HP margin {c.hpMargin >= 0 ? '+' : ''}{(c.hpMargin * 100).toFixed(1)}%
-                                                </span>
-                                                <button
-                                                    onClick={() => applyCandidate(c)}
-                                                    data-testid="substats-apply"
-                                                    className={cn(
-                                                        'shrink-0 px-2 py-0.5 rounded text-[10px] font-bold border',
-                                                        applied ? 'border-accent-primary/60 text-accent-primary' : 'border-border text-text-secondary hover:bg-white/5'
-                                                    )}
-                                                >
-                                                    {applied ? <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Applied</span> : 'Apply'}
-                                                </button>
-                                            </div>
-                                        </li>
-                                    );
-                                })}
-                            </ol>
-                            {topTied && (
-                                <div className="px-4 py-2 border-t border-border text-[10px] text-text-muted leading-snug">
-                                    Several builds win almost every battle against this opponent, so HP margin orders them. A stronger
-                                    opponent (a saved profile) separates them better.
-                                </div>
-                            )}
-                        </Card>
-                    )}
+                        )}
+                    </Card>
 
                     {/* Slot budget from the game's unlock rules */}
                     <Card className="p-4 border-accent-primary/20 bg-accent-primary/5">
@@ -701,7 +500,7 @@ export default function SubstatsCalculator() {
                             <li>Slots follow the game's unlock rules for your equipped gear (age and rarity).</li>
                             <li>A single item, pet or mount cannot roll the same stat twice, so each stat caps at {perStatCap}.</li>
                             <li>Tree-only stats (move speed, attack range, reflect) never take a substat slot.</li>
-                            <li>Pick a weapon type in the Scenario; the Auto-Optimizer decides the best fairy on its own, always at max level.</li>
+                            <li>Pick a weapon type in the Scenario and a fairy; loading a preset sets both to the preset's.</li>
                         </ul>
                     </Card>
                 </div>

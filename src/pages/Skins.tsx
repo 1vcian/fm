@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { Shield, Sword, Heart, Zap } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { getSkinSpriteStyle } from '../utils/skinSprites';
 import { useSkinIcons } from '../utils/skinIcons';
 import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
 import { SetEffectButton } from '../components/Wiki/SetEffectPreview';
 import { useGameDataContext } from '../context/GameDataContext';
 import skinSetNames from '../data/skinSetNames.json';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 interface SkinStat {
     StatNode: {
@@ -172,9 +173,7 @@ export default function Skins() {
                         <Card key={type} className="bg-bg-secondary/40 border-border/50 p-4 space-y-4">
                             <div className="flex items-center gap-3 border-b border-border/30 pb-3">
                                 <div className="p-2 bg-accent-primary/10 rounded-lg">
-                                    {type === 'Weapon' ? <Sword className="w-5 h-5 text-accent-primary" /> :
-                                        type === 'Helmet' ? <Shield className="w-5 h-5 text-accent-primary" /> :
-                                            <Shield className="w-5 h-5 text-accent-primary opacity-70" />}
+                                    <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: type === 'Weapon' ? 4 : type === 'Helmet' ? 5 : 6 }} size={20} />
                                 </div>
                                 <h3 className="text-lg font-bold text-text-primary uppercase tracking-wider">{type} Upgrades</h3>
                             </div>
@@ -251,7 +250,7 @@ export default function Skins() {
                                 {/* Set Bonuses */}
                                 <div className="flex flex-col gap-2 bg-bg-input/50 p-3 rounded-lg border border-border/30 min-w-[200px]">
                                     <span className="text-xs font-bold text-text-muted uppercase mb-1 flex items-center gap-1">
-                                        <Zap className="w-3 h-3 text-yellow-400" /> Set Bonuses
+                                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} /> Set Bonuses
                                     </span>
                                     {setInfo.BonusTiers.map((tier, i) => (
                                         <div key={i} className="space-y-1">
@@ -347,7 +346,7 @@ function SkinCard({ skin, bgStyle, timing, onShowBreakpoints }: {
                                 {timing.melee && (
                                     <div className="flex items-center justify-between gap-1">
                                         <div className="flex items-center gap-1 text-orange-400">
-                                            <Sword className="w-2.5 h-2.5" />
+                                            <GameAssetIcon asset={{ icon: 'Battle' }} size={10} />
                                             <span className="text-[9px] font-bold uppercase">Melee: {timing.melee.windup.toFixed(2)}s</span>
                                         </div>
                                         <button
@@ -364,7 +363,7 @@ function SkinCard({ skin, bgStyle, timing, onShowBreakpoints }: {
                                 {timing.ranged && (
                                     <div className="flex items-center justify-between gap-1">
                                         <div className="flex items-center gap-1 text-cyan-400">
-                                            <Zap className="w-2.5 h-2.5" />
+                                            <GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={10} />
                                             <span className="text-[9px] font-bold uppercase">Ranged: {timing.ranged.windup.toFixed(2)}s</span>
                                         </div>
                                         <button
@@ -389,9 +388,9 @@ function SkinCard({ skin, bgStyle, timing, onShowBreakpoints }: {
                     <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-text-secondary">
                             {stat.StatNode.UniqueStat.StatType === 'Damage' ? (
-                                <Sword className="w-3 h-3 text-red-400" />
+                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />
                             ) : stat.StatNode.UniqueStat.StatType === 'Health' ? (
-                                <Heart className="w-3 h-3 text-green-400" />
+                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} />
                             ) : (
                                 <GameIcon name="star" className="w-3 h-3 text-accent-primary" />
                             )}

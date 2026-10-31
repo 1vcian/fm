@@ -25,7 +25,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, BellOff, BellRing, AlertTriangle, Check, Loader2, Share } from 'lucide-react';
+import { Bell, BellOff, BellRing, Loader2, Share } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -277,14 +278,14 @@ export function PushPanel() {
                             </p>
                             {subscription?.registered === false && (
                                 <p className="mt-1.5 flex items-start gap-2 text-[11px] text-amber-400 leading-relaxed">
-                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                                     This browser is subscribed but the server has not confirmed it. Nothing will arrive
                                     until it does; it is retried every time you open the app.
                                 </p>
                             )}
                             {subscription?.keyMismatch && (
                                 <p className="mt-1.5 flex items-start gap-2 text-[11px] text-amber-400 leading-relaxed">
-                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                                     This device was registered against an older signing key and can no longer receive
                                     anything. Turn notifications off and on again to fix it.
                                 </p>
@@ -313,8 +314,8 @@ export function PushPanel() {
                             )}
                         >
                             {testResult.ok
-                                ? <Check className="w-3.5 h-3.5 shrink-0 mt-0.5 text-accent-primary" />
-                                : <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
+                                ? <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={14} className="mt-0.5" />
+                                : <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />}
                             <span>{testResult.message}</span>
                         </p>
                     )}
@@ -324,7 +325,7 @@ export function PushPanel() {
                             role="status"
                             className="mt-2 flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-2 text-[11px] text-red-200 leading-relaxed"
                         >
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                             <span>{failure}</span>
                         </p>
                     )}

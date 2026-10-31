@@ -34,6 +34,8 @@ export interface Look {
     mount?: string | null;
     pets?: string[];
     fairy?: string | null;
+    /** BodyParts the shown helmet, armour and weapon turn off (ItemVisual.turnOff, merged). */
+    turnOff?: number[];
 }
 
 const ITEM_TYPE = { Helmet: 0, Armour: 1, Weapon: 5 } as const;
@@ -44,21 +46,34 @@ function visualFor(data: BattleVisualData, age: number, type: number, idx: numbe
     return name ? data.visuals[name] ?? null : null;
 }
 
-function skinPrefab(data: BattleVisualData, type: number, skinIdx: number | undefined, ranged: boolean): string | null {
+function skinVisual(data: BattleVisualData, type: number, skinIdx: number | undefined, ranged: boolean): ItemVisual | null {
     if (skinIdx === undefined || skinIdx === null) return null;
     const s = data.skins.find(k => k.itemType === type && k.skinVisualId === skinIdx);
     if (!s) return null;
     const name = ranged && s.secondary ? s.secondary : s.main;
-    return name ? data.visuals[name]?.prefab ?? null : null;
+    return name ? data.visuals[name] ?? null : null;
+}
+
+function skinPrefab(data: BattleVisualData, type: number, skinIdx: number | undefined, ranged: boolean): string | null {
+    return skinVisual(data, type, skinIdx, ranged)?.prefab ?? null;
+}
+
+/** The body parts the shown visuals turn off: each slot's skin when one is shown, else its item. */
+function turnOffOf(shown: (ItemVisual | null | undefined)[]): number[] {
+    return [...new Set(shown.flatMap(v => v?.turnOff ?? []))];
 }
 
 /** The look of a bare character wearing the given skins (Skin Idx per slot), default weapon below. */
 export function lookFromSkins(data: BattleVisualData, skins: { helmet?: number; armour?: number; weapon?: number }): Look {
+    const h = skinVisual(data, ITEM_TYPE.Helmet, skins.helmet, false);
+    const a = skinVisual(data, ITEM_TYPE.Armour, skins.armour, false);
+    const w = skinVisual(data, ITEM_TYPE.Weapon, skins.weapon, false);
     return {
         weapon: data.visuals[data.defaultWeapon],
-        helmetPrefab: skinPrefab(data, ITEM_TYPE.Helmet, skins.helmet, false),
-        armourPrefab: skinPrefab(data, ITEM_TYPE.Armour, skins.armour, false),
-        weaponPrefab: skinPrefab(data, ITEM_TYPE.Weapon, skins.weapon, false),
+        helmetPrefab: h?.prefab ?? null,
+        armourPrefab: a?.prefab ?? null,
+        weaponPrefab: w?.prefab ?? null,
+        turnOff: turnOffOf([h, a, w]),
     };
 }
 
@@ -67,20 +82,27 @@ export function lookFromProfile(data: BattleVisualData, profile: UserProfile | n
     if (!profile) return { weapon: data.visuals[data.defaultWeapon] };
     const it = profile.items;
     const look: Look = {};
+    // A hidden skin (the game's per-type SkinVisibility) shows the item underneath.
+    const shown = (visible: boolean | undefined, idx: number | undefined) => (visible === false ? undefined : idx);
     if (it.Helmet) {
         look.helmet = visualFor(data, it.Helmet.age, ITEM_TYPE.Helmet, it.Helmet.idx);
-        look.helmetPrefab = skinPrefab(data, ITEM_TYPE.Helmet, it.Helmet.skin?.idx, false);
+        look.helmetPrefab = skinPrefab(data, ITEM_TYPE.Helmet, shown(profile.misc?.skinVisible?.Helmet, it.Helmet.skin?.idx), false);
     }
     if (it.Body) {
         look.armour = visualFor(data, it.Body.age, ITEM_TYPE.Armour, it.Body.idx);
-        look.armourPrefab = skinPrefab(data, ITEM_TYPE.Armour, it.Body.skin?.idx, false);
+        look.armourPrefab = skinPrefab(data, ITEM_TYPE.Armour, shown(profile.misc?.skinVisible?.Body, it.Body.skin?.idx), false);
     }
     if (it.Weapon) {
         look.weapon = visualFor(data, it.Weapon.age, ITEM_TYPE.Weapon, it.Weapon.idx);
-        look.weaponPrefab = skinPrefab(data, ITEM_TYPE.Weapon, it.Weapon.skin?.idx, !!opts?.weaponRanged);
+        look.weaponPrefab = skinPrefab(data, ITEM_TYPE.Weapon, shown(profile.misc?.useSkinWindup, it.Weapon.skin?.idx), !!opts?.weaponRanged);
     } else {
         look.weapon = data.visuals[data.defaultWeapon];
     }
+    look.turnOff = turnOffOf([
+        it.Helmet ? skinVisual(data, ITEM_TYPE.Helmet, shown(profile.misc?.skinVisible?.Helmet, it.Helmet.skin?.idx), false) ?? look.helmet : null,
+        it.Body ? skinVisual(data, ITEM_TYPE.Armour, shown(profile.misc?.skinVisible?.Body, it.Body.skin?.idx), false) ?? look.armour : null,
+        it.Weapon ? skinVisual(data, ITEM_TYPE.Weapon, shown(profile.misc?.useSkinWindup, it.Weapon.skin?.idx), !!opts?.weaponRanged) ?? look.weapon : null,
+    ]);
     if (opts?.noCompanions) return look;
     const asc = (n?: number) => Math.max(0, Math.min(3, n ?? 0));
     const m = profile.mount?.active;
@@ -186,6 +208,14 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
         controller = controllerClips(data, w?.controller);
     } else {
         controller = controllerClips(data, rig.nodes[charRig]?.anim ?? null);
+    }
+    // BodyPartsToTurnOff: CharacterRig.GetBodyPartRenderers (0x4042598) maps Head to
+    // SpriteRenderers[0], Body to [1], Hand to [2] and [3]; the extractor stores those as node
+    // indices (bodyPartNodes) on the CharacterRig node.
+    if (kind === 'unit' && look.turnOff?.length && charRig >= 0) {
+        const parts: number[] = (rig.nodes[charRig] as any).bodyPartNodes ?? [];
+        const byPart: Record<number, number[]> = { 0: [parts[0]], 1: [parts[1]], 2: [parts[2], parts[3]] };
+        for (const bp of look.turnOff) for (const n of byPart[bp] ?? []) if (n !== undefined && n >= 0 && rig.nodes[n]) rig.nodes[n].srOff = 1;
     }
     if (charRig < 0) charRig = 0;
     rig.setAnimRoot(charRig);

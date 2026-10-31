@@ -30,6 +30,7 @@
  * dt is F64.Ratio(1, 10) = floor(2^32/10) / 2^32, a hair under 0.1 s, so a 60 s timer reaches 0 on
  * Update 601: frames 1..600 run, Update 601 decides.
  */
+import { runSeed } from '../engine/rng';
 import { CombatScene, SkillManager, describeEvent, sceneVisuals, setupPvp, type PvpHpConfig, type PvpSetup, type Unit } from '../engine';
 import type { PvpFighter } from './fighter';
 
@@ -88,7 +89,7 @@ export class PvpBattle {
     private updates = 0;
     result: PvpRunResult | null = null;
 
-    constructor(p1: PvpFighter, p2: PvpFighter, cfg: PvpHpConfig, seed = 1, keepEvents = false) {
+    constructor(p1: PvpFighter, p2: PvpFighter, cfg: PvpHpConfig, seed: bigint | number = 1, keepEvents = false) {
         this.skills = new SkillManager();
         this.scene = new CombatScene({ seed, keepEvents, skillSystem: s => this.skills.execute(s) });
         this.setup = setupPvp(p1.loadout, p2.loadout, cfg, this.scene);
@@ -149,7 +150,7 @@ export class PvpBattle {
     }
 }
 
-/** Many seeded runs (seeds 1..runs), so the same inputs always give the same numbers. */
+/** Many seeded runs (runSeed(1..runs)), so the same inputs always give the same numbers. */
 export function simulatePvpBatch(
     p1: PvpFighter,
     p2: PvpFighter,
@@ -158,7 +159,7 @@ export function simulatePvpBatch(
 ): PvpBatchResult {
     let p1Wins = 0, p2Wins = 0, draws = 0, timeouts = 0, secs = 0, f1 = 0, f2 = 0, mult = 1;
     for (let seed = 1; seed <= runs; seed++) {
-        const battle = new PvpBattle(p1, p2, cfg, seed);
+        const battle = new PvpBattle(p1, p2, cfg, runSeed(seed));
         mult = battle.hpMultiplier;
         const r = battle.run();
         if (r.outcome === 'p1') p1Wins++;

@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../UI/Button';
-import { X, TrendingUp, Zap, Hash, Swords, Sparkles, HelpCircle } from 'lucide-react';
+import { X, Hash } from 'lucide-react';
 import { AggregatedStats } from '../../utils/statEngine';
 import { UserProfile } from '../../types/Profile';
 import { formatPercent, formatCompactNumber } from '../../utils/statsCalculator';
@@ -15,6 +15,7 @@ import { formatNumber } from '../../utils/format';
 import { EngineCheckSection } from './EngineCheckSection';
 import { useEngineCheck } from '../../hooks/useEngineCheck';
 import { TESTED_SECONDS } from '../../engine/dummyRun';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 /** How far above the current attack speed the next breakpoint is searched, in % points. */
 const BREAKPOINT_SCAN_PCT = 1000;
@@ -98,7 +99,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 border-b border-border bg-bg-secondary/40 gap-4">
                     <div className="flex items-center justify-between w-full sm:w-auto shrink min-w-0">
                         <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                            <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-orange-400 shrink-0" />
+                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={24} />
                             <div className="min-w-0">
                                 <h3 className="text-base md:text-xl font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-clip">DPS Breakdown</h3>
                                 <p className="text-[8px] md:text-[10px] text-white/40 font-mono uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden text-clip">Weapon formula and 24 h test</p>
@@ -121,7 +122,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                 )}
                                 title="View Attack Speed Thresholds"
                             >
-                                <Zap className="w-3 h-3" />
+                                <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                                 <span>Breakpoints</span>
                             </button>
                         </div>
@@ -152,7 +153,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                 {hasSkin && (
                     <div className="px-4 py-2 bg-accent-primary/5 border-b border-accent-primary/10 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="w-3.5 h-3.5 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'Sparkle' }} size={14} />
                             <span className="text-[10px] font-bold uppercase tracking-wider text-accent-primary/80">Skin Performance Optimization</span>
                         </div>
                         <label 
@@ -179,7 +180,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-10 custom-scrollbar bg-bg-primary font-sans">
                     {/* What the two figures are */}
                     <div className="bg-bg-input/60 rounded-xl p-3 md:p-4 border border-dashed border-white/10 flex gap-3" data-testid="dps-explainer">
-                        <HelpCircle className="w-5 h-5 text-orange-300 shrink-0 mt-0.5" />
+                        <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={20} className="mt-0.5" />
                         <div className="text-[10px] md:text-[11px] text-white/60 leading-relaxed space-y-1.5">
                             <p><strong className="text-orange-300">Weapon DPS (theoretical)</strong> is a formula for your weapon alone: damage x hits per second x average crit. Hits per second follow the game's 0.1 s attack breakpoints and your double chance. No skills are in it.</p>
                             <p><strong className="text-emerald-300">Tested DPS ({TESTED_SECONDS / 3600} h simulation)</strong> is measured: the real combat engine runs your whole build for {TESTED_SECONDS / 3600} hours of game time against a dummy with infinite health and the damage is averaged per second. It adds everything the formula leaves out: each skill with its real cooldown and uptime, buffs on your hits, and the luck of crit and double rolls averaged over hundreds of thousands of attacks.</p>
@@ -190,7 +191,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                     {/* Weapon Section */}
                     <section className="space-y-4 md:space-y-6">
                         <div className="flex items-center gap-3 text-orange-400 font-bold uppercase text-[10px] md:text-[11px] tracking-[0.2em] border-b border-orange-500/20 pb-3 font-sans">
-                            <Swords className="w-4 h-4 md:w-5 md:h-5" />
+                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={18} />
                             Weapon DPS (theoretical)
                         </div>
 
@@ -288,7 +289,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                                 )}
                                             </div>
                                             <button onClick={() => setShowBreakpoints(true)} className="shrink-0 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 flex items-center gap-1.5 w-fit">
-                                                <Zap className="w-3 h-3" /> All breakpoints
+                                                <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} /> All breakpoints
                                             </button>
                                         </div>
                                     </div>

@@ -5,8 +5,10 @@ import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { useTreeLimits } from '../../hooks/useTreeLimits';
 import { forgeLevelCost } from '../../hooks/useForgeCalculator';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
-import { ArrowRightLeft, HelpCircle, RefreshCw, Trophy } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
+import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { isWarPointDay, getDayBoostNodeType, getWarPointsForTask } from '../../utils/guildWarUtils';
+import { AgeBackground } from '../../components/AgeBackground/AgeBackground';
 import { cn, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -680,13 +682,13 @@ export default function ForgeCalculator() {
                     <div className="flex items-center gap-2 pt-3 scale-75 origin-left">
                         {isWarPointDay(new Date(), 'forge', guildWarConfig) && (
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-primary/20 text-accent-primary border border-accent-primary/30 text-[10px] font-black uppercase tracking-wider animate-pulse">
-                                <Trophy size={14} />
+                                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 10 }} size={14} />
                                 War Points Active: High Value Day
                             </div>
                         )}
                         {forgeWarBonus > 0 && (
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
-                                <Trophy size={14} />
+                                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 0 }} size={14} />
                                 Clan Boost: +{(forgeWarBonus * 100).toFixed(0)}% War Points
                             </div>
                         )}
@@ -700,7 +702,7 @@ export default function ForgeCalculator() {
             {false && (
             <div className="card p-4 border-accent-primary/20 bg-bg-secondary/30 backdrop-blur-md">
                 <div className="flex items-center gap-2 mb-3">
-                    <Trophy size={16} className="text-accent-primary" />
+                    <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 4 }} size={16} />
                     <h3 className="text-sm font-bold text-white">Forge Upgrade War Points</h3>
                     <span className="text-[10px] text-text-muted">(spending coins/gems on upgrades)</span>
                 </div>
@@ -874,7 +876,7 @@ export default function ForgeCalculator() {
                                 <div className="bg-bg-primary/40 border border-white/5 rounded-xl p-4 space-y-4">
                                     <div className="flex items-center justify-between text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
                                         <span>AutoForge Estimates</span>
-                                        <HelpCircle className="w-3 h-3 opacity-50" />
+                                        <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={12} className="opacity-50" />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
@@ -1042,7 +1044,7 @@ export default function ForgeCalculator() {
                                     Using {autoForgeSummons} items every {autoForgeInterval}s
                                 </div>
                             </div>
-                            <RefreshCw className="w-10 h-10 absolute right-4 bottom-4 opacity-20 text-green-500 animate-[spin_5s_linear_infinite]" />
+                            <GameAssetIcon asset={{ icon: 'AutoForge' }} size={40} className="absolute right-4 bottom-4 opacity-20 animate-[spin_5s_linear_infinite]" />
                         </div>
                     </div>
 
@@ -1057,23 +1059,10 @@ export default function ForgeCalculator() {
                                 <div key={age.name} className={cn(
                                     "p-4 flex flex-col md:flex-row items-center gap-4 transition-all relative overflow-hidden group",
                                     age.isMax ? "ring-2 ring-accent-primary/30 z-10" : "",
-                                    age.idx === 9 ? "bg-age-divine shadow-[inset_0_0_30px_rgba(0,0,0,0.2)]" :
-                                        age.idx === 8 ? "bg-age-underworld shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                            age.idx === 7 ? "bg-age-quantum shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                                age.idx === 6 ? "bg-age-multiverse shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                                    age.idx === 5 ? "bg-age-interstellar shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                                        age.idx === 4 ? "bg-age-space shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                                            age.idx === 3 ? "bg-age-modern shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                                                age.idx === 2 ? "bg-age-earlymodern shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                                                    age.idx === 1 ? "bg-age-medieval shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
-                                                                        "bg-age-primitive shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]"
+                                    "shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]"
                                 )}>
-                                    {/* Animation Layers */}
-                                    {age.idx === 9 && <div className="divine-animation" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}DivineBackground.png)`, height: '100vh' } as React.CSSProperties} />}
-                                    {age.idx === 8 && <div className="underworld-animation opacity-30" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}UnderworldBackground.png)` } as React.CSSProperties} />}
-                                    {age.idx === 7 && <div className="quantum-animation opacity-30"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>}
-                                    {age.idx === 6 && <div className="multiverse-animation opacity-30" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}MultiverseBackground.png)` } as React.CSSProperties} />}
-                                    {age.idx === 5 && <div className="interstellar-animation opacity-30" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}InterstellarBackground.png)` } as React.CSSProperties} />}
+                                    {/* The age's item background as the game draws it (forge upgrade popup). */}
+                                    <AgeBackground ageIdx={age.idx} />
 
                                     <div className="flex-1 w-full flex items-center gap-4 relative z-10">
                                         <div className="shrink-0 p-1 bg-white/10 rounded-lg border border-white/20 shadow-md backdrop-blur-sm" style={getAgeIconStyle(age.idx, 48, selectedVersion)} />

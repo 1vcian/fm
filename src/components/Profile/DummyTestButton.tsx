@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Target } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { BattleVisualizerModal } from '../Battle/BattleVisualizerModal';
 import { useBattleSimulation } from '../../hooks/useBattleSimulation';
@@ -9,6 +8,7 @@ import { useTreeMode } from '../../context/TreeModeContext';
 import { useStatLibraries, applyTreeMode } from '../../hooks/useGlobalStats';
 import { calculateStats } from '../../utils/statEngine';
 import type { UserProfile } from '../../types/Profile';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 type Comparison = ReturnType<typeof useComparison>;
 
@@ -70,7 +70,7 @@ export function DummyTestButton({ variant = 'default' }: { variant?: 'default' |
                 title="Your build vs a dummy with infinite HP. Every hit takes you straight down to a quarter of your HP, so you can watch regen, lifesteal, block and every skill at work."
                 className="flex-1 sm:flex-none py-1.5 border-amber-500/40 text-amber-300 hover:border-amber-500/70"
             >
-                <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} className="mr-1.5 sm:mr-2" />
                 <span className="text-xs sm:text-sm">Test against dummy</span>
             </Button>
             {open && stats && libs && (

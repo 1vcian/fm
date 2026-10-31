@@ -3,8 +3,9 @@ import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn } from '../lib/utils';
 import { formatVersion } from '../lib/formatVersion';
-import { Search, FileJson, FolderOpen, RefreshCw, Copy, Download, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { FileJson, FolderOpen, RefreshCw, Copy, Download, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '../components/UI/Button';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 export default function Configs() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -481,7 +482,7 @@ export default function Configs() {
                 <div className="p-4 border-b border-border bg-bg-secondary/50 space-y-3">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold flex items-center gap-2">
-                            <FolderOpen className="w-5 h-5 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'Savegame' }} size={20} />
                             Configs
                             <span className="text-xs font-normal text-text-muted bg-bg-input px-2 py-0.5 rounded-full">
                                 {displayFiles.length}
@@ -579,7 +580,7 @@ export default function Configs() {
                     )}
 
                     <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                        <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                         <Input
                             placeholder="Global Search"
                             className="pl-9"

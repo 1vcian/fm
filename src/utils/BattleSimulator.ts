@@ -16,6 +16,7 @@
  *  - real enemy scaling: AgeScaling * difficulty multiplier (src/engine/enemies.ts), no cancelling magic numbers
  *  - Monte Carlo runs are seeded (1..N), so the same inputs give the same win rate
  */
+import { runSeed } from '../engine/rng';
 import { AggregatedStats } from './statEngine';
 import { UserProfile } from '../types/Profile';
 import {
@@ -87,7 +88,7 @@ function buildScene(
     playerStats: AggregatedStats,
     profile: UserProfile | null,
     libs: LibraryData,
-    seed: number,
+    seed: bigint | number,
     debugConfig?: DebugConfig,
     context?: BattleContext,
     mode: SceneMode = 'main'
@@ -191,7 +192,7 @@ function runOnce(
     profile: UserProfile | null,
     libs: LibraryData,
     waves: WaveEnemySpec[][],
-    seed: number,
+    seed: bigint | number,
     debugConfig: DebugConfig | undefined,
     maxTicks: number,
     context?: BattleContext,
@@ -308,9 +309,32 @@ export function simulateBattleMulti(
     const n = runs > 0 ? runs : 100;
     const outcomes: RunOutcome[] = [];
     for (let seed = 1; seed <= n; seed++) {
-        outcomes.push(runOnce(playerStats, profile, libs, waves, seed, debugConfig, DEFAULT_MAX_TICKS, 'main'));
+        outcomes.push(runOnce(playerStats, profile, libs, waves, runSeed(seed), debugConfig, DEFAULT_MAX_TICKS, 'main'));
     }
     return toResult(playerStats, outcomes, { ageIdx, battleIdx, difficultyIdx: difficultyMode });
+}
+
+/**
+ * Wins of the main battle over the seeds seedFrom..seedTo (inclusive), the same runs
+ * simulateBattleMulti makes: lets a caller split one measurement's seeds across threads.
+ */
+export function mainBattleWins(
+    playerStats: AggregatedStats,
+    profile: UserProfile | null,
+    ageIdx: number,
+    battleIdx: number,
+    difficultyMode: number,
+    libs: LibraryData,
+    seedFrom: number,
+    seedTo: number,
+): number | null {
+    const waves = mainWaves(ageIdx, battleIdx, difficultyMode, libs);
+    if (!waves) return null;
+    let wins = 0;
+    for (let seed = seedFrom; seed <= seedTo; seed++) {
+        if (runOnce(playerStats, profile, libs, waves, runSeed(seed), undefined, DEFAULT_MAX_TICKS, 'main').victory) wins++;
+    }
+    return wins;
 }
 
 export function simulateDungeonBattle(
@@ -345,7 +369,7 @@ export function simulateDungeonBattleMulti(
     const n = runs > 0 ? runs : 100;
     const outcomes: RunOutcome[] = [];
     for (let seed = 1; seed <= n; seed++) {
-        outcomes.push(runOnce(playerStats, profile, libs, waves, seed, debugConfig, DEFAULT_MAX_TICKS, `dungeon:${dungeonType}` as BattleContext, 'dungeon'));
+        outcomes.push(runOnce(playerStats, profile, libs, waves, runSeed(seed), debugConfig, DEFAULT_MAX_TICKS, `dungeon:${dungeonType}` as BattleContext, 'dungeon'));
     }
     return toResult(playerStats, outcomes, { dungeonType, dungeonLevel: level, difficultyIdx: 0 });
 }
@@ -388,8 +412,8 @@ export function simulateMissionBattleMulti(
     for (let seed = 1; seed <= n; seed++) {
         // Enemy items come from their own RandomPCG built from the battle seed, like the game's
         // RandomPCG.CreateFromSeed in SetupEnemies; the combat RNG is untouched by them.
-        const { scene, player, mgr } = buildScene(playerStats, profile, libs, seed, debugConfig, 'mission', 'mission');
-        const wave = missionWaveSpecs(mission as never, level, levelMulti, enemyLibs, seed);
+        const { scene, player, mgr } = buildScene(playerStats, profile, libs, runSeed(seed), debugConfig, 'mission', 'mission');
+        const wave = missionWaveSpecs(mission as never, level, levelMulti, enemyLibs, runSeed(seed));
         const runner = new WaveRunner(
             scene,
             player,

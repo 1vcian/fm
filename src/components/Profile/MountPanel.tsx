@@ -1,7 +1,7 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Bike as MountIcon } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { useGameData } from '../../hooks/useGameData';
@@ -193,7 +193,7 @@ export function MountPanel() {
     return (
         <Card className="p-4 sm:p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <MountIcon className="w-6 h-6 text-accent-primary" />
+                <GameAssetIcon asset={{ sheet: 'MountIcons', index: 1 }} size={24} />
                 Active Mount
             </h2>
 
@@ -244,7 +244,7 @@ export function MountPanel() {
                                 smooth
                             />
                         ) : (
-                            <MountIcon className="w-10 h-10 opacity-50 text-text-muted" />
+                            <GameAssetIcon asset={{ sheet: 'MountIcons', index: 1 }} size={40} className="opacity-50" />
                         )}
                     />
                 ) : (
@@ -252,7 +252,7 @@ export function MountPanel() {
                         className="basis-[330px] grow min-w-0 max-w-[min(100%,560px)]"
                         label="No Mount Equipped"
                         hint="Click to select"
-                        icon={<MountIcon className="w-10 h-10 text-text-muted" />}
+                        icon={<GameAssetIcon asset={{ sheet: 'MountIcons', index: 1 }} size={40} />}
                         onClick={() => setIsModalOpen(true)}
                     />
                 )}

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { useEggSummonCalculator } from '../../hooks/useEggSummonCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
-import { Calculator, Plus, Info, Minus, RefreshCcw } from 'lucide-react';
+import { Calculator, Plus, Minus, RefreshCcw } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -36,7 +37,7 @@ export default function EggSummonCalculator() {
     if (!eggSummon.available || !eggSummon.ready) {
         return (
             <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">
-                <Info className="w-8 h-8 opacity-50" />
+                <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={32} className="opacity-50" />
                 <p>Eggshell summons are not available in this game data version.</p>
             </div>
         );
@@ -158,7 +159,7 @@ export default function EggSummonCalculator() {
                                         />
                                     </div>
                                     <div className="text-[10px] text-text-muted px-1">
-                                        Estimated cost per summon: <span className="text-accent-primary font-bold">{eggSummon.finalCostPerSummon}</span> 🥚
+                                        Estimated cost per summon: <span className="text-accent-primary font-bold">{eggSummon.finalCostPerSummon}</span> <GameAssetIcon asset={{ icon: 'Eggshell' }} size={14} className="inline-block align-middle" />
                                     </div>
                                 </div>
 
@@ -353,13 +354,13 @@ export default function EggSummonCalculator() {
                                         onClick={() => eggSummon.applyResultsToProfile()}
                                         className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
                                     >
-                                        <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                        <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} className="group-hover:rotate-180 transition-transform duration-500" />
                                         Update Level to Lv.{eggSummon.results.endLevel}{eggSummon.results.endAscensionLevel > (profile.misc.petAscensionLevel || 0) ? ` (Asc. ${eggSummon.results.endAscensionLevel})` : ''}
                                     </button>
                                 </>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">
-                                    <Info className="w-8 h-8 opacity-50" />
+                                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={32} className="opacity-50" />
                                     <p>Enter eggshells to see results</p>
                                 </div>
                             )}

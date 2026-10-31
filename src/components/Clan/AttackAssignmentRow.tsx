@@ -57,13 +57,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     ArrowLeft,
     Check,
-    Crosshair,
-    Pencil,
     Plus,
     Trash2,
     UserX,
     X,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { cn } from '../../lib/utils';
 import type { WarAssignmentRow, WarParticipantRow } from '../../services/warPlanApi';
 import { WAR_MAX_SLOTS_PER_ATTACKER, WAR_NAME_MAX_LENGTH } from '../../services/warPlanApi';
@@ -200,7 +199,7 @@ const InlineName: React.FC<{
             >
                 <span className="min-w-[7rem] max-w-full whitespace-nowrap overflow-hidden text-clip font-bold text-white">{value}</span>
                 {!disabled && (
-                    <Pencil className="h-3 w-3 shrink-0 text-text-secondary opacity-0 transition-opacity group-hover/name:opacity-100" />
+                    <GameAssetIcon asset={{ icon: 'Pen' }} size={12} className="opacity-0 transition-opacity group-hover/name:opacity-100" />
                 )}
             </button>
         );
@@ -340,7 +339,7 @@ export const AttackAssignmentRow: React.FC<AttackAssignmentRowProps> = ({
                                     : 'border-border bg-bg-input text-text-secondary hover:border-accent-primary/50 hover:text-white',
                             )}
                         >
-                            <Crosshair className="h-3.5 w-3.5" />
+                            <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={14} />
                         </button>
                     )}
 
@@ -444,7 +443,7 @@ export const AttackAssignmentRow: React.FC<AttackAssignmentRowProps> = ({
                                     : 'border-accent-primary/50 text-accent-primary',
                             )}
                         >
-                            <Pencil className="h-3 w-3" />
+                            <GameAssetIcon asset={{ icon: 'Pen' }} size={12} />
                         </button>
                     )}
                     {canEdit && (

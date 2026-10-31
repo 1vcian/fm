@@ -57,3 +57,48 @@ export function maxSubstatTotal(
     if (pieces === null || typeof upper !== 'number') return null;
     return upper * pieces;
 }
+
+/** One equipped piece that carries substats, as the substat optimizer and calculator see it. */
+export interface ProfileSubstatBody {
+    /** 'item:<Slot>', 'pet:<index>' or 'mount'. */
+    key: string;
+    label: string;
+    slots: number;
+}
+
+/**
+ * The substat slots of a profile's equipped pieces, by the same rules as the item, pet and mount
+ * pickers: SecondaryStatItemUnlockLibrary[item age] / SecondaryStatPetUnlockLibrary[rarity], and
+ * every piece of a kind gets the top count once that kind has an ascension (forge for items, pet
+ * and mount ascension for pets and the mount).
+ */
+export function profileSubstatBodies(
+    profile: {
+        items: Record<string, { age: number } | null>;
+        pets: { active: ({ rarity: string } | null)[] };
+        mount: { active: { rarity: string } | null };
+        misc: { forgeAscensionLevel?: number; petAscensionLevel?: number; mountAscensionLevel?: number };
+    },
+    itemUnlockLibrary: Record<string, { NumberOfSecondStats: number }> | null | undefined,
+    petUnlockLibrary: Record<string, { NumberOfSecondStats: number }> | null | undefined,
+): ProfileSubstatBody[] {
+    const top = (lib: Record<string, { NumberOfSecondStats: number }> | null | undefined) =>
+        Math.max(0, ...Object.values(lib ?? {}).map(r => r.NumberOfSecondStats));
+    const out: ProfileSubstatBody[] = [];
+    for (const [slot, item] of Object.entries(profile.items)) {
+        if (!item) continue;
+        const slots = (profile.misc.forgeAscensionLevel || 0) > 0 ? top(itemUnlockLibrary) : itemUnlockLibrary?.[String(item.age)]?.NumberOfSecondStats ?? 0;
+        out.push({ key: `item:${slot}`, label: slot, slots });
+    }
+    profile.pets.active.forEach((pet, i) => {
+        if (!pet) return;
+        const slots = (profile.misc.petAscensionLevel || 0) > 0 ? top(petUnlockLibrary) : petUnlockLibrary?.[pet.rarity]?.NumberOfSecondStats ?? 0;
+        out.push({ key: `pet:${i}`, label: `Pet ${i + 1}`, slots });
+    });
+    const mount = profile.mount.active;
+    if (mount) {
+        const slots = (profile.misc.mountAscensionLevel || 0) > 0 ? top(petUnlockLibrary) : petUnlockLibrary?.[mount.rarity]?.NumberOfSecondStats ?? 0;
+        out.push({ key: 'mount', label: 'Mount', slots });
+    }
+    return out;
+}

@@ -246,6 +246,9 @@ const nameSet = (profiles: UserProfile[]): Set<string> =>
  * That set is also the one `computeReview` always turns into rows, which is what keeps the panel's
  * count and the modal's row count in agreement.
  */
+/** Preset profiles (Max Power, ...) are read-only copies of published data: never in the account. */
+const syncable = (profiles: UserProfile[]) => profiles.filter(p => !p.preset);
+
 function countKeptOutOfAccount(localProfiles: UserProfile[], ledger: UserLedger): number {
     const keptLocal = keptLocalOf(ledger);
     if (keptLocal.size === 0) return 0;
@@ -674,7 +677,7 @@ export function useProfileSync({
         try {
             let ledger = readLedger(uid);
             const keptLocal = keptLocalOf(ledger);
-            const localProfiles = profilesRef.current;
+            const localProfiles = syncable(profilesRef.current);
             const localIds = new Set(localProfiles.map(p => p.id));
 
             let wrote = false;
@@ -787,7 +790,7 @@ export function useProfileSync({
             const ledger = readLedger(uid);
             const firstLogin = typeof ledger.mergedAt !== 'number';
             const { rows, autoPull, autoDelete } = computeReview(
-                profilesRef.current,
+                syncable(profilesRef.current),
                 listed.summaries,
                 ledger,
                 firstLogin,

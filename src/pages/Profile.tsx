@@ -1,6 +1,6 @@
 import { useProfile } from '../context/ProfileContext';
 import { useComparison } from '../context/ComparisonContext';
-import { Download, Upload, Trash2, Copy, Clipboard, ScanSearch, Swords } from 'lucide-react';
+import { Download, Upload, Trash2, Copy, Clipboard, ScanSearch } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,10 +16,12 @@ import { SkinArchivePanel } from '../components/Profile/SkinArchivePanel';
 import { AutoSyncModal } from '../components/Profile/AutoSyncModal';
 import { PvpModal } from '../components/Profile/PvpModal';
 import { AccountPanel } from '../components/Profile/AccountPanel';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 
 export default function Profile() {
     const {
+        profile,
         resetProfile,
         exportProfile,
         importProfile,
@@ -95,6 +97,7 @@ export default function Profile() {
                 </div>
             </div>
 
+
             {/* Content */}
             <div className="space-y-6">
                 {/* Account + sync. Renders nothing when the build has no backend configured. */}
@@ -125,7 +128,7 @@ export default function Profile() {
                     className="w-full group relative overflow-hidden rounded-2xl border border-red-500/40 bg-gradient-to-r from-red-500/20 via-red-500/10 to-accent-primary/10 p-4 flex items-center gap-4 hover:border-red-500/70 transition active:scale-[0.99]"
                 >
                     <div className="w-12 h-12 rounded-2xl bg-red-500/25 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
-                        <Swords className="w-7 h-7 text-red-400" />
+                        <GameAssetIcon asset={{ icon: 'Battle' }} size={28} />
                     </div>
                     <div className="text-left min-w-0">
                         <div className="text-lg font-black text-white flex items-center gap-2">

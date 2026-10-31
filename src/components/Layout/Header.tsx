@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Copy, Check, Share2, Save, TrendingUp, ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { Menu, Copy, Check, Share2, Save, ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Button } from '../UI/Button';
 import { buildShareUrl } from '../../utils/shareCodec';
 import { useTreeMode } from '../../context/TreeModeContext';
@@ -284,7 +285,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                         onClick={saveSharedProfile}
                         className="gap-2"
                     >
-                        <Save className="w-4 h-4" />
+                        <GameAssetIcon asset={{ icon: 'Savegame' }} size={16} />
                         <span className="hidden sm:inline">Save to My Profiles</span>
                     </Button>
                 ) : (

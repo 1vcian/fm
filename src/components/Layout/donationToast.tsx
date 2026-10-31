@@ -1,5 +1,6 @@
 /** The "Support the Forge" donation toast and the fullscreen-modal guard that keeps it out of the way. */
 import { toast } from 'react-toastify';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 /** True while a fullscreen modal (battle viewer, data-fullscreen-modal) covers the app. */
 export function fullscreenModalOpen(): boolean {
@@ -22,12 +23,12 @@ export function showDonationToast(message: string) {
                 </div>
             )}
             <div className="text-[9px] mt-1 font-black uppercase text-white/40 flex items-center gap-1">
-                {phone ? 'Tap to support the developer' : 'Click to support the developer'} <span className="animate-bounce text-xs">☕❤️</span>
+                {phone ? 'Tap to support the developer' : 'Click to support the developer'} <GameAssetIcon asset={{ icon: 'GiftIcon' }} size={14} className="inline-block align-middle animate-bounce" />
             </div>
         </div>,
         {
             toastId: DONATION_TOAST_ID,
-            icon: phone ? false : <div className="text-xl">🛠️</div>,
+            icon: phone ? false : <GameAssetIcon asset={{ icon: 'Anvil' }} size={24} />,
             autoClose: phone ? 5000 : 10000,
             position: "bottom-left",
             onClick: () => window.open('https://www.buymeacoffee.com/1vcian', '_blank'),

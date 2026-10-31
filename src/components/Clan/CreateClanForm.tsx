@@ -66,17 +66,14 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import {
-    AlertTriangle,
     Check,
     Copy,
-    Info,
     KeyRound,
     Loader2,
     Palette,
     ShieldCheck,
-    Swords,
-    Users,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Button } from '../UI/Button';
 import { ClanBadge, ClanBadgePicker } from '../UI/ClanBadge';
 import { TierOptions } from './ClanTierPanel';
@@ -305,7 +302,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
         >
             <div className="mb-4 flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent-primary/30 bg-accent-primary/15">
-                    <Users className="h-5 w-5 text-accent-primary" />
+                    <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={20} />
                 </div>
                 <div className="min-w-0">
                     <h3 id="create-clan-heading" className="text-lg font-black text-white">
@@ -339,7 +336,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
     if (clan.status === 'shared-profile') {
         return shell(
             <p className="flex items-start gap-2 text-sm text-text-secondary">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary" />
+                <GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} className="mt-0.5" />
                 <span>
                     You are looking at a profile somebody shared with you. A shared profile is not
                     yours and belongs to no clan: save it as your own profile first, then create a
@@ -364,7 +361,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
         return shell(
             <div className="space-y-2 text-sm text-text-secondary">
                 <p className="flex items-start gap-2">
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary" />
+                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} className="mt-0.5" />
                     <span>
                         <span className="font-semibold text-text-primary">{profile.name}</span> is
                         already in{' '}
@@ -453,7 +450,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
 
                 {afterNote && (
                     <p className="flex items-start gap-2 text-xs text-amber-300">
-                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                         <span>{afterNote}</span>
                     </p>
                 )}
@@ -622,7 +619,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
                         aria-hidden="true"
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-bg-input text-text-muted"
                     >
-                        <Swords className="h-4 w-4" />
+                        <GameAssetIcon asset={{ icon: 'Battle' }} size={16} />
                     </span>
                     <div className="min-w-0 flex-1 basis-48">
                         <div className="text-sm font-bold text-text-primary">Guild tier (optional)</div>
@@ -643,7 +640,7 @@ export function CreateClanForm({ onCreated, className }: CreateClanFormProps) {
 
             {failure && (
                 <p className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} className="mt-0.5" />
                     <span>{failure}</span>
                 </p>
             )}

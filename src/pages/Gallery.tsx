@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { Button } from '../components/UI/Button';
-import { Search, Image as ImageIcon, Download, X, Maximize2, ExternalLink, Columns, Layers, Hash, RefreshCw } from 'lucide-react';
+import { Download, X, Maximize2, Layers, Hash, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { formatVersion } from '../lib/formatVersion';
 import { useGameDataContext } from '../context/GameDataContext';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 type DiffStatus = 'added' | 'removed' | 'changed' | null;
 
@@ -204,7 +205,7 @@ export default function Gallery() {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="relative w-full md:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                        <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-1/2 -translate-y-1/2" />
                         <Input
                             placeholder="Search textures"
                             className="pl-9 h-10"

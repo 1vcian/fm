@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Shield, Zap, AlertTriangle, Flame, CheckCircle, XCircle, Play, Target, ChevronLeft, ChevronRight, Swords } from 'lucide-react';
+import { TrendingUp, Shield, Flame, Play, Target, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBattleSimulation } from '../hooks/useBattleSimulation';
 import { BattleResult } from '../utils/BattleSimulator';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
@@ -9,6 +9,7 @@ import { difficultyName, difficultyStyle } from '../utils/difficulty';
 import { useGameDataContext } from '../context/GameDataContext';
 import { FEATURE_NAMES } from '../hooks/useFeatureUnlocks';
 import { resolveTextureVersion } from '../utils/ascensionUtils';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 // Format large numbers
 function formatNumber(num: number): string {
@@ -107,7 +108,7 @@ function WinProbabilityDisplay({ probability, victory, totalRuns }: { probabilit
 
             {/* Status */}
             <div className={`flex items-center gap-2 ${textColor}`}>
-                {victory ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                {victory ? <GameAssetIcon asset={{ icon: 'crown0' }} size={20} /> : <GameAssetIcon asset={{ icon: 'Skull' }} size={20} />}
                 <span className="font-semibold">{label}</span>
             </div>
         </div>
@@ -914,7 +915,7 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
                                     </>
                                 ) : (
                                     <>
-                                        <Zap className="w-4 h-4" />
+                                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />
                                         Recalc
                                     </>
                                 )}
@@ -939,7 +940,7 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
             <div className="card p-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-yellow-400" />
+                        <GameAssetIcon asset={{ icon: 'Timer' }} size={16} />
                         <div>
                             <div className="text-text-secondary text-xs">Battle Time</div>
                             <div className="font-semibold text-text-primary">{result.totalTime.toFixed(1)}s</div>
@@ -947,7 +948,7 @@ function ResultPanel({ result, onRecalculate, isRecalculating, onShowBattle }: {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Swords className="w-4 h-4 text-accent-primary" />
+                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />
                         <div>
                             <div className="text-text-secondary text-xs">Your DPS</div>
                             <div className="font-semibold text-text-primary">{formatNumber(result.playerStats.effectiveDps)}</div>
@@ -1019,7 +1020,7 @@ export default function ProgressPrediction() {
         return (
             <div className="max-w-7xl mx-auto p-6">
                 <div className="card p-8 text-center">
-                    <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={64} className="mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-text-primary mb-2">Profile Required</h2>
                     <p className="text-text-secondary max-w-md mx-auto">
                         Configure your equipment, pets, and skills in the Profile page to see battle predictions.
@@ -1148,7 +1149,7 @@ export default function ProgressPrediction() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent flex items-center gap-3">
-                            <TrendingUp className="w-7 h-7 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'MainGameProgressPassSwordIcon' }} size={28} />
                             Battle Predictor
                         </h1>
                         <p className="text-text-secondary text-sm mt-1">
@@ -1199,7 +1200,7 @@ export default function ProgressPrediction() {
                                 onClick={() => setRecalcVersion(v => v + 1)}
                                 className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-500/50 rounded hover:bg-red-600/30 font-bold text-xs flex items-center gap-1 ml-2"
                             >
-                                <Zap className="w-3 h-3" />
+                                <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                                 Force Recalc
                             </button>
                         </div>

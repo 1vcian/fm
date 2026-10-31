@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, Save, Info, X, Search, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
+import { Plus, Trash2, X, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
 
 import { useGameData } from '../../hooks/useGameData';
 import { usePetNames } from '../../hooks/usePetNames';
@@ -17,6 +17,7 @@ import { RARITIES } from '../../utils/constants';
 import { getStatName } from '../../utils/statNames';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 type MobileTab = 'rarity' | 'pets' | 'config';
 type SortField = 'level' | 'name' | 'rarity' | 'perfection';
@@ -442,7 +443,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                 : "border-transparent text-text-muted hover:text-text-primary"
                         )}
                     >
-                        <Settings className="w-4 h-4" />
+                        <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={16} />
                         Config
                     </button>
                 </div>
@@ -535,7 +536,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     )}>
                         {/* Search Bar */}
                         <div className="relative mb-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                            <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                                 placeholder={activeTab === 'library' ? "Search pet library" : "Search saved builds"}
                                 value={searchTerm}
@@ -589,7 +590,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-                                    <Search className="w-12 h-12 opacity-20 mb-4" />
+                                    <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={48} className="opacity-20 mb-4" />
                                     <p className="font-bold">No pets found</p>
                                     <p className="text-xs opacity-60">Try a different name or rarity</p>
                                 </div>
@@ -798,7 +799,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                 placeholder="Set a custom name"
                                                 className="w-full bg-bg-input/50 border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-accent-primary transition-all pr-10"
                                             />
-                                            <Settings className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted opacity-30 group-hover:opacity-60 transition-opacity" />
+                                            <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={16} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30 group-hover:opacity-60 transition-opacity" />
                                         </div>
                                     </div>
                                 )}
@@ -914,7 +915,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                         className="w-full py-4 rounded-xl font-bold text-sm gap-2 shadow-lg shadow-accent-primary/20"
                                         onClick={handleSave}
                                     >
-                                        <Save className="w-5 h-5" />
+                                        <GameAssetIcon asset={{ icon: 'Savegame' }} size={20} />
                                         Equip Pet
                                     </Button>
                                     <p className="text-[9px] text-center text-text-muted mt-2 px-4 leading-tight">
@@ -925,7 +926,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-text-muted opacity-30 text-center px-6">
                                 <div className="p-4 bg-white/5 rounded-full mb-4">
-                                    <Info className="w-12 h-12" />
+                                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={48} />
                                 </div>
                                 <p className="font-bold uppercase tracking-widest text-xs">Configuration</p>
                                 <p className="text-[10px] mt-2 leading-relaxed">Select a pet from the library to configure its level and secondary statistics.</p>

@@ -53,3 +53,17 @@ export class RandomPCG {
         return Math.floor(this.nextF64() * 1e6) < Math.round(chance * 1e6);
     }
 }
+
+/**
+ * The seed of the i-th run of a multi-run simulation (i = 1, 2, ...): splitmix64(i), a well
+ * spread 64-bit value. Seeding RandomPCG with i itself is exact but statistically poor: the
+ * game's seeding (state = seed x MULT + constant) puts small consecutive seeds in correlated
+ * states, and measured over the same duel the mean of seeds 1..100 came out 50% above the mean
+ * of later seeds. A replay of a real battle passes its own seed straight to RandomPCG instead.
+ */
+export function runSeed(i: number): bigint {
+    let z = (BigInt(i) * 0x9E3779B97F4A7C15n) & MASK64;
+    z = ((z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n) & MASK64;
+    z = ((z ^ (z >> 27n)) * 0x94D049BB133111EBn) & MASK64;
+    return z ^ (z >> 31n);
+}

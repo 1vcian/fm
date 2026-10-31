@@ -76,6 +76,11 @@ export interface Prefab { nodes: PrefabNode[] }
 export interface ItemVisual {
     prefab: string | null;
     hideBodyPart: boolean;
+    /**
+     * EquipmentItemVisualConfig.BodyPartsToTurnOff: the character's parts this item hides while
+     * shown (BodyPart Head 0, Body 1, Hand 2), e.g. the boxing glove hides the hands.
+     */
+    turnOff?: number[];
     controller?: string | null;
     dualWield?: boolean;
     hasProjectile?: boolean;

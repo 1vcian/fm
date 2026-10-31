@@ -9,6 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AppShell from './components/Layout/AppShell';
 import Configs from './pages/Configs';
+import PresetBuilds from './pages/PresetBuilds';
 import Mounts from './pages/Mounts';
 import Items from './pages/Items';
 import Pets from './pages/Pets';
@@ -23,7 +24,7 @@ import Clan from './pages/Clan';
 import Unlocks from './pages/Unlocks';
 import Offline from './pages/Offline';
 import Colors from './pages/Colors';
-import Emblems from './pages/Emblems';
+import ImagesMaker from './pages/ImagesMaker';
 import FAQ from './pages/FAQ';
 import Profile from './pages/Profile';
 import ProgressPrediction from './pages/ProgressPrediction';
@@ -73,6 +74,7 @@ function App() {
                                     {/* pages/Home.tsx was a legacy copy of the forge calculator: send its old URL there. */}
                                     <Route path="home" element={<Navigate to="/calculators/forge" replace />} />
                                     <Route path="configs" element={<Configs />} />
+                                    <Route path="presets" element={<PresetBuilds />} />
                                     <Route path="mounts" element={<Mounts />} />
                                     <Route path="skills" element={<Skills />} />
                                     <Route path="eggs" element={<Eggs />} />
@@ -90,7 +92,8 @@ function App() {
                                     <Route path="unlocks" element={<Unlocks />} />
                                     <Route path="offline" element={<Offline />} />
                                     <Route path="colors" element={<Colors />} />
-                                    <Route path="emblems" element={<Emblems />} />
+                                    <Route path="images" element={<ImagesMaker />} />
+                                    <Route path="emblems" element={<ImagesMaker initialTab="emblem" />} />
                                     <Route path="faq" element={<FAQ />} />
                                     <Route path="pvp-arena" element={<PvpArena />} />
                                     <Route path="calculators/forge" element={<ForgeCalculator />} />

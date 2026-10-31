@@ -6,7 +6,7 @@ import { useGameDataContext } from '../context/GameDataContext';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { FAIRIES, SEASON_STATS, fairyPerStep } from '../utils/fairies';
 import { resolveTextureVersion } from '../utils/ascensionUtils';
-import { Sparkles } from 'lucide-react';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 /**
  * Fairies wiki page. A level slider drives the per level and total upgrade cost under each
@@ -115,14 +115,14 @@ export default function FairiesWiki() {
     return (
         <div className="p-4 md:p-6 space-y-4 max-w-6xl mx-auto">
             <h1 className="text-2xl md:text-3xl font-bold text-accent-primary flex items-center gap-2">
-                <Sparkles className="w-7 h-7" /> Fairies
+                <GameAssetIcon asset={{ icon: 'FairyIconLora' }} size={28} /> Fairies
             </h1>
 
             <Card className="p-4 bg-bg-secondary/50 border-accent-primary/20">
                 <div className="flex flex-col md:flex-row md:items-center gap-6">
                     <div className="flex items-center gap-4">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
-                            <Sparkles className="w-8 h-8 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'Sparkle' }} size={32} />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-text-primary">Fairy Level</h3>

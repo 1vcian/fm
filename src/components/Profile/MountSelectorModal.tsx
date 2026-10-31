@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Info, Plus, Trash2, Grid, Settings, Bookmark, Search, Unlock } from 'lucide-react';
+import { X, Plus, Trash2, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
@@ -16,6 +16,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 type MobileTab = 'rarity' | 'mounts' | 'config';
 type SortField = 'level' | 'name' | 'rarity' | 'perfection';
@@ -398,7 +399,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                 : "border-transparent text-text-muted hover:text-text-primary"
                         )}
                     >
-                        <Settings className="w-4 h-4" />
+                        <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={16} />
                         Config
                     </button>
                 </div>
@@ -483,7 +484,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                             mobileTab === 'mounts' ? "flex-1 block" : "hidden md:block md:flex-1"
                         )}>
                             <div className="relative mb-4">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                                <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
                                     placeholder={activeTab === 'library' ? "Search mount library" : "Search saved builds"}
                                     value={searchTerm}
@@ -711,7 +712,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                 <>
                                     <div className="space-y-4">
                                         <h3 className="text-sm font-black text-text-primary flex items-center gap-2 uppercase tracking-tight">
-                                            <Settings className="w-4 h-4 text-accent-primary" />
+                                            <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={16} />
                                             Companion Config
                                         </h3>
 

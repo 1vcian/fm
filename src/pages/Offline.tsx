@@ -4,10 +4,10 @@ import { useTreeModifiers } from '../hooks/useCalculatedStats';
 import { useTreeLimits } from '../hooks/useTreeLimits';
 import { SandboxPanel, type SandboxField } from '../components/UI/SandboxPanel';
 import { Card } from '../components/UI/Card';
-import { TrendingUp, Info } from 'lucide-react';
 import { GameIcon } from '../components/UI/GameIcon';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { formatNumber } from '../utils/format';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 
 export default function Offline() {
@@ -187,7 +187,7 @@ export default function Offline() {
                         {isOverCap && (
                             <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
                                 <div className="flex items-center gap-2 mb-2 text-orange-400 font-bold text-sm">
-                                    <Info className="w-4 h-4" />
+                                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} />
                                     <span>Time Exceeds Capacity ({formatHmMessages(maxOfflineHours)})</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-center">
@@ -239,7 +239,7 @@ export default function Offline() {
 
                         <div className="py-6 border-t border-border/50 mt-4">
                             <h2 className="font-semibold mb-6 text-accent-primary text-center flex items-center justify-center gap-2">
-                                <TrendingUp className="w-5 h-5" />
+                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 30 }} size={20} />
                                 {isOverCap ? 'Earnings Comparison' : 'Estimated Total Earnings'}
                             </h2>
 

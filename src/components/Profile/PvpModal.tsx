@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, UploadCloud, Loader2, Swords, Trophy, RefreshCw, Info } from 'lucide-react';
+import { X, UploadCloud, Loader2, Trophy } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
@@ -13,6 +13,7 @@ import {
     type DuelStats, type DuelResult,
 } from '../../utils/ocr/pvp';
 import { cn } from '../../lib/utils';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 type Stage = 'upload' | 'processing' | 'ready' | 'result';
 
@@ -119,7 +120,7 @@ export function PvpModal({ onClose }: { onClose: () => void }) {
             <div className="bg-bg-primary w-full max-w-2xl max-h-[95vh] rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-red-500/15 to-accent-primary/10">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center"><Swords className="w-5 h-5 text-red-400" /></div>
+                        <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center"><GameAssetIcon asset={{ icon: 'Battle' }} size={20} /></div>
                         <div><h3 className="font-black text-white">Simplified PvP</h3><p className="text-[11px] text-text-muted">Duel your build against an opponent screenshot</p></div>
                     </div>
                     <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-text-muted hover:text-white"><X className="w-5 h-5" /></button>
@@ -149,7 +150,9 @@ export function PvpModal({ onClose }: { onClose: () => void }) {
                         <div className="space-y-4">
                             {stage === 'result' && result && (
                                 <div className={cn('rounded-xl p-4 text-center border-2', draw ? 'border-white/30 bg-white/5' : youWin ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10')}>
-                                    <Trophy className={cn('w-8 h-8 mx-auto mb-1', draw ? 'text-white/60' : youWin ? 'text-green-400' : 'text-red-400')} />
+                                    {draw
+                                        ? <Trophy className="w-8 h-8 mx-auto mb-1 text-white/60" />
+                                        : <GameAssetIcon asset={youWin ? { sheet: 'ArenaRankIcons', index: 0 } : { icon: 'Skull' }} size={32} className="block mx-auto mb-1" />}
                                     <div className="text-xl font-black text-white">{draw ? 'Draw' : youWin ? 'You win!' : 'You lose'}</div>
                                     <div className="text-[11px] text-text-muted">
                                         {result.aTTK != null && `You kill in ${result.aTTK.toFixed(1)}s`}{result.aTTK != null && result.bTTK != null ? ' · ' : ''}
@@ -191,7 +194,7 @@ export function PvpModal({ onClose }: { onClose: () => void }) {
                                 </div>
                             </div>
 
-                            <p className="text-[10px] text-text-muted flex items-start gap-1.5"><Info className="w-3 h-3 mt-0.5 shrink-0" /> Both fighters use their full totals. Which already include tree &amp; passives. So this is the real matchup. The opponent's tree is baked into their Total Damage/Health, so nothing needs to be stripped.</p>
+                            <p className="text-[10px] text-text-muted flex items-start gap-1.5"><GameAssetIcon asset={{ icon: 'InfoIcon' }} size={12} className="mt-0.5" /> Both fighters use their full totals. Which already include tree &amp; passives. So this is the real matchup. The opponent's tree is baked into their Total Damage/Health, so nothing needs to be stripped.</p>
                         </div>
                     )}
                 </div>
@@ -200,7 +203,7 @@ export function PvpModal({ onClose }: { onClose: () => void }) {
                     <div className="p-3 border-t border-border flex gap-2">
                         <button onClick={() => { setStage('upload'); setResult(null); }} className="px-4 py-2.5 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold flex items-center gap-2"><UploadCloud className="w-4 h-4" /> New</button>
                         <button onClick={fight} className="flex-1 py-2.5 rounded-xl font-black bg-red-500 text-white hover:brightness-110 flex items-center justify-center gap-2">
-                            {stage === 'result' ? <><RefreshCw className="w-4 h-4" /> Rematch</> : <><Swords className="w-4 h-4" /> Fight!</>}
+                            {stage === 'result' ? <><GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} /> Rematch</> : <><GameAssetIcon asset={{ icon: 'Battle' }} size={16} /> Fight!</>}
                         </button>
                     </div>
                 )}

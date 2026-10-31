@@ -5,7 +5,7 @@ import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { Card } from '../UI/Card';
-import { Sparkles, ChevronDown, ChevronUp, Trash2, RotateCcw } from 'lucide-react';
+import { Trash2, RotateCcw } from 'lucide-react';
 import { Input } from '../UI/Input';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { useState, useMemo } from 'react';
@@ -18,6 +18,7 @@ import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 // The game's own cell order for the skills grid. It lives with the screenshot readers because
 // that is what reads the grid by position, and it is the only place this order is recorded.
 import { SKILLS_ORDER } from '../../utils/ocr/templateParams';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 interface SkillInfo {
     id: string;
@@ -242,7 +243,7 @@ export function SkillsPassivesPanel() {
         <Card className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-2">
-                    <Sparkles className="w-6 h-6 sm:w-8 h-8 text-yellow-400" />
+                    <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 36 }} size={32} />
                     <h2 className="text-lg sm:text-xl font-bold">Skill Passives</h2>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -348,7 +349,7 @@ export function SkillsPassivesPanel() {
                                         className="w-full h-full"
                                     />
                                 ) : (
-                                    <Sparkles className="w-1/2 h-1/2 text-text-muted" />
+                                    <GameAssetIcon asset={{ icon: 'Sparkle' }} className="!w-1/2 !h-1/2" />
                                 )}
                                 <span className="absolute inset-x-1 bottom-[8%] rounded-full bg-black/75 text-center font-black tabular-nums text-white text-[10px] leading-tight">
                                     {owned ? `Lv${level}` : '0'}

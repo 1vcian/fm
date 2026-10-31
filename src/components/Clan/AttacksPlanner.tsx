@@ -84,26 +84,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    AlertTriangle,
     Bell,
     BellOff,
     Check,
     ChevronLeft,
     ChevronRight,
     ClipboardCopy,
-    Crosshair,
     Eye,
     Loader2,
     Megaphone,
-    Pencil,
     Plus,
-    RefreshCw,
-    Settings2,
     Shield,
-    Swords,
     Trash2,
     X,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { useClan } from '../../context/ClanContext';
@@ -827,7 +822,7 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
                 </Button>
             )}
             <Button variant="ghost" size="sm" onClick={() => void war.refreshWar()} disabled={war.busy}>
-                <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', war.busy && 'animate-spin')} /> Refresh
+                <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={14} className={cn('mr-1.5', war.busy && 'animate-spin')} /> Refresh
             </Button>
         </div>
     );
@@ -840,7 +835,7 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
                 notice.tone === 'good' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-red-500/40 bg-red-500/10 text-red-200',
             )}
         >
-            {notice.tone === 'good' ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+            {notice.tone === 'good' ? <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={16} className="mt-0.5" /> : <GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} className="mt-0.5" />}
             <span className="min-w-0 flex-1">{notice.text}</span>
             <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss" className="rounded p-0.5 hover:bg-white/10">
                 <X className="h-3.5 w-3.5" />
@@ -944,7 +939,7 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
                         </button>
                     ) : notify.state === 'error' ? (
                         <Button variant="secondary" size="sm" onClick={() => void refreshNotify()} disabled={notifyLoading}>
-                            <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', notifyLoading && 'animate-spin')} /> Retry
+                            <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={14} className={cn('mr-1.5', notifyLoading && 'animate-spin')} /> Retry
                         </Button>
                     ) : null}
                 </div>
@@ -974,11 +969,11 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
         return (
             <div className={cn('space-y-4', className)}>
                 {weekStrip}
-                <Notice icon={<AlertTriangle className="h-7 w-7" />} title="Could not load the attack plan" tone="bad">
+                <Notice icon={<GameAssetIcon asset={{ icon: 'WarningSign' }} size={28} />} title="Could not load the attack plan" tone="bad">
                     <p>{war.error?.message || 'Something went wrong.'}</p>
                     <div className="pt-2">
                         <Button variant="secondary" size="sm" onClick={() => void war.refreshWar()} disabled={war.busy}>
-                            <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', war.busy && 'animate-spin')} /> Try again
+                            <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={14} className={cn('mr-1.5', war.busy && 'animate-spin')} /> Try again
                         </Button>
                     </div>
                 </Notice>
@@ -991,7 +986,7 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
             <div className={cn('space-y-4', className)}>
                 {weekStrip}
                 {noticeBanner}
-                <Notice icon={<Swords className="h-7 w-7" />} title="No attack plan for this week">
+                <Notice icon={<GameAssetIcon asset={{ icon: 'Battle' }} size={28} />} title="No attack plan for this week">
                     {canEdit ? (
                         <>
                             <p>
@@ -1070,7 +1065,7 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
                 {canEdit && (
                     <div className="ml-auto flex flex-wrap gap-2">
                         <Button variant="ghost" size="sm" onClick={() => setShowSettings(s => !s)}>
-                            <Settings2 className="mr-1.5 h-3.5 w-3.5" /> Plan settings
+                            <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={14} className="mr-1.5" /> Plan settings
                         </Button>
                         {published && (
                             <Button variant="secondary" size="sm" onClick={() => setPending({ kind: 'retract' })} disabled={war.busy}>
@@ -1191,7 +1186,7 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
 
             {armedId && canEdit && (
                 <div className="flex items-center gap-2 rounded-xl border border-accent-primary/50 bg-accent-primary/10 px-3 py-2 text-xs text-white">
-                    <Crosshair className="h-4 w-4 shrink-0 text-accent-primary" />
+                    <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} />
                     <span className="min-w-0 flex-1">
                         Aiming at <strong>{board.allies.find(a => a.id === armedId)?.display_name}</strong>. Click an enemy
                         to add them as the next target.
@@ -1287,7 +1282,7 @@ export const AttacksPlanner: React.FC<AttacksPlannerProps> = ({ className }) => 
                 {/* --- THE ENEMY --- */}
                 <Card className="p-3 sm:p-4">
                     <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <Swords className="h-4 w-4 text-red-400" />
+                        <GameAssetIcon asset={{ icon: 'Battle' }} size={16} />
                         <h3 className="text-sm font-black uppercase tracking-wider text-white">
                             {plan.opponent_name || 'The enemy'}
                         </h3>
@@ -1755,7 +1750,7 @@ const PlanSettings: React.FC<{
     return (
         <Card className="p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Pencil className="h-4 w-4 text-accent-primary" />
+                <GameAssetIcon asset={{ icon: 'Pen' }} size={16} />
                 <h3 className="text-sm font-black uppercase tracking-wider text-white">Plan settings</h3>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -2011,7 +2006,7 @@ const EnemyName: React.FC<{
                 className="group/en flex w-full min-w-0 items-center gap-1 text-left"
             >
                 <span className="whitespace-nowrap overflow-hidden text-clip text-sm text-white">{enemy.display_name}</span>
-                <Pencil className="h-3 w-3 shrink-0 text-text-secondary opacity-0 transition-opacity group-hover/en:opacity-100" />
+                <GameAssetIcon asset={{ icon: 'Pen' }} size={12} className="opacity-0 transition-opacity group-hover/en:opacity-100" />
             </button>
         );
     }

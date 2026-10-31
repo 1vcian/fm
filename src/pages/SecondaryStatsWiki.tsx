@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { Button } from '../components/UI/Button';
-import { TrendingUp, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { TrendingUp, ArrowRight, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { formatVersion } from '../lib/formatVersion';
 import { getStatName } from '../utils/statNames';
 import { useGameData } from '../hooks/useGameData';
 import { maxSubstatPieces } from '../utils/substatBodies';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 interface SecondaryStat {
     Stat: string;
@@ -109,7 +110,7 @@ export default function SecondaryStatsWiki() {
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-                <AlertCircle className="w-12 h-12 text-red-500 opacity-50" />
+                <GameAssetIcon asset={{ icon: 'WarningSign' }} size={48} className="opacity-50" />
                 <p className="text-text-secondary">{error}</p>
                 <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>

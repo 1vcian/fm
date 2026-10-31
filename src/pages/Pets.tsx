@@ -5,7 +5,7 @@ import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
-import { Search, Cat, Sword, Heart, Zap, Shield, Star, BookOpen, TrendingUp } from 'lucide-react';
+import { BookOpen, TrendingUp } from 'lucide-react';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { getAscensionTexturePath } from '../utils/ascensionUtils';
@@ -47,6 +47,7 @@ function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity:
 }
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 export default function Pets() {
     const { profile } = useProfile();
@@ -206,7 +207,7 @@ export default function Pets() {
             <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-border pb-6">
                 <div className="w-full">
                     <h1 className="text-3xl font-bold text-text-primary flex items-center gap-2">
-                        <Cat className="w-8 h-8 text-accent-secondary" />
+                        <GameAssetIcon asset={{ sheet: 'Pets', index: 7 }} size={32} />
                         Pet Wiki
                     </h1>
                     <p className="text-text-secondary text-sm sm:text-base">Complete pet database with stats and type information.</p>
@@ -214,7 +215,7 @@ export default function Pets() {
 
                 <div className="flex gap-2 items-center flex-wrap">
                     <div className="relative w-full md:w-40">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                        <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                         <Input
                             placeholder="Search"
                             className="pl-9"
@@ -263,7 +264,7 @@ export default function Pets() {
             <Card className="p-6 bg-gradient-to-br from-bg-secondary/50 to-bg-card border-accent-secondary/20">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="p-2 rounded-lg bg-accent-secondary/10">
-                        <Star className="w-5 h-5 text-accent-secondary" />
+                        <GameAssetIcon asset={{ icon: 'AscensionStar' }} size={20} />
                     </div>
                     <div>
                         <h2 className="text-xl font-bold text-text-primary tracking-tight">Egg Ascension Preview</h2>
@@ -335,7 +336,7 @@ export default function Pets() {
                                 {/* Active Badge (read-only) */}
                                 {isActive && (
                                     <div className="absolute top-2 right-2 p-1.5 rounded-full bg-accent-primary text-white z-20">
-                                        <Star className="w-4 h-4 fill-current" />
+                                        <GameAssetIcon asset={{ icon: 'Star' }} size={16} />
                                     </div>
                                 )}
 
@@ -348,7 +349,7 @@ export default function Pets() {
                                         {spriteStyle ? (
                                             <div style={spriteStyle} />
                                         ) : (
-                                            <Cat className="w-8 h-8 text-text-muted" />
+                                            <GameAssetIcon asset={{ sheet: 'Pets', index: 7 }} size={32} />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -366,8 +367,8 @@ export default function Pets() {
                                                     pet.type === 'Health' ? "bg-green-500/20 text-green-400" :
                                                         "bg-blue-500/20 text-blue-400"
                                             )}>
-                                                {pet.type === 'Damage' ? <Zap className="w-3 h-3 inline mr-0.5" /> :
-                                                    pet.type === 'Health' ? <Shield className="w-3 h-3 inline mr-0.5" /> : null}
+                                                {pet.type === 'Damage' ? <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} className="align-middle mr-0.5" /> :
+                                                    pet.type === 'Health' ? <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} className="align-middle mr-0.5" /> : null}
                                                 {pet.type}
                                             </span>
                                         </div>
@@ -378,7 +379,7 @@ export default function Pets() {
                                 <div className="grid grid-cols-2 gap-2 mt-auto">
                                     <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                         <div className="flex items-center gap-1 text-[10px] text-text-muted mb-0.5 uppercase font-bold">
-                                            <Sword className="w-3 h-3 text-red-400" /> Base Dmg
+                                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} /> Base Dmg
                                         </div>
                                         <div className="font-mono font-bold text-red-200">
                                             +{formatStatValue(finalDmg)}
@@ -386,7 +387,7 @@ export default function Pets() {
                                     </div>
                                     <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                         <div className="flex items-center gap-1 text-[10px] text-green-400 mb-1 uppercase font-bold">
-                                            <Heart className="w-3 h-3" /> Health
+                                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} /> Health
                                         </div>
                                         <div className="font-mono font-bold text-green-200">
                                             +{formatStatValue(finalHp)}

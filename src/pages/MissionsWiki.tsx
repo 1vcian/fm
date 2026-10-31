@@ -3,13 +3,22 @@ import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { Target, Trophy, Sword, Settings, Clock, Users, Shield, Zap, Info, Gift, Hammer as HammerIcon, ChevronRight, Search, Activity, Heart, TrendingUp, Star, Check } from 'lucide-react';
+import { Target, Activity, TrendingUp } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useGameDataContext } from '../context/GameDataContext';
 import { AGES } from '../utils/constants';
 import { getItemImage, getItemName } from '../utils/itemAssets';
 import { formatNumber } from '../utils/format';
 import missionTitles from '../data/missionTitles.json';
+import { GameAssetIcon, gameIcon } from '../components/UI/GameAssetIcon';
+
+/** Game art for the mission config stats. */
+const ENERGY_ICON = gameIcon({ icon: 'Lightning' });
+const SUPPORT_ICON = gameIcon({ icon: 'RallyIcon' });
+const GEM_ICON = gameIcon({ icon: 'GemSquare' });
+const REFRESH_ICON = gameIcon({ icon: 'RefreshArrows' });
+const TIMER_ICON = gameIcon({ icon: 'Timer' });
+const REWARDS_ICON = gameIcon({ icon: 'GiftIcon' });
 
 /** Shipped English titles and blurbs (Missions string table, key = MissionTitleId). */
 const MISSION_TEXT: Record<string, { title: string; description: string }> = missionTitles;
@@ -231,7 +240,7 @@ export default function MissionsWiki() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-text-muted animate-pulse">
-                <Target className="w-12 h-12 mb-4 opacity-20" />
+                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 21 }} size={48} className="mb-4 opacity-20" />
                 <p>Forging Mission Data</p>
             </div>
         );
@@ -243,7 +252,7 @@ export default function MissionsWiki() {
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-border pb-8">
                 <div className="space-y-2 text-center md:text-left">
                     <h1 className="text-4xl font-black text-text-primary flex items-center justify-center md:justify-start gap-4">
-                        <Target className="w-10 h-10 text-accent-primary" />
+                        <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 21 }} size={40} />
                         Mission Wiki
                     </h1>
                     <p className="text-text-secondary text-lg font-medium">Complete guide to Guild Missions, drops and scaling rewards.</p>
@@ -251,15 +260,15 @@ export default function MissionsWiki() {
 
                 {/* Base Config Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-7 gap-3 w-full md:w-auto">
-                    <ConfigStat label="Daily Energy" value={baseConfig.DailyEnergy} icon={Zap} />
-                    <ConfigStat label="Max Support" value={baseConfig.MaxSupportMembers} icon={Users} />
-                    <ConfigStat label="Refresh Cost" value={baseConfig.RefreshGemCost} suffix=" Gems" icon={Star} />
-                    <ConfigStat label="Refresh Count" value={baseConfig.RefreshMissionCount} icon={Settings} />
+                    <ConfigStat label="Daily Energy" value={baseConfig.DailyEnergy} icon={ENERGY_ICON} />
+                    <ConfigStat label="Max Support" value={baseConfig.MaxSupportMembers} icon={SUPPORT_ICON} />
+                    <ConfigStat label="Refresh Cost" value={baseConfig.RefreshGemCost} suffix=" Gems" icon={GEM_ICON} />
+                    <ConfigStat label="Refresh Count" value={baseConfig.RefreshMissionCount} icon={REFRESH_ICON} />
                     {baseConfig.DailyFreeRefreshCount !== undefined && (
-                        <ConfigStat label="Free Refreshes" value={`${baseConfig.DailyFreeRefreshCount}/day`} icon={Settings} />
+                        <ConfigStat label="Free Refreshes" value={`${baseConfig.DailyFreeRefreshCount}/day`} icon={REFRESH_ICON} />
                     )}
-                    <ConfigStat label="Match Timer" value={`${baseConfig.MissionBattleMatchTimerSeconds}s`} icon={Clock} />
-                    <ConfigStat label="Owner Rewards" value={`${baseConfig.MissionOwnerRewardsCount}x`} icon={Trophy} />
+                    <ConfigStat label="Match Timer" value={`${baseConfig.MissionBattleMatchTimerSeconds}s`} icon={TIMER_ICON} />
+                    <ConfigStat label="Owner Rewards" value={`${baseConfig.MissionOwnerRewardsCount}x`} icon={REWARDS_ICON} />
                 </div>
             </div>
 
@@ -386,12 +395,12 @@ export default function MissionsWiki() {
                 {/* Rewards Summary */}
                 <Card className="lg:col-span-3 p-6 bg-gradient-to-br from-bg-card to-bg-secondary border-accent-primary/20 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                        <Gift size={120} />
+                        <GameAssetIcon asset={{ icon: 'GiftIcon' }} size={120} />
                     </div>
 
                     <div className="flex items-center gap-4 mb-6">
                         <div className="p-3 bg-accent-primary/10 rounded-2xl">
-                            <Gift className="w-8 h-8 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'GiftIcon' }} size={32} />
                         </div>
                         <div>
                             <h2 className="text-2xl font-black text-white uppercase tracking-tight">Mission Reward Pool</h2>
@@ -426,7 +435,7 @@ export default function MissionsWiki() {
                         <p className="text-xs text-text-muted uppercase font-black">Stats scaled to Level {effectiveLevel}</p>
                     </div>
                     <div className="relative w-full md:w-80">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                        <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                         <input
                             placeholder="Filter missions by name"
                             className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-accent-primary outline-none transition-all"
@@ -454,7 +463,7 @@ export default function MissionsWiki() {
                             )}>
                                 {/* Background Decorative Elements */}
                                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity pointer-events-none rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                                    <Target size={120} />
+                                    <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={120} />
                                 </div>
 
                                 {/* Header Card */}
@@ -496,7 +505,7 @@ export default function MissionsWiki() {
                                         </div>
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase opacity-80">
-                                                <Heart size={10} /> Enemy HP
+                                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={10} /> Enemy HP
                                             </div>
                                             <div className="text-xl font-black text-white tracking-tighter">
                                                 {formatNumber(scaledHp)}
@@ -619,7 +628,7 @@ function ElegantDropSection({ label, chance, items, autoMapping, version }: { la
 function ConfigStat({ label, value, suffix = '', icon: Icon }: { label: string, value: any, suffix?: string, icon: any }) {
     return (
         <div className="bg-bg-secondary/40 border border-border/40 rounded-2xl p-3 flex flex-col items-center justify-center text-center hover:border-accent-primary/30 hover:bg-bg-secondary/60 transition-all group">
-            <Icon size={18} className="text-text-muted group-hover:text-accent-primary transition-all group-hover:scale-110 mb-1" />
+            <Icon size={18} className="transition-all group-hover:scale-110 mb-1" />
             <div className="text-[9px] font-black text-text-muted uppercase mb-0.5 whitespace-nowrap tracking-tighter">{label}</div>
             <div className="text-xs font-black text-white">{value}{suffix}</div>
         </div>

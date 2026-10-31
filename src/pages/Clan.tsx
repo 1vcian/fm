@@ -2,8 +2,14 @@ import { clanNodeValueAtLevel, clanNodeCaps } from '../utils/clanTechStacking';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-    Users, Swords, Heart, Info, Cpu, Coins, Plus, Minus, Loader2, AlertTriangle,
-    ArrowDownToLine, ArrowUpFromLine, Check, X,
+    Cpu,
+    Plus,
+    Minus,
+    Loader2,
+    ArrowDownToLine,
+    ArrowUpFromLine,
+    Check,
+    X,
 } from 'lucide-react';
 import { Card } from '../components/UI/Card';
 import { Button } from '../components/UI/Button';
@@ -20,6 +26,7 @@ import { useComparison } from '../context/ComparisonContext';
 import { getTechNodeName, getClanIconStyle } from '../utils/techUtils';
 import { formatCompactNumber } from '../utils/statsCalculator';
 import { cn } from '../lib/utils';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 type Tab = 'clan' | 'tree' | 'resources';
 
@@ -233,16 +240,16 @@ export default function Clan() {
     const warHealthMult = warMult('ClanWarHealth');
 
     const TABS: { id: Tab; label: string; icon: JSX.Element }[] = [
-        { id: 'clan', label: 'Clan', icon: <Users className="w-4 h-4" /> },
-        { id: 'tree', label: 'My Tree', icon: <Cpu className="w-4 h-4" /> },
-        { id: 'resources', label: 'My Resources', icon: <Coins className="w-4 h-4" /> },
+        { id: 'clan', label: 'Clan', icon: <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={16} /> },
+        { id: 'tree', label: 'My Tree', icon: <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 3 }} size={16} /> },
+        { id: 'resources', label: 'My Resources', icon: <GameAssetIcon asset={{ icon: 'Coin' }} size={16} /> },
     ];
 
     return (
         <div className="max-w-[100rem] mx-auto space-y-6 animate-fade-in pb-12 px-4 xl:px-8">
             <div className="flex items-center gap-4 border-b border-border pb-5">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-primary/30 to-accent-secondary/20 flex items-center justify-center border border-accent-primary/30">
-                    <Users className="w-7 h-7 text-accent-primary" />
+                    <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={28} />
                 </div>
                 <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">Clan</h1>
@@ -302,18 +309,18 @@ export default function Clan() {
                         {/* War stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Card className="p-4 border-2 border-red-500/30 bg-red-500/5">
-                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-400 mb-2"><Swords className="w-4 h-4" /> Attack during War</div>
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-400 mb-2"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} /> Attack during War</div>
                                 <div className="text-2xl font-black text-white">{formatCompactNumber((stats?.totalDamage || 0) * (1 + warDamageMult))}</div>
                                 <div className="text-[11px] text-text-muted mt-1">Base {formatCompactNumber(stats?.totalDamage || 0)}{warDamageMult > 0 && <span className="text-red-400"> · +{(warDamageMult * 100).toFixed(0)}% war</span>}</div>
                             </Card>
                             <Card className="p-4 border-2 border-green-500/30 bg-green-500/5">
-                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-green-400 mb-2"><Heart className="w-4 h-4" /> Health during War</div>
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-green-400 mb-2"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} /> Health during War</div>
                                 <div className="text-2xl font-black text-white">{formatCompactNumber((stats?.totalHealth || 0) * (1 + warHealthMult))}</div>
                                 <div className="text-[11px] text-text-muted mt-1">Base {formatCompactNumber(stats?.totalHealth || 0)}{warHealthMult > 0 && <span className="text-green-400"> · +{(warHealthMult * 100).toFixed(0)}% war</span>}</div>
                             </Card>
                         </div>
                         <div className="flex items-start gap-2 text-[11px] text-text-muted">
-                            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={14} className="mt-0.5" />
                             <span>
                                 {canEditClanTree
                                     ? <>Edit any node below. It writes to this profile only, so all your calculators and counters update instantly.{' '}</>
@@ -621,7 +628,7 @@ const ClanTreeSyncBar: React.FC<{ diff: TreeDiff; localLevels: Map<number, numbe
         return (
             <Card className="p-4 border-2 border-amber-500/50 bg-amber-500/5">
                 <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={20} className="mt-0.5" />
                     <div className="min-w-0 flex-1 space-y-3">
                         <div>
                             <h3 className="font-black text-white text-sm">
@@ -684,7 +691,7 @@ const ClanTreeSyncBar: React.FC<{ diff: TreeDiff; localLevels: Map<number, numbe
                     per line. Taking the whole first row lets the buttons wrap underneath instead. */}
                 <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-primary">
-                        <Users className="w-3.5 h-3.5" />
+                        <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={14} />
                         {clan.clan.name} [{clan.clan.tag}] · shared tree
                     </div>
                     <p className="text-xs text-text-secondary mt-1">
@@ -796,7 +803,7 @@ const ClanTreeSyncBar: React.FC<{ diff: TreeDiff; localLevels: Map<number, numbe
                             : 'border-red-500/40 bg-red-500/10 text-red-200',
                     )}
                 >
-                    {feedback.tone === 'ok' ? <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
+                    {feedback.tone === 'ok' ? <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={14} className="mt-0.5" /> : <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />}
                     <span>{feedback.text}</span>
                 </p>
             )}

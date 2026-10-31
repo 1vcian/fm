@@ -8,7 +8,8 @@ import { cn } from '../../lib/utils';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { FAIRIES, SEASON_STATS, SeasonFairyStat, fairyRawBonus, fairyGranted, fairySummary } from '../../utils/fairies';
 import { AggregatedStats } from '../../utils/statEngine';
-import { Minus, Plus, Sparkles } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 /**
  * Compact seasonal-fairy card, sized to sit in the Active Bonuses grid beside the skin sets.
@@ -133,7 +134,7 @@ export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
                     {texture ? (
                         <img src={`${import.meta.env.BASE_URL}Texture2D/${texVersion}/${texture}`} alt={value.name ?? 'Fairy'} className="w-full h-full object-contain" />
                     ) : (
-                        <Sparkles className="w-4 h-4 text-accent-primary" />
+                        <GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />
                     )}
                 </div>
             </div>

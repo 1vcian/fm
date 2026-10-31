@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, BookmarkCheck, Check, Pencil, Plus, Shirt, Trash2, X } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Check, Plus, Trash2, X } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -16,6 +16,7 @@ import {
     resolvedSkinStats, setDisplayName, skinDisplayName, skinLevelExperience, skinLevelFromTotalXp, skinMaxLevel,
     skinRow, skinStatIncreasePerLevel, skinTotalLevelXp, skinTypes, syncLinkedSkins, withSkin,
 } from '../../utils/skinArchive';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 const statsLine = (stats: Record<string, number>) =>
@@ -101,7 +102,7 @@ export function SkinArchivePanel() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div className="min-w-0">
                         <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                            <Shirt className="w-6 h-6 text-accent-primary" /> Skin Archive
+                            <GameAssetIcon asset={{ icon: 'SteppingStoneCharIcon0' }} size={24} /> Skin Archive
                             <span className="text-xs font-bold text-text-muted">{saved.length}</span>
                         </h2>
                         <p className="text-[11px] text-text-muted">
@@ -188,7 +189,7 @@ export function SkinArchivePanel() {
                                                 {worn ? <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Worn, take off</span> : toTest ? 'Equip on Test' : 'Equip'}
                                             </button>
                                             <button onClick={() => setEditing(s)} className="px-2 py-0.5 rounded text-[10px] font-bold border border-border text-text-secondary hover:bg-white/5" data-testid="skin-archive-edit">
-                                                <Pencil className="w-3 h-3 inline mr-0.5" /> Edit
+                                                <GameAssetIcon asset={{ icon: 'Pen' }} size={12} className="inline-block mr-0.5" /> Edit
                                             </button>
                                             {confirmDelete === s.id ? (
                                                 <button onClick={() => remove(s.id)} className="px-2 py-0.5 rounded text-[10px] font-bold border border-red-500/60 text-red-400" data-testid="skin-archive-delete-confirm">

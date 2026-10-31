@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { Plus, Minus, Info } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { EggIcon } from '../UI/EggIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { cn } from '../../lib/utils';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 // One editable resource tile. `icon` is a rendered node so callers can pass a
 // SpriteIcon, an EggIcon, or anything else.
@@ -145,7 +146,7 @@ export function ResourcesEditor() {
             </div>
 
             <p className="text-[11px] text-text-muted flex items-start gap-2">
-                <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent-primary" />
+                <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={14} className="mt-0.5" />
                 These are the same values the calculators use. Edit them here or inside a calculator, they stay in sync.
                 (Coins and Guild Potions aren&apos;t consumed by any calculator yet.)
             </p>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { createPortal } from 'react-dom';
-import { Info, X, Maximize2 } from 'lucide-react';
+import { X, Maximize2 } from 'lucide-react';
 import { AutoSyncModal } from './AutoSyncModal';
 import type { ForcedTemplate } from '../../utils/ocr/guidedSync';
 import { cn } from '../../lib/utils';
@@ -84,7 +85,7 @@ export function SectionSyncButton({ preset, label = 'Sync', className }: {
                 title={`Sync your ${PRESET_TITLE[preset]} from screenshots`}
                 className="h-7 px-2 rounded-lg border border-accent-primary/20 hover:bg-accent-primary/10 hover:border-accent-primary/40 text-accent-primary text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 whitespace-nowrap"
             >
-                <span aria-hidden>📷</span> {label}
+                <GameAssetIcon asset={{ icon: 'VideoCameraIcon' }} size={14} /> {label}
             </button>
             <button
                 ref={infoBtnRef}
@@ -95,7 +96,7 @@ export function SectionSyncButton({ preset, label = 'Sync', className }: {
                 aria-label="Which screenshot to take"
                 className="h-7 w-7 rounded-lg border border-border/50 hover:border-accent-primary/40 text-text-muted hover:text-accent-primary flex items-center justify-center transition-all shrink-0"
             >
-                <Info className="w-3.5 h-3.5" />
+                <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={14} />
             </button>
 
             {showInfo && createPortal(

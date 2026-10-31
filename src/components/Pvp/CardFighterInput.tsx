@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Upload, Save, AlertTriangle, CheckCircle2, Loader2, PencilLine, Plus, X, Cat, Star } from 'lucide-react';
+import { Upload, Loader2, Plus, PencilLine, X } from 'lucide-react';
 import type { UserProfile } from '../../types/Profile';
 import type { CardItem, CardRead, CardSkill, CardUnit } from '../../utils/ocr/cardTypes';
 import { mergeCardReads, CARD_ITEM_SLOTS } from '../../utils/ocr/cardTypes';
@@ -22,6 +22,7 @@ import { MountSelectorModal } from '../Profile/MountSelectorModal';
 import { SkillSelectorModal } from '../Profile/SkillSelectorModal';
 import { FAIRIES } from '../../utils/fairies';
 import { useCardReader } from './useCardReader';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 export interface CardFighterState {
     card: CardRead;
@@ -279,12 +280,12 @@ export function CardFighterInput({ mode, value, onChange, solverReady }: {
 
                     {rebuilt?.solve && <SolveSummary solve={rebuilt.solve} />}
                     {[...card.warnings, ...(rebuilt?.notes ?? [])].map((n, k) => (
-                        <p key={k} className="text-xs text-amber-300/90 flex gap-1"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />{n}</p>
+                        <p key={k} className="text-xs text-amber-300/90 flex gap-1"><GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />{n}</p>
                     ))}
 
                     <button disabled={!rebuilt?.profile} onClick={saveProfile}
                         className="px-3 py-1.5 rounded-lg border border-border flex items-center gap-2 disabled:opacity-40 hover:border-accent-primary/60">
-                        <Save className="w-4 h-4" /> {saved ? 'Saved as a new profile' : 'Save as a new profile'}
+                        <GameAssetIcon asset={{ icon: 'Savegame' }} size={16} /> {saved ? 'Saved as a new profile' : 'Save as a new profile'}
                     </button>
                 </div>
             )}
@@ -374,7 +375,7 @@ function StarsInput({ value, onChange }: { value: number | null; onChange: (v: n
         <div className="flex items-center gap-0.5" title="Ascension stars">
             {[1, 2, 3].map(n => (
                 <button key={n} onClick={() => onChange(value === n ? n - 1 : n)} aria-label={`${n} stars`}>
-                    <Star className={'w-3.5 h-3.5 ' + ((value ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-text-muted')} />
+                    <GameAssetIcon asset={{ icon: 'AscensionStar' }} size={14} className={(value ?? 0) >= n ? '' : 'opacity-30 grayscale'} />
                 </button>
             ))}
         </div>
@@ -441,7 +442,7 @@ function UnitSlotCard({ kind, label, unit, onPick, onChange }: {
                             sheetWidth={sheet.texture_size.width} sheetHeight={sheet.texture_size.height}
                             iconIndex={parseInt(entry[0])} className="w-full h-full" />
                     </div>
-                ) : <Cat className="w-4 h-4 text-text-muted" />}
+                ) : <GameAssetIcon asset={{ sheet: 'Pets', index: 7 }} size={16} />}
             </Evidence>
             <div className="flex items-center gap-1">
                 <LevelInput value={unit.level} onChange={level => onChange({ level })} />
@@ -565,7 +566,7 @@ function SolveSummary({ solve }: { solve: SolveResult }) {
     return (
         <div className={'rounded-lg border p-2 text-xs space-y-1 ' + (ok ? 'border-green-500/40' : 'border-amber-500/50')}>
             <div className="flex items-center gap-1 font-bold">
-                {ok ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <AlertTriangle className="w-4 h-4 text-amber-400" />}
+                <GameAssetIcon asset={{ icon: ok ? 'CheckIcon' : 'WarningSign' }} size={16} />
                 Trees rebuilt from the card totals
             </div>
             <div>Damage {formatNumber(solve.achieved.damage)} ({pct(solve.error.damage)}), Health {formatNumber(solve.achieved.health)} ({pct(solve.error.health)})</div>

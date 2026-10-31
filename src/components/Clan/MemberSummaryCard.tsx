@@ -67,7 +67,7 @@
  * same way.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, type ComponentType } from 'react';
 import {
     Ban,
     Check,
@@ -75,17 +75,15 @@ import {
     ChevronsUp,
     Clock,
     Coins,
-    Crown,
     EyeOff,
     GitBranch,
     HelpCircle,
-    Info,
-    Rabbit,
     Shield,
     Sigma,
-    Swords,
     User,
+    type LucideIcon,
 } from 'lucide-react';
+import { GameAssetIcon, gameIcon } from '../UI/GameAssetIcon';
 import { useGameData } from '../../hooks/useGameData';
 import { getTechNodeName } from '../../utils/techUtils';
 import { getWarDayName } from '../../utils/guildWarUtils';
@@ -824,8 +822,11 @@ const CHIP_AMBER = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
 const CHIP_RED = 'bg-red-500/15 text-red-400 border-red-500/30';
 const CHIP_MUTED = 'bg-white/5 text-text-muted border-border';
 
-const ROLE_META: Record<ClanRole, { label: string; icon: typeof Crown; className: string }> = {
-    owner: { label: 'Owner', icon: Crown, className: 'text-amber-400' },
+/** The game's crown, drawn in the owner slot of the role chip. */
+const OwnerCrownIcon = gameIcon({ icon: 'crown0' });
+
+const ROLE_META: Record<ClanRole, { label: string; icon: LucideIcon | ComponentType<{ size?: number; className?: string }>; className: string }> = {
+    owner: { label: 'Owner', icon: OwnerCrownIcon, className: '' },
     admin: { label: 'Admin', icon: Shield, className: 'text-accent-tertiary' },
     member: { label: 'Member', icon: User, className: 'text-text-muted' },
 };
@@ -1000,7 +1001,7 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
                         </span>
                     )}
                     <span className="shrink-0" title={role.label} aria-label={role.label}>
-                        <RoleIcon className={cn('w-3.5 h-3.5', role.className)} aria-hidden="true" />
+                        <RoleIcon size={14} className={cn('w-3.5 h-3.5', role.className)} />
                     </span>
                     {/* The name and its chips share ONE wrapping box, and the figure plus the
                         chevron stay pinned to the right outside it. Measured: with the provenance
@@ -1226,7 +1227,7 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
                             {summary.notes.length > 0 && (
                                 <div className="space-y-1">
                                     <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-accent-primary">
-                                        <Info className="w-3.5 h-3.5" /> What {summary.name} assumed
+                                        <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={14} /> What {summary.name} assumed
                                     </h4>
                                     <ul className="space-y-0.5">
                                         {summary.notes.map((note, index) => (
@@ -1555,7 +1556,7 @@ const WarBreakdown: React.FC<{
     return (
     <div className="space-y-2">
         <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-accent-primary">
-            <Swords className="w-3.5 h-3.5" /> War points still obtainable
+            <GameAssetIcon asset={{ icon: 'Battle' }} size={14} /> War points still obtainable
         </h4>
 
         {/* The one sentence a planner needs before reading any of the numbers below: is this the
@@ -1884,7 +1885,7 @@ const MountsStoryBlock: React.FC<{ summary: MemberSummary; breakdown: MemberBrea
     return (
         <div className="space-y-1.5" data-mounts-story={m.known ? 'known' : 'unknown'}>
             <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-accent-primary">
-                <Rabbit className="w-3.5 h-3.5" /> Mounts, in full
+                <GameAssetIcon asset={{ sheet: 'MountIcons', index: 1 }} size={14} /> Mounts, in full
             </h4>
 
             {!m.known ? (
@@ -1973,7 +1974,7 @@ const AnchoredTimesNote: React.FC = () => (
         className="flex items-start gap-1.5 rounded-lg border border-border bg-bg-input/40 p-2 text-[10px] leading-relaxed text-text-secondary"
         data-anchored-times="none"
     >
-        <Clock className="mt-0.5 w-3.5 h-3.5 shrink-0 text-text-muted" aria-hidden="true" />
+        <GameAssetIcon asset={{ icon: 'Timer' }} size={14} className="mt-0.5" />
         <span className="min-w-0">{ANCHORED_TIMES_LINE}</span>
     </p>
 );
@@ -2115,7 +2116,7 @@ const ResourceBreakdown: React.FC<{ share: ClanShare }> = ({ share }) => {
     return (
         <div className="space-y-1.5">
             <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-accent-primary">
-                <Coins className="w-3.5 h-3.5" /> Resources behind those points
+                <GameAssetIcon asset={{ icon: 'Coin' }} size={14} /> Resources behind those points
             </h4>
             {items.length === 0 ? (
                 <p className="text-[11px] text-text-muted">

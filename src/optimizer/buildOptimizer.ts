@@ -22,6 +22,7 @@
  *            Against the test dummy (vsDummy) there are no battles: each finalist runs the combat
  *            engine on the unkillable dummy (testedRun) and is ranked by measured DPS, then HPS.
  */
+import { runSeed } from '../engine/rng';
 import type { EquippedSkin, MountSlot, PetSlot, SkillSlot, UserProfile } from '../types/Profile';
 import { calculateStats, type LibraryData } from '../utils/statEngine';
 import { playerUnitSpec, skillSpecs, testedRun, type PvpHpConfig } from '../engine';
@@ -472,10 +473,10 @@ export function runOptimizer(input: OptimizerInput, onProgress: OptimizerProgres
         const me = fighter('Candidate', withBuild(c.skills, c, c.fairy, c.skins));
         let wins = 0, draws = 0, losses = 0, margin = 0;
         for (let seed = 1; seed <= n; seed++) {
-            const a = new PvpBattle(me, ref, pvpConfig, seed).run();
+            const a = new PvpBattle(me, ref, pvpConfig, runSeed(seed)).run();
             if (a.outcome === 'p1') wins++; else if (a.outcome === 'p2') losses++; else draws++;
             margin += a.p1HpFrac - a.p2HpFrac;
-            const b = new PvpBattle(ref, me, pvpConfig, seed).run();
+            const b = new PvpBattle(ref, me, pvpConfig, runSeed(seed)).run();
             if (b.outcome === 'p2') wins++; else if (b.outcome === 'p1') losses++; else draws++;
             margin += b.p2HpFrac - b.p1HpFrac;
         }

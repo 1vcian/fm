@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Heart } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { useGameData } from '../../hooks/useGameData';
 import { attackIntervalSeconds, doubleCycleSeconds } from '../../utils/constants';
 import { maxSubstatTotal } from '../../utils/substatBodies';
@@ -126,7 +126,7 @@ export const BreakpointTables = memo(({
                             </div>
                         </>
                     ) : (
-                        <div className="text-sm font-bold text-white/50 mt-1">You&apos;ve hit the last breakpoint 🎯</div>
+                        <div className="text-sm font-bold text-white/50 mt-1"><span className="inline-flex items-center gap-1">You&apos;ve hit the last breakpoint <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} /></span></div>
                     )}
                 </div>
                 <div className="bg-black/25 border border-white/5 rounded-lg p-3">
@@ -195,7 +195,7 @@ export const BreakpointTables = memo(({
                     (orange = single, purple = double). Double breakpoints only matter while your double chance &gt; 0.
                 </p>
                 <p className="text-[10px] text-emerald-400/70 flex items-start gap-1.5">
-                    <Heart className="w-3 h-3 mt-0.5 shrink-0" />
+                    <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} className="mt-0.5" />
                     <span>
                         These same breakpoints also raise your <strong>lifesteal HPS</strong>. It scales 1:1 with the real attack
                         rate. Only the lifesteal share of your healing follows them though; flat health-regen and skill healing don&apos;t

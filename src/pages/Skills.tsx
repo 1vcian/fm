@@ -4,7 +4,7 @@ import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
-import { Zap, Search, Star, Clock, Crosshair, Sword, Heart, Package, TrendingUp } from 'lucide-react';
+import { Package, TrendingUp } from 'lucide-react';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { getNormalizedTarget } from '../utils/ascensionUtils';
@@ -12,6 +12,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
 import { formatCompactNumber } from '../utils/statsCalculator';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 export default function Skills() {
     const { profile } = useProfile();
@@ -170,7 +171,7 @@ export default function Skills() {
             <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-border pb-6">
                 <div className="w-full">
                     <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                        <Zap className="w-8 h-8 sm:w-10 h-10 text-accent-primary" />
+                        <GameAssetIcon asset={{ sheet: 'SkillIcons', index: 14 }} size={40} />
                         Skill Wiki
                     </h1>
                     <p className="text-text-secondary text-sm sm:text-base">
@@ -180,7 +181,7 @@ export default function Skills() {
 
                 <div className="flex gap-2 items-center flex-wrap">
                     <div className="relative w-full md:w-40">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                        <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                         <Input
                             placeholder="Search"
                             className="pl-9"
@@ -257,7 +258,7 @@ export default function Skills() {
                                 {/* Equipped Badge (read-only) */}
                                 {isEquipped && (
                                     <div className="absolute top-2 right-2 p-1.5 rounded-full bg-accent-primary text-white z-20">
-                                        <Star className="w-4 h-4 fill-current" />
+                                        <GameAssetIcon asset={{ icon: 'Star' }} size={16} />
                                     </div>
                                 )}
 
@@ -270,7 +271,7 @@ export default function Skills() {
                                         {spriteStyle ? (
                                             <div style={spriteStyle} />
                                         ) : (
-                                            <Zap className="w-8 h-8 text-text-muted" />
+                                            <GameAssetIcon asset={{ sheet: 'SkillIcons', index: 14 }} size={32} />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -287,12 +288,12 @@ export default function Skills() {
                                 {/* Skill Info */}
                                 <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
                                     <div className="bg-bg-input/50 p-2 rounded flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-accent-secondary" />
+                                        <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                                         <span className="text-text-muted">Duration:</span>
                                         <span className="font-mono font-bold ml-auto">{skill.activeDuration}s</span>
                                     </div>
                                     <div className="bg-bg-input/50 p-2 rounded flex items-center gap-2">
-                                        <Crosshair className="w-3 h-3 text-accent-tertiary" />
+                                        <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 9 }} size={12} />
                                         <span className="text-text-muted">Cooldown:</span>
                                         <span className="font-mono font-bold ml-auto">{skill.cooldown}s</span>
                                     </div>
@@ -336,7 +337,7 @@ export default function Skills() {
                                     {dmgAtLevel > 0 && (
                                         <div className="flex flex-col bg-bg-input/50 p-2 rounded border border-white/5 flex-1 items-center">
                                             <div className="flex items-center gap-1 text-[10px] text-red-400 mb-1 uppercase font-bold">
-                                                <Sword className="w-3 h-3" /> Damage
+                                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} /> Damage
                                             </div>
                                             <div className="font-mono font-bold text-red-200">
                                                 +{formatStatValue(dmgAtLevel)}
@@ -346,7 +347,7 @@ export default function Skills() {
                                     {hpAtLevel > 0 && (
                                         <div className="bg-bg-input/50 p-2 rounded border border-white/5 flex-1 items-center">
                                             <div className="flex items-center gap-1 text-[10px] text-green-400 mb-1 uppercase font-bold">
-                                                <Heart className="w-3 h-3" /> Health
+                                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} /> Health
                                             </div>
                                             <div className="font-mono font-bold text-green-200">
                                                 +{formatStatValue(hpAtLevel)}

@@ -52,15 +52,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    AlertTriangle,
     Loader2,
     LogIn,
-    RefreshCw,
     Search,
     SearchX,
-    Users,
     X,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { ClanBadge } from '../UI/ClanBadge';
 import { Button } from '../UI/Button';
 import { cn } from '../../lib/utils';
@@ -168,7 +166,7 @@ const ClanRow: React.FC<ClanRowProps> = ({ clan, mine, onPick }) => {
                     what a 360px viewport does to it. */}
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-muted">
                     <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                        <Users className="w-3 h-3" />
+                        <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={12} />
                         {clan.member_count}/{clan.member_cap} members
                     </span>
                     <span
@@ -409,7 +407,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
     const body = useMemo(() => {
         if (!backendConfigured) {
             return (
-                <Panel icon={<Users className="w-5 h-5" />} title="Clans are not available in this build">
+                <Panel icon={<GameAssetIcon asset={{ icon: 'RallyIcon' }} size={20} />} title="Clans are not available in this build">
                     This copy of the app has no server configured, so there are no accounts and no clans. Everything
                     else keeps working locally.
                 </Panel>
@@ -431,7 +429,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
         }
         if (listError) {
             return (
-                <Panel icon={<AlertTriangle className="w-5 h-5" />} title="Could not load clans" tone="warn">
+                <Panel icon={<GameAssetIcon asset={{ icon: 'WarningSign' }} size={20} />} title="Could not load clans" tone="warn">
                     <p>{listError.message}</p>
                     <Button
                         variant="secondary"
@@ -439,7 +437,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
                         className="mt-3"
                         onClick={() => (searchMode ? setRetryTick(t => t + 1) : loadRecent())}
                     >
-                        <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Try again
+                        <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={14} className="mr-1.5" /> Try again
                     </Button>
                 </Panel>
             );
@@ -468,7 +466,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
             );
         }
         return (
-            <Panel icon={<Users className="w-5 h-5" />} title="No clans yet">
+            <Panel icon={<GameAssetIcon asset={{ icon: 'RallyIcon' }} size={20} />} title="No clans yet">
                 Nobody has created a clan on this server yet. Create one and it will show up here for everybody
                 else.
             </Panel>
@@ -494,7 +492,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
                                 Find a clan by name or tag
                             </label>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                                <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                 <input
                                     id="clan-browser-search"
                                     type="search"
@@ -529,7 +527,7 @@ export const ClanBrowser: React.FC<ClanBrowserProps> = ({
                             >
                                 {recentLoading
                                     ? <Loader2 className="w-4 h-4 animate-spin" />
-                                    : <RefreshCw className="w-4 h-4" />}
+                                    : <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} />}
                                 <span className="ml-1.5">Refresh</span>
                             </Button>
                         )}

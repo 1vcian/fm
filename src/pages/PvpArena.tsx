@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Swords, Play, Eye, Info } from 'lucide-react';
+import { Play, Eye } from 'lucide-react';
 import { Card } from '../components/UI/Card';
 import { useProfile } from '../context/ProfileContext';
 import { useGameData } from '../hooks/useGameData';
@@ -12,6 +12,7 @@ import { pvpHpMultiplier, type PvpHpConfig } from '../engine';
 import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
 import { CardFighterInput, type CardFighterState } from '../components/Pvp/CardFighterInput';
 import type { UserProfile } from '../types/Profile';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 type Source =
     | { kind: 'active' }
@@ -92,7 +93,7 @@ export default function PvpArena() {
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
             <h1 className="text-2xl md:text-3xl font-bold text-accent-primary flex items-center gap-2">
-                <Swords className="w-7 h-7" /> Arena Simulator
+                <GameAssetIcon asset={{ icon: 'Battle' }} size={28} /> Arena Simulator
                 <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">Beta</span>
             </h1>
 
@@ -248,7 +249,7 @@ function FormulaCard({ cfg, f1, f2 }: { cfg: PvpHpConfig; f1: PvpFighter | null;
     const n = (v: number) => Number(v.toFixed(4)).toString();
     return (
         <Card className="p-4 space-y-2 text-sm">
-            <h2 className="font-bold flex items-center gap-2"><Info className="w-4 h-4 text-accent-primary" /> How the arena works</h2>
+            <h2 className="font-bold flex items-center gap-2"><GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} /> How the arena works</h2>
             <p className="text-text-secondary">Values from PvpBaseConfig of the selected game data, read from the game binary (PvpCombatScene).</p>
             <div className="font-mono text-xs bg-bg-input/60 border border-border rounded-lg p-3 space-y-1">
                 <div>m = {n(cfg.PvpHpBaseMultiplier)} + {n(cfg.PvpHpPetMultiplier)} x equipped pets + {n(cfg.PvpHpSkillMultiplier)} x equipped skills + {n(cfg.PvpHpMountMultiplier)} x (mount equipped ? 1 : 0)</div>

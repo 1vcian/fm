@@ -3,12 +3,13 @@ import { Card } from '../components/UI/Card';
 import { useProfile } from '../context/ProfileContext';
 import { useGameData } from '../hooks/useGameData';
 import { cn } from '../lib/utils';
-import { Hammer, Zap, Info, X, RefreshCw, Star, Plus, Minus, Download, Upload } from 'lucide-react';
+import { X, RefreshCw, Plus, Minus, Download, Upload } from 'lucide-react';
 import { getTechNodeName, getTechNodeDescription, getClanIconStyle } from '../utils/techUtils';
 import { useTreeMode } from '../context/TreeModeContext';
 import { clanNodeValueAtLevel, mergeClanModifiers } from '../utils/clanTechStacking';
 import { useGameDataContext } from '../context/GameDataContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
+import { GameAssetIcon, type GameAsset } from '../components/UI/GameAssetIcon';
 import { techLevelCostAndDuration } from '../utils/techOptimizer';
 
 const ICON_SIZE = 48;
@@ -18,6 +19,14 @@ const LAYER_GAP = 80;
 const COL_GAP = 40;
 
 type TreeName = 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan';
+
+/** Placeholder art for a node whose sprite is missing: the game's own icon of its tree. */
+const TREE_FALLBACK_ICON: Record<TreeName, GameAsset> = {
+    Forge: { icon: 'TechTreeForge' },
+    Power: { icon: 'TechTreePower' },
+    SkillsPetTech: { icon: 'TechTreeMeta' },
+    Clan: { icon: 'RallyIcon' },
+};
 
 export default function TechTree() {
     const { profile } = useProfile();
@@ -689,13 +698,7 @@ export default function TechTree() {
             {/* Wiki Header */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-border pb-4 mb-4 shrink-0 px-2 sm:px-0">
                 <div className="flex items-center gap-3 self-start md:self-center">
-                    <div className="inline-block shrink-0 drop-shadow-md sm:w-[40px] sm:h-[40px] w-[32px] h-[32px]" role="img" aria-label="Potion" style={{
-                        backgroundImage: `url(${import.meta.env.BASE_URL}icons/game/Icons.png)`,
-                        backgroundPosition: '0px -40px',
-                        backgroundSize: '320px 320px',
-                        backgroundRepeat: 'no-repeat',
-                        imageRendering: 'pixelated'
-                    }} />
+                    <GameAssetIcon asset={{ icon: 'Potion' }} size={40} className="drop-shadow-md" />
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
                             Tech Wiki
@@ -782,7 +785,7 @@ export default function TechTree() {
             {/* Simulation Controls */}
             <Card className="p-2 mb-4 flex flex-wrap items-center justify-between gap-3 border-accent-primary/20 shrink-0 bg-accent-primary/5">
                 <div className="flex items-center gap-2 px-2 py-1">
-                    <Info className="w-4 h-4 text-accent-primary" />
+                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} />
                     <span className="text-[11px] font-bold text-text-secondary uppercase">Simulation Mode</span>
                 </div>
                 <div className="flex gap-2">
@@ -790,14 +793,14 @@ export default function TechTree() {
                         onClick={resetToProfile}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-input border border-border hover:bg-white/5 text-[11px] font-bold transition-all"
                     >
-                        <RefreshCw className="w-3 h-3" />
+                        <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={12} />
                         Reload My Profile
                     </button>
                     <button
                         onClick={maxOutCurrentTree}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-primary/10 border border-accent-primary/20 hover:bg-accent-primary/20 text-accent-primary text-[11px] font-bold transition-all"
                     >
-                        <Zap className="w-3 h-3 fill-current" />
+                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                         Max Tree
                     </button>
                     {activeTab !== 'Clan' && (
@@ -813,7 +816,7 @@ export default function TechTree() {
                         onClick={maxOutTree}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-primary/20 border border-accent-primary/30 hover:bg-accent-primary/30 text-accent-primary text-[11px] font-bold transition-all"
                     >
-                        <Star className="w-3 h-3 fill-current" />
+                        <GameAssetIcon asset={{ icon: 'Star' }} size={12} />
                         Max Everything
                     </button>
                     {activeTab === 'Clan' && (
@@ -1027,7 +1030,7 @@ export default function TechTree() {
                                                         {spriteStyle ? (
                                                             <div style={spriteStyle} />
                                                         ) : (
-                                                            activeTab === 'Power' ? <Zap className="w-8 h-8 text-yellow-500" /> : <Hammer className="w-8 h-8 text-blue-500" />
+                                                            <GameAssetIcon asset={TREE_FALLBACK_ICON[activeTab]} size={32} />
                                                         )}
                                                         {isMaxed && (
                                                             <div className="absolute inset-0 border-2 border-green-500/50 rounded-lg pointer-events-none" />
@@ -1120,7 +1123,7 @@ export default function TechTree() {
                                                 return spriteStyle ? (
                                                     <div style={spriteStyle} />
                                                 ) : (
-                                                    activeTab === 'Power' ? <Zap className="w-8 h-8 text-yellow-500" /> : <Hammer className="w-8 h-8 text-blue-500" />
+                                                    <GameAssetIcon asset={TREE_FALLBACK_ICON[activeTab]} size={32} />
                                                 );
                                             })()}
                                         </div>
@@ -1283,7 +1286,7 @@ export default function TechTree() {
                                                             onClick={() => setSelectedNodeId(reqId)}
                                                             className="w-full flex items-center gap-3 p-2 bg-bg-secondary/40 rounded-lg border border-border hover:border-accent-primary transition-colors text-left"
                                                         >
-                                                            <Info className="w-4 h-4 text-accent-primary shrink-0" />
+                                                            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} />
                                                             <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-clip">{getTechNodeName(reqNode.type)}</span>
                                                         </button>
                                                     );
@@ -1422,7 +1425,7 @@ export default function TechTree() {
 
                             {!selectedNode && (
                                 <div className="h-full flex flex-col items-center justify-center p-12 text-center opacity-30">
-                                    <Info className="w-16 h-16 mb-4" />
+                                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={64} className="mb-4" />
                                     <p className="text-sm font-bold uppercase tracking-widest leading-relaxed">Select a tech node to view function & simulate stats</p>
                                 </div>
                             )}

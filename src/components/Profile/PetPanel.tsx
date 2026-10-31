@@ -2,7 +2,6 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Cat } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { PetSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
@@ -22,6 +21,7 @@ import { SectionSyncButton } from './SectionSyncButton';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 interface PetPanelProps {
     variant?: 'default' | 'original' | 'test';
@@ -355,7 +355,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 hint="Click to equip"
                                 hasDiff={hasDiff}
                                 onClick={() => setIsModalOpen(true)}
-                                icon={<Cat className="w-10 h-10 text-text-muted" />}
+                                icon={<GameAssetIcon asset={{ sheet: 'Pets', index: 7 }} size={40} />}
                             />
                         );
                     }
@@ -451,7 +451,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                         smooth
                                     />
                                 ) : (
-                                    <Cat className={cn("w-10 h-10 opacity-50", `text-rarity-${pet.rarity.toLowerCase()}`)} />
+                                    <GameAssetIcon asset={{ sheet: 'Pets', index: 7 }} size={40} className="opacity-50" />
                                 )
                             )}
                             onClick={() => setEditingPetIdx(idx)}

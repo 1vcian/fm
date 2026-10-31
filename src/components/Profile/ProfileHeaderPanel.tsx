@@ -5,11 +5,12 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
-import { Pencil, Check, X, Trophy, Coffee } from 'lucide-react';
+import { Check, X, Coffee } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useSkinSets } from '../../hooks/useSkinSets';
 import { useGameData } from '../../hooks/useGameData';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 /**
  * CardIcons.png is a square atlas of profile avatars, 2048px on both axes in every version
@@ -238,7 +239,7 @@ export function ProfileHeaderPanel() {
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl cursor-pointer"
                         onClick={() => setIsIconModalOpen(true)}
                     >
-                        <Pencil className="w-5 h-5 text-white" />
+                        <GameAssetIcon asset={{ icon: 'Pen' }} size={20} />
                     </div>
                 </div>
 
@@ -276,7 +277,7 @@ export function ProfileHeaderPanel() {
                                 onClick={handleStartEdit}
                                 className="p-1 text-text-muted hover:text-accent-primary opacity-0 group-hover/name:opacity-100 transition-opacity"
                             >
-                                <Pencil className="w-4 h-4" />
+                                <GameAssetIcon asset={{ icon: 'Pen' }} size={16} />
                             </button>
                         </div>
                     )}
@@ -292,7 +293,7 @@ export function ProfileHeaderPanel() {
                                 className="flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.05)] animate-in fade-in zoom-in duration-500"
                                 title={`${set.setId.replace(/Set$/, '')} Set Complete!`}
                             >
-                                <Trophy className="w-3 h-3" />
+                                <GameAssetIcon asset={{ sheet: 'ArenaRankIcons', index: 0 }} size={12} />
                                 <span>{set.setId.replace(/Set$/, '')}</span>
                             </div>
                         ))}

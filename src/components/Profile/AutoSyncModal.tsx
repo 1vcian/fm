@@ -1,9 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import {
-    X, UploadCloud, Check, Loader2, Image as ImageIcon, Sparkles,
-    AlertTriangle, Trash2, ScanSearch, CheckCircle2, ArrowRight, GitBranch, Bookmark,
-} from 'lucide-react';
+import { X, UploadCloud, Check, Image as ImageIcon, ScanSearch, ArrowRight, Bookmark, Loader2, Trash2, GitBranch } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -28,6 +25,7 @@ import { SUBSTAT_DEFS } from '../../utils/ocr/gameDictionary';
 import { getStatName } from '../../utils/statNames';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { cn } from '../../lib/utils';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 // upload -> review (confirm the detected template per screenshot) -> processing -> diff -> done
 type Stage = 'upload' | 'review' | 'processing' | 'diff' | 'done';
@@ -550,7 +548,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                 value === n
                                     ? (edited ? 'bg-amber-400/30 text-amber-100' : 'bg-white/15 text-text-primary')
                                     : 'bg-bg-input text-text-muted hover:text-text-primary')}>
-                            {n === 0 ? '-' : '★'.repeat(n)}
+                            {n === 0 ? '-' : <span className="inline-flex items-center">{Array.from({ length: n }, (_, i) => <GameAssetIcon key={i} asset={{ icon: 'AscensionStar' }} size={11} />)}</span>}
                         </button>
                     ))}
                 </span>
@@ -651,7 +649,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                     {langOptions.map(l => <option key={l} value={l}>{LANG_LABEL[l]}</option>)}
                                 </select>
                             </label>
-                            {error && <p className="text-red-400 text-sm flex items-center gap-2"><AlertTriangle className="w-4 h-4" />{error}</p>}
+                            {error && <p className="text-red-400 text-sm flex items-center gap-2"><GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} />{error}</p>}
                             <button disabled={!files.length} onClick={startReview}
                                 className="w-full py-3 rounded-xl font-bold bg-accent-primary text-white disabled:opacity-40 hover:brightness-110 transition flex items-center justify-center gap-2">
                                 Review {files.length || ''} screenshot{files.length === 1 ? '' : 's'} <ArrowRight className="w-4 h-4" />
@@ -699,7 +697,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                     );
                                 })}
                             </div>
-                            {error && <p className="text-red-400 text-sm flex items-center gap-2"><AlertTriangle className="w-4 h-4" />{error}</p>}
+                            {error && <p className="text-red-400 text-sm flex items-center gap-2"><GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} />{error}</p>}
                         </div>
                     )}
 
@@ -721,7 +719,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                         <div className="space-y-4">
                             {fileNotes.length > 0 && (
                                 <details className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px]" open={rows.length === 0}>
-                                    <summary className="cursor-pointer font-bold text-amber-400 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Notes on {fileNotes.length} screenshot{fileNotes.length === 1 ? '' : 's'}</summary>
+                                    <summary className="cursor-pointer font-bold text-amber-400 flex items-center gap-1.5"><GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} /> Notes on {fileNotes.length} screenshot{fileNotes.length === 1 ? '' : 's'}</summary>
                                     <ul className="mt-2 space-y-1.5">
                                         {fileNotes.map((n, i) => (
                                             <li key={i}><span className="text-white font-bold">{n.name}</span>
@@ -733,7 +731,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                             )}
                             {rows.length === 0 ? (
                                 <div className="py-10 text-center text-text-muted">
-                                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-400" />Nothing detected. Try clearer, full-screen captures of the item / pet / mount detail popups, and check the game language above.
+                                    <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={32} className="mx-auto mb-2" />Nothing detected. Try clearer, full-screen captures of the item / pet / mount detail popups, and check the game language above.
                                     <div className="mt-4"><button onClick={() => setStage('review')} className="px-4 py-2 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold">Back to review</button></div>
                                 </div>
                             ) : (
@@ -759,7 +757,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                         ? <SpriteIcon name={CURRENCY_ICON[r.label] || 'Coin'} size={22} />
                                                         : r.category === 'clanTree'
                                                             ? <GitBranch className="w-5 h-5 text-accent-primary shrink-0" />
-                                                            : <Sparkles className="w-5 h-5 text-accent-secondary shrink-0" />}
+                                                            : <GameAssetIcon asset={{ icon: 'Sparkle' }} size={20} className="shrink-0" />}
                                                     {/* NAME. Must never be squeezed out. On narrow viewports it claims the
                                                         rest of line 1 (checkbox + icon ≈ 4rem) and pushes the crop/level/star
                                                         controls onto line 2; from sm up it flexes but never below 6rem. */}
@@ -826,7 +824,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                             <div className="ml-auto flex items-center gap-1.5">
                                                                 {r.accepted && petSlotConflicts.has(r.patch.slotIndex) && (
                                                                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border text-amber-400 bg-amber-500/10 border-amber-500/30 flex items-center gap-1">
-                                                                        <AlertTriangle className="w-3 h-3" /> slot clash
+                                                                        <GameAssetIcon asset={{ icon: 'WarningSign' }} size={12} /> slot clash
                                                                     </span>
                                                                 )}
                                                                 {/* WHICH slot this detected pet replaces is the user's choice: two pets of
@@ -874,7 +872,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                                             field on the item. So this row has nothing to write them to and
                                                                             they stay read-only evidence (see task #39). */}
                                                                         {r.category === 'item' && r.detected?.stars
-                                                                            ? <span className="text-amber-400" title="Forge ascension read from the item tile. Not applied by this row">{'★'.repeat(r.detected.stars)}</span>
+                                                                            ? <span className="inline-flex items-center" title="Forge ascension read from the item tile. Not applied by this row">{Array.from({ length: r.detected.stars }, (_, i) => <GameAssetIcon key={i} asset={{ icon: 'AscensionStar' }} size={12} />)}</span>
                                                                             : null}
                                                                         {/* The picker shares this wrapping line with the level crop, so the
                                                                             screenshot pixels the stars came from sit right next to it (and the
@@ -897,9 +895,9 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                                                         </div>
                                                     </div>
                                                     {r.category === 'skinEquip' && r.warnings.length > 0 && (
-                                                        <p className="text-[10px] text-amber-400/80 flex items-center gap-1 mt-1"><AlertTriangle className="w-3 h-3" /> {r.warnings[r.warnings.length - 1]}</p>
+                                                        <p className="text-[10px] text-amber-400/80 flex items-center gap-1 mt-1"><GameAssetIcon asset={{ icon: 'WarningSign' }} size={12} /> {r.warnings[r.warnings.length - 1]}</p>
                                                     )}
-                                                    {r.confidence < 0.6 && <p className="text-[10px] text-amber-400/80 flex items-center gap-1 mt-1"><AlertTriangle className="w-3 h-3" /> Low confidence. Check the picture{r.category === 'item' ? ' and slot' : ''} before accepting.</p>}
+                                                    {r.confidence < 0.6 && <p className="text-[10px] text-amber-400/80 flex items-center gap-1 mt-1"><GameAssetIcon asset={{ icon: 'WarningSign' }} size={12} /> Low confidence. Check the picture{r.category === 'item' ? ' and slot' : ''} before accepting.</p>}
                                                 </div>
                                             ))}
                                             </div>
@@ -912,7 +910,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
 
                     {stage === 'done' && (
                         <div className="py-12 text-center space-y-3">
-                            <CheckCircle2 className="w-12 h-12 mx-auto text-green-400" />
+                            <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={48} className="mx-auto" />
                             <p className="font-bold text-white text-lg">Profile updated</p>
                             <p className="text-[12px] text-text-muted">{acceptedCount} change{acceptedCount === 1 ? '' : 's'} applied.</p>
                             {presetsWritten > 0 && (
@@ -929,7 +927,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                         <button onClick={() => setStage('upload')} className="px-4 py-2.5 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Back</button>
                         <button onClick={process} disabled={!processCount || pendingCount > 0}
                             className="flex-1 py-2.5 rounded-xl font-bold bg-accent-primary text-white disabled:opacity-40 hover:brightness-110 flex items-center justify-center gap-2">
-                            <Sparkles className="w-4 h-4" />
+                            <GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />
                             {pendingCount > 0 ? 'Detecting' : `Process ${processCount} screenshot${processCount === 1 ? '' : 's'}`}
                         </button>
                     </div>
@@ -951,7 +949,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                         </label>
                         {hasPetConflict && (
                             <p className="text-[11px] text-amber-400 flex items-center gap-1.5">
-                                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="shrink-0" />
                                 Two accepted pets target the same slot (only 3 active slots). Change a slot or untick one to apply.
                             </p>
                         )}

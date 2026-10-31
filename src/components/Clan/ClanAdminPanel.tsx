@@ -70,29 +70,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    AlertTriangle,
     ArrowUpRight,
     Check,
     Copy,
-    Crown,
     Eye,
     EyeOff,
-    Info,
     KeyRound,
     Loader2,
     LogOut,
     Palette,
-    Pencil,
-    RefreshCw,
     Shield,
     ShieldCheck,
-    Swords,
     Trash2,
     UserCheck,
     UserMinus,
     UserX,
     X,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Button } from '../UI/Button';
 import { ClanBadge, ClanBadgePicker } from '../UI/ClanBadge';
 import { ClanTierPanel, TierOptions } from './ClanTierPanel';
@@ -350,7 +345,7 @@ function RoleChip({ role }: { role: ClanRole }) {
                         : 'bg-white/5 text-text-muted',
             )}
         >
-            {role === 'owner' ? <Crown className="h-3 w-3" /> : role === 'admin' ? <Shield className="h-3 w-3" /> : null}
+            {role === 'owner' ? <GameAssetIcon asset={{ icon: 'crown0' }} size={12} /> : role === 'admin' ? <Shield className="h-3 w-3" /> : null}
             {ROLE_LABEL[role]}
         </span>
     );
@@ -876,7 +871,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                     {feedback.tone === 'ok' ? (
                         <Check className="mt-0.5 h-4 w-4 shrink-0" />
                     ) : (
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} className="mt-0.5" />
                     )}
                     <span>{feedback.text}</span>
                 </p>
@@ -940,11 +935,11 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                                 setDraftPassword('');
                             }}
                         >
-                            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                            <GameAssetIcon asset={{ icon: 'Pen' }} size={14} className="mr-1.5" />
                             {editingPassword ? 'Cancel edit' : 'Set my own'}
                         </Button>
                         <Button variant="secondary" size="sm" onClick={() => setPending({ kind: 'regenerate' })}>
-                            <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Generate a new one
+                            <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={14} className="mr-1.5" /> Generate a new one
                         </Button>
                     </div>
 
@@ -1033,7 +1028,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                                     setTierDraft(undefined);
                                 }}
                             >
-                                <Swords className="mr-1.5 h-3.5 w-3.5" />
+                                <GameAssetIcon asset={{ icon: 'Battle' }} size={14} className="mr-1.5" />
                                 {tierOpen ? 'Close' : currentTier ? 'Change tier' : 'Set tier'}
                             </Button>
                         ) : undefined
@@ -1157,7 +1152,7 @@ export function ClanAdminPanel({ onLeft, onDeleted, className }: ClanAdminPanelP
                         // Not hidden, and not a dead button: the owner is told exactly what to do
                         // first. The server enforces the same thing (`needs-owner-transfer`).
                         <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
-                            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} className="mt-0.5" />
                             <span>
                                 You are the owner and this clan has other members, so you cannot just leave: a clan
                                 is never ownerless. Hand it to somebody in the list above first (their row has a

@@ -4,7 +4,8 @@ import { useGameData } from '../hooks/useGameData';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
 import { forgeTierCost, forgeUpgradeDurationSeconds } from '../hooks/useForgeCalculator';
 import { Card, CardHeader, CardTitle } from '../components/UI/Card';
-import { Hammer, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 export default function ForgeWiki() {
     const { data: upgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
@@ -81,7 +82,7 @@ export default function ForgeWiki() {
     if (!upgradeData || !dropData) {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-text-muted animate-pulse">
-                <Hammer className="w-12 h-12 mb-4 opacity-20" />
+                <GameAssetIcon asset={{ icon: 'TechTreeForge' }} size={48} className="mb-4 opacity-20" />
                 <p>Loading Forge configurations</p>
             </div>
         );
@@ -92,7 +93,7 @@ export default function ForgeWiki() {
             {/* Header */}
             <div className="text-center space-y-2 mb-8">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                    <Hammer className="w-8 h-8 text-accent-primary" />
+                    <GameAssetIcon asset={{ icon: 'TechTreeForge' }} size={32} />
                     Forge Upgrade Wiki
                 </h1>
                 <p className="text-text-secondary">

@@ -126,6 +126,12 @@ interface ProfileContextType {
     // Sharing
     saveSharedProfile: () => void; // Save the currently viewed shared profile to local storage
 
+    /**
+     * Adds a copy of a preset build (parsed_configs/<version>/ProfilePresets.json) to the list as a
+     * normal profile and makes it active: it is the user's own from then on, editable and synced.
+     */
+    addPresetProfile: (preset: { key: string; name: string; profile: UserProfile }, version: string) => void;
+
     // Convenience Helpers
     getTechLevel: (tree: 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan', nodeId: number) => number;
     getDungeonLevel: (dungeonId: string) => number;
@@ -163,6 +169,8 @@ const getInitialProfiles = (): { profiles: UserProfile[], activeId: string } => 
                     ...p,
                     id: p.id || generateProfileId(),
                     iconIndex: p.iconIndex ?? 0,
+                    // Presets used to be added read-only; an added preset is now the user's own.
+                    preset: undefined,
                 };
                 return sanitizeProfile(migratedP);
             });
@@ -396,7 +404,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
             ...JSON.parse(JSON.stringify(currentProfile)), // Deep clone
             id: generateProfileId(),
             name: cloneName,
-            isShared: undefined // Remove shared flag on clone
+            isShared: undefined, // Remove shared flag on clone
+            preset: undefined, // A clone of a preset is a normal, editable profile
         };
 
         setImportedProfile(null); // Exit shared mode
@@ -482,6 +491,25 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Clean URL (keeps the router route, drops the shared payload)
         clearShareUrl();
     }, [importedProfile, isNameTaken]);
+
+    const addPresetProfile = useCallback((preset: { key: string; name: string; profile: UserProfile }, version: string) => {
+        setImportedProfile(null);
+        let name = preset.name;
+        for (let n = 2; isNameTaken(name); n++) name = `${preset.name} (${n})`;
+        const id = generateProfileId();
+        const next: UserProfile = {
+            ...INITIAL_PROFILE,
+            ...JSON.parse(JSON.stringify(preset.profile)),
+            id,
+            name,
+            iconIndex: preset.profile.iconIndex ?? 0,
+            isShared: undefined,
+            preset: undefined,
+        };
+        void version;
+        setProfiles(prev => [...prev, next]);
+        setActiveProfileId(id);
+    }, [profiles, isNameTaken]);
 
     const resetProfile = useCallback(() => {
         if (importedProfile) {
@@ -619,6 +647,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     }
                 }
                 importedProfileData.name = newName;
+                // An imported file is the user's own profile, even if it was exported from a preset.
+                delete importedProfileData.preset;
 
                 // Clear temporary shared profile
                 setImportedProfile(null);
@@ -667,6 +697,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         importProfile,
         importProfileFromJsonString,
         saveSharedProfile,
+        addPresetProfile,
         getTechLevel,
         getDungeonLevel,
         isNameTaken,
@@ -675,7 +706,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         profile, updateProfile, updateNestedProfile, profiles, importedProfile,
         activeProfileId, switchProfile, createProfile, cloneProfile, deleteProfile,
         renameProfile, setProfileIcon, saveProfile, resetProfile, exportProfile,
-        importProfile, importProfileFromJsonString, saveSharedProfile, getTechLevel,
+        importProfile, importProfileFromJsonString, saveSharedProfile, addPresetProfile, getTechLevel,
         getDungeonLevel, isNameTaken, sync
     ]);
 

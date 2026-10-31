@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { TrendingUp, Star } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { AGES } from '../utils/constants';
 import { difficultyName } from '../utils/difficulty';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 interface Reward {
     Amount: number;
@@ -89,7 +90,7 @@ export default function ProgressPassWiki() {
             <div className="flex flex-col sm:flex-row items-center gap-6 border-b border-border pb-8">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-primary to-accent-secondary p-0.5 shadow-[0_0_30px_rgba(var(--color-accent-primary),0.3)] flex-shrink-0">
                     <div className="w-full h-full bg-bg-primary rounded-[14px] flex items-center justify-center">
-                        <TrendingUp size={32} className="text-accent-primary" />
+                        <GameAssetIcon asset={{ icon: 'MainProgressPassIcon' }} size={32} />
                     </div>
                 </div>
                 <div className="text-center sm:text-left">
@@ -169,7 +170,7 @@ export default function ProgressPassWiki() {
                                 {/* Premium Track */}
                                 <div className="col-span-4 p-4 sm:p-6 bg-gradient-to-br from-accent-secondary/5 to-transparent">
                                     <div className="sm:hidden text-[10px] font-black uppercase tracking-widest text-accent-secondary mb-3 flex items-center gap-2">
-                                        <Star fill="currentColor" className="w-3 h-3 text-accent-secondary" />
+                                        <GameAssetIcon asset={{ icon: 'Star' }} size={12} />
                                         Premium Pass
                                     </div>
                                     <div className="flex flex-wrap gap-2 sm:justify-center">

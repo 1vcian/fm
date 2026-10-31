@@ -12,7 +12,8 @@ import { DndContext, closestCenter, closestCorners, KeyboardSensor, PointerSenso
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'react-toastify';
-import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, Pencil, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles, Lock, Unlock, Users } from 'lucide-react';
+import { Cpu, RefreshCcw, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Play, Pause, List } from 'lucide-react';
+import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
 import { InputModal } from '../../components/UI/InputModal';
@@ -118,7 +119,7 @@ const ScheduleItem = React.memo(({
                     <div className="flex justify-between items-start mb-0.5">
                         <span className={cn("text-xs font-black uppercase tracking-tight", isStartWar ? "text-accent-primary" : "text-text-muted")}>START</span>
                         <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-white bg-black/30 px-1.5 rounded">
-                            <Clock size={10} className="text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'Timer' }} size={10} />
                             {formatScheduleTime(entry.startDate)}
                         </div>
                     </div>
@@ -144,7 +145,7 @@ const ScheduleItem = React.memo(({
                     <div className="flex flex-col">
                         <span className={cn("text-[10px] font-black uppercase tracking-tight", isStopWar ? "text-accent-primary" : "text-text-muted")}>FINISH</span>
                         <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-white bg-black/30 px-1.5 rounded w-fit">
-                            <CheckCircle2 size={10} className="text-accent-secondary" />
+                            <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={10} />
                             {formatScheduleTime(entry.endDate)}
                             {isRunning && (
                                 <span className="text-accent-primary ml-2 pl-2 border-l border-white/10 animate-pulse">
@@ -160,7 +161,7 @@ const ScheduleItem = React.memo(({
                     <div className="flex flex-col items-end">
                         <div className={cn("text-xs font-black flex items-center gap-1", isStopWar ? "text-accent-primary shadow-glow-sm" : "text-white/60")}>
                             +{entry.points.toLocaleString()} pts
-                            {isStopWar && <Trophy size={12} className="animate-bounce" />}
+                            {isStopWar && <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 3 }} size={12} className="animate-bounce" />}
                         </div>
                         {isStopWar && <span className="text-[7px] font-black bg-accent-primary text-black px-1 rounded uppercase tracking-tighter">WAR BONUS</span>}
                     </div>
@@ -168,7 +169,7 @@ const ScheduleItem = React.memo(({
 
                 <div className="mt-auto flex justify-between items-center gap-4">
                     <div className="flex items-center gap-2 text-[10px] font-mono text-text-muted">
-                        <div className="flex items-center gap-1"><Timer size={10} />{formatTime(entry.duration || entry.delaySeconds)}</div>
+                        <div className="flex items-center gap-1"><GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 9 }} size={10} />{formatTime(entry.duration || entry.delaySeconds)}</div>
                         {entry.potionCost > 0 && <div className="flex items-center gap-1"><SpriteIcon name="Potion" size={10} />{entry.potionCost}</div>}
                     </div>
 
@@ -178,7 +179,7 @@ const ScheduleItem = React.memo(({
                         </button>
                         {entry.step.type === 'delay' && onEditDelay && (
                             <button onClick={() => onEditDelay(idx)} className="p-1 hover:bg-yellow-500/20 rounded-md transition-colors" title="Change this delay">
-                                <Pencil size={14} className="text-yellow-400" />
+                                <GameAssetIcon asset={{ icon: 'Pen' }} size={14} />
                             </button>
                         )}
                         <button onClick={() => onAddDelay(idx)} className="p-1 hover:bg-yellow-500/20 rounded-md transition-colors" title="Add delay after">
@@ -256,7 +257,7 @@ const ScheduleItem = React.memo(({
                             className="bg-accent-primary text-black p-1.5 rounded hover:bg-white transition-colors"
                             title="Update Remaining Time"
                         >
-                            <RefreshCcw size={14} />
+                            <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={14} />
                         </button>
                     </div>
                 </div>
@@ -291,7 +292,7 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
         <Card className="p-6 bg-gradient-to-br from-accent-primary/5 via-bg-secondary to-accent-secondary/5 border-accent-primary/30 shadow-lg shadow-accent-primary/5">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Zap size={20} className="text-accent-primary" />
+                    <GameAssetIcon asset={{ icon: 'Lightning' }} size={20} />
                     Auto-Planner
                 </CardTitle>
             </CardHeader>
@@ -305,9 +306,9 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                     <label className="text-[10px] font-bold text-text-secondary uppercase">Target Trees</label>
                     <div className="grid grid-cols-3 gap-2">
                         {[
-                            { key: 'Forge', label: 'Forge', icon: <Hammer size={12} /> },
-                            { key: 'Power', label: 'Power', icon: <Shield size={12} /> },
-                            { key: 'SkillsPetTech', label: 'SPT', icon: <Sparkles size={12} /> }
+                            { key: 'Forge', label: 'Forge', icon: <GameAssetIcon asset={{ icon: 'TechTreeForge' }} size={12} /> },
+                            { key: 'Power', label: 'Power', icon: <GameAssetIcon asset={{ icon: 'TechTreePower' }} size={12} /> },
+                            { key: 'SkillsPetTech', label: 'SPT', icon: <GameAssetIcon asset={{ icon: 'TechTreeMeta' }} size={12} /> }
                         ].map(t => {
                             const isActive = autoAllowedTrees.includes(t.key);
                             return (
@@ -342,10 +343,10 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                     <label className="text-[10px] font-bold text-text-secondary uppercase">Priorities</label>
                     <div className="grid grid-cols-2 gap-2">
                         {[
-                            { key: 'war_points', label: 'War Points', icon: <Trophy size={18} />, desc: 'Max points/time' },
-                            { key: 'dps', label: 'DPS / Stats', icon: <Swords size={18} />, desc: 'Combat power' },
-                            { key: 'speed', label: 'Research Speed', icon: <Gauge size={18} />, desc: 'Faster upgrades' },
-                            { key: 'time', label: 'Min Time', icon: <Timer size={18} />, desc: 'Short first' },
+                            { key: 'war_points', label: 'War Points', icon: <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 3 }} size={18} />, desc: 'Max points/time' },
+                            { key: 'dps', label: 'DPS / Stats', icon: <GameAssetIcon asset={{ icon: 'Battle' }} size={18} />, desc: 'Combat power' },
+                            { key: 'speed', label: 'Research Speed', icon: <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 9 }} size={18} />, desc: 'Faster upgrades' },
+                            { key: 'time', label: 'Min Time', icon: <GameAssetIcon asset={{ icon: 'Timer' }} size={18} />, desc: 'Short first' },
                         ].map(p => {
                             const isActive = autoPriorities.has(p.key);
                             return (
@@ -419,7 +420,7 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                 {/* Schedule Optimization */}
                 <div className="pt-2 border-t border-white/5 space-y-3">
                     <label className="text-[10px] font-bold text-text-secondary uppercase flex items-center gap-2">
-                        <Clock size={12} className="text-accent-secondary" />
+                        <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                         Schedule Optimization
                     </label>
 
@@ -504,7 +505,7 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                     disabled={autoPriorities.size === 0 || autoAllowedTrees.length === 0}
                     className="w-full py-3.5 bg-gradient-to-r from-accent-primary to-accent-secondary text-black font-black uppercase tracking-tighter rounded-xl hover:opacity-90 disabled:opacity-30 disabled:grayscale transition-all shadow-xl shadow-accent-primary/20 flex items-center justify-center gap-2 group"
                 >
-                    <Zap size={18} className="group-hover:scale-110 transition-transform" />
+                    <GameAssetIcon asset={{ icon: 'Lightning' }} size={18} className="group-hover:scale-110 transition-transform" />
                     Generate Plan
                 </button>
 
@@ -1043,7 +1044,7 @@ export default function TreeCalculator() {
                             activeTab === 'optimizer' ? "bg-accent-primary text-black shadow-glow" : "text-text-muted hover:text-text-primary"
                         )}
                     >
-                        <Zap size={16} />
+                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />
                         Optimizer
                     </button>
                     <button
@@ -1168,7 +1169,7 @@ export default function TreeCalculator() {
                                 {/* Duration Display/Input */}
                                 <div className="space-y-2 pt-2 border-t border-white/5">
                                     <label className="text-[10px] font-bold text-text-secondary uppercase flex items-center gap-2">
-                                        <Timer size={12} />
+                                        <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                                         Duration (Time Limit)
                                     </label>
                                     <div className="flex gap-3">
@@ -1276,7 +1277,7 @@ export default function TreeCalculator() {
                             </div>
 
                             <div className="p-4 bg-accent-primary/5 rounded-lg border border-accent-primary/20 flex gap-3 items-start">
-                                <Info size={16} className="text-accent-primary shrink-0 mt-0.5" />
+                                <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} className="mt-0.5" />
                                 <p className="text-[11px] text-text-secondary leading-relaxed">
                                     Use the arrows on the right to reorder upgrades based on your schedule. Reordering is blocked if it violates game prerequisites.
                                 </p>
@@ -1306,7 +1307,7 @@ export default function TreeCalculator() {
                                         <div className="p-4 bg-bg-primary rounded-xl border border-accent-primary/20 md:col-span-2 shadow-lg shadow-accent-primary/5">
                                             <div className="text-[10px] text-accent-primary font-black uppercase tracking-widest mb-1 flex items-center justify-between">
                                                 <span>War Points (Completion)</span>
-                                                <Trophy size={14} />
+                                                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 3 }} size={14} />
                                             </div>
                                             <div className="flex items-baseline gap-2">
                                                 <div className="text-3xl font-black text-white">
@@ -1328,7 +1329,7 @@ export default function TreeCalculator() {
 
                                         <div className="bg-bg-tertiary/50 p-4 rounded-xl border border-white/5 flex flex-col justify-center">
                                             <div className="text-[10px] text-text-muted uppercase font-bold mb-1 flex items-center gap-1">
-                                                <Timer size={10} />
+                                                <GameAssetIcon asset={{ icon: 'Timer' }} size={10} />
                                                 Time Used
                                             </div>
                                             <div className="text-lg font-mono font-bold text-white leading-none">
@@ -1469,10 +1470,10 @@ export default function TreeCalculator() {
                                                                                     <div className="flex items-center gap-2 text-right">
                                                                                         <div className="flex flex-col items-end">
                                                                                             <div className="flex items-center gap-1 text-[9px] font-bold text-accent-primary uppercase">
-                                                                                                <Clock size={8} /> {formatScheduleTime(startObj)}
+                                                                                                <GameAssetIcon asset={{ icon: 'Timer' }} size={8} /> {formatScheduleTime(startObj)}
                                                                                             </div>
                                                                                             <div className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
-                                                                                                <CheckCircle2 size={8} /> {formatScheduleTime(endObj)}
+                                                                                                <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={8} /> {formatScheduleTime(endObj)}
                                                                                                 {isDifferentDay && <span className="text-[8px] text-accent-secondary ml-0.5">+{endObj.getDate() - startObj.getDate()}d</span>}
                                                                                             </div>
                                                                                         </div>
@@ -1493,7 +1494,7 @@ export default function TreeCalculator() {
                                                                                 <div className="flex justify-between items-center text-[11px] font-mono border-t border-white/5 pt-2">
                                                                                     <div className="flex items-center gap-3">
                                                                                         <div className={cn("flex items-center gap-1", recalculatedGemCost > 0 ? "text-accent-primary" : "")}>
-                                                                                            <Timer size={10} className="opacity-50" />
+                                                                                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 9 }} size={10} className="opacity-50" />
                                                                                             {formatTime(effectiveDuration)}
                                                                                             {recalculatedGemCost > 0 && <span className="text-[8px] opacity-70 underline">Gems used</span>}
                                                                                         </div>
@@ -1548,7 +1549,7 @@ export default function TreeCalculator() {
                                 </>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3 text-center px-6">
-                                    <Info className="w-10 h-10 opacity-20" />
+                                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={40} className="opacity-20" />
                                     <div>
                                         <p className="font-bold">No upgrades found</p>
                                         <p className="text-sm opacity-60 mt-1">Increase your time limit or potions budget to see the optimal upgrade path.</p>
@@ -1612,12 +1613,12 @@ export default function TreeCalculator() {
                                         <div className="flex flex-col items-center">
                                             <div className="text-xl font-black text-white leading-none mb-0.5">{planner.summary.totalPoints.toLocaleString()}</div>
                                             <div className="text-[10px] font-black text-accent-primary flex items-center gap-1 bg-accent-primary/10 px-1.5 py-0.5 rounded-full border border-accent-primary/20" title="Points earned during Guild War days">
-                                                <Trophy size={10} /> {planner.summary.totalWarPoints.toLocaleString()} War
+                                                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 3 }} size={10} /> {planner.summary.totalWarPoints.toLocaleString()} War
                                             </div>
                                         </div>
                                     </div>
                                     <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-accent-primary/10 shadow-glow-sm shadow-accent-primary/5">
-                                        <div className="text-[10px] text-accent-primary uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><Timer size={10} />Time</div>
+                                        <div className="text-[10px] text-accent-primary uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><GameAssetIcon asset={{ icon: 'Timer' }} size={10} />Time</div>
                                         <div className="text-xl font-black text-white drop-shadow-sm leading-none">
                                             {(() => {
                                                 const totalSecs = planner.summary.totalTime;
@@ -1693,7 +1694,7 @@ export default function TreeCalculator() {
                             <CardContent className="space-y-3">
                                 {/* Search */}
                                 <div className="relative">
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                                    <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={14} className="absolute left-3 top-1/2 -translate-y-1/2" />
                                     <input
                                         type="text"
                                         placeholder="Search nodes"
@@ -1795,7 +1796,7 @@ export default function TreeCalculator() {
                                         : "bg-bg-primary/50 border-white/10 text-text-muted hover:border-white/20"
                                 )}
                             >
-                                {isPlannerEditMode ? <Unlock size={14} /> : <Lock size={14} />}
+                                {isPlannerEditMode ? <GameAssetIcon asset={{ icon: 'Unlocked Lock Icon' }} size={14} /> : <GameAssetIcon asset={{ icon: 'Solid Lock Icon' }} size={14} />}
                                 {isPlannerEditMode ? "Unlock Edit" : "Lock View"}
                             </button>
                         </CardHeader>
@@ -1847,7 +1848,7 @@ export default function TreeCalculator() {
 
                                                                 {isFirstInWarBlock && (
                                                                     <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
-                                                                        <Trophy size={14} className="text-accent-primary animate-pulse" />
+                                                                        <GameAssetIcon asset={{ icon: 'WarTicket' }} size={14} className="animate-pulse" />
                                                                         <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Guild War Event Period</span>
                                                                         <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
                                                                     </div>
@@ -1944,7 +1945,7 @@ export default function TreeCalculator() {
 
                                                         {isFirstInWarBlock && (
                                                             <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
-                                                                <Trophy size={14} className="text-accent-primary animate-pulse" />
+                                                                <GameAssetIcon asset={{ icon: 'WarTicket' }} size={14} className="animate-pulse" />
                                                                 <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Guild War Event Period</span>
                                                                 <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
                                                             </div>
@@ -1979,7 +1980,7 @@ export default function TreeCalculator() {
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3 text-center px-6">
-                                    <Info className="w-10 h-10 opacity-20" />
+                                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={40} className="opacity-20" />
                                     <div>
                                         <p className="font-bold">No upgrades queued</p>
                                         <p className="text-sm opacity-60 mt-1">Use the node picker on the left to add upgrades to your plan.</p>

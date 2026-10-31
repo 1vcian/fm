@@ -3,7 +3,8 @@ import { useEggsCalculator } from '../hooks/useEggsCalculator';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/UI/Card';
 import { cn } from '../lib/utils';
-import { Calculator, Plus, Egg, Info, Trophy } from 'lucide-react';
+import { Calculator, Plus } from 'lucide-react';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { useProfile } from '../context/ProfileContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
@@ -96,7 +97,7 @@ export default function Eggs() {
                 {eggWarBoost > 0 && (
                     <div className="flex justify-center pt-2">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
-                            <Trophy size={14} />
+                            <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 6 }} size={14} />
                             Clan Boost: +{(eggWarBoost * 100).toFixed(0)}% War Points
                         </div>
                     </div>
@@ -113,7 +114,7 @@ export default function Eggs() {
                     title="Open the eggshell summon calculator in the Summons calculator"
                 >
                     <div className="flex items-center gap-2">
-                        <Egg className="w-4 h-4" />
+                        <GameAssetIcon asset={{ icon: 'Egg' }} size={16} />
                         Summon Calculator
                     </div>
                 </Link>

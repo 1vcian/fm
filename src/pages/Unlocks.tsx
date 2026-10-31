@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useFeatureUnlocks, type FeatureUnlock } from '../hooks/useFeatureUnlocks';
-import { Unlock, AlertCircle, Shield, Info, ListChecks } from 'lucide-react';
+import { AlertCircle, Shield, ListChecks } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { AGES } from '../utils/constants';
 import { stageLabel } from '../utils/difficulty';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 const AGE_COLORS = ['#F1F1F1', '#5DD8FF', '#5CFE89', '#FDFF5D', '#FF5D5D', '#D55DFF', '#75FFEE', '#886DFF', '#A77373', '#FF9E0D'];
 
 
@@ -46,7 +47,7 @@ export default function Unlocks() {
     if (loading) return <div className="text-center p-12 text-text-muted animate-pulse">Loading Unlock Data</div>;
     if (failed) return (
         <div className="text-center p-12 text-amber-300 flex flex-col items-center gap-2">
-            <AlertCircle className="w-8 h-8" />
+            <GameAssetIcon asset={{ icon: 'WarningSign' }} size={32} />
             <p>The feature unlock table could not be loaded.</p>
             <p className="text-xs text-text-muted">
                 PlayerSegments for game data {version} did not load. Reload the page to try again.
@@ -57,7 +58,7 @@ export default function Unlocks() {
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
             <div className="flex items-center gap-4 border-b border-border pb-6">
-                <Unlock className="w-10 h-10 text-accent-primary" />
+                <GameAssetIcon asset={{ icon: 'Unlocked Lock Icon' }} size={40} />
                 <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
                         Feature Unlocks
@@ -70,7 +71,7 @@ export default function Unlocks() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-bg-secondary/30 p-6 rounded-2xl border border-border">
                 <div className="space-y-4">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-accent-primary flex items-center gap-2">
-                        <Info className="w-4 h-4" /> Understanding Unlocks
+                        <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={16} /> Understanding Unlocks
                     </h3>
                     <p className="text-xs text-text-muted leading-relaxed">
                         Features unlock as you progress through the ages and battle stages. 

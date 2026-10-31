@@ -38,6 +38,8 @@ const STRIPPED_FIELDS = [
     'id',
     'isShared',
     'techTreeUpdatedAt',
+    // a shared or exported preset arrives as a normal, editable profile
+    'preset',
     // sync metadata (present or planned) — §4b.3
     'version',
     'updatedAt',
@@ -55,7 +57,7 @@ const STRIPPED_FIELDS = [
 ] as const;
 
 /** The shape that travels: a UserProfile without the stripped fields. */
-export type SharedProfilePayload = Omit<UserProfile, 'id' | 'isShared' | 'techTreeUpdatedAt' | 'version'>;
+export type SharedProfilePayload = Omit<UserProfile, 'id' | 'isShared' | 'techTreeUpdatedAt' | 'version' | 'preset'>;
 
 const isPlainObject = (v: unknown): v is Record<string, any> =>
     typeof v === 'object' && v !== null && !Array.isArray(v);

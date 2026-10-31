@@ -103,7 +103,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlarmClock, AlertTriangle, BellRing, Check, Loader2, X } from 'lucide-react';
+import { AlarmClock, BellRing, Check, Loader2, X } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { cn } from '../../lib/utils';
@@ -926,7 +927,7 @@ export function PlannerAlarms({
 
                     {/* ---- the assumption, always ---------------------------------------- */}
                     <p className="mt-2 flex items-start gap-2 text-[11px] text-text-secondary leading-relaxed">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-text-muted" />
+                        <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                         <span>
                             {assumption} Every notification says what it assumed. If a plan changes after an alarm was
                             queued the advice is dropped and only the completion is sent, because a plain timer is
@@ -948,7 +949,7 @@ export function PlannerAlarms({
                     )}
                     {record.enabled && deviceReady === false && (
                         <p className="mt-1 flex items-start gap-2 text-[11px] text-amber-400 leading-relaxed">
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                             <span>
                                 This device is not subscribed, so nothing will buzz here. Turn notifications on in
                                 Profile → Misc; the alarms are queued for your account either way.

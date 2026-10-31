@@ -5,7 +5,7 @@ import { useProfile } from '../context/ProfileContext';
 import { useGameDataContext } from '../context/GameDataContext';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { Sword, Zap, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
 import { cn, getAgeBgStyle, getAgeIconStyle, getInventoryIconStyle } from '../lib/utils';
 import { AGES } from '../utils/constants';
@@ -15,6 +15,7 @@ import { formatCompactNumber } from '../utils/statsCalculator';
 import { useComparison } from '../context/ComparisonContext';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 const SLOTS = ['Weapon', 'Helmet', 'Armour', 'Gloves', 'Shoes', 'Necklace', 'Ring', 'Belt'];
 
@@ -142,7 +143,7 @@ export default function Items() {
             <div className="flex flex-col gap-6">
                 <div className="px-4 sm:px-0">
                     <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                        <Sword className="w-8 h-8 sm:w-10 h-10 text-accent-primary" />
+                        <GameAssetIcon asset={{ icon: 'IconMedievalWeaponSwordandshield' }} size={40} />
                         Item Wiki
                     </h1>
                     <p className="text-text-muted mt-1 text-sm sm:text-base">Browse equipment stats across all ages.</p>
@@ -386,7 +387,7 @@ export default function Items() {
                                                         }}
                                                         className="mt-2 w-full flex items-center justify-center gap-2 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary py-2 rounded-lg text-[9px] font-bold uppercase transition-all ring-1 ring-accent-primary/30 col-span-2"
                                                     >
-                                                        <Zap className="w-3 h-3" />
+                                                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                                                         Show Breakpoints Table
                                                     </button>
                                                 </div>
@@ -419,7 +420,7 @@ export default function Items() {
                         );
                     }) : (
                         <div className="col-span-full text-center py-12 bg-bg-secondary/30 rounded-2xl border border-dashed border-border">
-                            <div className="text-4xl mb-4 grayscale opacity-50">🛡️</div>
+                            <div className="mb-4 grayscale opacity-50 flex justify-center"><GameAssetIcon asset={{ icon: 'GoldShield' }} size={40} /></div>
                             <div className="text-text-muted font-medium">No items found for this Age/Slot.</div>
                         </div>
                     )}

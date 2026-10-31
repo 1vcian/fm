@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, X, Skull, RotateCcw } from 'lucide-react';
+import { X, Skull, RotateCcw } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { loadBattleVisuals, TextureCache, type BattleVisualData, type ParticleDef } from '../Battle/gameView/visualData';
 import { RigInstance, rigItems, sortItems, layerIndex, IDENTITY, type DrawItem, type Mat } from '../Battle/gameView/rig';
 import { Emitter, tintTexture } from '../Battle/gameView/particles';
@@ -153,7 +154,7 @@ export function SetEffectButton({ setId, setName, pieces }: { setId: string; set
                 className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-accent-primary/40 bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20"
                 title="The effect this set shows in the game when all its pieces are at max level"
             >
-                <Sparkles className="w-3.5 h-3.5" /> Max set effect
+                <GameAssetIcon asset={{ icon: 'Sparkle' }} size={14} /> Max set effect
             </button>
             {open && createPortal(
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setOpen(false)}>
@@ -167,7 +168,7 @@ export function SetEffectButton({ setId, setName, pieces }: { setId: string; set
                         <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-gradient-to-r from-accent-primary/15 via-bg-secondary/40 to-bg-secondary/40">
                             <div className="flex items-center gap-2.5 min-w-0">
                                 <div className="w-9 h-9 shrink-0 rounded-xl bg-accent-primary/20 border border-accent-primary/40 flex items-center justify-center">
-                                    <Sparkles className="w-5 h-5 text-accent-primary" />
+                                    <GameAssetIcon asset={{ icon: 'Sparkle' }} size={20} />
                                 </div>
                                 <div className="min-w-0">
                                     <div className="text-sm font-bold">{setName}</div>
@@ -188,7 +189,7 @@ export function SetEffectButton({ setId, setName, pieces }: { setId: string; set
                                 data-testid="set-effect-death"
                                 className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 shrink-0"
                             >
-                                <Skull className="w-3.5 h-3.5" /> Play death <RotateCcw className="w-3 h-3 opacity-60" />
+                                <GameAssetIcon asset={{ icon: 'Skull' }} size={14} /> Play death <RotateCcw className="w-3 h-3 opacity-60" />
                             </button>
                         </div>
                     </div>

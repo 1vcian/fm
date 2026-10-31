@@ -1,6 +1,6 @@
 import React from 'react';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
-import { X, Bookmark, Shield, Minus, Plus, Check } from 'lucide-react';
+import { X, Bookmark, Shield, Minus, Plus, Check, Eye, EyeOff } from 'lucide-react';
 import { ItemSlot, MountSlot, PetSlot } from '../../types/Profile';
 import { AscensionStars, ascensionTypeForSlot, useAscensionMax } from './AscensionStars';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getRarityBgStyle, getRarityBorderStyle } from '../../lib/utils';
@@ -34,6 +34,12 @@ const TAP = 'w-6 h-6 sm:w-7 sm:h-7 pointer-coarse:w-10 pointer-coarse:h-10';
 
 interface ItemSelectionCardProps {
     item: ItemSlot | MountSlot | PetSlot | any;
+    /**
+     * Row layout, an item with a skin: whether the skin is shown (the game's per-type
+     * SkinVisibility). With onToggleSkinVisible the skin badge gets an eye switch.
+     */
+    skinVisible?: boolean;
+    onToggleSkinVisible?: (e: React.MouseEvent) => void;
     slotKey: string;
     slotLabel: string;
     isSelected?: boolean;
@@ -148,6 +154,8 @@ export function ItemSelectionCard({
     maxLevel = Infinity,
     className,
     artClassName,
+    skinVisible,
+    onToggleSkinVisible,
 }: ItemSelectionCardProps) {
     const { selectedVersion } = useGameDataContext();
     // Re-render once the exact skin icon rects arrive.
@@ -191,6 +199,8 @@ export function ItemSelectionCard({
                 displayLevel={displayLevel}
                 maxLevel={maxLevel}
                 starSrc={starSrc}
+                skinVisible={skinVisible}
+                onToggleSkinVisible={onToggleSkinVisible}
             />
         );
     }
@@ -618,6 +628,8 @@ interface RowCardProps {
     displayLevel: number;
     maxLevel: number;
     starSrc: string;
+    skinVisible?: boolean;
+    onToggleSkinVisible?: (e: React.MouseEvent) => void;
 }
 
 function RowCard({
@@ -625,7 +637,7 @@ function RowCard({
     itemName, itemImage, stats, customStats, tags, perfection, getStatPerfection, spriteMapping,
     onClick, onDelete, onUnequip, onSave, onLevelChange, onLevelSet, onAscensionChange,
     renderIcon, hideAgeStyles, rarity, displayLevel, maxLevel, starSrc, className, artClassName,
-    isCompact,
+    isCompact, skinVisible, onToggleSkinVisible,
 }: RowCardProps) {
     // In comparison mode the card is roughly a third of its usual width. Nothing is hidden and
     // nothing is cut with dots: the artwork and the type sizes come down, and the rows below are
@@ -812,9 +824,26 @@ function RowCard({
                             )
                         )}
                     </div>
+                    {item?.skin && onToggleSkinVisible && (
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onToggleSkinVisible(e); }}
+                            title={skinVisible === false ? 'Skin hidden: the item shows and, for a weapon, attacks with its own animation. Click to show the skin' : 'Skin shown. Click to hide it (stats and set bonus stay)'}
+                            aria-label={skinVisible === false ? 'Show skin' : 'Hide skin'}
+                            className={cn(
+                                'absolute -bottom-1.5 -left-1.5 z-30 w-6 h-6 rounded-full border shadow-md flex items-center justify-center',
+                                skinVisible === false ? 'bg-bg-secondary border-border text-text-muted' : 'bg-accent-primary border-accent-primary text-white'
+                            )}
+                        >
+                            {skinVisible === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                    )}
                     {item?.skin && (
                         <div
-                            className="absolute -bottom-1.5 -right-1.5 z-20 w-8 h-8 rounded-lg bg-bg-secondary border border-accent-primary shadow-md overflow-hidden"
+                            className={cn(
+                                'absolute -bottom-1.5 -right-1.5 z-20 w-8 h-8 rounded-lg bg-bg-secondary border border-accent-primary shadow-md overflow-hidden',
+                                skinVisible === false && 'opacity-40 grayscale'
+                            )}
                             title={`Skin ID: ${item.skin.idx}`}
                         >
                             <div className="w-full h-full flex items-center justify-center bg-accent-primary/20">

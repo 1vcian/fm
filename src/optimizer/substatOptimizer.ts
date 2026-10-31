@@ -15,6 +15,8 @@
  *            greedy ascent with lookahead (finds breakpoint jumps: fairy steps, the attack
  *            interval table) + 1-2 point swap refinement from shared seeded restarts, under no
  *            fairy and each fairy at max level. Returns the single best allocation.
+ *   custom   the same search on a caller's score of the built profile (customScore), e.g. a
+ *            duel measured by the combat engine.
  *   simulated
  *            stage 1  a diverse shortlist: the DPS, HPS, Damage and Health optimum plus points
  *                     along the DPS/HPS frontier (w x DPS/DPS* + (1 - w) x HPS/HPS*, several w;
@@ -33,6 +35,7 @@
  * RemoveSecondaryStatContributions 0x78641A0) and only then reads PlayerDamage / PlayerHealth.
  * In-game Power is the same for every substat allocation.
  */
+import { runSeed } from '../engine/rng';
 import type { UserProfile } from '../types/Profile';
 import { calculateStats, type LibraryData } from '../utils/statEngine';
 import { SEASON_STATS, fairyPerStep, type FairyName } from '../utils/fairies';
@@ -55,7 +58,7 @@ export interface RollableStat {
     upper: number;
 }
 
-export type SubstatObjective = 'dps' | 'hps' | 'damage' | 'health' | 'simulated';
+export type SubstatObjective = 'dps' | 'hps' | 'damage' | 'health' | 'custom' | 'simulated';
 
 export interface SubstatOptimizerInput {
     /** The build, scenario (tree mode, weapon type) applied. Its substats are replaced. */
@@ -81,6 +84,20 @@ export interface SubstatOptimizerInput {
     battlesPerSide: number;
     /** Rows returned by 'simulated'. */
     keep: number;
+    /** Extra allocations every search also climbs from (completed greedily), e.g. the build's own. */
+    startAllocs?: Alloc[];
+    /**
+     * Climb only from startAllocs (no greedy from scratch, no fairy seeds, no random restarts):
+     * a refinement around a known good build, for a caller that already ran the full search.
+     */
+    localOnly?: boolean;
+    /** 'custom': the score of a profile with the allocation and fairy applied (higher is better). */
+    customScore?: (p: UserProfile) => number;
+    /**
+     * customScore of many profiles at once (same values, e.g. on worker threads). The search asks
+     * for every candidate of a step before it walks them.
+     */
+    customScoreBatch?: (ps: UserProfile[]) => number[];
 }
 
 export interface SubstatMetrics {
@@ -88,6 +105,8 @@ export interface SubstatMetrics {
     hps: number;
     damage: number;
     health: number;
+    /** customScore of the build, when the input has one. */
+    custom?: number;
 }
 
 export interface SubstatCandidate extends SubstatMetrics {
@@ -245,10 +264,8 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
         }
         return p;
     };
-    const metrics = (alloc: Alloc, fairy: FairyName | null) => {
-        const key = `${fairy}|${allocKey(alloc)}`;
-        const hit = metricCache.get(key);
-        if (hit) return hit;
+    /** The fairy's scenario with the allocation's rolls (the shared object, rewritten each call). */
+    const profileFor = (alloc: Alloc, fairy: FairyName | null) => {
         const p = scenarioFor(fairy);
         const list: { statId: string; value: number }[] = [];
         for (const id of statIds) for (let i = 0; i < (alloc[id] || 0); i++) list.push({ statId: id, value: (upper.get(id) || 0) * perfection });
@@ -258,6 +275,28 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
             else if (k.startsWith('pet:')) p.pets.active[Number(k.slice(4))].secondaryStats = list;
             else if (p.mount.active) p.mount.active.secondaryStats = list;
         }
+        return p;
+    };
+    // customScore values computed ahead by prefetch (customScoreBatch).
+    const customCache = new Map<string, number>();
+    const prefetch = (allocs: Alloc[], fairy: FairyName | null) => {
+        if (!input.customScoreBatch) return;
+        const keys: string[] = [], profiles: UserProfile[] = [], seen = new Set<string>();
+        for (const a of allocs) {
+            const key = `${fairy}|${allocKey(a)}`;
+            if (metricCache.has(key) || customCache.has(key) || seen.has(key)) continue;
+            seen.add(key);
+            keys.push(key);
+            profiles.push(structuredClone(profileFor(a, fairy)));
+        }
+        if (keys.length < 2) return;
+        input.customScoreBatch(profiles).forEach((v, i) => customCache.set(keys[i], v));
+    };
+    const metrics = (alloc: Alloc, fairy: FairyName | null) => {
+        const key = `${fairy}|${allocKey(alloc)}`;
+        const hit = metricCache.get(key);
+        if (hit) return hit;
+        const p = profileFor(alloc, fairy);
         const s = calculateStats(p, libs);
         scored++;
         const m = {
@@ -266,13 +305,15 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
             damage: s.totalDamage || 0,
             health: s.totalHealth || 0,
             granted: s.fairyBonus?.granted || 0,
+            custom: customCache.get(key) ?? (input.customScore ? input.customScore(p) : undefined),
         };
         metricCache.set(key, m);
         return m;
     };
 
     // ------------------------------------------------------------------ search
-    type Score = (a: Alloc) => number;
+    /** A score of allocations; prefetch computes a whole step's candidates ahead (custom objective). */
+    type Score = ((a: Alloc) => number) & { prefetch?: (allocs: Alloc[]) => void };
 
     // Lookahead greedy: per stat, every add-count (finds jumps such as fairy steps and attack
     // interval breakpoints), then the best return per point.
@@ -280,6 +321,14 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
         const allocs: Alloc = { ...start };
         let left = pool - allocTotal(allocs);
         while (left > 0) {
+            if (score.prefetch) {
+                const step: Alloc[] = [allocs];
+                for (const st of statIds) {
+                    const cur = allocs[st] || 0;
+                    for (let k = 1; k <= Math.min(left, perStatCap - cur); k++) step.push({ ...allocs, [st]: cur + k });
+                }
+                score.prefetch(step);
+            }
             const baseScore = score(allocs);
             let bestStat = '', bestAdd = 0, bestGain = -Infinity;
             for (const st of statIds) {
@@ -326,6 +375,18 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
             const cur = { ...s0 };
             let curVal = score(cur);
             for (;;) {
+                if (score.prefetch) {
+                    const step: Alloc[] = [];
+                    for (const r of Object.keys(cur)) {
+                        if (!(cur[r] > 0)) continue;
+                        for (const a of statIds) {
+                            if (a === r) continue;
+                            const maxK = Math.min(cur[r], perStatCap - (cur[a] || 0), 2);
+                            for (let k = 1; k <= maxK; k++) step.push({ ...cur, [r]: cur[r] - k, [a]: (cur[a] || 0) + k });
+                        }
+                    }
+                    score.prefetch(step);
+                }
                 let move: { r: string; a: string; k: number; v: number } | null = null;
                 for (const r of Object.keys(cur)) {
                     if (!(cur[r] > 0)) continue;
@@ -388,13 +449,15 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
         for (let n = 1; n <= full; n++) out.push({ [id]: n });
         return out;
     };
-    /** Greedy from scratch and from each fairy seed. */
-    const greedyStarts = (score: Score, fairy: FairyName | null) =>
-        [greedy(score), ...fairySeeds(fairy).map(seed => greedy(score, seed))];
+    /** Greedy from scratch, from each fairy seed and from the caller's starts. */
+    const greedyStarts = (score: Score, fairy: FairyName | null) => input.localOnly && input.startAllocs?.length
+        ? input.startAllocs.map(a => greedy(score, a))
+        : [greedy(score), ...fairySeeds(fairy).map(seed => greedy(score, seed)), ...(input.startAllocs ?? []).map(a => greedy(score, a))];
 
     type Metric = keyof SubstatMetrics;
-    const scorer = (fairy: FairyName | null, f: (m: SubstatMetrics) => number): Score => a => f(metrics(a, fairy));
-    const single = (k: Metric) => (m: SubstatMetrics) => m[k];
+    const scorer = (fairy: FairyName | null, f: (m: SubstatMetrics) => number): Score =>
+        Object.assign((a: Alloc) => f(metrics(a, fairy)), { prefetch: (allocs: Alloc[]) => prefetch(allocs, fairy) });
+    const single = (k: Metric) => (m: SubstatMetrics) => m[k] ?? 0;
 
     /**
      * Best allocation for one score over the fairy choices: greedy under each, refine no fairy
@@ -424,7 +487,7 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
     const candidateOf = (alloc: Alloc, fairy: FairyName | null, tag: string): SubstatCandidate => {
         const eff = effectiveFairy(alloc, fairy);
         const m = metrics(alloc, eff);
-        return { alloc, fairy: eff, dps: m.dps, hps: m.hps, damage: m.damage, health: m.health, tags: [tag], isCurrent: false };
+        return { alloc, fairy: eff, dps: m.dps, hps: m.hps, damage: m.damage, health: m.health, custom: m.custom, tags: [tag], isCurrent: false };
     };
 
     const noResult = (best: SubstatCandidate): SubstatOptimizerResult => ({
@@ -434,13 +497,14 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
 
     if (pool === 0 || !firstBody) return noResult(candidateOf({}, null, 'No substat slots'));
 
-    const LABEL: Record<Metric, string> = { dps: 'Best DPS', hps: 'Best HPS', damage: 'Best Damage', health: 'Best Health' };
+    const LABEL: Record<Metric, string> = { dps: 'Best DPS', hps: 'Best HPS', damage: 'Best Damage', health: 'Best Health', custom: 'Best score' };
 
     if (input.objective !== 'simulated') {
         const k = input.objective;
+        if (k === 'custom' && !input.customScore) throw new Error("objective 'custom' needs customScore");
         const fairies = input.fairies;
         onProgress(1, 0, 1);
-        const r = optimizeOver(single(k), fairies, seeds.length);
+        const r = optimizeOver(single(k), fairies, input.localOnly ? 0 : seeds.length);
         onProgress(1, 1, 1);
         return noResult(candidateOf(r.alloc, r.fairy, LABEL[k]));
     }
@@ -524,10 +588,10 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
         const me = fighter('Candidate', p);
         let wins = 0, draws = 0, losses = 0, margin = 0;
         for (let seed = 1; seed <= n; seed++) {
-            const a = new PvpBattle(me, ref, pvpConfig, seed).run();
+            const a = new PvpBattle(me, ref, pvpConfig, runSeed(seed)).run();
             if (a.outcome === 'p1') wins++; else if (a.outcome === 'p2') losses++; else draws++;
             margin += a.p1HpFrac - a.p2HpFrac;
-            const b = new PvpBattle(ref, me, pvpConfig, seed).run();
+            const b = new PvpBattle(ref, me, pvpConfig, runSeed(seed)).run();
             if (b.outcome === 'p2') wins++; else if (b.outcome === 'p1') losses++; else draws++;
             margin += b.p2HpFrac - b.p1HpFrac;
         }

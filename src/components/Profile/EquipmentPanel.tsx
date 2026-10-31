@@ -5,7 +5,8 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
-import { GitCompare } from 'lucide-react';
+import { GitCompare, Eye, EyeOff } from 'lucide-react';
+import { usePersistentState } from '../../hooks/usePersistentState';
 import { ItemSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
@@ -26,6 +27,7 @@ import { personalTechShare } from '../../utils/clanTechStacking';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 
 import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
+import { FitBuildPortrait, fullMaxedSet } from '../Presets/BuildPortrait';
 
 /** Artwork well for a card in the five-across row: five cards share the width three would get. */
 const ITEM_ART = 'w-12 h-12 sm:w-16 sm:h-16 xl:w-20 xl:h-20';
@@ -82,6 +84,8 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         testMountAscension,
         originalUseSkinWindup,
         testUseSkinWindup,
+        originalMount,
+        testMount,
         updateOriginalForgeAscension,
         updateTestForgeAscension,
         updateOriginalUseSkinWindup,
@@ -90,6 +94,8 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         isCompactStats } = useComparison();
     const { selectedVersion } = useGameDataContext();
     const [selectedSlot, setSelectedSlot] = useState<keyof UserProfile['items'] | null>(null);
+    // The character preview column: shown until the viewer turns it off, then remembered.
+    const [showPortrait, setShowPortrait] = usePersistentState('fm.equipment.showPortrait', true);
     const [itemToSave, setItemToSave] = useState<{ slot: keyof UserProfile['items']; item: ItemSlot } | null>(null);
 
     const items = useMemo(() => {
@@ -252,8 +258,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const saveModalProps = getSaveModalProps();
     const panelTitle = title || 'Equipment';
 
-    const weapon = items.Weapon;
-    const hasSkin = !!weapon?.skin;
+    const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
 
     const currentUseSkinWindup = useMemo(() => {
         if (isComparing) {
@@ -262,6 +267,21 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         }
         return profile.misc.useSkinWindup !== false;
     }, [isComparing, variant, originalUseSkinWindup, testUseSkinWindup, profile.misc.useSkinWindup]);
+
+    /** Slots whose skin visibility only changes the look. */
+    const lookSlot = (k: string): 'Helmet' | 'Body' | null => (k === 'Helmet' || k === 'Body' ? k : null);
+
+    // The look of this panel's build: its items, mount and skin animation.
+    const shownProfile = useMemo<UserProfile>(() => {
+        const mount = isComparing ? (variant === 'original' ? originalMount : variant === 'test' ? testMount : profile.mount.active) : profile.mount.active;
+        return {
+            ...profile,
+            items,
+            mount: { ...profile.mount, active: mount ?? null },
+            misc: { ...profile.misc, useSkinWindup: currentUseSkinWindup },
+        };
+    }, [profile, items, isComparing, variant, originalMount, testMount, currentUseSkinWindup]);
+    const shownSet = useMemo(() => fullMaxedSet(items, skinsLibrary, skinUpgradeLibrary), [items, skinsLibrary, skinUpgradeLibrary]);
 
     const handleToggleSkinWindup = (val: boolean) => {
         if (isComparing) {
@@ -324,31 +344,18 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                 <span className="text-xs sm:text-sm">Compare Build</span>
                             </Button>
                         )}
+                        <button
+                            type="button"
+                            onClick={() => setShowPortrait(v => !v)}
+                            title={showPortrait ? 'Hide the character preview' : 'Show the character preview'}
+                            aria-label={showPortrait ? 'Hide the character preview' : 'Show the character preview'}
+                            className={cn('p-1.5 sm:p-2 rounded-lg border transition-colors', showPortrait ? 'border-accent-primary/50 bg-accent-primary/10 text-accent-primary' : 'border-border text-text-muted hover:text-text-primary')}
+                        >
+                            {showPortrait ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </button>
                     </div>
                 </div>
 
-                {hasSkin && (
-                    <label 
-                        htmlFor={`toggle-skin-windup-${variant}`}
-                        className="mb-6 flex items-center gap-3 bg-accent-primary/10 p-3 rounded-xl border border-accent-primary/20 shadow-sm transition-all hover:bg-accent-primary/15 group/toggle cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="relative inline-flex items-center">
-                            <input 
-                                type="checkbox" 
-                                checked={currentUseSkinWindup}
-                                onChange={(e) => handleToggleSkinWindup(e.target.checked)}
-                                className="sr-only peer"
-                                id={`toggle-skin-windup-${variant}`}
-                            />
-                            <div className="w-9 h-5 bg-bg-input peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-primary border border-border/50 group-hover/toggle:border-accent-primary/50" />
-                        </div>
-                        <div className="text-xs sm:text-sm font-bold text-accent-primary select-none flex-1">
-                            Use Skin Animation Speed
-                            <span className="ml-2 text-[10px] text-text-muted font-normal block sm:inline">(Legacy skins might have faster animations)</span>
-                        </div>
-                    </label>
-                )}
                 {/* Wrapped flex, not a fixed column count: this same panel renders full width on the
                     Profile page and two-up inside the compare grid, so the cards have to reflow to
                     the container. basis-[330px] is the width the row card needs to keep the name,
@@ -361,7 +368,8 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                     // renders two of these panels side by side, so the panel gets half the width
                     // while a viewport breakpoint still thinks it has all of it, which is what
                     // squeezed five cards into 150px each and broke every name onto its own letter.
-                    isComparing ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-5'
+                    // A sixth column on a desktop holds the character, two rows tall.
+                    isComparing ? 'grid-cols-2' : showPortrait ? 'grid-cols-2 lg:grid-cols-6' : 'grid-cols-2 lg:grid-cols-5'
                 )}>
                     {SLOTS.map((slot) => {
                         const equipped = items[slot.key];
@@ -405,6 +413,15 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                     { itemBalancingLibrary, itemBalancingConfig, weaponLibrary, skinUpgradeLibrary },
                                     { techModifiers, forgeAscensionMulti, clanModifiers }
                                 )}
+                                // The game's per-type SkinVisibility: the weapon's also picks the attack
+                                // animation (useSkinWindup, per comparison side); helmet and armour only
+                                // change the look.
+                                skinVisible={slot.key === 'Weapon' ? currentUseSkinWindup : lookSlot(slot.key) ? profile.misc.skinVisible?.[lookSlot(slot.key)!] !== false : undefined}
+                                onToggleSkinVisible={slot.key === 'Weapon'
+                                    ? () => handleToggleSkinWindup(!currentUseSkinWindup)
+                                    : lookSlot(slot.key)
+                                        ? () => { const k = lookSlot(slot.key)!; updateNestedProfile('misc', { skinVisible: { ...profile.misc.skinVisible, [k]: profile.misc.skinVisible?.[k] === false } }); }
+                                        : undefined}
                                 perfection={getPerfection(equipped, secondaryStatLibrary)}
                                 getStatPerfection={(sId, val) => getStatPerfection(sId, val, secondaryStatLibrary)}
                                 spriteMapping={spriteMapping}
@@ -423,6 +440,16 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                     })}
 
                     <MountSlotWidget variant={variant} isCompact={isCompactStats} />
+
+                    {/* The character as these items make it look in battle: a column two rows tall on
+                        the right on a desktop; two wide and two tall at the end of the narrow grid
+                        (phone, comparison), so it lines up with the cards either way. */}
+                    {showPortrait && <div className={cn(
+                        'relative min-w-0 rounded-xl border border-border/60 overflow-hidden bg-gradient-to-b from-accent-primary/10 via-bg-secondary/40 to-bg-secondary/20',
+                        isComparing ? 'col-span-2 row-span-2 min-h-[16rem]' : 'col-span-2 h-64 lg:h-auto lg:col-span-1 lg:col-start-6 lg:row-start-1 lg:row-span-2'
+                    )}>
+                        <FitBuildPortrait profile={shownProfile} setId={shownSet} className="absolute inset-0" />
+                    </div>}
                 </div>
             </Card>
 

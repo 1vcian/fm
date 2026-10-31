@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fullscreenModalOpen, holdFullscreenModal, showDonationToast } from './donationToast';
@@ -7,13 +8,15 @@ import { Header } from './Header';
 import { Coffee, ExternalLink, Github, Sparkles, X } from 'lucide-react';
 import { FloatingCoffeeButton } from './FloatingCoffeeButton';
 import { useGameDataContext } from '../../context/GameDataContext';
-import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
+import { AgeBackground } from '../AgeBackground/AgeBackground';
+import { TeaseBubble, useTeasingDrag } from './useTeasingDrag';
+import { useMaxForgeAge } from '../../hooks/useMaxForgeAge';
 import { cn } from '../../lib/utils';
 import { formatVersion } from '../../lib/formatVersion';
-import { getAnvilTexturePath, resolveTextureVersion } from '../../utils/ascensionUtils';
-import { RELEASE_NOTES } from '../../data/releaseNotes';
+import { getAnvilTexturePath } from '../../utils/ascensionUtils';
+import { RELEASE_NOTES, RELEASE_NOTES_REVISION } from '../../data/releaseNotes';
 
 
 const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
@@ -122,7 +125,6 @@ function prettyDeltaLine(line: string): string {
 export default function AppShell() {
     const { selectedVersion, versions, isLoadingVersions } = useGameDataContext();
     const { profile } = useProfile();
-    const { data: forgeDropChances } = useGameData<Record<string, Record<string, number>>>('ItemAgeDropChancesLibrary.json');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false);
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
@@ -137,13 +139,15 @@ export default function AppShell() {
      */
     const [delta, setDelta] = useState<VersionDelta | null>(null);
 
-    // The popup opens only when the game data changed since the version this browser last saw.
-    // A newer build whose data is identical to that version (empty delta) is recorded silently.
+    // The popup opens when the game data changed since the version this browser last saw, or when
+    // the release notes have a revision it has not seen. A newer build whose data is identical to
+    // that version (empty delta) is recorded silently, unless there are unseen notes.
     useEffect(() => {
         if (isLoadingVersions || !versions || versions.length === 0) return;
         const latest = versions[0];
         const lastSeen = localStorage.getItem('fm_last_seen_config_version');
-        if (lastSeen === latest) return;
+        const notesSeen = localStorage.getItem('fm_last_seen_release_notes') === RELEASE_NOTES_REVISION;
+        if (lastSeen === latest && notesSeen) return;
         let alive = true;
         (async () => {
             let json: VersionDelta | null = null;
@@ -160,7 +164,7 @@ export default function AppShell() {
             if (!alive) return;
             const unchangedSinceSeen = !!json && json.version === latest && !!lastSeen
                 && json.previous === lastSeen && json.changes.length === 0;
-            if (unchangedSinceSeen) {
+            if (unchangedSinceSeen && notesSeen) {
                 localStorage.setItem('fm_last_seen_config_version', latest);
                 return;
             }
@@ -173,57 +177,12 @@ export default function AppShell() {
 
     const handleClosePopup = () => {
         localStorage.setItem('fm_last_seen_config_version', popupVersion);
+        localStorage.setItem('fm_last_seen_release_notes', RELEASE_NOTES_REVISION);
         setShowVersionPopup(false);
     };
 
-    const maxAgeVisuals = useMemo(() => {
-        // profile.misc.forgeLevel is 0-indexed (0 = Lvl 1 in UI)
-        const uiLevel = (profile.misc.forgeLevel || 0) + 1;
-
-        // Highest age this forge level can drop. ForgeAction.RollAge 0x7838958 rolls the age from
-        // ItemAgeDropChancesLibrary[PlayerForgeModel.ForgeLevel] (stored, 0-based); ForgeLevelUiView.UpdateUi
-        // 0x404800C displays ForgeLevel + 1. So row uiLevel - 1 is the player's row, and an age appears from
-        // the first displayed level whose row gives it a chance > 0 (Divine: row 28, displayed 29).
-        let ageIdx = 0;
-        const row = forgeDropChances?.[String(uiLevel - 1)];
-        if (row) {
-            for (let a = 9; a >= 0; a--) {
-                if ((row[`Age${a}`] ?? 0) > 0) { ageIdx = a; break; }
-            }
-        }
-
-        // Each age names its background file; themeUrl below uses it only if TextureManifest lists it.
-        const visuals: { id: string; name: string; anim: string; bg: string; texture: string | null }[] = [
-            { id: 'primitive', name: "Primitive", anim: "primitive-animation", bg: "bg-age-primitive", texture: "PrimitiveBackground.png" },
-            { id: 'medieval', name: "Medieval", anim: "medieval-animation", bg: "bg-age-medieval", texture: "MedievalBackground.png" },
-            { id: 'earlymodern', name: "Early-Modern", anim: "earlymodern-animation", bg: "bg-age-earlymodern", texture: "EarlyModernBackground.png" },
-            { id: 'modern', name: "Modern", anim: "modern-animation", bg: "bg-age-modern", texture: "ModernBackground.png" },
-            { id: 'space', name: "Space", anim: "space-animation", bg: "bg-age-space", texture: "SpaceBackground.png" },
-            { id: 'interstellar', name: "Interstellar", anim: "interstellar-animation", bg: "bg-age-interstellar", texture: "InterstellarBackground.png" },
-            { id: 'multiverse', name: "Multiverse", anim: "multiverse-animation", bg: "bg-age-multiverse", texture: "MultiverseBackground.png" },
-            { id: 'quantum', name: "Quantum", anim: "quantum-animation", bg: "bg-age-quantum", texture: "QuantumBackground.png" },
-            { id: 'underworld', name: "Underworld", anim: "underworld-animation", bg: "bg-age-underworld", texture: "UnderworldBackground.png" },
-            { id: 'divine', name: "Divine", anim: "divine-animation", bg: "bg-age-divine", texture: "DivineBackground.png" },
-        ];
-
-        return visuals[ageIdx];
-    }, [profile.misc.forgeLevel, forgeDropChances]);
-
-    // Only some ages ship a background texture. Point --theme-url at a file only when the texture
-    // manifest lists it: a missing file behind the infinite theme animation is re-requested forever.
-    const [textureNames, setTextureNames] = useState<Set<string> | null>(null);
-    useEffect(() => {
-        let alive = true;
-        fetch(`${import.meta.env.BASE_URL}parsed_configs/TextureManifest.json`)
-            .then(r => (r.ok ? r.json() : []))
-            .then((names: unknown) => { if (alive && Array.isArray(names)) setTextureNames(new Set(names as string[])); })
-            .catch(() => { /* no manifest: render the age colour only */ });
-        return () => { alive = false; };
-    }, []);
-    const textureVersion = resolveTextureVersion(selectedVersion) ?? selectedVersion;
-    const themeUrl = maxAgeVisuals.texture && textureNames?.has(maxAgeVisuals.texture)
-        ? `url(${import.meta.env.BASE_URL}Texture2D/${textureVersion ? `${textureVersion}/` : ''}${maxAgeVisuals.texture})`
-        : 'none';
+    const maxAgeIdx = useMaxForgeAge();
+    const pill = useTeasingDrag<HTMLAnchorElement>({ storageKey: 'fm_coffee_pill_pos', snapSides: true, fallbackSize: { w: 220, h: 56 } });
 
     const donationLabel = useMemo(() => {
         const labels = [
@@ -324,7 +283,7 @@ export default function AppShell() {
                     }}
                     className="absolute left-1/2 top-1/2 text-lg"
                 >
-                    {i % 2 === 0 ? '☕' : '🔥'}
+                    <GameAssetIcon asset={{ icon: ['Hammer', 'Coin', 'GemSquare'][i % 3] }} size={18} />
                 </motion.span>
             ))}
         </div>
@@ -403,35 +362,39 @@ export default function AppShell() {
                 </div>
 
                 {/* Buy Me A Coffee - Fixed Floating Button */}
+                {/* Draggable like the phone one (useTeasingDrag); until it is moved it keeps its corner. */}
                 <motion.a
+                    ref={pill.ref}
                     href="https://www.buymeacoffee.com/1vcian"
                     target="_blank"
                     rel="noopener noreferrer"
+                    draggable={false}
+                    onDragStart={e => e.preventDefault()}
+                    {...pill.handlers}
                     onMouseEnter={() => setIsHoveringCoffee(true)}
                     onMouseLeave={() => setIsHoveringCoffee(false)}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    layout
+                    layout={!pill.corner}
+                    style={pill.corner ? { left: pill.corner.left, top: pill.corner.top, touchAction: 'none', ...pill.flightStyle } : { touchAction: 'none' }}
                     className={cn(
-                        "hidden md:flex fixed bottom-8 z-[100] group items-center gap-3 py-3 md:py-4 rounded-full overflow-visible transition-all duration-300",
-                        maxAgeVisuals.bg,
+                        "hidden md:flex fixed group items-center gap-3 py-3 md:py-4 rounded-full overflow-visible select-none",
+                        // Resting on the header: drawn below it, so the header covers it.
+                        pill.parked ? "z-40" : "z-[100]",
+                        !pill.dragging && !pill.flying && "transition-[padding,right,bottom,left,top,box-shadow] duration-300",
+                        pill.flying && "animate-[spin_0.7s_ease-out]",
                         isSidebarOpen ? "px-3 md:px-4" : "px-5 md:px-6",
                         // Slide clear of the Character-Stats drawer (450px) when it's open so it
                         // stops overlapping the stats; normal bottom-right otherwise.
-                        isStatsOpen ? "right-4 lg:right-[474px]" : "right-8",
+                        !pill.corner && "bottom-8",
+                        !pill.corner && (isStatsOpen ? "right-4 lg:right-[474px]" : "right-8"),
                         "shadow-[0_8px_25px_-5px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(0,0,0,0.6)]"
                     )}
                 >
-                    <div
-                        className={cn(maxAgeVisuals.anim, "rounded-full")}
-                        style={{ '--theme-url': themeUrl } as React.CSSProperties}
-                    >
-                        {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
-                            <span key={i} />
-                        ))}
-                    </div>
+                    {/* The background of the highest age the forge level can drop, as the game draws it. */}
+                    <AgeBackground ageIdx={maxAgeIdx} className="absolute inset-0 rounded-full overflow-hidden" />
 
                     <AnimatePresence>
                         {isHoveringCoffee && (
@@ -439,7 +402,7 @@ export default function AppShell() {
                                 initial={{ opacity: 0, y: 10, scale: 0.8 }}
                                 animate={{ opacity: 1, y: -50, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.8 }}
-                                className="absolute bottom-full right-0 mb-4 bg-white text-black px-4 py-2 rounded-2xl shadow-xl text-xs whitespace-nowrap font-black border-2 border-[#FFDD00] origin-bottom-right"
+                                className="absolute bottom-full right-0 mb-4 pointer-events-none bg-white text-black px-4 py-2 rounded-2xl shadow-xl text-xs whitespace-nowrap font-black border-2 border-[#FFDD00] origin-bottom-right"
                             >
                                 {donationTooltip}
                                 <div className="absolute top-full right-6 -mt-1 w-3 h-3 bg-white border-r-2 border-b-2 border-[#FFDD00] rotate-45" />
@@ -467,8 +430,10 @@ export default function AppShell() {
                     </div>
                 </motion.a>
 
+                <div className="hidden md:block"><TeaseBubble bubble={pill.bubble} anchor={pill.ref.current} /></div>
+
                 {/* Phone: small draggable icon instead of the labelled pill */}
-                <FloatingCoffeeButton href="https://www.buymeacoffee.com/1vcian" bgClass={maxAgeVisuals.bg} className="md:hidden" />
+                <FloatingCoffeeButton href="https://www.buymeacoffee.com/1vcian" ageIdx={maxAgeIdx} className="md:hidden" />
             </div>
 
             <AnimatePresence>
@@ -595,21 +560,11 @@ export default function AppShell() {
                                 <button
                                     onClick={handleClosePopup}
                                     className={cn(
-                                        "mt-4 w-full py-3.5 relative overflow-hidden text-white font-black uppercase tracking-wider rounded-2xl transition-all duration-300 hover:shadow-lg active:scale-95 text-sm select-none shadow-[0_4px_20px_rgba(0,0,0,0.3)]",
-                                        maxAgeVisuals.bg
+                                        "mt-4 w-full py-3.5 relative overflow-hidden text-white font-black uppercase tracking-wider rounded-2xl transition-all duration-300 hover:shadow-lg active:scale-95 text-sm select-none shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
                                     )}
                                 >
-                                    {/* The animated age-based overlay */}
-                                    <div
-                                        className={cn(maxAgeVisuals.anim, "absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none")}
-                                        style={{
-                                            '--theme-url': themeUrl
-                                        } as React.CSSProperties}
-                                    >
-                                        {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
-                                            <span key={i} />
-                                        ))}
-                                    </div>
+                                    {/* The background of the highest age the forge level can drop, as the game draws it. */}
+                                    <AgeBackground ageIdx={maxAgeIdx} className="absolute inset-0 pointer-events-none" />
 
                                     <span className="relative z-10 text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                                         Heck yeah, let's forge!

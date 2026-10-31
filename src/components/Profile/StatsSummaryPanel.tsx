@@ -1,11 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-    Swords, Heart, Shield, Zap, Target, Gauge,
-    TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
-    ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
-    ArrowLeftRight, Info, Layers
-} from 'lucide-react';
+import { Shield, TrendingUp, Sparkles, X, Check, ArrowRight, Hash, Minimize2, Layout, Download, ArrowLeftRight } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
 import { Card } from '../UI/Card';
@@ -27,6 +22,7 @@ import { LifestealBreakdownModal } from './LifestealBreakdownModal';
 import { useEngineCheck, type EngineCheckState } from '../../hooks/useEngineCheck';
 import { StatSourcesModal, MultiplierBreakdown } from './StatSourcesModal';
 import { TOTAL_DAMAGE_KEY, TOTAL_HEALTH_KEY, TOTAL_POWER_KEY } from '../../types/statAttribution';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 interface StatRowProps {
     icon: React.ReactNode;
@@ -54,7 +50,7 @@ function InfoDot({ onClick, className }: { onClick: () => void; className?: stri
             title="Show stat sources"
             aria-label="Show stat sources"
         >
-            <Info className="w-2.5 h-2.5" />
+            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={10} />
         </button>
     );
 }
@@ -217,7 +213,7 @@ export function ComparisonStatRow({
         return (
             <div className={cn("flex items-center gap-3 rounded-lg border border-border/20 bg-bg-input/20", isMinimal ? "p-1.5 px-2" : "p-2.5")}>
                 <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-bg-secondary shrink-0", color)}>
-                    {React.cloneElement(icon as React.ReactElement, { className: 'w-3 h-3' })}
+                    {React.cloneElement(icon as React.ReactElement<{ className?: string; size?: number }>, { className: 'w-3 h-3', size: 12 })}
                 </div>
                 <div className="flex flex-col min-w-0">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted leading-tight">{label}</span>
@@ -246,8 +242,8 @@ export function ComparisonStatRow({
     // Determine delta color and icon
     const getDeltaStyle = () => {
         if (isExactlySame) return { color: "text-text-muted", icon: <span className="text-sm">=</span> };
-        if (delta.isPositive) return { color: "text-green-400", icon: <ArrowUp className="w-3.5 h-3.5" /> };
-        return { color: "text-red-400", icon: <ArrowDown className="w-3.5 h-3.5" /> };
+        if (delta.isPositive) return { color: "text-green-400", icon: <GameAssetIcon asset={{ icon: 'ArrowUp' }} size={14} /> };
+        return { color: "text-red-400", icon: <GameAssetIcon asset={{ icon: 'ArrowDown' }} size={14} /> };
     };
     const deltaStyle = getDeltaStyle();
 
@@ -255,7 +251,7 @@ export function ComparisonStatRow({
         return (
             <div className="flex items-center gap-3 p-1.5 px-2 bg-bg-input/20 rounded-lg border border-border/20 hover:bg-bg-input/40 transition-colors">
                 <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-bg-secondary shrink-0", color)}>
-                    {React.cloneElement(icon as React.ReactElement, { className: 'w-3 h-3' })}
+                    {React.cloneElement(icon as React.ReactElement<{ className?: string; size?: number }>, { className: 'w-3 h-3', size: 12 })}
                 </div>
                 <div className="flex flex-col min-w-0">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted leading-tight">{label}</span>
@@ -268,7 +264,7 @@ export function ComparisonStatRow({
                             </span>
                         </div>
                         <div className={cn("flex items-center gap-0.5 font-mono font-bold text-[10px]", deltaStyle.color)}>
-                            {deltaStyle.icon && React.cloneElement(deltaStyle.icon as React.ReactElement, { className: 'w-2.5 h-2.5' })}
+                            {deltaStyle.icon && React.cloneElement(deltaStyle.icon as React.ReactElement<{ className?: string; size?: number }>, typeof (deltaStyle.icon as React.ReactElement).type === 'string' ? { className: 'w-2.5 h-2.5' } : { className: 'w-2.5 h-2.5', size: 10 })}
                             <span>{delta.percent}</span>
                         </div>
                     </div>
@@ -690,7 +686,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 <div className="space-y-3">
                     <ComparisonStatRow
                         isCompact={isCompactStats}
-                        icon={<Gauge className="w-4 h-4" />}
+                        icon={<GameAssetIcon asset={{ icon: 'TechTreePower' }} size={16} />}
                         label="Power"
                         originalValue={originalStats.power}
                         testValue={testStats.power}
@@ -698,7 +694,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     />
                     <ComparisonStatRow
                         isCompact={isCompactStats}
-                        icon={<Swords className="w-4 h-4" />}
+                        icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />}
                         label="Damage"
                         originalValue={originalStats.totalDamage}
                         testValue={testStats.totalDamage}
@@ -706,7 +702,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     />
                     <ComparisonStatRow
                         isCompact={isCompactStats}
-                        icon={<Swords className="w-4 h-4" />}
+                        icon={<GameAssetIcon asset={{ icon: 'Battle' }} size={16} />}
                         label="Melee DMG"
                         originalValue={originalStats.meleeDamage}
                         testValue={testStats.meleeDamage}
@@ -714,7 +710,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     />
                     <ComparisonStatRow
                         isCompact={isCompactStats}
-                        icon={<Crosshair className="w-4 h-4" />}
+                        icon={<GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={16} />}
                         label="Ranged DMG"
                         originalValue={originalStats.rangedDamage}
                         testValue={testStats.rangedDamage}
@@ -722,7 +718,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     />
                     <ComparisonStatRow
                         isCompact={isCompactStats}
-                        icon={<Heart className="w-4 h-4" />}
+                        icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                         label="Health"
                         originalValue={originalStats.totalHealth}
                         testValue={testStats.totalHealth}
@@ -732,22 +728,22 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
             )}
             {viewTab === 'passives' && (
                 <div className="space-y-3">
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Star className="w-4 h-4 text-yellow-400" />} label="Crit %" originalValue={originalStats.criticalChance || 0} testValue={testStats.criticalChance || 0} formatFn={formatPercent} color="text-yellow-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ icon: 'Star' }} size={16} />} label="Crit %" originalValue={originalStats.criticalChance || 0} testValue={testStats.criticalChance || 0} formatFn={formatPercent} color="text-yellow-400" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<TrendingUp className="w-4 h-4 text-yellow-500" />} label="Crit Damage" originalValue={originalStats.criticalDamage || 0} testValue={testStats.criticalDamage || 0} formatFn={formatMultiplier} color="text-yellow-500" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<Shield className="w-4 h-4 text-blue-400" />} label="Block %" originalValue={originalStats.blockChance || 0} testValue={testStats.blockChance || 0} formatFn={formatPercent} color="text-blue-400" />
                     {((originalStats.reflectChance || 0) > 0 || (testStats.reflectChance || 0) > 0) && (
                         <ComparisonStatRow isCompact={isCompactStats} icon={<Shield className="w-4 h-4 text-teal-400" />} label="Reflect %" originalValue={originalStats.reflectChance || 0} testValue={testStats.reflectChance || 0} formatFn={formatPercent} color="text-teal-400" />
                     )}
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Zap className="w-4 h-4 text-purple-400" />} label="Double %" originalValue={originalStats.doubleDamageChance || 0} testValue={testStats.doubleDamageChance || 0} formatFn={formatPercent} color="text-purple-400" />
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-purple-400" />} label="Life Steal %" originalValue={originalStats.lifeSteal || 0} testValue={testStats.lifeSteal || 0} formatFn={formatPercent} color="text-purple-400" />
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-purple-400" />} label="Health Regen %" originalValue={originalStats.healthRegen || 0} testValue={testStats.healthRegen || 0} formatFn={formatPercent} color="text-purple-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />} label="Double %" originalValue={originalStats.doubleDamageChance || 0} testValue={testStats.doubleDamageChance || 0} formatFn={formatPercent} color="text-purple-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Life Steal %" originalValue={originalStats.lifeSteal || 0} testValue={testStats.lifeSteal || 0} formatFn={formatPercent} color="text-purple-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Health Regen %" originalValue={originalStats.healthRegen || 0} testValue={testStats.healthRegen || 0} formatFn={formatPercent} color="text-purple-400" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<TrendingUp className="w-4 h-4 text-orange-400" />} label="Attack Speed" originalValue={originalStats.attackSpeedMultiplier || 0} testValue={testStats.attackSpeedMultiplier || 0} formatFn={formatMultiplier} color="text-orange-400" />
                     <ComparisonStatRow isCompact={isCompactStats} icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Skill CDR %" originalValue={originalStats.skillCooldownReduction || 0} testValue={testStats.skillCooldownReduction || 0} formatFn={formatPercent} color="text-emerald-400" />
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage %" originalValue={originalStats.secondaryDamageMulti || 0} testValue={testStats.secondaryDamageMulti || 0} formatFn={formatPercent} color="text-red-400" />
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-green-400" />} label="Health %" originalValue={originalStats.secondaryHealthMulti || 0} testValue={testStats.secondaryHealthMulti || 0} formatFn={formatPercent} color="text-green-400" />
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Swords className="w-4 h-4 text-amber-400" />} label="Melee DMG %" originalValue={originalStats.meleeDamageMultiplier || 0} testValue={testStats.meleeDamageMultiplier || 0} formatFn={formatPercent} color="text-amber-400" />
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Crosshair className="w-4 h-4 text-sky-400" />} label="Ranged DMG %" originalValue={originalStats.rangedDamageMultiplier || 0} testValue={testStats.rangedDamageMultiplier || 0} formatFn={formatPercent} color="text-sky-400" />
-                    <ComparisonStatRow isCompact={isCompactStats} icon={<Swords className="w-4 h-4 text-red-400" />} label="Skill Damage %" originalValue={originalStats.skillDamageMultiplier || 0} testValue={testStats.skillDamageMultiplier || 0} formatFn={formatMultiplier} color="text-red-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />} label="Damage %" originalValue={originalStats.secondaryDamageMulti || 0} testValue={testStats.secondaryDamageMulti || 0} formatFn={formatPercent} color="text-red-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Health %" originalValue={originalStats.secondaryHealthMulti || 0} testValue={testStats.secondaryHealthMulti || 0} formatFn={formatPercent} color="text-green-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ icon: 'Battle' }} size={16} />} label="Melee DMG %" originalValue={originalStats.meleeDamageMultiplier || 0} testValue={testStats.meleeDamageMultiplier || 0} formatFn={formatPercent} color="text-amber-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={16} />} label="Ranged DMG %" originalValue={originalStats.rangedDamageMultiplier || 0} testValue={testStats.rangedDamageMultiplier || 0} formatFn={formatPercent} color="text-sky-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 35 }} size={16} />} label="Skill Damage %" originalValue={originalStats.skillDamageMultiplier || 0} testValue={testStats.skillDamageMultiplier || 0} formatFn={formatMultiplier} color="text-red-400" />
                 </div>
             )}
 
@@ -761,7 +757,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         <div className="p-2 space-y-2">
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
-                                icon={<Zap className="w-4 h-4" />}
+                                icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />}
                                 label="Weapon DPS"
                                 originalValue={originalDps}
                                 testValue={testDps}
@@ -799,7 +795,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             />
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
-                                icon={<Heart className="w-4 h-4 text-purple-400" />}
+                                icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                                 label="Lifesteal/sec"
                                 originalValue={originalHpsDetails.lifesteal}
                                 testValue={testHpsDetails.lifesteal}
@@ -821,13 +817,13 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     {/* Tested (24 h) block */}
                     <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
                         <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10 flex items-center gap-2">
-                            <Zap className="w-3 h-3 text-orange-400" />
+                            <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                             <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Tested (24 h simulation)</span>
                         </div>
                         <div className="p-2 space-y-2">
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
-                                icon={<Zap className="w-4 h-4" />}
+                                icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />}
                                 label="Tested DPS"
                                 originalValue={originalDpsDetails.realTotal}
                                 testValue={testDpsDetails.realTotal}
@@ -865,7 +861,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             />
                             <ComparisonStatRow
                                 isCompact={isCompactStats}
-                                icon={<Heart className="w-4 h-4 text-purple-500" />}
+                                icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                                 label="Lifesteal/sec"
                                 originalValue={originalRealHpsDetails.lifesteal}
                                 testValue={testRealHpsDetails.lifesteal}
@@ -896,7 +892,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         <div className="p-2 space-y-2">
                             <ComparisonStatRow
                                 isCompact={true}
-                                icon={<Swords className="w-4 h-4" />}
+                                icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />}
                                 label="Normal"
                                 originalValue={originalFullStats.hitDamage}
                                 testValue={testFullStats.hitDamage}
@@ -905,7 +901,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             />
                             <ComparisonStatRow
                                 isCompact={true}
-                                icon={<Sparkles className="w-4 h-4" />}
+                                icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
                                 label="Critical"
                                 originalValue={originalFullStats.hitDamageCrit}
                                 testValue={testFullStats.hitDamageCrit}
@@ -924,7 +920,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <div className="p-2 space-y-2">
                                 <ComparisonStatRow
                                     isCompact={true}
-                                    icon={<Zap className="w-4 h-4" />}
+                                    icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />}
                                     label="Normal"
                                     originalValue={originalFullStats.hitDamageBuffed}
                                     testValue={testFullStats.hitDamageBuffed}
@@ -933,7 +929,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 />
                                 <ComparisonStatRow
                                     isCompact={true}
-                                    icon={<Sparkles className="w-4 h-4" />}
+                                    icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
                                     label="Critical"
                                     originalValue={originalFullStats.hitDamageBuffedCrit}
                                     testValue={testFullStats.hitDamageBuffedCrit}
@@ -981,7 +977,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             )}
                             title="DPS & HPS Metrics"
                         >
-                            <Zap className="w-3 h-3" />
+                            <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Metrics</span>
                         </button>
                         <button
@@ -992,7 +988,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             )}
                             title="Hit Damage"
                         >
-                            <Swords className="w-3 h-3" />
+                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Hits</span>
                         </button>
                         <button
@@ -1003,7 +999,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             )}
                             title="Secondary Stats"
                         >
-                            <Sparkles className="w-3 h-3" />
+                            <GameAssetIcon asset={{ icon: 'Sparkle' }} size={12} />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Stats</span>
                         </button>
                     </div>
@@ -1040,45 +1036,45 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     {viewTab === 'general' ? (
                         <>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Gauge className="w-4 h-4 text-purple-400" />} label="Power" originalValue={originalStats?.power ?? 0} testValue={testStats?.power ?? 0} color="text-purple-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'TechTreePower' }} size={16} />} label="Power" originalValue={originalStats?.power ?? 0} testValue={testStats?.power ?? 0} color="text-purple-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage" originalValue={originalStats?.totalDamage ?? 0} testValue={testStats?.totalDamage ?? 0} color="text-red-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />} label="Damage" originalValue={originalStats?.totalDamage ?? 0} testValue={testStats?.totalDamage ?? 0} color="text-red-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-amber-400" />} label="Melee DMG" originalValue={originalStats?.meleeDamage ?? 0} testValue={testStats?.meleeDamage ?? 0} color="text-amber-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Battle' }} size={16} />} label="Melee DMG" originalValue={originalStats?.meleeDamage ?? 0} testValue={testStats?.meleeDamage ?? 0} color="text-amber-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Crosshair className="w-4 h-4 text-sky-400" />} label="Ranged DMG" originalValue={originalStats?.rangedDamage ?? 0} testValue={testStats?.rangedDamage ?? 0} color="text-sky-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={16} />} label="Ranged DMG" originalValue={originalStats?.rangedDamage ?? 0} testValue={testStats?.rangedDamage ?? 0} color="text-sky-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-green-400" />} label="Health" originalValue={originalStats?.totalHealth ?? 0} testValue={testStats?.totalHealth ?? 0} color="text-green-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Health" originalValue={originalStats?.totalHealth ?? 0} testValue={testStats?.totalHealth ?? 0} color="text-green-400" />
                             </div>
                         </>
                     ) : viewTab === 'metrics' ? (
                         <>
                             {/* Grouped weapon only */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Weapon DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />} label="Weapon DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-white/10" />
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Weapon HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
                                 <div className="w-px h-6 bg-white/10" />
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Weapon LS/s" originalValue={originalHpsDetails.lifesteal} testValue={testHpsDetails.lifesteal} color="text-purple-400" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Weapon LS/s" originalValue={originalHpsDetails.lifesteal} testValue={testHpsDetails.lifesteal} color="text-purple-400" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
                             </div>
 
                             {/* Grouped tested */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-orange-500/5 rounded-xl border border-orange-500/10 ring-1 ring-orange-500/10">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Tested DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />} label="Tested DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onOriginalDetailsClick={() => { if (originalStats && originalProfile) { setModalData({ stats: originalStats, profile: originalProfile, variant: 'original' }); setShowDpsModal(true); } }} onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-orange-500/10" />
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Tested HPS" originalValue={originalRealHps} testValue={testRealHps} color="text-emerald-500" />
                                 <div className="w-px h-6 bg-orange-500/10" />
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-500" />} label="Tested LS/s" originalValue={originalRealHpsDetails.lifesteal} testValue={testRealHpsDetails.lifesteal} color="text-purple-500" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Tested LS/s" originalValue={originalRealHpsDetails.lifesteal} testValue={testRealHpsDetails.lifesteal} color="text-purple-500" onOriginalDetailsClick={() => { if (originalFullStats && originalProfile) { openLifestealModal(originalFullStats, originalProfile, 'original'); } }} onTestDetailsClick={() => { if (testFullStats && testProfile) { openLifestealModal(testFullStats, testProfile, 'test'); } }} />
                             </div>
                         </>
                     ) : viewTab === 'passives' ? (
                         <>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Star className="w-4 h-4 text-yellow-400" />} label="Crit %" originalValue={originalStats?.criticalChance ?? 0} testValue={testStats?.criticalChance ?? 0} formatFn={formatPercent} color="text-yellow-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Star' }} size={16} />} label="Crit %" originalValue={originalStats?.criticalChance ?? 0} testValue={testStats?.criticalChance ?? 0} formatFn={formatPercent} color="text-yellow-400" />
                             </div>
                             <div className="shrink-0">
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-yellow-500" />} label="Crit DMG" originalValue={originalStats?.criticalDamage ?? 0} testValue={testStats?.criticalDamage ?? 0} formatFn={formatMultiplier} color="text-yellow-500" />
@@ -1087,13 +1083,13 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Shield className="w-4 h-4 text-blue-400" />} label="Block %" originalValue={originalStats?.blockChance ?? 0} testValue={testStats?.blockChance ?? 0} formatFn={formatPercent} color="text-blue-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-purple-400" />} label="Double %" originalValue={originalStats?.doubleDamageChance ?? 0} testValue={testStats?.doubleDamageChance ?? 0} formatFn={formatPercent} color="text-purple-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />} label="Double %" originalValue={originalStats?.doubleDamageChance ?? 0} testValue={testStats?.doubleDamageChance ?? 0} formatFn={formatPercent} color="text-purple-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Lifesteal %" originalValue={originalStats?.lifeSteal ?? 0} testValue={testStats?.lifeSteal ?? 0} formatFn={formatPercent} color="text-purple-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Lifesteal %" originalValue={originalStats?.lifeSteal ?? 0} testValue={testStats?.lifeSteal ?? 0} formatFn={formatPercent} color="text-purple-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Regen %" originalValue={originalStats?.healthRegen ?? 0} testValue={testStats?.healthRegen ?? 0} formatFn={formatPercent} color="text-purple-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Regen %" originalValue={originalStats?.healthRegen ?? 0} testValue={testStats?.healthRegen ?? 0} formatFn={formatPercent} color="text-purple-400" />
                             </div>
                             <div className="shrink-0">
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-orange-400" />} label="Atk Speed" originalValue={originalStats?.attackSpeedMultiplier ?? 0} testValue={testStats?.attackSpeedMultiplier ?? 0} formatFn={formatMultiplier} color="text-orange-400" />
@@ -1102,33 +1098,33 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Skill CDR" originalValue={originalStats?.skillCooldownReduction ?? 0} testValue={testStats?.skillCooldownReduction ?? 0} formatFn={formatPercent} color="text-emerald-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage %" originalValue={originalStats?.secondaryDamageMulti ?? 0} testValue={testStats?.secondaryDamageMulti ?? 0} formatFn={formatPercent} color="text-red-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />} label="Damage %" originalValue={originalStats?.secondaryDamageMulti ?? 0} testValue={testStats?.secondaryDamageMulti ?? 0} formatFn={formatPercent} color="text-red-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-green-400" />} label="Health %" originalValue={originalStats?.secondaryHealthMulti ?? 0} testValue={testStats?.secondaryHealthMulti ?? 0} formatFn={formatPercent} color="text-green-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />} label="Health %" originalValue={originalStats?.secondaryHealthMulti ?? 0} testValue={testStats?.secondaryHealthMulti ?? 0} formatFn={formatPercent} color="text-green-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-amber-400" />} label="Melee DMG %" originalValue={originalStats?.meleeDamageMultiplier ?? 0} testValue={testStats?.meleeDamageMultiplier ?? 0} formatFn={formatPercent} color="text-amber-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Battle' }} size={16} />} label="Melee DMG %" originalValue={originalStats?.meleeDamageMultiplier ?? 0} testValue={testStats?.meleeDamageMultiplier ?? 0} formatFn={formatPercent} color="text-amber-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Crosshair className="w-4 h-4 text-sky-400" />} label="Ranged DMG %" originalValue={originalStats?.rangedDamageMultiplier ?? 0} testValue={testStats?.rangedDamageMultiplier ?? 0} formatFn={formatPercent} color="text-sky-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={16} />} label="Ranged DMG %" originalValue={originalStats?.rangedDamageMultiplier ?? 0} testValue={testStats?.rangedDamageMultiplier ?? 0} formatFn={formatPercent} color="text-sky-400" />
                             </div>
                         </>
                     ) : (
                         <>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Base Hit" originalValue={originalStats?.hitDamage ?? 0} testValue={testStats?.hitDamage ?? 0} color="text-red-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />} label="Base Hit" originalValue={originalStats?.hitDamage ?? 0} testValue={testStats?.hitDamage ?? 0} color="text-red-400" />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Sparkles className="w-4 h-4 text-yellow-400" />} label="Crit Hit" originalValue={originalStats?.hitDamageCrit ?? 0} testValue={testStats?.hitDamageCrit ?? 0} color="text-yellow-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />} label="Crit Hit" originalValue={originalStats?.hitDamageCrit ?? 0} testValue={testStats?.hitDamageCrit ?? 0} color="text-yellow-400" />
                             </div>
                             {testStats && (testStats.hitDamageBuffed !== testStats.hitDamage || originalStats?.hitDamageBuffed !== originalStats?.hitDamage) && (
                                 <>
                                     <div className="shrink-0">
-                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Buffed Hit" originalValue={originalStats?.hitDamageBuffed ?? 0} testValue={testStats?.hitDamageBuffed ?? 0} color="text-orange-400" />
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />} label="Buffed Hit" originalValue={originalStats?.hitDamageBuffed ?? 0} testValue={testStats?.hitDamageBuffed ?? 0} color="text-orange-400" />
                                     </div>
                                     <div className="shrink-0">
-                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Sparkles className="w-4 h-4 text-orange-500" />} label="Buffed Crit" originalValue={originalStats?.hitDamageBuffedCrit ?? 0} testValue={testStats?.hitDamageBuffedCrit ?? 0} color="text-orange-500" />
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />} label="Buffed Crit" originalValue={originalStats?.hitDamageBuffedCrit ?? 0} testValue={testStats?.hitDamageBuffedCrit ?? 0} color="text-orange-500" />
                                     </div>
                                 </>
                             )}
@@ -1291,7 +1287,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 {/* Tree Mode Selection - Top Level Segmented Control */}
                 <div className="p-1.5 bg-bg-input/50 rounded-xl border border-border/30 shadow-inner">
                     <div className="flex items-center gap-2 mb-2 px-2">
-                        <TreeDeciduous className="w-3.5 h-3.5 text-green-400" />
+                        <GameAssetIcon asset={{ icon: 'Potion' }} size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest text-text-muted opacity-70">Calculation Basis (Tree)</span>
                     </div>
 
@@ -1440,7 +1436,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     viewTab === 'metrics' ? "bg-orange-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
                                 )}
                             >
-                                <Zap className="w-3.5 h-3.5" />
+                                <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} />
                                 <span>Metrics</span>
                             </button>
                             <button
@@ -1450,7 +1446,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     viewTab === 'hits' ? "bg-red-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
                                 )}
                             >
-                                <Swords className="w-3.5 h-3.5" />
+                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={14} />
                                 <span>Hits</span>
                             </button>
                             <button
@@ -1460,7 +1456,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     viewTab === 'passives' ? "bg-yellow-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
                                 )}
                             >
-                                <Sparkles className="w-3.5 h-3.5" />
+                                <GameAssetIcon asset={{ icon: 'Sparkle' }} size={14} />
                                 <span>Stats</span>
                             </button>
                         </div>
@@ -1471,7 +1467,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         {/* Summary Section */}
                         <div className="space-y-3">
                             <StatRow
-                                icon={<Gauge className="w-4 h-4" />}
+                                icon={<GameAssetIcon asset={{ icon: 'TechTreePower' }} size={16} />}
                                 label="Total Power"
                                 value={formatValue(stats.power)}
                                 color="text-purple-400"
@@ -1491,7 +1487,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 return (
                                     <>
                                         <StatRow
-                                            icon={<Swords className="w-4 h-4" />}
+                                            icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />}
                                             label="Total Damage"
                                             value={formatValue(stats.totalDamage)}
                                             subValue={`${formatPercent(stats.damageMultiplier || 1, 0)} Total (${formatDetailedBreakdown(stats.damageBreakdown) || 'Base Only'})`}
@@ -1499,19 +1495,19 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                             {...infoProps(TOTAL_DAMAGE_KEY, 'Total Damage', formatValue(stats.totalDamage), formatValue, mulBreakdown('Damage Multiplier', stats.damageMultiplier, stats.damageBreakdown))}
                                         />
                                         <StatRow
-                                            icon={<Swords className="w-4 h-4" />}
+                                            icon={<GameAssetIcon asset={{ icon: 'Battle' }} size={16} />}
                                             label="Melee DMG"
                                             value={formatValue(stats.meleeDamage)}
                                             color="text-amber-400"
                                         />
                                         <StatRow
-                                            icon={<Crosshair className="w-4 h-4" />}
+                                            icon={<GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={16} />}
                                             label="Ranged DMG"
                                             value={formatValue(stats.rangedDamage)}
                                             color="text-sky-400"
                                         />
                                         <StatRow
-                                            icon={<Heart className="w-4 h-4" />}
+                                            icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                                             label="Total Health"
                                             value={formatValue(stats.totalHealth)}
                                             subValue={`${formatPercent(stats.healthMultiplier || 1, 0)} Total (${formatDetailedBreakdown(stats.healthBreakdown) || 'Base Only'})`}
@@ -1529,7 +1525,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 </div>
                                 <div className="p-2 space-y-1">
                                     <StatRow
-                                        icon={<Zap className="w-4 h-4" />}
+                                        icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />}
                                         label="Weapon DPS"
                                         value={formatValue(effectiveDps)}
                                         subValue={dpsSub(currentDpsDetails, false)}
@@ -1545,7 +1541,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         color="text-emerald-400"
                                     />
                                     <StatRow
-                                        icon={<Heart className="w-4 h-4" />}
+                                        icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                                         label="Lifesteal/sec"
                                         value={formatValue(currentHpsDetails.lifesteal)}
                                         subValue={`Weapon DPS x Lifesteal ${formatPercent(fullStats.lifeSteal)}, before the max HP cap`}
@@ -1558,12 +1554,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             {/* Tested (24 h) block */}
                             <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
                                 <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10 flex items-center gap-2">
-                                    <Zap className="w-3 h-3 text-orange-400" />
+                                    <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Tested (24 h simulation)</span>
                                 </div>
                                 <div className="p-2 space-y-1">
                                     <StatRow
-                                        icon={<Zap className="w-4 h-4" />}
+                                        icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />}
                                         label="Tested DPS"
                                         value={formatValue(currentDpsDetails.realTotal)}
                                         subValue={dpsSub(currentDpsDetails, true)}
@@ -1579,7 +1575,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         color="text-emerald-500"
                                     />
                                     <StatRow
-                                        icon={<Heart className="w-4 h-4" />}
+                                        icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                                         label="Lifesteal/sec"
                                         value={formatValue(currentRealHpsDetails.lifesteal)}
                                         subValue={Number.isFinite(currentRealHpsDetails.lifesteal) ? `All lifesteal in the 24 h run (weapon hits and buffs), before the max HP cap` : testedPending(testedCur)}
@@ -1594,13 +1590,13 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         {/* Single Hit Damage Section */}
                         <CollapsibleSection
                             title="Single Hit Damage"
-                            icon={<Sparkles className="w-4 h-4 text-orange-400" />}
+                            icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
                             isOpen={openSection === 'hit-damage'}
                             onToggle={() => setOpenSection(openSection === 'hit-damage' ? null : 'hit-damage')}
                         >
                             <div className="space-y-2">
                                 <StatRow
-                                    icon={<Swords className="w-4 h-4" />}
+                                    icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />}
                                     label="Base Hit"
                                     value={formatValue(fullStats.hitDamage)}
                                     subValue={`Crit: ${formatValue(fullStats.hitDamageCrit)}`}
@@ -1608,7 +1604,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 />
                                 {fullStats.hitDamageBuffed !== fullStats.hitDamage && (
                                     <StatRow
-                                        icon={<Sparkles className="w-4 h-4" />}
+                                        icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
                                         label="All Buffs Active"
                                         value={formatValue(fullStats.hitDamageBuffed)}
                                         subValue={`Crit: ${formatValue(fullStats.hitDamageBuffedCrit)}`}
@@ -1643,7 +1639,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         {/* Passive Detailed Section */}
                         <CollapsibleSection
                             title="Passives & Multipliers"
-                            icon={<Sparkles className="w-4 h-4 text-yellow-400" />}
+                            icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
                             isOpen={openSection === 'passives'}
                             onToggle={() => setOpenSection(openSection === 'passives' ? null : 'passives')}
                         >
@@ -1661,7 +1657,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     return (
                                         <div className="grid grid-cols-2 gap-2">
                                             <CompactStat
-                                                icon={<Star className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ icon: 'Star' }} size={12} />}
                                                 label="Crit %"
                                                 value={formatPercent(stats.criticalChance || 0)}
                                                 subValue={formatBreakdown(stats.critChanceBreakdown) ?? undefined}
@@ -1690,7 +1686,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 {...infoProps('BlockChance', 'Block %', formatPercent(stats.blockChance || 0))}
                                             />
                                             <CompactStat
-                                                icon={<Zap className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />}
                                                 label="Double %"
                                                 value={formatPercent(stats.doubleDamageChance || 0)}
                                                 subValue={formatBreakdown(stats.doubleDamageBreakdown) ?? undefined}
@@ -1700,7 +1696,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 {...infoProps('DoubleDamageChance', 'Double %', formatPercent(stats.doubleDamageChance || 0))}
                                             />
                                             <CompactStat
-                                                icon={<Heart className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} />}
                                                 label="Life Steal %"
                                                 value={formatPercent(stats.lifeSteal || 0)}
                                                 count={activePerfectionDetails['LifeSteal']?.count}
@@ -1709,7 +1705,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 {...infoProps('LifeSteal', 'Life Steal %', formatPercent(stats.lifeSteal || 0))}
                                             />
                                             <CompactStat
-                                                icon={<Heart className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} />}
                                                 label="Health Regen %"
                                                 value={formatPercent(stats.healthRegen || 0)}
                                                 count={activePerfectionDetails['HealthRegen']?.count}
@@ -1738,7 +1734,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 {...infoProps('SkillCooldownMulti', 'Skill CDR %', formatPercent(stats.skillCooldownReduction))}
                                             />
                                             <CompactStat
-                                                icon={<Swords className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />}
                                                 label="Damage %"
                                                 value={formatPercent(stats.secondaryDamageMulti || 0)}
                                                 count={activePerfectionDetails['DamageMulti']?.count}
@@ -1747,7 +1743,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 {...infoProps('DamageMulti', 'Damage %', formatPercent(stats.secondaryDamageMulti || 0))}
                                             />
                                             <CompactStat
-                                                icon={<Heart className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} />}
                                                 label="Health %"
                                                 value={formatPercent(stats.secondaryHealthMulti || 0)}
                                                 count={activePerfectionDetails['HealthMulti']?.count}
@@ -1756,7 +1752,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 {...infoProps('HealthMulti', 'Health %', formatPercent(stats.secondaryHealthMulti || 0))}
                                             />
                                             <CompactStat
-                                                icon={<Swords className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ icon: 'Battle' }} size={12} />}
                                                 label="Melee DMG %"
                                                 value={formatPercent(stats.meleeDamageMultiplier || 0)}
                                                 count={activePerfectionDetails['MeleeDamageMulti']?.count}
@@ -1765,7 +1761,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 {...infoProps('MeleeDamageMulti', 'Melee DMG %', formatPercent(stats.meleeDamageMultiplier || 0))}
                                             />
                                             <CompactStat
-                                                icon={<Crosshair className="w-3 h-3" />}
+                                                icon={<GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={12} />}
                                                 label="Ranged DMG %"
                                                 value={formatPercent(stats.rangedDamageMultiplier || 0)}
                                                 count={activePerfectionDetails['RangedDamageMulti']?.count}
@@ -1778,7 +1774,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 })()}
 
                                 <StatRow
-                                    icon={<Swords className="w-3 h-3" />}
+                                    icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 35 }} size={12} />}
                                     label="Skill Damage %"
                                     value={formatMultiplier(stats.skillDamageMultiplier)}
                                     subValue={(() => {
@@ -1795,7 +1791,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     {...infoProps('SkillDamageMulti', 'Skill Damage %', formatMultiplier(stats.skillDamageMultiplier), formatMultiplier)}
                                 />
                                 <StatRow
-                                    icon={<Swords className="w-3 h-3" />}
+                                    icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />}
                                     label="Overall Damage Multi"
                                     value={formatPercent(stats.damageMultiplier, 0)}
                                     subValue={(() => {
@@ -1811,7 +1807,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     color="text-red-400"
                                 />
                                 <StatRow
-                                    icon={<Heart className="w-3 h-3" />}
+                                    icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} />}
                                     label="Health Multiplier %"
                                     value={formatPercent(stats.healthMultiplier, 0)}
                                     subValue={(() => {
@@ -1843,7 +1839,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     color="text-emerald-500"
                                 />
                                 <StatRow
-                                    icon={<Heart className="w-4 h-4 text-purple-400" />}
+                                    icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                                     label="Weapon Lifesteal/sec"
                                     value={formatCompactNumber(currentHpsDetails.lifesteal)}
                                     subValue={`Weapon DPS x Lifesteal ${formatPercent(fullStats.lifeSteal)}, before the max HP cap`}
@@ -1851,7 +1847,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     onInfoPointsClick={() => setShowLifestealModal(true)}
                                 />
                                 <StatRow
-                                    icon={<Heart className="w-4 h-4 text-purple-500" />}
+                                    icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={16} />}
                                     label="Tested Lifesteal/sec"
                                     value={formatValue(currentRealHpsDetails.lifesteal)}
                                     subValue={Number.isFinite(currentRealHpsDetails.lifesteal) ? `All lifesteal in the 24 h run (weapon hits and buffs), before the max HP cap` : testedPending(testedCur)}
@@ -1860,7 +1856,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 />
 
                                 <StatRow
-                                    icon={<Clock className="w-4 h-4" />}
+                                    icon={<GameAssetIcon asset={{ icon: 'Timer' }} size={16} />}
                                     label={getStatName('AttackDuration')}
                                     value={`${stats.weaponAttackDuration.toFixed(2)}s`}
                                     subValue={`Final: ${(stats.weaponAttackDuration / stats.attackSpeedMultiplier).toFixed(2)}s`}
@@ -1873,7 +1869,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         {/* Weapon Section */}
                         <CollapsibleSection
                             title="Weapon Metrics"
-                            icon={<Crosshair className="w-4 h-4 text-amber-400" />}
+                            icon={<GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} />}
                             isOpen={openSection === 'weapon'}
                             onToggle={() => setOpenSection(openSection === 'weapon' ? null : 'weapon')}
                         >
@@ -1884,28 +1880,28 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         "font-bold px-2 py-0.5 rounded text-[10px]",
                                         stats.isRangedWeapon ? "bg-sky-500/20 text-sky-400 border border-sky-500/30" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                                     )}>
-                                        {stats.isRangedWeapon ? '🏹 RANGED' : '⚔️ MELEE'}
+                                        {stats.isRangedWeapon ? <><GameAssetIcon asset={{ icon: 'IconMedievalWeaponBow' }} size={14} className="inline-block align-middle mr-1" />RANGED</> : <><GameAssetIcon asset={{ icon: 'Battle' }} size={14} className="inline-block align-middle mr-1" />MELEE</>}
                                     </span>
                                 </div>
-                                <StatRow icon={<Target className="w-4 h-4" />} label="Atk Range" value={`${stats.weaponAttackRange.toFixed(1)}m`} color="text-cyan-400" />
-                                <StatRow icon={<Clock className="w-4 h-4" />} label="Windup" value={`${stats.weaponWindupTime.toFixed(2)}s`} color="text-amber-400" />
-                                 <StatRow icon={<Target className="w-4 h-4" />} label="Is Aiming" value={stats.isAiming ? 'Yes' : 'No'} color="text-cyan-400" />
+                                <StatRow icon={<GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} />} label="Atk Range" value={`${stats.weaponAttackRange.toFixed(1)}m`} color="text-cyan-400" />
+                                <StatRow icon={<GameAssetIcon asset={{ icon: 'Timer' }} size={16} />} label="Windup" value={`${stats.weaponWindupTime.toFixed(2)}s`} color="text-amber-400" />
+                                 <StatRow icon={<GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} />} label="Is Aiming" value={stats.isAiming ? 'Yes' : 'No'} color="text-cyan-400" />
                                 {stats.hasProjectile && (
                                     <>
                                         <StatRow
-                                            icon={<Zap className="w-4 h-4" />}
+                                            icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />}
                                             label="Projectile Speed"
                                             value={`${stats.projectileSpeed.toFixed(1)} m/s`}
                                             color="text-sky-400"
                                         />
                                         <StatRow
-                                            icon={<Target className="w-4 h-4" />}
+                                            icon={<GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} />}
                                             label="Projectile Radius"
                                             value={`${stats.projectileRadius.toFixed(2)}m`}
                                             color="text-sky-400"
                                         />
                                         <StatRow
-                                            icon={<Target className="w-4 h-4" />}
+                                            icon={<GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 40 }} size={16} />}
                                             label="Affected By Gravity"
                                             value={stats.projectileAffectedByGravity ? 'Yes' : 'No'}
                                             color="text-sky-400"
@@ -1918,17 +1914,17 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         {/* Economy Section */}
                         <CollapsibleSection
                             title="Economy & Freebies"
-                            icon={<Coins className="w-4 h-4 text-amber-500" />}
+                            icon={<GameAssetIcon asset={{ icon: 'Coin' }} size={16} />}
                             isOpen={openSection === 'economy'}
                             onToggle={() => setOpenSection(openSection === 'economy' ? null : 'economy')}
                         >
                             <div className="space-y-2">
 
                                 <div className="grid grid-cols-2 gap-2">
-                                    <CompactStat icon={<Coins className="w-3 h-3" />} label="Sell Price" value={formatMultiplier(stats.sellPriceMultiplier)} color="text-amber-400" />
-                                    <CompactStat icon={<Star className="w-3 h-3" />} label="Forge Free" value={formatPercent(stats.forgeFreebieChance)} color="text-pink-400" />
-                                    <CompactStat icon={<Star className="w-3 h-3" />} label="Egg Free" value={formatPercent(stats.eggFreebieChance)} color="text-amber-400" />
-                                    <CompactStat icon={<Star className="w-3 h-3" />} label="Mount Free" value={formatPercent(stats.mountFreebieChance)} color="text-cyan-400" />
+                                    <CompactStat icon={<GameAssetIcon asset={{ icon: 'Coin' }} size={12} />} label="Sell Price" value={formatMultiplier(stats.sellPriceMultiplier)} color="text-amber-400" />
+                                    <CompactStat icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 32 }} size={12} />} label="Forge Free" value={formatPercent(stats.forgeFreebieChance)} color="text-pink-400" />
+                                    <CompactStat icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 42 }} size={12} />} label="Egg Free" value={formatPercent(stats.eggFreebieChance)} color="text-amber-400" />
+                                    <CompactStat icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 24 }} size={12} />} label="Mount Free" value={formatPercent(stats.mountFreebieChance)} color="text-cyan-400" />
                                 </div>
                             </div>
                         </CollapsibleSection>
@@ -1936,7 +1932,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         {/* Tree Bonuses */}
                         <CollapsibleSection
                             title="Active Tree Passive Modifiers"
-                            icon={<TreeDeciduous className="w-4 h-4 text-green-400" />}
+                            icon={<GameAssetIcon asset={{ icon: 'Potion' }} size={16} />}
                             isOpen={openSection === 'tree'}
                             onToggle={() => setOpenSection(openSection === 'tree' ? null : 'tree')}
                         >

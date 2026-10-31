@@ -1208,7 +1208,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // `profile.isShared` is how ProfileContext says "a share link is on screen". `activeProfileId`
     // then reports the imported profile's freshly minted id, which exists in no database — so the
-    // id is only ever used when this is false.
+    // id is only ever used when this is false. A preset profile is never in the account either.
     const isSharedProfile = !!profile?.isShared;
     const signedIn = authStatus === 'signed-in' && !!userId;
     const profileId = !isSharedProfile && activeProfileId ? activeProfileId : null;

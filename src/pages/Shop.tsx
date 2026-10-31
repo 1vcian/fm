@@ -3,7 +3,6 @@ import { Card, CardContent } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
 import { useFeatureUnlocks, type FeatureUnlock } from '../hooks/useFeatureUnlocks';
-import { Search, Sparkles, TrendingUp, Package, Info, Lock, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getItemImage, getItemName } from '../utils/itemAssets';
 import { useGameDataContext } from '../context/GameDataContext';
@@ -104,6 +103,7 @@ function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any, ve
 }
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 export default function Shop() {
     const { selectedVersion } = useGameDataContext();
@@ -196,14 +196,14 @@ export default function Shop() {
                             Game Shop
                         </h1>
                         <p className="text-[11px] text-text-muted flex items-center gap-1.5 font-bold uppercase tracking-wider opacity-80">
-                            <Info size={12} />
+                            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={12} />
                             Rewards, deals and visibility
                         </p>
                     </div>
                 </div>
 
                 <div className="relative w-full md:w-80 group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-primary transition-colors" size={18} />
+                    <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={18} className="absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                         type="text"
                         placeholder="Search rewards or packs"
@@ -218,11 +218,11 @@ export default function Shop() {
             {shopUnlock && (
                 <div className="bg-accent-primary/5 border border-accent-primary/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-8 opacity-5 -mr-4 -mt-4 transition-transform group-hover:scale-110">
-                        <Lock size={120} />
+                        <GameAssetIcon asset={{ icon: 'Solid Lock Icon' }} size={120} />
                     </div>
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="w-16 h-16 rounded-full bg-accent-primary/10 flex items-center justify-center ring-4 ring-bg-primary">
-                            <Lock className="w-8 h-8 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'Solid Lock Icon' }} size={32} />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-white uppercase tracking-tight">Shop Availability</h3>
@@ -413,10 +413,10 @@ export default function Shop() {
                         {/* Starter Offers */}
                         <div className="p-6 rounded-2xl bg-bg-secondary/20 border border-border/50 relative overflow-hidden group/offer">
                             <div className="absolute top-0 right-0 -mr-16 -mt-16 opacity-[0.03] transition-transform group-hover/offer:scale-110 duration-700">
-                                <Sparkles size={320} />
+                                <GameAssetIcon asset={{ icon: 'Sparkle' }} size={320} />
                             </div>
                             <h2 className="text-xl font-black uppercase tracking-tight px-1 flex items-center gap-3 mb-8 relative z-10">
-                                <Sparkles className="text-yellow-400" size={20} />
+                                <GameAssetIcon asset={{ icon: 'Sparkle' }} size={20} />
                                 Starter Packages
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
@@ -431,10 +431,10 @@ export default function Shop() {
                         {/* Progress Passes */}
                         <div className="p-6 rounded-2xl bg-bg-secondary/20 border border-accent-secondary/30 relative overflow-hidden group/offer shadow-2xl shadow-accent-secondary/5">
                             <div className="absolute top-0 right-0 -mr-16 -mt-16 opacity-[0.05] transition-transform group-hover/offer:scale-110 duration-700 text-accent-secondary">
-                                <TrendingUp size={320} />
+                                <GameAssetIcon asset={{ icon: 'MainProgressPassIcon' }} size={320} />
                             </div>
                             <h2 className="text-xl font-black uppercase tracking-tight px-1 flex items-center gap-3 mb-8 relative z-10">
-                                <TrendingUp className="text-accent-secondary" size={20} />
+                                <GameAssetIcon asset={{ icon: 'MainProgressPassIcon' }} size={20} />
                                 Progress Passes
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
@@ -450,7 +450,7 @@ export default function Shop() {
                                 <hr className="border-border/40" />
                                 <div className="p-6 rounded-2xl bg-bg-secondary/20 border border-border/50 relative overflow-hidden group/offer">
                                     <h2 className="text-xl font-black uppercase tracking-tight px-1 flex items-center gap-3 mb-8 relative z-10">
-                                        <Package className="text-accent-primary" size={20} />
+                                        <GameAssetIcon asset={{ icon: 'CommonChest' }} size={20} />
                                         Special Proposals
                                     </h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
@@ -553,7 +553,7 @@ function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, v
                     {/* Unlock Info */}
                     {(unlockInfo || (starterReward && starterReward.ItemId)) && (
                         <div className="flex items-center justify-center gap-1.5 mt-2">
-                            <Lock className="w-3 h-3 text-text-muted" />
+                            <GameAssetIcon asset={{ icon: 'Solid Lock Icon' }} size={12} />
                             <span className="text-[10px] font-bold text-text-muted uppercase">
                                 {starterReward && starterReward.ItemId
                                     ? `Required Age ${starterReward.ItemId.Age}`
@@ -582,7 +582,7 @@ function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, v
                     {/* Starter Offer Duration */}
                     {product.ProductId?.includes('StarterOffer') && (
                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent-primary/10 border border-accent-primary/20 mt-2">
-                            <Clock className="w-3 h-3 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'Timer' }} size={12} />
                             <span className="text-[9px] font-black text-accent-primary uppercase tracking-wider">48h Duration</span>
                         </div>
                     )}
@@ -590,7 +590,7 @@ function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, v
                     {/* Inactive Token Status */}
                     {isInactiveToken && (
                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 mt-2">
-                            <Lock className="w-3 h-3 text-red-500" />
+                            <GameAssetIcon asset={{ icon: 'Solid Lock Icon' }} size={12} />
                             <span className="text-[9px] font-black text-red-500 uppercase tracking-wider">War Season Ended</span>
                         </div>
                     )}

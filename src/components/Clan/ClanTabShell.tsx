@@ -49,21 +49,15 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    AlertTriangle,
-    Crown,
     Link2,
     ListOrdered,
     Loader2,
     Lock,
     LogIn,
-    RefreshCw,
-    Settings2,
     Shield,
-    Sparkles,
-    Swords,
     User as UserIcon,
-    Users,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { ClanBadge } from '../UI/ClanBadge';
@@ -113,7 +107,7 @@ const Notice: React.FC<{
 );
 
 const ROLE_ICON: Record<ClanRole, React.ReactNode> = {
-    owner: <Crown className="w-3.5 h-3.5 text-amber-400" />,
+    owner: <GameAssetIcon asset={{ icon: 'crown0' }} size={14} />,
     admin: <Shield className="w-3.5 h-3.5 text-sky-400" />,
     member: <UserIcon className="w-3.5 h-3.5 text-text-muted" />,
 };
@@ -151,13 +145,13 @@ export const ClanTabShell: React.FC<ClanTabShellProps> = ({ className }) => {
             // (your squad, with attack budgets) and stacking two member lists on one page makes a
             // reader distrust both. Every role sees the tab — a member's plan is read-only and
             // carries their own notification switch, which is the one control on it that is theirs.
-            { id: 'attacks' as ClanView, label: 'Attacks', icon: <Swords className="w-4 h-4" /> },
+            { id: 'attacks' as ClanView, label: 'Attacks', icon: <GameAssetIcon asset={{ icon: 'Battle' }} size={16} /> },
             {
                 id: 'manage' as ClanView,
                 // A plain member's "manage" view holds their own membership and nothing else, so it
                 // is named after what they will find there rather than after a power they lack.
                 label: isLeader ? 'Manage clan' : 'My membership',
-                icon: <Settings2 className="w-4 h-4" />,
+                icon: <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={16} />,
             },
         ],
         [isLeader],
@@ -171,7 +165,7 @@ export const ClanTabShell: React.FC<ClanTabShellProps> = ({ className }) => {
         return (
             <Card className={cn('p-10 text-center border-2 border-dashed border-accent-primary/30 bg-gradient-to-b from-accent-primary/5 to-transparent', className)}>
                 <div className="w-16 h-16 mx-auto rounded-2xl bg-accent-primary/15 flex items-center justify-center mb-4">
-                    <Sparkles className="w-8 h-8 text-accent-primary" />
+                    <GameAssetIcon asset={{ icon: 'Sparkle' }} size={32} />
                 </div>
                 <h2 className="text-2xl font-black text-white mb-2">Clan hub: coming soon</h2>
                 <p className="text-text-secondary max-w-xl mx-auto text-sm leading-relaxed">
@@ -179,7 +173,7 @@ export const ClanTabShell: React.FC<ClanTabShellProps> = ({ className }) => {
                     Profiles will sync to the cloud so your clan can plan Guild War together.
                 </p>
                 <div className="flex items-center justify-center gap-2 mt-5 text-[11px] uppercase tracking-widest text-text-muted">
-                    <Lock className="w-3.5 h-3.5" /> Password-protected clan spaces
+                    <GameAssetIcon asset={{ icon: 'Solid Lock Icon' }} size={14} /> Password-protected clan spaces
                 </div>
             </Card>
         );
@@ -239,11 +233,11 @@ export const ClanTabShell: React.FC<ClanTabShellProps> = ({ className }) => {
     if (clan.status === 'error') {
         return (
             <div className={className}>
-                <Notice icon={<AlertTriangle className="w-7 h-7" />} title="Could not load your clan" tone="bad">
+                <Notice icon={<GameAssetIcon asset={{ icon: 'WarningSign' }} size={28} />} title="Could not load your clan" tone="bad">
                     <p>{clan.error?.message || 'Something went wrong.'}</p>
                     <div className="pt-2">
                         <Button variant="secondary" size="sm" onClick={() => void clan.refresh()} disabled={clan.busy}>
-                            <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', clan.busy && 'animate-spin')} /> Try again
+                            <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={14} className={cn('mr-1.5', clan.busy && 'animate-spin')} /> Try again
                         </Button>
                     </div>
                 </Notice>
@@ -392,7 +386,7 @@ export const ClanHeaderChip: React.FC<{ className?: string }> = ({ className }) 
                     className,
                 )}
             >
-                <Users className="w-4 h-4 shrink-0" />
+                <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={16} />
                 <span className="hidden sm:inline text-xs font-bold whitespace-nowrap">Create clan</span>
             </span>
         );

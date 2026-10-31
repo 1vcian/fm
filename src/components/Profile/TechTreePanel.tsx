@@ -4,7 +4,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { Card } from '../UI/Card';
 import { ConfirmModal } from '../UI/ConfirmModal';
-import { Search, Lock, Check, Download, Upload, Calendar, ArrowDownToLine, Loader2 } from 'lucide-react';
+import { Check, Download, Upload, ArrowDownToLine, Loader2 } from 'lucide-react';
 import { useClan } from '../../context/ClanContext';
 import { cn } from '../../lib/utils';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -12,6 +12,7 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { getNormalizedTarget } from '../../utils/ascensionUtils';
 import { getTechNodeName, getClanIconStyle } from '../../utils/techUtils';
 import { SpriteIcon } from '../UI/SpriteIcon';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 const ICON_SIZE = 40;
 
@@ -654,7 +655,7 @@ export function TechTreePanel() {
                     })}
                 </div>
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                    <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                     <input
                         placeholder="Search nodes"
                         value={searchTerm}
@@ -897,7 +898,7 @@ const maxLevel = upgradeDef?.MaxLevel ?? 0;
                                                         )}
                                                         {!unlocked && (
                                                             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                                                                <Lock className="w-3 h-3 text-text-muted" />
+                                                                <GameAssetIcon asset={{ icon: 'Solid Lock Icon' }} size={12} />
                                                             </div>
                                                         )}
                                                         {completed && (

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Flame, Plus, Minus, Search, Info, Save, Star, Grid, Settings } from 'lucide-react';
+import { X, Plus, Minus, Star, Grid } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useProfile } from '../../context/ProfileContext';
@@ -13,6 +13,7 @@ import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 type MobileTab = 'rarity' | 'skills' | 'config';
 
@@ -207,7 +208,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                 : "border-transparent text-text-muted hover:text-text-primary"
                         )}
                     >
-                        <Settings className="w-4 h-4" />
+                        <GameAssetIcon asset={{ icon: 'SettingsIcon' }} size={16} />
                         Config
                     </button>
                 </div>
@@ -244,7 +245,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                         <div className="p-3 overflow-y-auto h-full">
                             <div className="flex items-center gap-2 mb-4">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                                    <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                                     <input
                                         placeholder="Search skills"
                                         value={searchTerm}
@@ -375,11 +376,11 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                     )}
 
 
-                                    <Button variant="primary" className="w-full gap-2" onClick={handleSave}><Save className="w-4 h-4" />Confirm</Button>
+                                    <Button variant="primary" className="w-full gap-2" onClick={handleSave}><GameAssetIcon asset={{ icon: 'Savegame' }} size={16} />Confirm</Button>
                                 </>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-50 space-y-4">
-                                    <Info className="w-12 h-12" />
+                                    <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={48} />
                                     <div className="text-sm text-center">Select a skill first</div>
                                 </div>
                             )}
@@ -418,7 +419,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                     <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                         <div className="flex items-center gap-2 mb-4">
                             <div className="relative flex-1">
-                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                                <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                                 <input
                                     placeholder="Search skills"
                                     value={searchTerm}
@@ -492,7 +493,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                     />
                                                 );
                                             }
-                                            return <Flame className="w-10 h-10 text-accent-primary" />;
+                                            return <GameAssetIcon asset={{ sheet: 'SkillIcons', index: 14 }} size={40} />;
                                         })()}
                                     </div>
                                     <h2 className="text-xl font-bold text-text-primary break-words">
@@ -579,13 +580,13 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
 
                                 <div className="pt-4 mt-auto">
                                     <Button variant="primary" className="w-full gap-2" onClick={handleSave}>
-                                        <Save className="w-4 h-4" /> Confirm Selection
+                                        <GameAssetIcon asset={{ icon: 'Savegame' }} size={16} /> Confirm Selection
                                     </Button>
                                 </div>
                             </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-50 space-y-4">
-                                <Info className="w-12 h-12" />
+                                <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={48} />
                                 <div className="text-sm text-center px-4">Select a skill from the grid to view stats</div>
                             </div>
                         )}

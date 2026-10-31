@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, Trophy } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { BuildOptimizerModal } from './BuildOptimizerModal';
 import { comparisonSideProfile } from './DummyTestButton';
@@ -7,6 +7,7 @@ import { useComparison } from '../../context/ComparisonContext';
 import { useProfile } from '../../context/ProfileContext';
 import { applySkinChoice, type Candidate, type FairyChoice, type SkinChoice } from '../../optimizer/buildOptimizer';
 import type { MountSlot, PetSlot, SkillSlot, UserProfile } from '../../types/Profile';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 /**
  * AUTO BEST: the build optimizer (BuildOptimizerModal) over the profile ('default') or over a
@@ -94,7 +95,7 @@ export function AutoBestButton({ variant = 'default' }: { variant?: 'default' | 
                 title={`Find the best skills, pets, mount, fairy and skins for ${isTest ? 'the Test build' : 'your build'} by simulated arena win rate`}
                 className="flex-1 sm:flex-none py-1.5 border-yellow-500/40 text-yellow-400 hover:border-yellow-500/70"
             >
-                <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                <GameAssetIcon asset={{ sheet: 'ArenaRankIcons', index: 0 }} size={16} className="mr-1.5 sm:mr-2" />
                 <span className="text-xs sm:text-sm">Auto best</span>
             </Button>
             {canRevert && (

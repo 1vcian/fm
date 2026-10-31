@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Trophy, Search, Clock, Repeat, Layers, AlertCircle } from 'lucide-react';
+import { Repeat, Layers } from 'lucide-react';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
@@ -7,6 +7,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import { cn } from '../lib/utils';
 import { stageLabel } from '../utils/difficulty';
 import achievementTitles from '../data/achievementTitles.json';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 /**
  * Achievements wiki page, built entirely from AchievementLibrary (new in 2026_10_08_09_03).
@@ -195,7 +196,7 @@ export default function AchievementsWiki() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-text-muted animate-pulse">
-                <Trophy className="w-12 h-12 mb-4 opacity-20" />
+                <GameAssetIcon asset={{ icon: 'PotionsRace' }} size={48} className="mb-4 opacity-20" />
                 <p>Loading achievements</p>
             </div>
         );
@@ -205,7 +206,7 @@ export default function AchievementsWiki() {
         return (
             <div className="max-w-3xl mx-auto p-6">
                 <Card className="p-6 flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-text-muted shrink-0 mt-0.5" />
+                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={20} className="shrink-0 mt-0.5" />
                     <div>
                         <p className="font-bold text-text-primary">Achievements could not be loaded</p>
                         <p className="text-sm text-text-secondary mt-1">
@@ -220,7 +221,7 @@ export default function AchievementsWiki() {
     return (
         <div className="p-4 md:p-6 space-y-4 max-w-6xl mx-auto">
             <h1 className="text-2xl md:text-3xl font-bold text-accent-primary flex items-center gap-2">
-                <Trophy className="w-7 h-7" /> Achievements
+                <GameAssetIcon asset={{ icon: 'PotionsRace' }} size={28} /> Achievements
             </h1>
 
             <div className="grid grid-cols-3 gap-3">
@@ -241,7 +242,7 @@ export default function AchievementsWiki() {
 
             <div className="flex flex-col md:flex-row gap-3 md:items-center">
                 <div className="relative md:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                         value={search}
                         onChange={e => setSearch(e.target.value)}
@@ -314,7 +315,7 @@ function TrackerCard({ tracker }: { tracker: Tracker }) {
                         </span>
                         {window && (
                             <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/30 text-amber-400">
-                                <Clock className="w-3 h-3" /> {window}
+                                <GameAssetIcon asset={{ icon: 'Timer' }} size={12} /> {window}
                             </span>
                         )}
                         {!single && (

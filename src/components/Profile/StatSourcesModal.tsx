@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Cat, Info, Bike } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
@@ -13,6 +13,7 @@ import { usePetNames } from '../../hooks/usePetNames';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { AggregatedStats } from '../../utils/statEngine';
 import { StatContribution, SourceKind, isTotalKey } from '../../types/statAttribution';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 const SLOT_TO_FILE_MAP: Record<string, string> = {
     Weapon: 'Weapon', Helmet: 'Headgear', Body: 'Armor', Gloves: 'Glove',
@@ -140,7 +141,7 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                             className="w-10 h-10"
                         />
                     ) : (
-                        <Cat className={cn('w-8 h-8 opacity-50', `text-rarity-${pet.rarity.toLowerCase()}`)} />
+                        <GameAssetIcon asset={{ sheet: 'Pets', index: 7 }} size={32} className="opacity-50" />
                     )}
                 />
             );
@@ -178,7 +179,7 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                         className="w-10 h-10"
                     />
                 ) : (
-                    <Bike className={cn('w-8 h-8 opacity-50', `text-rarity-${mount.rarity.toLowerCase()}`)} />
+                    <GameAssetIcon asset={{ sheet: 'MountIcons', index: 1 }} size={32} className="opacity-50" />
                 )}
             />
         );
@@ -228,7 +229,7 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                 <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 custom-scrollbar">
                     {!hasAnything && (
                         <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-                            <Info className="w-8 h-8 text-text-muted opacity-50" />
+                            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={32} className="opacity-50" />
                             <div className="text-sm text-text-muted">Nothing is contributing to this stat yet.</div>
                         </div>
                     )}

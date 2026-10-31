@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-toastify';
 import { cn } from '../../lib/utils';
+import { gameIcon, GameAssetIcon } from '../UI/GameAssetIcon';
+import { AgeBackground } from '../AgeBackground/AgeBackground';
+import { useMaxForgeAge } from '../../hooks/useMaxForgeAge';
 import {
-    Star, Egg, Key, Shirt, Cat, Image, ChevronDown,
-    Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart, Target, Sliders,
-    Trash2, Check, Copy, Trophy, Users, Sparkles, Settings as SettingsIcon, ShieldCheck
+    Image, ChevronDown, Github, Coffee, Trash2, Check, Copy, Crown
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
 import { useProfile } from '../../context/ProfileContext';
@@ -62,16 +62,60 @@ const CoffeeFountain = () => {
                     }}
                     className="absolute left-1/2 top-1/2 text-lg"
                 >
-                    {i % 2 === 0 ? '☕' : '❤️'}
+                    <GameAssetIcon asset={{ icon: ['Hammer', 'Coin', 'GemSquare'][i % 3] }} size={18} />
                 </motion.span>
             ))}
         </div>
     );
 };
 
+/**
+ * Navigation icons: real game assets (Icons.png sprites, standalone Texture2D PNGs, icon sheet
+ * cells), chosen by what the page is about. GitHub and the Gallery keep a generic glyph: the game
+ * has nothing for them.
+ */
+const NAV = {
+    presets: gameIcon({ sheet: 'ArenaRankIcons', index: 0 }),
+    clan: gameIcon({ icon: 'RallyIcon' }),
+    progress: gameIcon({ icon: 'MainGameProgressPassSwordIcon' }),
+    missionCalc: gameIcon({ sheet: 'ClanTechTreeIcons', index: 23 }),
+    pvp: gameIcon({ icon: 'Battle' }),
+    images: gameIcon({ icon: 'Pen' }),
+    offline: gameIcon({ sheet: 'TechTreeIcons', index: 30 }),
+    dungeons: gameIcon({ icon: 'DungeonTabIcon' }),
+    forgeCalc: gameIcon({ icon: 'Anvil' }),
+    treePlanner: gameIcon({ sheet: 'ClanTechTreeIcons', index: 3 }),
+    eggs: gameIcon({ icon: 'Egg' }),
+    summons: gameIcon({ icon: 'SkillTicket' }),
+    warPrizes: gameIcon({ sheet: 'ClanTechTreeIcons', index: 19 }),
+    substats: gameIcon({ sheet: 'TechTreeIcons', index: 14 }),
+    items: gameIcon({ icon: 'IconMedievalWeaponSwordandshield' }),
+    skins: gameIcon({ icon: 'SteppingStoneCharIcon0' }),
+    pets: gameIcon({ sheet: 'Pets', index: 7 }),
+    mounts: gameIcon({ sheet: 'MountIcons', index: 1 }),
+    skills: gameIcon({ sheet: 'SkillIcons', index: 14 }),
+    unlocks: gameIcon({ icon: 'Unlocked Lock Icon' }),
+    baseDrops: gameIcon({ icon: 'CommonChest' }),
+    forgeWiki: gameIcon({ icon: 'TechTreeForge' }),
+    techTree: gameIcon({ icon: 'Potion' }),
+    arena: gameIcon({ icon: 'ArenaTabIcon' }),
+    guildWar: gameIcon({ icon: 'WarTicket' }),
+    missions: gameIcon({ sheet: 'ClanTechTreeIcons', index: 21 }),
+    shop: gameIcon({ icon: 'ShopTabIcon' }),
+    progressPass: gameIcon({ icon: 'MainProgressPassIcon' }),
+    secondaryStats: gameIcon({ icon: 'UpgradeArrow' }),
+    fairies: gameIcon({ icon: 'FairyIconLora' }),
+    achievements: gameIcon({ icon: 'PotionsRace' }),
+    faq: gameIcon({ icon: 'RoleInfoIcon' }),
+    settings: gameIcon({ icon: 'SettingsIcon' }),
+    configs: gameIcon({ icon: 'Savegame' }),
+    verify: gameIcon({ icon: 'CheckIcon' }),
+};
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { profile, profiles, activeProfileId, switchProfile, createProfile, cloneProfile, deleteProfile } = useProfile();
+
     const { selectedVersion, isDebug } = useGameDataContext();
     const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const warDays = useMemo(() => computeWarDaysMap(warDayConfig), [warDayConfig]);
@@ -110,85 +154,78 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         return labels[Math.floor(Math.random() * labels.length)];
     }, []);
 
+    const maxAgeIdx = useMaxForgeAge();
+
     const NAV_GROUPS = [
         {
             title: 'Profile',
             items: [
                 { name: 'My Profile', path: '/', isProfile: true },
-                { name: 'Clan', path: '/clan', icon: Users },
-                { name: 'Progress Prediction', path: '/progress-prediction', icon: TrendingUp },
-                { name: 'Mission Calculator', path: '/solo-mission', icon: Target },
-                { name: 'PVP Simulator (Beta)', path: '/pvp-arena', icon: Swords },
-                { name: 'Colors', path: '/colors', icon: Palette },
-                { name: 'Emblems', path: '/emblems', icon: Shield },
+                { name: 'Preset Builds', path: '/presets', icon: NAV.presets },
+                { name: 'Clan', path: '/clan', icon: NAV.clan },
+                { name: 'Progress Prediction', path: '/progress-prediction', icon: NAV.progress },
+                { name: 'Mission Calculator', path: '/solo-mission', icon: NAV.missionCalc },
+                { name: 'PVP Simulator (Beta)', path: '/pvp-arena', icon: NAV.pvp },
+                // Colors is hidden while the game has no chat embeds to colour; the route still works.
+                // { name: 'Colors', path: '/colors', icon: Palette },
+                { name: 'Images Maker', path: '/images', icon: NAV.images },
             ]
         },
         {
             title: 'Calculators',
             collapsible: true,
             items: [
-                { name: 'Offline', path: '/offline', icon: Coins },
-                { name: 'Dungeons', path: '/dungeons', icon: Key },
-                { name: 'Forge', path: '/calculators/forge', icon: Hammer },
-                { name: 'Tech Tree - Planner', path: '/calculators/tree', icon: Cpu },
-                { name: 'Eggs', path: '/eggs', icon: Egg },
-                { name: 'Summons', path: '/calculators/summons', icon: Star },
-                { name: 'War Prizes', path: '/calculators/war-prizes', icon: Trophy },
-                { name: 'Substats', path: '/calculators/substats', icon: Sliders },
+                { name: 'Offline', path: '/offline', icon: NAV.offline },
+                { name: 'Dungeons', path: '/dungeons', icon: NAV.dungeons },
+                { name: 'Forge', path: '/calculators/forge', icon: NAV.forgeCalc },
+                { name: 'Tech Tree - Planner', path: '/calculators/tree', icon: NAV.treePlanner },
+                { name: 'Eggs', path: '/eggs', icon: NAV.eggs },
+                { name: 'Summons', path: '/calculators/summons', icon: NAV.summons },
+                { name: 'War Prizes', path: '/calculators/war-prizes', icon: NAV.warPrizes },
+                { name: 'Substats', path: '/calculators/substats', icon: NAV.substats },
             ]
         },
         {
             title: 'Wiki',
             collapsible: true,
             items: [
-                { name: 'Items', path: '/items', icon: Shirt },
-                { name: 'Skins', path: '/skins', icon: Shirt },
-                { name: 'Pets', path: '/pets', icon: Cat },
-                { name: 'Mounts', path: '/mounts', icon: Star },
-                { name: 'Skills', path: '/skills', icon: Star },
-                { name: 'Unlocks', path: '/unlocks', icon: Lock },
-                { name: 'Base Drops', path: '/wiki/base-drops', icon: HelpCircle },
-                { name: 'Forge', path: '/wiki/forge', icon: Hammer },
-                { name: 'Tech Tree', path: '/tech-tree', icon: Cpu },
-                { name: 'Arena', path: '/arena', icon: Swords },
-                { name: 'Guild War', path: '/guild-war', icon: Shield },
-                { name: 'Missions', path: '/wiki/missions', icon: Target },
-                { name: 'Shop', path: '/wiki/shop', icon: ShoppingCart },
-                { name: 'Progress Pass', path: '/wiki/progress-pass', icon: Zap },
-                { name: 'Secondary Stats', path: '/wiki/secondary-stats', icon: TrendingUp },
-                { name: 'Fairies', path: '/wiki/fairies', icon: Sparkles },
-                { name: 'Achievements', path: '/wiki/achievements', icon: Trophy },
+                { name: 'Items', path: '/items', icon: NAV.items },
+                { name: 'Skins', path: '/skins', icon: NAV.skins },
+                { name: 'Pets', path: '/pets', icon: NAV.pets },
+                { name: 'Mounts', path: '/mounts', icon: NAV.mounts },
+                { name: 'Skills', path: '/skills', icon: NAV.skills },
+                { name: 'Unlocks', path: '/unlocks', icon: NAV.unlocks },
+                { name: 'Base Drops', path: '/wiki/base-drops', icon: NAV.baseDrops },
+                { name: 'Forge', path: '/wiki/forge', icon: NAV.forgeWiki },
+                { name: 'Tech Tree', path: '/tech-tree', icon: NAV.techTree },
+                { name: 'Arena', path: '/arena', icon: NAV.arena },
+                { name: 'Guild War', path: '/guild-war', icon: NAV.guildWar },
+                { name: 'Missions', path: '/wiki/missions', icon: NAV.missions },
+                { name: 'Shop', path: '/wiki/shop', icon: NAV.shop },
+                { name: 'Progress Pass', path: '/wiki/progress-pass', icon: NAV.progressPass },
+                { name: 'Secondary Stats', path: '/wiki/secondary-stats', icon: NAV.secondaryStats },
+                { name: 'Fairies', path: '/wiki/fairies', icon: NAV.fairies },
+                { name: 'Achievements', path: '/wiki/achievements', icon: NAV.achievements },
             ]
         },
         {
             title: 'Info',
             items: [
                 { name: 'Gallery', path: '/gallery', icon: Image, theme: 'interstellar' },
-                { name: 'FAQ', path: '/faq', icon: HelpCircle, theme: 'quantum' },
-                { name: 'Settings', path: '/settings', icon: SettingsIcon },
-                { name: 'Configs', path: '/configs', icon: FileJson, theme: 'multiverse' },
+                { name: 'FAQ', path: '/faq', icon: NAV.faq, theme: 'quantum' },
+                { name: 'Settings', path: '/settings', icon: NAV.settings },
+                { name: 'Configs', path: '/configs', icon: NAV.configs, theme: 'multiverse' },
                 // Verify is a developer page: listed (and routed) only with ?debug=true.
-                { name: 'Verify', path: '/verify', icon: ShieldCheck, debugOnly: true },
+                { name: 'Verify', path: '/verify', icon: NAV.verify, debugOnly: true },
                 { name: 'GitHub', path: 'https://github.com/1vcian/fm', icon: Github, external: true, theme: 'underworld' },
             ]
         }
     ];
 
+    // An entry's theme is an age: its item background as the game draws it (AgeBackground).
     const getThemeInfo = (themeName?: string) => {
-        if (!themeName) return null;
-        const info: Record<string, { className: string, asset?: string }> = {
-            divine: { className: 'divine-animation', asset: 'DivineBackground.png' },
-            underworld: { className: 'underworld-animation', asset: 'UnderworldBackground.png' },
-            multiverse: { className: 'multiverse-animation', asset: 'MultiverseBackground.png' },
-            interstellar: { className: 'interstellar-animation', asset: 'InterstellarBackground.png' },
-            quantum: { className: 'quantum-animation' }
-        };
-        const theme = info[themeName];
-        if (!theme) return null;
-        return {
-            className: theme.className,
-            style: theme.asset ? { '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${theme.asset})` } : {}
-        };
+        const ages: Record<string, number> = { interstellar: 5, multiverse: 6, quantum: 7, underworld: 8, divine: 9 };
+        return themeName && themeName in ages ? { ageIdx: ages[themeName] } : null;
     };
 
     return (
@@ -297,6 +334,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     <Copy className="w-3.5 h-3.5" />
                                     <span>Clone Current</span>
                                 </button>
+                                <Link
+                                    to="/presets"
+                                    onClick={() => { setIsDropdownOpen(false); onClose?.(); }}
+                                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-input text-text-secondary hover:text-text-primary transition-colors text-xs font-semibold"
+                                >
+                                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>Preset builds</span>
+                                </Link>
                             </div>
                         </div>
                     )}
@@ -383,21 +428,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                                     : themeInfo ? "text-white" : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                                                             )}
                                                         >
-                                                            {themeInfo && (
-                                                                <div
-                                                                    className={cn(themeInfo.className, "rounded-lg")}
-                                                                    style={themeInfo.style as React.CSSProperties}
-                                                                >
-                                                                    {themeInfo.className === 'quantum-animation' && (
-                                                                        <>
-                                                                            <span></span><span></span><span></span><span></span>
-                                                                            <span></span><span></span><span></span><span></span>
-                                                                            <span></span><span></span><span></span><span></span>
-                                                                            <span></span><span></span><span></span><span></span><span></span><span></span>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            {themeInfo && <AgeBackground ageIdx={themeInfo.ageIdx} className="absolute inset-0 rounded-lg overflow-hidden" />}
                                                             {isCoffee && isHoveringCoffee && <CoffeeFountain />}
                                                             {Icon && <Icon size={18} className={cn(
                                                                 "transition-transform relative z-10 text-white",
@@ -430,19 +461,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                                     : themeInfo ? "text-white" : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                                                         )}
                                                     >
-                                                        {themeInfo && (
-                                                            <div
-                                                                className={cn(themeInfo.className, "rounded-lg")}
-                                                                style={themeInfo.style as React.CSSProperties}
-                                                            >
-                                                                {themeInfo.className === 'quantum-animation' && (
-                                                                    <>
-                                                                        <span></span><span></span><span></span><span></span>
-                                                                        <span></span><span></span><span></span><span></span>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                        {themeInfo && <AgeBackground ageIdx={themeInfo.ageIdx} className="absolute inset-0 rounded-lg overflow-hidden" />}
                                                         {'isProfile' in item && item.isProfile ? (
                                                             <ProfileIcon iconIndex={profile.iconIndex} size={18} className="border-0" />
                                                         ) : Icon ? (
@@ -455,8 +474,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                         <span className={cn("flex-1 relative z-10", themeInfo ? "text-stroke-sm" : "")}>{item.name}</span>
                                                         {recommended && !isActive && (
                                                             group.title === 'Calculators'
-                                                                ? <Swords size={12} className="text-red-500 animate-bounce relative z-10" />
-                                                                : <Zap size={12} className="text-accent-primary fill-accent-primary animate-pulse relative z-10" />
+                                                                ? <GameAssetIcon asset={{ icon: 'WarTicket' }} size={14} className="animate-bounce relative z-10" />
+                                                                : <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} className="animate-pulse relative z-10" />
                                                         )}
                                                     </Link>
                                                 );
@@ -483,12 +502,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             }
                             onClose();
                         }}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative group/coffee overflow-visible coffee-btn-animated shadow-lg hover:shadow-accent-primary/20 hover:-translate-y-0.5"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative group/coffee overflow-visible shadow-lg hover:shadow-accent-primary/20 hover:-translate-y-0.5"
                     >
-                        <div
-                            className="divine-animation rounded-xl"
-                            style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}DivineBackground.png)` } as React.CSSProperties}
-                        />
+                        {/* The background of the highest age the forge level can drop, as the game draws it. */}
+                        <AgeBackground ageIdx={maxAgeIdx} className="absolute inset-0 rounded-xl overflow-hidden" />
                         {isHoveringCoffee && <CoffeeFountain />}
                         <Coffee size={18} className="transition-transform relative z-10 text-white icon-stroke-sm group-hover/coffee:rotate-12" />
                         <span className="relative z-10 text-stroke-sm text-white">

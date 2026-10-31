@@ -68,7 +68,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, Info, Swords, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { useClan } from '../../context/ClanContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { computeWarDaysMap, getWarDayIndex, getWarDayName } from '../../utils/guildWarUtils';
@@ -437,7 +438,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
         >
             {/* ---- heading ---- */}
             <div className="flex items-center gap-2 flex-wrap">
-                <Users className="w-4 h-4 text-accent-primary shrink-0" />
+                <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={16} />
                 <h2 className="text-sm font-bold uppercase tracking-wider text-text-primary">Roster</h2>
                 <span className="text-[11px] text-text-muted">
                     {members.length}
@@ -452,7 +453,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
 
             {effectiveError && (
                 <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} className="mt-0.5" />
                     {/* `error.message` only — `error.raw` carries uuids and byte counts and stays in the console. */}
                     <p className="text-xs text-red-200">{effectiveError.message}</p>
                 </div>
@@ -473,7 +474,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                         <div className="flex items-end gap-3 flex-wrap">
                             <div>
                                 <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-accent-primary">
-                                    <Swords className="w-3.5 h-3.5" /> Obtainable war points
+                                    <GameAssetIcon asset={{ icon: 'Battle' }} size={14} /> Obtainable war points
                                 </div>
                                 {/* The "≥" is not decoration: unless every member published an
                                     all-exact document, this figure is a floor, and a bare number
@@ -716,7 +717,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                             explanation anywhere — the member row was labelled and the clan was not. */}
                         {totals.daySplitMismatches > 0 && (
                             <p className="flex items-start gap-1.5 text-[10px] text-amber-400 leading-relaxed">
-                                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+                                <GameAssetIcon asset={{ icon: 'WarningSign' }} size={14} className="mt-0.5" />
                                 <span>
                                     These day figures add up to{' '}
                                     <span className="font-mono">{formatCompactNumber(totals.byDay.reduce((a, b) => a + b, 0))}</span>,
@@ -794,7 +795,7 @@ export const ClanRoster: React.FC<ClanRosterProps> = ({
                         keeps telling the truth as the engine improves and as members update. */}
                     <div className="space-y-1.5 text-[10px] text-text-muted leading-relaxed" data-testid="clan-caveats">
                         <div className="flex items-start gap-2">
-                            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent-primary" />
+                            <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={14} className="mt-0.5" />
                             <span>
                                 Every figure is the member&apos;s own published estimate of the war points still{' '}
                                 <span className="text-text-secondary">obtainable</span> from the resources they

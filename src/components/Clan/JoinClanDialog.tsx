@@ -50,18 +50,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    AlertTriangle,
     Check,
-    Hourglass,
-    Info,
     KeyRound,
     Loader2,
     LogIn,
     Timer,
     UserPlus,
-    Users,
     X,
 } from 'lucide-react';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Button } from '../UI/Button';
 import { cn } from '../../lib/utils';
 import { useClan } from '../../context/ClanContext';
@@ -399,7 +396,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
         switch (blocker) {
             case 'no-backend':
                 return {
-                    icon: <Users className="w-5 h-5" />,
+                    icon: <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={20} />,
                     title: 'Clans are not available in this build',
                     body: 'This copy of the app has no server configured, so there are no accounts and no clans to join. Everything else keeps working locally.',
                 };
@@ -411,13 +408,13 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                 };
             case 'shared-profile':
                 return {
-                    icon: <Info className="w-5 h-5" />,
+                    icon: <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={20} />,
                     title: 'This is a shared profile',
                     body: 'A profile opened from a share link is not yours and is never in a clan: membership never travels inside a profile. Save it as your own profile first, then join with that one.',
                 };
             case 'in-a-clan':
                 return {
-                    icon: <Users className="w-5 h-5" />,
+                    icon: <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={20} />,
                     title: `${profileName} is already in a clan`,
                     body: clan
                         ? `This profile belongs to ${clan.name} [${clan.tag}]. One clan per profile: leave that one first, or switch to another profile and join with it.`
@@ -471,7 +468,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                         /* ------------------------------ success ------------------------------ */
                         <div className="rounded-xl border border-green-500/40 bg-green-500/10 p-4 text-center">
                             <div className="w-10 h-10 mx-auto rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center mb-3">
-                                {done.status === 'joined' ? <Check className="w-5 h-5" /> : <Hourglass className="w-5 h-5" />}
+                                {done.status === 'joined' ? <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={20} /> : <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 9 }} size={20} />}
                             </div>
                             <p className="font-bold text-white text-sm">
                                 {done.status === 'joined'
@@ -503,7 +500,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                             {/* Which profile is joining. The triplet is per profile, and a user with
                                 several of them would otherwise have no way of knowing. */}
                             <div className="flex items-start gap-2 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-3 py-2">
-                                <Users className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent-primary" />
+                                <GameAssetIcon asset={{ icon: 'RallyIcon' }} size={14} className="mt-0.5" />
                                 <p className="text-[11px] text-text-secondary leading-relaxed">
                                     Joining as <span className="font-bold text-white">{profileName}</span>. A clan
                                     belongs to one profile, not to your whole account: switch profile first if this is
@@ -545,7 +542,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                             {/* ---- the limiter: a state, not a toast ---- */}
                             {rateLimited && (
                                 <div className="flex items-start gap-2 rounded-lg border border-accent-primary/40 bg-accent-primary/10 px-3 py-2.5">
-                                    <Timer className="w-4 h-4 mt-0.5 shrink-0 text-accent-primary" />
+                                    <GameAssetIcon asset={{ icon: 'Timer' }} size={16} className="mt-0.5" />
                                     <div className="min-w-0">
                                         <p className="text-xs font-bold text-white">
                                             Too many attempts: try again in{' '}
@@ -581,7 +578,7 @@ export const JoinClanDialog: React.FC<JoinClanDialogProps> = ({
                             {/* ---- a real failure ---- */}
                             {error && error.kind !== 'rate-limited' && (
                                 <div className="flex items-start gap-2 rounded-lg border border-accent-secondary/40 bg-accent-secondary/10 px-3 py-2.5">
-                                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-accent-secondary" />
+                                    <GameAssetIcon asset={{ icon: 'WarningSign' }} size={16} className="mt-0.5" />
                                     <p className="text-xs text-text-secondary leading-relaxed">{error.message}</p>
                                 </div>
                             )}

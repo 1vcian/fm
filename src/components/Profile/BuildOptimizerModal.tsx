@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Trophy, Loader2, Play, Square, Check } from 'lucide-react';
+import { X, Loader2, Play, Square, Check } from 'lucide-react';
 import { useBuildOptimizer } from '../../hooks/useBuildOptimizer';
 import { applyTreeMode, useStatLibraries } from '../../hooks/useGlobalStats';
 import { useGameData } from '../../hooks/useGameData';
@@ -18,6 +18,7 @@ import { formatCompactNumber } from '../../utils/statsCalculator';
 import { UserProfile } from '../../types/Profile';
 import { cn } from '../../lib/utils';
 import { SLOT_TO_SKIN_TYPE, setDisplayName, skinDisplayName } from '../../utils/skinArchive';
+import { GameAssetIcon } from '../UI/GameAssetIcon';
 
 interface BuildOptimizerModalProps {
     /** The build to improve (before the header's tree mode, which is applied here). */
@@ -127,7 +128,7 @@ export function BuildOptimizerModal({ base, onLoad, onClose, targetLabel }: Buil
             >
                 <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-bg-secondary/40">
                     <div className="flex items-center gap-2 min-w-0">
-                        <Trophy className="w-5 h-5 text-yellow-400 shrink-0" />
+                        <GameAssetIcon asset={{ sheet: 'ArenaRankIcons', index: 0 }} size={20} />
                         <div className="min-w-0">
                             <div className="text-sm font-bold text-text-primary">Best build</div>
                             <div className="text-[10px] text-text-muted truncate">{vsDummy ? 'Ranked by DPS on the test dummy' : 'Ranked by simulated arena win rate'}. Load a row into {targetLabel}.</div>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { useMountsCalculator } from '../../hooks/useMountsCalculator';
 import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
-import { Trophy, Info, Minus, Plus, RefreshCcw, Calculator } from 'lucide-react';
+import { Minus, Plus, RefreshCcw, Calculator } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { useGameData } from '../../hooks/useGameData';
@@ -80,13 +81,13 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                 <div className="flex justify-center items-center gap-2 pt-2">
                     {isWarPointDay(new Date(), 'mounts', warDayConfig) && (
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-primary/20 text-accent-primary border border-accent-primary/30 text-[10px] font-black uppercase tracking-wider animate-pulse">
-                            <Trophy size={14} />
+                            <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 10 }} size={14} />
                             War Points Active: High Value Day
                         </div>
                     )}
                     {mountWarBoost > 0 && (
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
-                            <Trophy size={14} />
+                            <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 8 }} size={14} />
                             Clan Boost: +{(mountWarBoost * 100).toFixed(0)}% War Points
                         </div>
                     )}
@@ -209,7 +210,7 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                                     />
                                 </div>
                                 <div className="text-[10px] text-text-muted px-1">
-                                    Estimated cost per summon: <span className="text-accent-primary font-bold">{finalCostPerSummon}</span> ⚙️
+                                    Estimated cost per summon: <span className="text-accent-primary font-bold">{finalCostPerSummon}</span> <GameAssetIcon asset={{ icon: 'MountKey' }} size={14} className="inline-block align-middle" />
                                 </div>
 
                                 <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-muted mt-3">
@@ -329,7 +330,7 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                                                 {Math.floor(results.totalPoints).toLocaleString()}
                                             </div>
                                         </div>
-                                        <Trophy className="w-8 h-8 text-accent-primary opacity-50" />
+                                        <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 8 }} size={32} className="opacity-50" />
                                     </div>
                                     {results.simulateAscension && results.phases && results.phases.length > 1 && (
                                         <div className="space-y-2 -mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -489,13 +490,13 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                                     onClick={applyResultsToProfile}
                                     className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
                                 >
-                                    <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                    <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} className="group-hover:rotate-180 transition-transform duration-500" />
                                     Update Level to Lv.{results.endLevel}{results.endAscensionLevel > (profile.misc.mountAscensionLevel || 0) ? ` (Asc. ${results.endAscensionLevel})` : ''}
                                 </button>
                             </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-48 text-text-muted gap-2">
-                                <Info className="w-8 h-8 opacity-50" />
+                                <GameAssetIcon asset={{ icon: 'InfoIcon' }} size={32} className="opacity-50" />
                                 <p>Enter winders to see results</p>
                             </div>
                         )}

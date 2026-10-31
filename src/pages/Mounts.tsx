@@ -4,13 +4,14 @@ import { useProfile } from '../context/ProfileContext';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
-import { Star, Search, BookOpen, TrendingUp } from 'lucide-react';
+import { BookOpen, TrendingUp } from 'lucide-react';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { formatCompactNumber } from '../utils/statsCalculator';
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
+import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 export default function Mounts() {
     const { profile } = useProfile();
@@ -164,7 +165,7 @@ export default function Mounts() {
             <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-border pb-6">
                 <div className="w-full">
                     <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                        <Star className="w-8 h-8 sm:w-10 h-10 text-accent-primary" />
+                        <GameAssetIcon asset={{ sheet: 'MountIcons', index: 1 }} size={40} />
                         Mount Wiki
                     </h1>
                     <p className="text-text-secondary text-sm sm:text-base">
@@ -174,7 +175,7 @@ export default function Mounts() {
 
                 <div className="flex gap-2 items-center flex-wrap">
                     <div className="relative w-full md:w-40">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                        <GameAssetIcon asset={{ icon: 'SearchIcon' }} size={16} className="absolute left-3 top-2.5" />
                         <Input
                             placeholder="Search"
                             className="pl-9"
@@ -240,7 +241,7 @@ export default function Mounts() {
                                 {/* Active Badge (read-only) */}
                                 {isActive && (
                                     <div className="absolute top-2 right-2 p-1.5 rounded-full bg-accent-primary text-white z-20">
-                                        <Star className="w-4 h-4 fill-current" />
+                                        <GameAssetIcon asset={{ icon: 'Star' }} size={16} />
                                     </div>
                                 )}
 
@@ -253,7 +254,7 @@ export default function Mounts() {
                                         {spriteStyle ? (
                                             <div style={spriteStyle} />
                                         ) : (
-                                            <Star className="w-10 h-10 text-text-muted" />
+                                            <GameAssetIcon asset={{ sheet: 'MountIcons', index: 1 }} size={40} />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
