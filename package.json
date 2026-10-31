@@ -10,6 +10,7 @@
         "dev": "npm run update-configs && vite",
         "build": "npm run update-contributors && npm run update-configs && tsc -b && vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "test": "vitest run",
         "preview": "vite preview"
     },
     "dependencies": {
@@ -40,12 +41,14 @@
         "autoprefixer": "^10.4.16",
         "eslint": "^8.55.0",
         "eslint-plugin-react-refresh": "^0.4.5",
+        "jsdom": "^25.0.1",
         "playwright": "^1.62.1",
         "postcss": "^8.4.32",
         "tailwindcss": "^3.4.0",
         "ts-node": "^10.9.2",
         "tsx": "^4.21.0",
         "typescript": "^5.2.2",
-        "vite": "^5.0.8"
+        "vite": "^5.0.8",
+        "vitest": "^2.1.9"
     }
 }
