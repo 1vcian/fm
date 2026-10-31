@@ -35,6 +35,8 @@ export interface BattleResult {
     victory: boolean;
     winProbability: number; // 0-100%
     totalRuns: number;
+    /** Mean fraction (0-1) of total enemy HP removed in the LOST runs; undefined when every run won. */
+    lossProgress?: number;
     playerHealthRemaining: number;
     totalTime: number;
     totalEnemyHp?: number;
