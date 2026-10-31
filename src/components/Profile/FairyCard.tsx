@@ -2,7 +2,10 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison, FairySelection } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useGameData } from '../../hooks/useGameData';
-import { useGlobalStats } from '../../hooks/useGlobalStats';
+import { useMemo } from 'react';
+import { useGlobalStats, useStatLibraries } from '../../hooks/useGlobalStats';
+import { calculateStats } from '../../utils/statEngine';
+import { comparisonSideProfile } from './DummyTestButton';
 import { Card } from '../UI/Card';
 import { cn } from '../../lib/utils';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
@@ -86,7 +89,9 @@ function FairyControls({
 
 export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
     const { profile, updateNestedProfile } = useProfile();
-    const { originalFairy, testFairy, updateOriginalFairy, updateTestFairy } = useComparison();
+    const comparison = useComparison();
+    const { originalFairy, testFairy, updateOriginalFairy, updateTestFairy } = comparison;
+    const { libs, ready } = useStatLibraries();
     const { selectedVersion } = useGameDataContext();
     const { data: fairyUpgrades } = useGameData<Record<string, { Level: number }>>('FairyUpgradesLibrary.json');
     const stats = useGlobalStats(false);
@@ -104,9 +109,17 @@ export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
         : (next: FairySelection) => updateNestedProfile('misc', { fairy: next });
     const cfg = value.name ? SEASON_STATS[value.name] : null;
 
-    // Grant preview: exact engine numbers when the shown fairy is the profile's own, the
-    // pre-fairy pools otherwise (a compare side can pick a different fairy).
-    const exact = stats?.fairyBonus && value.name === stored.name ? stats.fairyBonus : null;
+    // A compare side is its own build: its items, pets and mount (their substats feed the fairy)
+    // and its fairy, so its preview comes from the engine run on that side, not on the profile.
+    const sideStats = useMemo(() => {
+        if (!variant || !ready || !comparison.originalItems || !comparison.testItems) return null;
+        const side = comparisonSideProfile(profile, comparison, variant, profile.techTree);
+        return calculateStats({ ...side, misc: { ...side.misc, fairy: value } }, libs);
+    }, [variant, ready, comparison, profile, value, libs]);
+
+    // Grant preview: exact engine numbers for the shown build and fairy (a compare side's own
+    // build; else the profile when the shown fairy is its own), the pre-fairy pools otherwise.
+    const exact = sideStats?.fairyBonus ?? (stats?.fairyBonus && value.name === stored.name ? stats.fairyBonus : null);
     const pools = cfg && stats ? defaultPools(cfg, stats) : null;
     const required = exact ? exact.required : pools?.required ?? 0;
     const targetBefore = exact ? exact.targetPoolBefore : pools?.targetBefore ?? 0;
