@@ -11,6 +11,7 @@
 import '../services/authUrl';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 import { UserProfile, INITIAL_PROFILE, generateProfileId } from '../types/Profile';
 import {
     decodeSharedPayload,
@@ -602,11 +603,11 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 setActiveProfileId(newId);
 
             } else {
-                alert("Invalid profile file format.");
+                toast.error("Invalid profile file format.");
             }
         } catch (e) {
             console.error("Import failed", e);
-            alert("Failed to parse JSON file.");
+            toast.error("Failed to parse JSON file.");
         }
     }, [isNameTaken]);
 
@@ -658,11 +659,11 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 setActiveProfileId(newId);
 
             } else {
-                alert("Invalid profile format: Missing items or techTree.");
+                toast.error("Invalid profile format: Missing items or techTree.");
             }
         } catch (e) {
             console.error("Import failed", e);
-            alert("Failed to parse JSON string.");
+            toast.error("Failed to parse JSON string.");
         }
     }, [isNameTaken]);
 

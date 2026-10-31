@@ -9,6 +9,7 @@ import {
     Image, ChevronDown, Github, Coffee, Trash2, Check, Copy, Crown
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
+import { ConfirmModal } from '../UI/ConfirmModal';
 import { useProfile } from '../../context/ProfileContext';
 import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -122,6 +123,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const warToday = getWarDayIndex();
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [toDelete, setToDelete] = useState<{ id: string; name: string } | null>(null);
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
         'Calculators': true,
         'Wiki': true
@@ -299,9 +301,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         if (profiles.length <= 1) return;
-                                                        if (window.confirm(`Are you sure you want to delete profile "${p.name}"?`)) {
-                                                            deleteProfile(p.id);
-                                                        }
+                                                        setToDelete({ id: p.id, name: p.name });
                                                     }}
                                                     className="p-1 text-text-muted hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
                                                     title="Delete profile"
@@ -312,6 +312,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                         </div>
                                     ))}
                                 </div>
+                                <ConfirmModal
+                                    isOpen={!!toDelete}
+                                    title="Delete profile"
+                                    message={`Are you sure you want to delete profile "${toDelete?.name ?? ''}"? This cannot be undone.`}
+                                    confirmText="Delete"
+                                    variant="danger"
+                                    onConfirm={() => { if (toDelete) deleteProfile(toDelete.id); setToDelete(null); }}
+                                    onCancel={() => setToDelete(null)}
+                                />
                             </div>
                             <div className="p-1.5 space-y-0.5">
                                 <button

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ATTEMPTS_KEY, COFFEE_SYNC_EVENT, coffeeChanged, startCoffeeSync } from '../../services/coffeeSync';
 
 /**
  * Dragging for the donation buttons, with a running joke: dropping a button under the page
  * header counts as an attempt to hide it. Until the visitor has really done it HIDE_GOAL times
- * (counted in localStorage, shared by both buttons) the button complains in a speech bubble and
+ * (counted in localStorage, shared by both buttons, and mirrored to the account when signed in:
+ * src/services/coffeeSync.ts) the button complains in a speech bubble and
  * flies back to a random spot, and half the time plays "catch me" for a few seconds: grabbing
  * or (with a mouse) touching it makes it dodge, 1 to 4 times, so a visitor who wants to click it
  * always can. On the HIDE_GOAL-th attempt it gives up and stays under the header for good.
@@ -12,7 +14,6 @@ import { AnimatePresence, motion } from 'framer-motion';
  */
 
 export const HIDE_GOAL = 100;
-const ATTEMPTS_KEY = 'fm_coffee_hide_attempts';
 /** Set once the positions saved before the hiding game existed were checked (see the hook). */
 const MIGRATED_KEY = 'fm_coffee_tease_v1';
 const MARGIN = 8;
@@ -94,6 +95,7 @@ function loadNumber(key: string): number {
 }
 function saveNumber(key: string, v: number) {
     try { localStorage.setItem(key, String(v)); } catch { /* storage blocked */ }
+    coffeeChanged();
 }
 export function loadFreePos(key: string): FreePos | null {
     try {
@@ -108,6 +110,7 @@ export function loadFreePos(key: string): FreePos | null {
 }
 function saveFreePos(key: string, p: FreePos) {
     try { localStorage.setItem(key, JSON.stringify(p)); } catch { /* storage blocked */ }
+    coffeeChanged(key);
 }
 
 function headerRect(): DOMRect | null {
@@ -159,6 +162,14 @@ export function useTeasingDrag<E extends HTMLElement>({ storageKey, snapSides = 
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Signed in, the attempts and positions follow the account: another device's arrive here.
+    useEffect(() => {
+        startCoffeeSync();
+        const onSync = () => setPos(loadFreePos(storageKey));
+        window.addEventListener(COFFEE_SYNC_EVENT, onSync);
+        return () => window.removeEventListener(COFFEE_SYNC_EVENT, onSync);
+    }, [storageKey]);
 
     useEffect(() => {
         const onResize = () => setViewport(v => v + 1);

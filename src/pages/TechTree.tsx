@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { Card } from '../components/UI/Card';
 import { useProfile } from '../context/ProfileContext';
 import { useGameData } from '../hooks/useGameData';
@@ -55,14 +56,14 @@ export default function TechTree() {
         const ranks = activeTab === 'Clan' ? (localRanks['Clan'] || {}) : {};
         const jsonStr = JSON.stringify({ ClanTech: ranks });
         navigator.clipboard.writeText(jsonStr);
-        alert("Clan Tech ranks copied to clipboard!");
+        toast.success("Clan Tech ranks copied to clipboard!");
     };
 
     const importClanTech = () => {
         try {
             const parsed = JSON.parse(importText.trim());
             if (!parsed || typeof parsed !== 'object' || !parsed.ClanTech) {
-                alert("Invalid format! Must contain a 'ClanTech' object.");
+                toast.error("Invalid format! Must contain a 'ClanTech' object.");
                 return;
             }
             const importedRanks = parsed.ClanTech;
@@ -83,9 +84,9 @@ export default function TechTree() {
             
             setShowImportModal(false);
             setImportText('');
-            alert("Clan Tech ranks imported successfully!");
+            toast.success("Clan Tech ranks imported successfully!");
         } catch (e) {
-            alert("Failed to parse JSON. Please verify the input.");
+            toast.error("Failed to parse JSON. Please verify the input.");
         }
     };
 
