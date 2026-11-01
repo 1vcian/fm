@@ -3,9 +3,11 @@ import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { useTreeLimits } from '../../hooks/useTreeLimits';
-import { forgeLevelCost } from '../../hooks/useForgeCalculator';
+import { forgeGemSkipCost, forgeLevelCost, forgeUpgradeDurationSeconds } from '../../hooks/useForgeCalculator';
+import { formatDuration } from '../../utils/format';
+import { AscensionStars } from '../../components/UI/AscensionStars';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRight, ArrowRightLeft } from 'lucide-react';
 import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { isWarPointDay, getDayBoostNodeType, getWarPointsForTask } from '../../utils/guildWarUtils';
 import { AgeBackground } from '../../components/AgeBackground/AgeBackground';
@@ -232,9 +234,16 @@ export default function ForgeCalculator() {
     const spendDayActive = isWarPointDay(new Date(), 'forgeSpend', guildWarConfig);
     const profileSpendDayBoost = spendDayActive ? (treeModifiers[getDayBoostNodeType()] || 0) : 0;
     const spendDayBoost = sandbox.spendDayBoost ?? profileSpendDayBoost;
+    // Forge upgrades (the after-ascension planner): the personal tree's cost discount and timer speed.
+    const profileUpgradeCost = treeModifiers['ForgeUpgradeCost'] || 0;
+    const upgradeCost = sandbox.upgradeCost ?? profileUpgradeCost;
+    const profileTimerSpeed = treeModifiers['ForgeTimerSpeed'] || 0;
+    const timerSpeed = sandbox.timerSpeed ?? profileTimerSpeed;
     const sandboxControls = {
         reset: () => setSandbox({}),
         fields: [
+            { key: 'upgradeCost', label: 'Forge upgrade cost (discount)', value: upgradeCost, profileValue: profileUpgradeCost, min: 0, ...treeLimits.personal('ForgeUpgradeCost'), onChange: (v: number) => setSandbox(p => ({ ...p, upgradeCost: v })) },
+            { key: 'timerSpeed', label: 'Forge timer speed', value: timerSpeed, profileValue: profileTimerSpeed, min: 0, ...treeLimits.personal('ForgeTimerSpeed'), onChange: (v: number) => setSandbox(p => ({ ...p, timerSpeed: v })) },
             { key: 'warForging', label: 'War points: forging', value: forgeWarBonus, profileValue: profileForgeWarBonus, min: 0, ...treeLimits.clan('WarPointsFromForging'), onChange: (v: number) => setSandbox(p => ({ ...p, warForging: v })) },
             { key: 'warForgeSpend', label: 'War points: forge spend', value: forgeSpendBonus, profileValue: profileForgeSpendBonus, min: 0, ...treeLimits.clan('WarPointsFromForgeSpend'), onChange: (v: number) => setSandbox(p => ({ ...p, warForgeSpend: v })) },
             { key: 'dayBoost', label: 'Day boost. Crafting (today)', value: dayBoost, profileValue: profileDayBoost, min: 0, ...treeLimits.clan('WarPointsOnDay1'), onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
@@ -698,6 +707,7 @@ export default function ForgeCalculator() {
 
             <SandboxPanel fields={sandboxControls.fields} onReset={sandboxControls.reset} />
 
+
             {/* Forge Upgrade War Points. Hidden for now (WIP: forge N→M with auto coins/steps/gems + completed toggle) */}
             {false && (
             <div className="card p-4 border-accent-primary/20 bg-bg-secondary/30 backdrop-blur-md">
@@ -768,7 +778,7 @@ export default function ForgeCalculator() {
                                 onClick={() => setSimulatedForgeLevel(profile.misc.forgeLevel || 1)}
                                 className="text-xs text-accent-primary hover:text-white underline ml-2"
                             >
-                                Reset
+                                Reset to my profile
                             </button>
                         )}
                     </div>
@@ -791,6 +801,8 @@ export default function ForgeCalculator() {
                     </div>
                 </div>
             </div>
+
+            <AfterAscensionPlanner costReduction={upgradeCost} timerSpeed={timerSpeed} fromLevel={simulatedForgeLevel} />
 
             {/* Main Input Card */}
             <div className="card p-1 border-accent-primary/20 bg-gradient-to-b from-bg-secondary/50 to-bg-secondary/30 backdrop-blur-md overflow-hidden">
@@ -1191,6 +1203,165 @@ export default function ForgeCalculator() {
             <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none overflow-hidden">
                 <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Anvil.png`} alt="" className="w-64 h-64 object-contain grayscale" />
             </div>
+        </div>
+    );
+}
+
+/**
+ * Forge levels and ascensions: from the simulated forge level and the ascensions done to a final
+ * ascension count and a final forge level.
+ * - An ascension needs the forge at its top level: PlayerSegments "ForgeAscension" ("Determines if
+ *   the player can ascend his forge") requires PlayerPropertyIdForgeLevelMaxed = true, and
+ *   AscendAction (RVA 0x7820368) checks the conditions, AscensionsMaxed and the price.
+ * - PlayerForgeModel.Ascend (RVA 0x7878004) sets ForgeLevel (+0x20) to 0, clears the upgrade timer
+ *   (+0x28) and zeroes ForgeCount and the current tier (+0x38..+0x44): back to displayed level 1.
+ * - Leaving displayed level N buys every tier of ForgeUpgradeLibrary[N] (forgeLevelCost, the
+ *   ForgeUpgradeCost node a OneMinusMultiplier) and runs its timer (forgeUpgradeDurationSeconds,
+ *   ForgeTimerSpeed a Divisor); skipping it at once costs forgeGemSkipCost of its whole duration.
+ * - Ascension k costs AscensionConfigsLibrary.Forge.AscensionConfigPerLevel[k].Cost.
+ */
+function AfterAscensionPlanner({ costReduction, timerSpeed, fromLevel }: { costReduction: number; timerSpeed: number; fromLevel: number }) {
+    const { profile } = useProfile();
+    const { data: upgrades } = useGameData<Record<string, { Level: number; Duration: number; Tiers: number; Cost: number }>>('ForgeUpgradeLibrary.json');
+    const { data: ascensions } = useGameData<any>('AscensionConfigsLibrary.json');
+    const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
+    const maxLevel = upgrades ? Math.max(...Object.keys(upgrades).map(Number)) + 1 : 1;
+    const ascensionRows: { Cost: { Amount: number; Currency: string } }[] = ascensions?.Forge?.AscensionConfigPerLevel ?? [];
+    const maxAscensions = ascensionRows.length;
+    const profileAscensions = profile.misc.forgeAscensionLevel ?? 0;
+    const [ascendedInput, setAscended] = useState<number | null>(null);
+    const ascended = Math.min(maxAscensions, ascendedInput ?? profileAscensions);
+    const [finalAscInput, setFinalAsc] = useState<number | null>(null);
+    const finalAsc = Math.min(maxAscensions, Math.max(ascended, finalAscInput ?? ascended));
+    const [finalLevelInput, setFinalLevel] = useState<number | null>(null);
+    const from = Math.min(maxLevel, Math.max(1, fromLevel));
+    const minFinal = finalAsc === ascended ? from : 1;
+    const finalLevel = Math.min(maxLevel, Math.max(minFinal, finalLevelInput ?? maxLevel));
+    const rate = forgeConfig?.ForgeGemSkipCostPerSecond;
+    const levelsBetween = (a: number, b: number) => {
+        const out: { level: number; coins: number; seconds: number; gems: number | null }[] = [];
+        for (let n = a; n < b && upgrades; n++) {
+            const row = upgrades[String(n)];
+            if (!row) break;
+            const seconds = forgeUpgradeDurationSeconds(row, timerSpeed);
+            out.push({ level: n, coins: forgeLevelCost(row, costReduction), seconds, gems: seconds > 0 ? forgeGemSkipCost(seconds, rate) : 0 });
+        }
+        return out;
+    };
+    // The road: up to the top level, ascend, again from level 1 ... and the final climb.
+    const phases = useMemo(() => {
+        const out: { label: string; steps: ReturnType<typeof levelsBetween>; ascension?: { Amount: number; Currency: string } }[] = [];
+        if (finalAsc === ascended) {
+            out.push({ label: `Level ${from} to ${finalLevel}`, steps: levelsBetween(from, finalLevel) });
+            return out;
+        }
+        for (let k = ascended; k < finalAsc; k++) {
+            const start = k === ascended ? from : 1;
+            out.push({ label: `Level ${start} to ${maxLevel}, then ascension ${k + 1}`, steps: levelsBetween(start, maxLevel), ascension: ascensionRows[k]?.Cost });
+        }
+        out.push({ label: `After ascension ${finalAsc}: level 1 to ${finalLevel}`, steps: levelsBetween(1, finalLevel) });
+        return out;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [upgrades, ascensions, from, finalLevel, ascended, finalAsc, costReduction, timerSpeed, rate, maxLevel]);
+    const all = phases.flatMap(p => p.steps);
+    const coins = all.reduce((t, x) => t + x.coins, 0);
+    const ascensionCoins = phases.reduce((t, p) => t + (p.ascension?.Currency === 'Coins' ? p.ascension.Amount : 0), 0);
+    const seconds = all.reduce((t, x) => t + x.seconds, 0);
+    const gems = all.some(x => x.gems === null) ? null : all.reduce((t, x) => t + (x.gems ?? 0), 0);
+    const [open, setOpen] = useState(false);
+    const num = (v: number) => new Intl.NumberFormat('en-US').format(Math.round(v));
+    return (
+        <div className="card p-4 border-amber-500/30 bg-bg-secondary/30 backdrop-blur-md space-y-4">
+            <div className="flex items-center gap-2">
+                <GameAssetIcon asset={{ icon: 'Anvil' }} size={18} />
+                <h3 className="text-sm font-bold text-white">Forge levels and ascensions</h3>
+            </div>
+            <p className="text-[11px] text-text-muted">
+                Gold, timers and gems from start to end. Each ascension needs the forge at its top level and takes it back to level 1.
+                Tech from your profile or the sandbox above: {(costReduction * 100).toFixed(0)}% upgrade discount, +{(timerSpeed * 100).toFixed(0)}% timer speed.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-stretch gap-2 sm:gap-3">
+                <div className="rounded-xl border border-white/10 bg-black/10 p-3 space-y-3 min-w-0">
+                    <div className="text-[10px] text-text-muted uppercase font-black tracking-wider">Start</div>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <AscensionStars value={ascended} onChange={v => setAscended(v)} type="Forge" size="sm" className="items-start" />
+                            {ascended !== profileAscensions && (
+                                <button onClick={() => setAscended(null)} className="text-[10px] text-accent-primary hover:underline">Reset to my profile ({profileAscensions})</button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="text-[10px] text-text-muted uppercase font-bold">Forge level</div>
+                        <div className="text-xs"><span className="font-mono font-black text-base">{from}</span> <span className="text-text-muted">(the Simulated Forge Level above)</span></div>
+                    </div>
+                </div>
+                <div className="flex items-center justify-center text-text-muted">
+                    <ArrowRight className="w-5 h-5 rotate-90 sm:rotate-0" />
+                </div>
+                <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 space-y-3 min-w-0">
+                    <div className="text-[10px] text-amber-300 uppercase font-black tracking-wider">End</div>
+                    <div className="space-y-1">
+                        <AscensionStars value={finalAsc} onChange={v => setFinalAsc(Math.max(ascended, v))} type="Forge" size="sm" className="items-start" />
+                    </div>
+                    <div className="space-y-1">
+                        <div className="text-[10px] text-text-muted uppercase font-bold">Forge level</div>
+                        <div className="flex items-center gap-2">
+                            <input type="range" min={minFinal} max={maxLevel} value={finalLevel} onChange={e => setFinalLevel(Number(e.target.value))} className="flex-1 min-w-0 accent-amber-400" />
+                            <span className="font-mono font-black text-base w-8 text-right">{finalLevel}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="rounded-xl px-3 py-2 border bg-amber-400/10 border-amber-400/50">
+                    <div className="text-[10px] uppercase font-bold text-amber-300 flex items-center gap-1"><GameAssetIcon asset={{ icon: 'Coin' }} size={14} /> Gold, all included</div>
+                    <div className="font-black font-mono text-lg">{num(coins + ascensionCoins)}</div>
+                    {ascensionCoins > 0 && <div className="text-[10px] text-text-muted">{num(coins)} upgrades + {num(ascensionCoins)} ascensions</div>}
+                </div>
+                <div className="rounded-xl px-3 py-2 border border-white/10 bg-bg-input/40">
+                    <div className="text-[10px] uppercase font-bold text-text-muted flex items-center gap-1"><GameAssetIcon asset={{ icon: 'Timer' }} size={14} /> Upgrade timers</div>
+                    <div className="font-black font-mono text-lg">{formatDuration(seconds)}</div>
+                </div>
+                <div className="rounded-xl px-3 py-2 border border-white/10 bg-bg-input/40">
+                    <div className="text-[10px] uppercase font-bold text-text-muted flex items-center gap-1"><GameAssetIcon asset={{ icon: 'GemSquare' }} size={14} /> Gems to skip every timer</div>
+                    <div className="font-black font-mono text-lg">{gems === null ? '...' : num(gems)}</div>
+                </div>
+                <div className="rounded-xl px-3 py-2 border border-white/10 bg-bg-input/40">
+                    <div className="text-[10px] uppercase font-bold text-text-muted flex items-center gap-1"><GameAssetIcon asset={{ icon: 'AscensionStar' }} size={14} /> Ascensions</div>
+                    <div className="font-black font-mono text-lg">{ascended} to {finalAsc}</div>
+                </div>
+            </div>
+            <button onClick={() => setOpen(o => !o)} className="text-xs font-bold text-text-secondary hover:text-text-primary">{open ? 'Hide' : 'Show'} every step</button>
+            {open && (
+                <div className="max-h-96 overflow-y-auto text-xs space-y-3">
+                    {phases.map(p => (
+                        <div key={p.label}>
+                            <div className="font-bold text-text-secondary mb-1">{p.label}</div>
+                            <table className="w-full">
+                                <thead><tr className="text-[10px] uppercase text-text-muted"><th className="text-left">Level</th><th className="text-right">Gold</th><th className="text-right">Timer</th><th className="text-right">Gems to skip</th></tr></thead>
+                                <tbody>
+                                    {p.steps.map(x => (
+                                        <tr key={x.level} className="border-t border-white/5">
+                                            <td>{x.level} to {x.level + 1}</td>
+                                            <td className="text-right font-mono">{num(x.coins)}</td>
+                                            <td className="text-right font-mono">{formatDuration(x.seconds)}</td>
+                                            <td className="text-right font-mono">{x.gems === null ? '...' : num(x.gems)}</td>
+                                        </tr>
+                                    ))}
+                                    {p.ascension && (
+                                        <tr className="border-t border-amber-400/30 text-amber-200">
+                                            <td>Ascension</td>
+                                            <td className="text-right font-mono">{num(p.ascension.Amount)}{p.ascension.Currency !== 'Coins' ? ` ${p.ascension.Currency}` : ''}</td>
+                                            <td /><td />
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
