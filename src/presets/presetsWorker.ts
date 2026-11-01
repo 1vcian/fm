@@ -6,12 +6,12 @@
 import type { ConfigFiles, ProfilePresetsFile } from './buildPresets';
 import { presetLibsFrom, PRESET_CONFIG_FILES } from './presetLibs';
 import { buildOwnedPresets } from './ownedVariants';
-import { topPieces } from './skinsApply';
+import { ownedPieces, topPieces } from './skinsApply';
 import type { SavedSkin } from '../types/Profile';
 
 /**
- * saved: the player's skins ("my best variants"). excludeWeaponSets instead: every set at its
- * top, but without these sets' weapon skins (their attack animation and their weapon piece).
+ * saved: the player's skins ("use my skins"), or none for every set at its top. excludeWeaponSets:
+ * without these sets' weapon skins (their attack animation and their weapon piece).
  */
 export type VariantsRequest = { version: string; saved: SavedSkin[]; excludeWeaponSets?: string[] };
 
@@ -40,12 +40,13 @@ self.onmessage = async (e: MessageEvent<VariantsRequest>) => {
         });
         const libs = presetLibsFrom(version, cfg);
         let extra = {};
-        if (excludeWeaponSets) {
+        if (excludeWeaponSets?.length) {
             const out = new Set(excludeWeaponSets);
             const sets = new Set(Object.values<any>(libs.skinsLibrary ?? {}).map(r => r.BaseSetId).filter(Boolean));
+            const pieces = saved.length ? ownedPieces(saved, libs.skinsLibrary) : topPieces(libs.skinsLibrary, libs.skinUpgradeLibrary, sets);
             extra = {
-                pieces: topPieces(libs.skinsLibrary, libs.skinUpgradeLibrary, sets).filter(p => !(p.type === 'Weapon' && out.has(p.setId))),
-                skinsNote: 'Every skin at its top except the left out weapon skins.',
+                pieces: pieces.filter(p => !(p.type === 'Weapon' && out.has(p.setId))),
+                skinsNote: saved.length ? 'Your skins, without the left out weapon skins.' : 'Every skin at its top except the left out weapon skins.',
             };
         }
         const result = buildOwnedPresets(site, saved, libs, cfg, { ...BROWSER_OPTIONS, ...extra, log: msg => post({ type: 'log', msg }) });

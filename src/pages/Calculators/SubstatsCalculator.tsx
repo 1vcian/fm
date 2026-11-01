@@ -14,6 +14,7 @@ import { FAIRIES, SEASON_STATS, fairyRawBonus, fairyGranted } from '../../utils/
 import { useStatLibraries } from '../../hooks/useGlobalStats';
 import { distribute, placedCounts, currentAlloc, type SubstatBody } from '../../optimizer/substatOptimizer';
 import type { ProfilePreset, ProfilePresetsFile } from '../../presets/buildPresets';
+import { listBuilds, substatCounts, type BuildTag } from '../../presets/presetList';
 import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 
 /**
@@ -209,8 +210,28 @@ export default function SubstatsCalculator() {
     // published with the presets; loading one puts its rolls on the sliders, laid onto this
     // build's own slots (placedCounts: the stats with the most rolls first when slots run short).
     const { data: presetFile } = useGameData<ProfilePresetsFile>('ProfilePresets.json');
-    // The best build of each category (the file also holds the runners-up).
-    const presets = (presetFile?.presets ?? []).filter(p => (p.rank ?? 1) === 1);
+    // Every distinct substat allocation and fairy among the preset builds (the same list and names
+    // as the Preset Builds page): the strongest build with it in the arena tournament names it,
+    // and the tags say what the builds with it are best at.
+    const presets = useMemo(() => {
+        if (!presetFile?.presets?.length) return [] as { preset: ProfilePreset; tags: BuildTag[]; place: number | null; stats: string }[];
+        const { builds, renamed } = listBuilds(presetFile);
+        const place = new Map((renamed.tournament?.standings ?? []).flatMap((st, i) => [st.key, ...(st.same ?? [])].map(k => [k, i + 1] as const)));
+        const groups = new Map<string, { preset: ProfilePreset; tags: BuildTag[]; place: number | null; stats: string }>();
+        for (const b of builds) {
+            const counts = substatCounts(b.preset.profile);
+            const sig = JSON.stringify([counts, b.preset.profile.misc.fairy?.name ?? null]);
+            const at = Math.min(...b.keys.map(k => place.get(k) ?? Infinity));
+            const g = groups.get(sig);
+            const stats = counts.map(([id, n]) => `${n} ${getStatName(id)}`).join(', ');
+            if (!g) groups.set(sig, { preset: b.preset, tags: [...b.tags], place: Number.isFinite(at) ? at : null, stats });
+            else {
+                for (const t of b.tags) if (!g.tags.some(x => x.label === t.label)) g.tags.push(t);
+                if (Number.isFinite(at) && (g.place === null || at < g.place)) { g.place = at; g.preset = b.preset; }
+            }
+        }
+        return [...groups.values()].sort((a, b) => (a.place ?? 1e9) - (b.place ?? 1e9));
+    }, [presetFile]);
     const [loadedPreset, setLoadedPreset] = useState<string | null>(null);
 
     const loadPreset = useCallback((preset: ProfilePreset) => {
@@ -365,15 +386,15 @@ export default function SubstatsCalculator() {
                             <GameAssetIcon asset={{ sheet: 'ArenaRankIcons', index: 0 }} size={20} /> Best substats
                         </h3>
                         <p className="text-[11px] text-text-muted leading-snug mb-3">
-                            The best allocations of every <Link to="/presets" className="text-accent-primary hover:underline">preset build</Link>,
-                            searched for this game version. Load one to put its rolls and fairy on the sliders (only substats and
-                            fairy: your gear, levels and trees stay yours) and compare it with your build.
+                            Every substat allocation of the <Link to="/presets" className="text-accent-primary hover:underline">preset builds</Link> found
+                            for this game version, strongest in the arena first, with what its builds are best at. Load one to put its rolls and fairy
+                            on the sliders (only substats and fairy: your gear, levels and trees stay yours) and compare it with your build.
                         </p>
                         {presets.length === 0 ? (
                             <div className="text-xs text-text-muted">No preset builds for this game version yet.</div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-1.5">
-                                {presets.map((p) => (
+                                {presets.map(({ preset: p, tags, place, stats }) => (
                                     <button
                                         key={p.key}
                                         onClick={() => loadPreset(p)}
@@ -384,9 +405,13 @@ export default function SubstatsCalculator() {
                                         )}
                                     >
                                         <div className="text-xs font-bold flex items-center gap-1">
-                                            {loadedPreset === p.key && <Check className="w-3 h-3 text-orange-400" />}{p.name}
+                                            {loadedPreset === p.key && <Check className="w-3 h-3 text-orange-400" />}
+                                            {place !== null && <span className="text-orange-300">#{place}</span>} {p.name}
                                         </div>
-                                        <div className="text-[10px] text-text-muted">{p.goal}</div>
+                                        <div className="text-[10px] text-text-muted">{stats}</div>
+                                        <div className="flex flex-wrap gap-1 mt-0.5">
+                                            {tags.map(t => <span key={t.label} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/30 text-text-secondary">{t.label}</span>)}
+                                        </div>
                                     </button>
                                 ))}
                             </div>

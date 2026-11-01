@@ -8,6 +8,7 @@ import type { SavedSkin, UserProfile } from '../types/Profile';
 import type { VariantsReply, VariantsRequest } from './presetsWorker';
 import type { ChallengeReply, ChallengeRequest } from './challengeWorker';
 import type { ChallengeResult } from './challenge';
+import type { Alloc } from '../optimizer/substatOptimizer';
 
 export interface VariantsRun {
     promise: Promise<ProfilePresetsFile>;
@@ -37,7 +38,7 @@ export interface ChallengeRun {
 }
 
 /** "Fight against": the profile against every preset build, on a browser worker. */
-export function runFightAgainst(version: string, name: string, profile: UserProfile, onProgress: (done: number, total: number) => void): ChallengeRun {
+export function runFightAgainst(version: string, name: string, profile: UserProfile, onProgress: (done: number, total: number) => void, alloc?: Alloc): ChallengeRun {
     const worker = new Worker(new URL('./challengeWorker.ts', import.meta.url), { type: 'module' });
     let reject: (e: Error) => void = () => {};
     const promise = new Promise<ChallengeResult>((resolve, rej) => {
@@ -49,7 +50,7 @@ export function runFightAgainst(version: string, name: string, profile: UserProf
             else resolve(d.result);
         };
         worker.onerror = ev => rej(new Error(ev.message || 'worker failed'));
-        worker.postMessage({ version, name, profile: JSON.parse(JSON.stringify(profile)) } satisfies ChallengeRequest);
+        worker.postMessage({ version, name, profile: JSON.parse(JSON.stringify(profile)), alloc } satisfies ChallengeRequest);
     }).finally(() => worker.terminate());
     return { promise, cancel: () => { worker.terminate(); reject(new Error('stopped')); } };
 }

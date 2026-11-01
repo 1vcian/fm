@@ -160,6 +160,25 @@ export function doubleSecondStrikeSeconds(mult: number, windup: number): number 
     return climbTicks(W - Math.floor(W * 0.75), attackIncRaw(mult)) * 0.1;
 }
 
+/**
+ * Everything the windup changes in a battle, at one attack speed (the single-timer state machine,
+ * src/engine/scene.ts, from 0x773FFCC): ticks to the hit from a standstill, then ticks from the hit
+ * to the end of the attack (the timer keeps its overshoot), and with a double chance above zero the
+ * re-climb from floor(0.75 * windup) to the second hit and on to the end. Attack speed never
+ * changes in battle, so two windups with the same ticks fight identically.
+ */
+export function attackTimingTicks(mult: number, windup: number, attackDuration: number, doubleChance: number): number[] {
+    const inc = attackIncRaw(mult);
+    const W = fd6MicroFromF64(windup), D = fd6MicroFromF64(attackDuration);
+    const toHit = climbTicks(W, inc);
+    const rest = (t: number) => Math.max(1, Math.ceil((D - t) / inc));
+    const single = [toHit, rest(toHit * inc)];
+    if (!(doubleChance > 0)) return single;
+    const seed = Math.floor(W * 0.75);
+    const again = climbTicks(W - seed, inc);
+    return [...single, again, rest(seed + again * inc)];
+}
+
 // Steady-state weapon hits per second for a double chance d (each roll is independent and a
 // double cannot chain): (1 + d) hits per ((1 - d) * single + d * double) seconds.
 export function weaponHitsPerSecond(mult: number, windup: number, attackDuration: number, doubleChance: number): number {

@@ -44,11 +44,14 @@ import { INITIAL_PROFILE } from '../types/Profile';
 import { calculateStats, type LibraryData } from '../utils/statEngine';
 import { applyTreeMode } from '../utils/treeMode';
 import { buildGameLimits } from '../utils/ocr/gameLimits';
-import { RARITIES } from '../utils/constants';
+import { RARITIES, attackTimingTicks, fd6MicroFromF64 } from '../utils/constants';
 import { FAIRIES, type FairyName } from '../utils/fairies';
+import { STAT_NAMES } from '../utils/statNames';
+import { labNames } from './filterAnimations';
+import { hash53 } from './tournament';
 import { skinMaxLevel, equippedFromSaved, isGoodSkin, SKIN_TYPE_TO_SLOT } from '../utils/skinArchive';
 import { skillMaxLevel } from '../optimizer/buildOptimizer';
-import { runSubstatOptimizer, buildWithAlloc, currentAlloc, type RollableStat, type SubstatBody, type SubstatObjective } from '../optimizer/substatOptimizer';
+import { runSubstatOptimizer, buildWithAlloc, currentAlloc, type Alloc, type RollableStat, type SubstatBody, type SubstatObjective } from '../optimizer/substatOptimizer';
 import { playerUnitSpec, skillSpecs, testedRun, TESTED_SECONDS } from '../engine';
 import { QuestMeter, questBattleLabel } from './mainProgress';
 import { pvpConfigFromJson } from '../pvp/simulate';
@@ -83,6 +86,8 @@ export interface PresetMetrics {
         /** Mean share of the next battle's enemy HP removed in its lost runs (missing in older files). */
         nextLossProgress?: number;
         runs: number;
+        /** QuestMeter score (cleared battles plus the reach into the next one), to rank builds; missing in older files. */
+        score?: number;
     };
 }
 
@@ -116,8 +121,23 @@ export interface ProfilePreset {
     metrics: PresetMetrics;
     /** What can be swapped without changing a single number of the build, read from the configs. */
     equivalents?: PresetEquivalents;
+    /** Most Power and lab builds: the same build with every other attack animation of its kind. */
+    alternatives?: PresetVariant[];
+    /** Same key, same battles and numbers (fightKeyOf): another look of the same build. */
+    fightKey?: string;
+    /** Its id in ProfilePresetsFile.pairs (tournament.fighterIdOf), set when the pairings are played. */
+    fighterId?: string;
     /** Build lab only: arena score against the best build of every category, and what no other build does. */
-    lab?: { arenaWinRate: number; unusual: string };
+    lab?: {
+        arenaWinRate: number;
+        unusual: string;
+        /**
+         * The same build with every attack animation of its kind (substats, fairy, skin stats and
+         * pets kept): its win rate with the best and the worst one. Equal: the animation does not
+         * change its results, any skin works.
+         */
+        animations?: { best: number; worst: number; bestLabel: string; worstLabel: string; all?: { label: string; rate: number }[] };
+    };
 }
 
 /**
@@ -144,10 +164,22 @@ export interface PresetCategoryInfo {
     description: string;
 }
 
-/** A category's build with one attack animation and its best skins (all of them, not only the top five). */
+/**
+ * A build with one attack animation and its best skins: every animation of a stat category (not
+ * only the top five), or of a Most Power or lab build. With its published numbers, so the page can
+ * leave attack skins out without calculating anything (src/presets/filterAnimations.ts).
+ */
 export interface PresetVariant {
     animation: PresetAnimation;
     profile: UserProfile;
+    /** Missing in older files. */
+    metrics?: PresetMetrics;
+    equivalents?: PresetEquivalents;
+    /** Lab builds: the win rate against the other published builds with this animation. */
+    arenaWinRate?: number;
+    /** Same key, same battles and numbers (fightKeyOf): another look of the same build. */
+    fightKey?: string;    /** Its id in ProfilePresetsFile.pairs (tournament.fighterIdOf), set when the pairings are played. */
+    fighterId?: string;
 }
 
 export type StatCategory = 'dpsMelee' | 'dpsRanged' | 'hpsMelee' | 'hpsRanged';
@@ -160,6 +192,8 @@ export interface ProfilePresetsFile {
     bare?: Partial<Record<StatCategory, UserProfile>>;
     /** Per stat category: the build with every distinct attack animation and its best skins, for "my best variants". */
     variants?: Partial<Record<StatCategory, PresetVariant[]>>;
+    /** Every pairing between the published builds and their variants, played ahead (src/presets/tournament.ts). */
+    pairs?: import('./tournament').PairResults;
     /** Arena round robin between every published build (scripts/build_presets.ts, src/presets/tournament.ts). */
     tournament?: import('./tournament').TournamentResult;
     /** The same categories, lab and tournament built without any skin: what every player can build (F2P). */
@@ -188,6 +222,7 @@ const F2P_TOURNAMENT_BATTLES = 100;
 /** Build lab: arena seeds per side and opponent while ranking and for the published rate, extra builds. */
 const LAB_BATTLES = 4;
 const LAB_FINAL_BATTLES = 50;
+/** Build lab: published builds beyond the Arena Champion. */
 const LAB_UNEXPECTED = 4;
 /** Build lab: how many of the best candidates play again with every attack animation of their kind. */
 const LAB_ANIMATION_RETRY = 8;
@@ -198,6 +233,14 @@ const LAB_ANIMATION_RETRY = 8;
  */
 const LAB_CONFIRM = 16;
 const LAB_CONFIRM_BATTLES = 50;
+/**
+ * Build lab arena search: how many of the best distinct confirmed builds climb again with every
+ * choice scored on the arena, and how many of the distinct builds each climb met are confirmed.
+ */
+const LAB_SEARCH = 3;
+const LAB_SEARCH_KEEP = 4;
+/** Build lab: arena search rounds, each against the category builds and every earlier round's winner. */
+const LAB_SELF_PLAY = 3;
 
 /** Builds shown per category. */
 export const PRESETS_PER_CATEGORY = 5;
@@ -396,6 +439,40 @@ function applyChoice(base: UserProfile, c: Choice, libs: LibraryData, space: Spa
 type Score = ((p: UserProfile) => number) & { many?: (ps: UserProfile[]) => number[] };
 const batched = (one: (p: UserProfile) => number, many: (ps: UserProfile[]) => number[]): Score => Object.assign(one, { many });
 
+/**
+ * What the battle reads of a combat row at one attack speed and double chance: range and duration,
+ * the projectile (only when it shoots one: IsRanged with ProjectileId >= 0; without one IsRanged
+ * changes nothing in a battle, the hit lands at once either way, it only moves a mission's start)
+ * and the ticks of every attack (attackTimingTicks). Attack speed never changes in battle, so rows
+ * with the same timing fight identically.
+ */
+function timingSig(row: any, attackSpeed: number, doubleChance: number): string {
+    const shoots = row?.IsRanged === true && (row?.ProjectileId ?? -1) >= 0;
+    return JSON.stringify([fd6MicroFromF64(row?.AttackRange ?? 0), fd6MicroFromF64(row?.AttackDuration ?? 0),
+        shoots ? [row.ProjectileId, row.IsAiming, row.Hand, row.Offset] : null,
+        attackTimingTicks(attackSpeed || 1, row?.WindupTime ?? 0, row?.AttackDuration ?? 0, doubleChance || 0)]);
+}
+
+/**
+ * Builds with the same key fight identically and have the same numbers: the same attack timing,
+ * and everything else but the look (which top-age weapon of the kind, which set's skins, the
+ * skin animation switch): items of one age share their stats and every set gives the same bonus.
+ */
+function fightKeyOf(p: UserProfile, libs: LibraryData, space: Space): string {
+    const s = calculateStats(p, libs);
+    const q: UserProfile = clone(p);
+    q.id = ''; q.name = '';
+    for (const slot of ITEM_SLOTS) {
+        const it = q.items[slot];
+        if (!it) continue;
+        if (slot === 'Weapon') it.idx = space.rangedIdxs.has(it.idx) ? -2 : -1;
+        if (it.skin) it.skin = { stats: it.skin.stats } as any;
+    }
+    q.skins = { saved: [] };
+    q.misc = { ...q.misc, useSkinWindup: undefined };
+    return hash53(JSON.stringify([timingSig(combatRow(choiceOf(p, space), libs, space), s.attackSpeedMultiplier, s.doubleDamageChance), q]));
+}
+
 /** One attack animation option: the combat row it runs and how a choice gets it. */
 interface Animation {
     weaponIdx: number;
@@ -408,7 +485,19 @@ interface Animation {
     sameAs: string[];
 }
 
-const rowSig = (row: any) => JSON.stringify([row?.WindupTime, row?.AttackDuration, row?.AttackRange, row?.IsRanged, row?.IsAiming, row?.ProjectileId, row?.Hand, row?.Offset]);
+/**
+ * What of a combat row the battle reads: windup, duration and range as SetUnitWeapon stores them
+ * (FD6, fd6MicroFromF64: 0.71666664 and 0.71666660 are the same 716666), and the projectile with
+ * where it leaves the hand. Hand, Offset and IsAiming only place a projectile (ExecuteAttack), so
+ * a row without one (melee, or IsRanged with ProjectileId < 0, a hit at once) leaves them out.
+ */
+const rowSig = (row: any) => {
+    const shoots = row?.IsRanged === true && (row?.ProjectileId ?? -1) >= 0;
+    return JSON.stringify([
+        fd6MicroFromF64(row?.WindupTime ?? 0), fd6MicroFromF64(row?.AttackDuration ?? 0), fd6MicroFromF64(row?.AttackRange ?? 0), row?.IsRanged,
+        shoots ? [row.ProjectileId, row.IsAiming, row.Hand, row.Offset] : null,
+    ]);
+};
 
 /** The WeaponLibrary row a choice attacks with (see the header: skin row by weapon kind, else the weapon's own). */
 function combatRow(c: Choice, libs: LibraryData, space: Space): any {
@@ -466,7 +555,7 @@ class TopBuilds {
 function search(
     label: string, start: Choice, base: UserProfile, score: Score, objective: SubstatObjective,
     libs: LibraryData, space: Space, petLevel: number, o: Required<PresetOptions>,
-    choose: { animations: Animation[]; skills: boolean; substats: boolean; skins?: boolean },
+    choose: { animations: Animation[]; skills: boolean; substats: boolean; skins?: boolean; substatStarts?: Alloc[] },
 ): { best: UserProfile; met: TopBuilds } {
     let choice: Choice = clone(start);
     let substats = base;
@@ -512,7 +601,7 @@ function search(
                 fairies: round === 1 ? space.fairies : [fairy], fairyLevel: space.fairyLevel, extra: null, pvpConfig: null,
                 battlesPerSide: 0, keep: 1, customScore: objective === 'custom' ? score : undefined,
                 customScoreBatch: objective === 'custom' ? score.many : undefined,
-                startAllocs: [currentAlloc(current)], localOnly: round > 1,
+                startAllocs: [currentAlloc(current), ...(round === 1 ? choose.substatStarts ?? [] : [])], localOnly: round > 1,
             }, libs);
             const withAlloc = buildWithAlloc(current, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, 100);
             const v = score(withAlloc);
@@ -605,7 +694,7 @@ function metricsMaker(libs: LibraryData, cfg: ConfigFiles, o: Required<PresetOpt
             quest: {
                 index: q.index, total: q.total, label: questBattleLabel(q.battle), winRate: q.winRate,
                 nextLabel: q.index + 1 < q.total ? questBattleLabel(questFinal.line[q.index + 1]) : 'end of the quest',
-                nextWinRate: q.nextWinRate, nextLossProgress: q.nextLossProgress, runs: o.questFinalRuns,
+                nextWinRate: q.nextWinRate, nextLossProgress: q.nextLossProgress, runs: o.questFinalRuns, score: q.score,
             },
         };
     };
@@ -636,7 +725,7 @@ export const CATEGORIES: PresetCategoryInfo[] = [
     { key: 'hpsRanged', name: 'HPS Ranged', goal: 'Most healing per second, ranged',
         description: 'The most healing per second (regen, lifesteal, skill heals) with a ranged weapon, ranked on the 24 h test.' },
     { key: 'lab', name: 'Build Lab', goal: 'Wins the arena against the other builds',
-        description: 'Found by the build lab: arena battles (game PvP rules) against the best build of every category, searching animation, pets, fairy and substats. The active skills barely matter there: the battles end before most of them come into play.' },
+        description: 'Found by the build lab: arena battles (game PvP rules) against the best build of every category and, round after round, against the builds the lab itself finds, searching substats, fairy, attack animation, skin stats and pets. The active skills barely matter there: the battles end before most of them come into play.' },
     { key: 'quest', name: 'Main Quest', goal: 'Furthest main quest battle',
         description: 'The builds that go furthest in the main quest: the furthest battle cleared (at least 50% wins in the battle simulator, every difficulty in order), searched from where the strongest builds already get.' },
 ];
@@ -745,7 +834,7 @@ export function buildKindPresets(ctx: PresetContext, kind: 'melee' | 'ranged'): 
 
 /** Most Power, main quest, the published builds and the build lab, from both kinds' categories. */
 export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: KindPresets): ProfilePresetsFile {
-    const { version, libs, cfg, o, space, base, petLevel, anims, sitePieces, swapOf, dpsOf } = ctx;
+    const { version, libs, cfg, o, space, base, petLevel, anims, sitePieces, swapOf, dpsOf, withAnimation } = ctx;
     const dpsMelee = melee.dps, hpsMelee = melee.hps, dpsRanged = ranged.dps, hpsRanged = ranged.hps;
 
     // ---------------------------------------------------------------- Most Power
@@ -780,7 +869,7 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     const questTop: typeof questRanked = [];
     for (const r of questRanked) {
         if (questTop.length >= PRESETS_PER_CATEGORY) break;
-        if (!questTop.some(t => JSON.stringify(t.profile) === JSON.stringify(r.profile))) questTop.push(r);
+        if (!questTop.some(t => fightKeyOf(t.profile, libs, space) === fightKeyOf(r.profile, libs, space))) questTop.push(r);
     }
     const quest = questTop.map(r => r.profile);
     o.log(`quest: ${questCandidates.length} builds from ${questSearch.hintIndex + 1}, final ${questTop.map(r => r.score.toFixed(2)).join(', ')}`);
@@ -815,6 +904,26 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
             : { weaponIdx: anim.weaponIdx, setId: x, visible: true }))]
             .map(a => ({ source: a.visible ? 'skin' as const : 'weapon' as const, weaponIdx: a.weaponIdx, setId: a.visible ? a.setId : null, windup: anim.windup }))
             .filter(w => (w.source === 'skin' ? !(skinOn && w.setId === c.setId) : !(!skinOn && w.weaponIdx === c.weaponIdx))) : [];
+        // At this build's attack speed and double chance, other animations of its kind can attack on
+        // the very same ticks (attackTimingTicks): the battles are identical, so they are exact too.
+        {
+            const s = calculateStats(p, libs);
+            const timing = (row: any) => timingSig(row, s.attackSpeedMultiplier, s.doubleDamageChance);
+            const own = timing(combatRow(c, libs, space));
+            const listed = new Set(animations.map(w => (w.source === 'skin' ? w.setId : `weapon ${w.weaponIdx}`)));
+            listed.add(skinOn ? c.setId : `weapon ${c.weaponIdx}`);
+            for (const a of anims[kind]) {
+                const opts = [a, ...a.sameAs.map(x => (/^weapon \d+$/.test(x) ? { weaponIdx: Number(x.slice(7)), setId: null, visible: false } : { weaponIdx: a.weaponIdx, setId: x, visible: true }))];
+                for (const x of opts) {
+                    const id = x.visible ? x.setId! : `weapon ${x.weaponIdx}`;
+                    if (listed.has(id)) continue;
+                    const row = combatRow({ ...c, weaponIdx: x.weaponIdx, setId: x.setId ?? c.setId, skinVisible: x.visible } as Choice, libs, space);
+                    if (timing(row) !== own) continue;
+                    listed.add(id);
+                    animations.push({ source: x.visible ? 'skin' : 'weapon', weaponIdx: x.weaponIdx, setId: x.visible ? x.setId : null, windup: row?.WindupTime ?? a.windup });
+                }
+            }
+        }
         const items: Record<string, number[]> = {};
         for (const slot of ITEM_SLOTS) {
             const it = p.items[slot];
@@ -841,7 +950,7 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
             const name = builds.length > 1 ? `${c.name} #${i + 1}` : c.name;
             presets.push({
                 key: `${category}${i + 1}`, category, rank: i + 1, name, goal: c.goal, weapons,
-                description: `${c.description} ${MAXED}.`, animation: animationOf(p), equivalents: equivalentsOf(p),
+                description: `${c.description} ${MAXED}.`, animation: animationOf(p), equivalents: equivalentsOf(p), fightKey: fightKeyOf(p, libs, space),
                 profile: { ...p, id: '', name, isShared: undefined }, metrics: metricsOf(p),
             });
         });
@@ -852,6 +961,16 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     publish('hpsMelee', 'melee', hpsMelee.top);
     publish('hpsRanged', 'ranged', hpsRanged.top);
     publish('quest', 'any', quest);
+    /** A build with one animation, with everything the page shows of it. */
+    const variantOf = (p: UserProfile, arenaWinRate?: number): PresetVariant => ({ animation: animationOf(p), profile: p, metrics: metricsOf(p), equivalents: equivalentsOf(p), fightKey: fightKeyOf(p, libs, space), ...(arenaWinRate === undefined ? {} : { arenaWinRate }) });
+    // Most Power with every other attack animation of its kind: Power reads no animation, the
+    // other numbers do.
+    {
+        const pp = presets.find(p => p.category === 'power')!;
+        const kind = space.rangedIdxs.has(power.items.Weapon!.idx) ? 'ranged' : 'melee';
+        const own = rowSig(combatRow(choiceOf(power, space), libs, space));
+        pp.alternatives = anims[kind].filter(a => a.sig !== own).map(a => variantOf(withAnimation(power, a)));
+    }
 
     // ---------------------------------------------------------------- Build lab
     // Arena score against the best build of every category: a win 1, a draw 0.5, LAB_BATTLES seeds
@@ -862,11 +981,10 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     // The active skills stay the categories' ones: in battles this short they barely change a result.
     if (pvpConfigFromJson(cfg.PvpBaseConfig)) {
         const field = presets.filter(p => p.rank === 1).map(p => p.profile);
-        const arenaWith = (perSide: number): Score => batched(
-            p => o.pool.arena(p, field, perSide),
-            ps => o.pool.many(ps.map(p => ({ kind: 'arena', p, field, perSide }))));
+        const arenaWith = (perSide: number, against: UserProfile[] = field): Score => batched(
+            p => o.pool.arena(p, against, perSide),
+            ps => o.pool.many(ps.map(p => ({ kind: 'arena', p, field: against, perSide }))));
         const arenaOf = arenaWith(o.labBattles);
-        const arenaFinal = arenaWith(o.labFinalBattles);
         const withFairy = (p: UserProfile, fairy: FairyName | null) => {
             const r = runSubstatOptimizer({
                 base: p, current: p, reference: p, referenceName: '', objective: 'dps', withSkills: true,
@@ -895,65 +1013,121 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
         const quick = [...firstRanked, ...retried.map((p, i) => ({ profile: p, value: retryScores[i] }))].sort((x, y) => y.value - x.value);
         const confirmScores = arenaWith(LAB_CONFIRM_BATTLES).many!(quick.slice(0, LAB_CONFIRM).map(m => m.profile));
         const confirmed = quick.slice(0, LAB_CONFIRM).map((m, i) => ({ profile: m.profile, value: confirmScores[i] })).sort((x, y) => y.value - x.value);
-        const labRanked = [...confirmed, ...quick.slice(LAB_CONFIRM)];
-        o.log(`lab: ${retried.length} animation retries of the best ${LAB_ANIMATION_RETRY}, the best ${LAB_CONFIRM} confirmed on ${LAB_CONFIRM_BATTLES} seeds a side (top ${(confirmed[0].value * 100).toFixed(1)}%)`);
-        o.log(`lab: ${labCandidates.length} candidates, best ${(labRanked[0].value * 100).toFixed(1)}%`);
-        const lab = { best: labRanked[0].profile, met: { list: () => labRanked } };
         const traitOf = (p: UserProfile) => ({
             anim: rowSig(combatRow(choiceOf(p, space), libs, space)),
             fairy: p.misc.fairy?.name ?? null,
             pets: p.pets.active.map(x => x.id).sort((a, b) => a - b).join(','),
         });
-        const used = presets.map(p => traitOf(p.profile));
-        const petName = (id: number) => {
-            const row = Object.values<any>(cfg.PetLibrary ?? {}).find(r => r.PetId.Rarity === space.topRarity && r.PetId.Id === id);
-            return row?.Name ? String(row.Name).replace(/([a-z])([A-Z])/g, '$1 $2') : `pet ${id}`;
-        };
-        /** What a build does that no published build does, by kind. */
-        const novelties = (p: UserProfile) => {
-            const t = traitOf(p);
-            const a = animationOf(p);
-            const out: { kind: 'animation' | 'fairy' | 'pets'; text: string }[] = [];
-            if (!used.some(u => u.anim === t.anim)) out.push({ kind: 'animation', text: a.source === 'skin' ? `${a.setId!.replace(/Set$/, '')} skin animation` : `weapon ${a.weaponIdx} animation` });
-            if (!used.some(u => u.fairy === t.fairy)) out.push({ kind: 'fairy', text: t.fairy ? `fairy ${t.fairy}` : 'no fairy' });
-            if (!used.some(u => u.pets === t.pets)) {
-                const counts = new Map<string, number>();
-                for (const x of p.pets.active) counts.set(petName(x.id), (counts.get(petName(x.id)) ?? 0) + 1);
-                out.push({ kind: 'pets', text: [...counts].map(([n, c]) => (c > 1 ? `${c}x ${n}` : n)).join(' + ') });
-            }
-            return out;
-        };
-        const describe = (p: UserProfile) => novelties(p).map(n => n.text).join(', ');
-        // One build per kind of novelty first (the best with a new animation, with a new fairy,
-        // with new pets), then the next best of any kind.
-        const picked: UserProfile[] = [];
         const same = (x: UserProfile, y: UserProfile) => { const a = traitOf(x), b = traitOf(y); return a.anim === b.anim && a.fairy === b.fairy && a.pets === b.pets; };
-        const ranked = lab.met.list().filter(m => novelties(m.profile).length > 0 && !same(m.profile, lab.best));
-        for (const kind of ['animation', 'fairy', 'pets'] as const) {
-            const m = ranked.find(r => novelties(r.profile).some(n => n.kind === kind) && !picked.some(q => same(q, r.profile)));
-            if (m && picked.length < LAB_UNEXPECTED) picked.push(m.profile);
+        // Arena search: the candidates' substats, fairy and pets were chosen for DPS or HPS, not for
+        // these fights. The best distinct confirmed builds climb again with every choice scored on
+        // the arena itself: substats (also from a start stacked on each stat, so crit, double,
+        // attack speed, health, block... builds no DPS search reaches are tried), fairy, attack
+        // animation, skin stats and pets. The active skills stay the categories' ones.
+        // Arena results are not transitive (a build can beat the best one and lose to the category
+        // builds), and the category builds alone are beaten almost every
+        // time, which leaves a climb nothing to tell builds apart. So the climbs go round after
+        // round: each round fights the category builds and every build the earlier rounds found,
+        // and climbs again from that round's winners.
+        const searchFrom: UserProfile[] = [];
+        for (const m of confirmed) {
+            if (searchFrom.length >= LAB_SEARCH) break;
+            if (!searchFrom.some(q => same(q, m.profile))) searchFrom.push(m.profile);
         }
-        for (const m of ranked) {
-            if (picked.length >= LAB_UNEXPECTED) break;
-            if (!picked.some(q => same(q, m.profile))) picked.push(m.profile);
-        }
-        const info = CATEGORIES.find(c => c.key === 'lab')!;
-        const addLab = (p: UserProfile, rank: number, name: string, unusual: string) => {
-            const score = arenaFinal(p);
-            o.log(`${name}: ${(score * 100).toFixed(1)}% vs the category builds${unusual ? `, ${unusual}` : ''}`);
-            presets.push({
-                key: `lab${rank}`, category: 'lab', rank, name, goal: info.goal, weapons: space.rangedIdxs.has(p.items.Weapon!.idx) ? 'ranged' : 'melee',
-                description: `${info.description} It wins ${(score * 100).toFixed(1)}% of its arena battles against them. ${MAXED}.`,
-                animation: animationOf(p), equivalents: equivalentsOf(p), profile: { ...p, id: '', name, isShared: undefined }, metrics: metricsOf(p),
-                lab: { arenaWinRate: score, unusual },
+        const perStatCap = space.bodies.filter(b => b.slots > 0).length;
+        const slots = space.bodies.reduce((n, b) => n + b.slots, 0);
+        const stackedStarts: Alloc[] = space.stats.map(st => ({ [st.id]: Math.min(perStatCap, slots) }));
+        /** Everything a build fights with: two equal builds are one. */
+        const buildSig = (p: UserProfile) => JSON.stringify([p.items, p.pets.active, p.mount.active, p.skills.equipped.map(x => x.id).sort(), p.misc.fairy, p.misc.useSkinWindup]);
+        const rivals = [...field, ...searchFrom];
+        const found: UserProfile[] = [];
+        let starts = searchFrom;
+        for (let round = 1; round <= LAB_SELF_PLAY && starts.length; round++) {
+            const versus = [...rivals];
+            const arenaSearch: Score = batched(
+                p => o.pool.arena(p, versus, o.labBattles),
+                ps => o.pool.many(ps.map(p => ({ kind: 'arena', p, field: versus, perSide: o.labBattles }))));
+            const winners: UserProfile[] = [];
+            starts.forEach((p, i) => {
+                const r = search(`lab arena ${round}.${i + 1}`, choiceOf(p, space), p, arenaSearch, 'custom', libs, space, petLevel, o,
+                    { animations: anims[kindOf(p)], skills: false, substats: true, substatStarts: stackedStarts });
+                found.push(r.best, ...r.met.list().map(m => m.profile).filter(q => !same(q, r.best)).slice(0, LAB_SEARCH_KEEP - 1));
+                if (![...rivals, ...winners].some(q => buildSig(q) === buildSig(r.best))) winners.push(r.best);
             });
+            o.log(`lab: arena round ${round}, ${starts.length} climbs against ${versus.length} builds, ${winners.length} new`);
+            rivals.push(...winners);
+            starts = winners;
+        }
+        // The ranking: every confirmed and found build against every published category build and
+        // every round's winner, on the long run.
+        const unique = (ps: UserProfile[]) => ps.filter((p, i) => ps.findIndex(q => buildSig(q) === buildSig(p)) === i);
+        const population = unique([...presets.map(p => p.profile), ...rivals.slice(field.length)]);
+        const vsPopulation = arenaWith(LAB_CONFIRM_BATTLES, population);
+        const ratesVs = (ps: UserProfile[], against: (i: number) => UserProfile[], perSide: number) =>
+            o.pool.many(ps.map((p, i) => ({ kind: 'arena', p, field: against(i), perSide, winRate: true })));
+        const labRanked = (() => { const ps = unique([...confirmed.map(m => m.profile), ...found]); const v = vsPopulation.many!(ps); return ps.map((p, i) => ({ profile: p, value: v[i] })).sort((x, y) => y.value - x.value); })();
+        o.log(`lab: ${labRanked.length} builds ranked against the ${population.length} published and found builds, best ${(labRanked[0].value * 100).toFixed(1)}%`);
+        /** Rolls per substat over every body, most rolled first. */
+        const substatCounts = (p: UserProfile) => {
+            const counts = new Map<string, number>();
+            for (const body of [...Object.values(p.items), ...p.pets.active, p.mount.active]) for (const st of body?.secondaryStats ?? []) counts.set(st.statId, (counts.get(st.statId) ?? 0) + 1);
+            return [...counts].sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1));
         };
-        addLab(lab.best, 1, 'Arena Champion', '');
-        picked.forEach((p, i) => addLab(p, i + 2, `Lab: ${describe(p)}`, describe(p)));
+        /** Builds with the same substats and fairy are one build, whatever their animation or pets. */
+        const substatSig = (p: UserProfile) => JSON.stringify([substatCounts(p), p.misc.fairy?.name ?? null]);
+        const animName = (p: UserProfile) => { const a = animationOf(p); return a.source === 'skin' ? `${a.setId!.replace(/Set$/, '')} skin` : `weapon ${a.weaponIdx}`; };
+        /** What the build is: its three most rolled substats (fairy, animation and pets are shown apart). */
+        const describe = (p: UserProfile) => substatCounts(p).slice(0, 3).map(([id]) => STAT_NAMES[id] ?? id).join(' + ');
+        // The lab's builds: the best build of each substat allocation and fairy (the others with the
+        // same ones are variants of it), each with every attack animation of its kind (substats,
+        // fairy, skin stats and pets kept); the best animation is the one published.
+        const groups: UserProfile[] = [];
+        for (const m of labRanked) {
+            if (groups.length > LAB_UNEXPECTED) break;
+            if (!groups.some(q => substatSig(q) === substatSig(m.profile))) groups.push(m.profile);
+        }
+        const withAnim = (p: UserProfile, a: Animation) => {
+            const c = choiceOf(p, space);
+            return applyChoice(p, { ...c, weaponIdx: a.weaponIdx, setId: a.setId ?? c.setId, skinVisible: a.visible }, libs, space, petLevel);
+        };
+        // Each against every other build the page publishes (the categories' and the other lab
+        // builds), as in the arena tournament: the best animation is the one published, the
+        // order follows, and the first is the Arena Champion.
+        const others = presets.map(p => p.profile);
+        const sweeps = groups.map(p => anims[kindOf(p)].map(a => withAnim(p, a)));
+        const groupOf = sweeps.flatMap((row, g) => row.map(() => g));
+        const sweepRates = ratesVs(sweeps.flat(), i => [...others, ...groups.filter((_, j) => j !== groupOf[i])], o.labFinalBattles);
+        let at = 0;
+        const ordered = sweeps.map(row => {
+            // Equal results go to the lower windup, as in the stat categories. Animations that attack
+            // on the same ticks at this build's speed fight identically (equivalentsOf).
+            const runs = row.map(p => ({ p, label: animName(p), rate: sweepRates[at++], windup: animationOf(p).windup }))
+                .sort((x, y) => y.rate - x.rate || x.windup - y.windup);
+            const first = runs[0], last = runs[runs.length - 1];
+            return {
+                p: first.p, rate: first.rate, others: runs.slice(1),
+                animations: { best: first.rate, worst: last.rate, bestLabel: first.label, worstLabel: last.label, all: runs.map(r => ({ label: r.label, rate: r.rate })) },
+            };
+        }).sort((x, y) => y.rate - x.rate);
+        const info = CATEGORIES.find(c => c.key === 'lab')!;
+        const names = labNames(ordered.map(c => ({ unusual: describe(c.p), fairy: c.p.misc.fairy?.name ?? null })));
+        ordered.forEach((c, i) => {
+            const rank = i + 1;
+            const unusual = describe(c.p);
+            const name = names[i];
+            o.log(`${name}: ${(c.rate * 100).toFixed(1)}% vs the other published builds, ${unusual}, animations ${c.animations.all.map(a => `${a.label} ${(a.rate * 100).toFixed(1)}%`).join(', ')}`);
+            presets.push({
+                key: `lab${rank}`, category: 'lab', rank, name, goal: info.goal, weapons: space.rangedIdxs.has(c.p.items.Weapon!.idx) ? 'ranged' : 'melee',
+                description: `${info.description} It wins ${(c.rate * 100).toFixed(1)}% of its arena battles against the other published builds. ${MAXED}.`,
+                animation: animationOf(c.p), equivalents: equivalentsOf(c.p), fightKey: fightKeyOf(c.p, libs, space), profile: { ...c.p, id: '', name, isShared: undefined }, metrics: metricsOf(c.p),
+                lab: { arenaWinRate: c.rate, unusual, animations: c.animations },
+                alternatives: c.others.map(r => variantOf(r.p, r.rate)),
+            });
+        });
     }
     const bare = { dpsMelee: dpsMelee.bare, dpsRanged: dpsRanged.bare, hpsMelee: hpsMelee.bare, hpsRanged: hpsRanged.bare };
     const variants = Object.fromEntries(([['dpsMelee', dpsMelee], ['dpsRanged', dpsRanged], ['hpsMelee', hpsMelee], ['hpsRanged', hpsRanged]] as const)
-        .map(([k, c]) => [k, c.variants.map(p => ({ animation: animationOf(p), profile: p }))]));
+        .map(([k, c]) => [k, c.variants.map(p => variantOf(p))]));
     const file: ProfilePresetsFile = { version, categories: CATEGORIES, presets, bare, variants };
 
     // The same builds without any skin (every weapon's own attack, no skin stats): what every
@@ -971,6 +1145,57 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     noSkins.tournament?.standings.slice(0, 5).forEach((st, i) => o.log(`F2P #${i + 1} ${st.name}: ${(st.winRate * 100).toFixed(1)}%`));
     file.noSkins = noSkins;
     return file;
+}
+
+/**
+ * Substat bodies of a build: every item at the top age, and the pets and mount of their own
+ * rarities (SecondaryStatPetUnlockLibrary, NumberOfSecondStats per rarity).
+ */
+export function substatBodiesOf(p: UserProfile, cfg: ConfigFiles): SubstatBody[] {
+    const unlock = Object.values<any>(cfg.SecondaryStatItemUnlockLibrary ?? {});
+    const itemSlots = Math.max(0, ...unlock.map(r => r.NumberOfSecondStats));
+    const petSlots = (rarity: string | undefined) => (rarity ? (cfg.SecondaryStatPetUnlockLibrary as any)?.[rarity]?.NumberOfSecondStats ?? 0 : 0);
+    return [
+        ...ITEM_SLOTS.map(slot => ({ key: `item:${slot}`, label: slot, slots: itemSlots })),
+        ...p.pets.active.map((pet, i) => ({ key: `pet:${i}`, label: `Pet ${i + 1}`, slots: petSlots(pet?.rarity) })),
+        { key: 'mount', label: 'Mount', slots: petSlots(p.mount.active?.rarity) },
+    ];
+}
+
+/**
+ * A player's build with everything they have maxed: the same weapon kind and attack animation,
+ * skins (set and Damage/Health rolls), pets and mount (their rarity, at its top level), equipped
+ * skills and fairy, everything else at its maximum like the preset builds, and the given substat
+ * allocation at the top roll.
+ */
+export function maxedFromProfile(user: UserProfile, alloc: Alloc, libs: LibraryData, cfg: ConfigFiles): UserProfile {
+    const space = readSpace(libs, cfg);
+    const base = maxedBase(libs, cfg, space);
+    const w = user.items.Weapon;
+    const ranged = w ? (libs.weaponLibrary as any)?.[libKey(w.age, 'Weapon', w.idx)]?.IsRanged === true : false;
+    const weaponIdx = w && space.weaponIdxs.includes(w.idx) && space.rangedIdxs.has(w.idx) === ranged
+        ? w.idx : space.weaponIdxs.find(i => space.rangedIdxs.has(i) === ranged) ?? space.weaponIdxs[0];
+    const weaponSet = setOfSkin(space, 'Weapon', w?.skin?.idx);
+    const setId = weaponSet ?? setOfSkin(space, 'Helmet', user.items.Helmet?.skin?.idx) ?? setOfSkin(space, 'Armour', user.items.Body?.skin?.idx);
+    const c: Choice = {
+        weaponIdx, setId,
+        skinStats: Object.fromEntries(SKIN_SLOTS.map(t => [t, Object.keys(user.items[SKIN_TYPE_TO_SLOT[t]]?.skin?.stats ?? {})[0] ?? space.skinStatTypes[t][0]])),
+        skinVisible: !!weaponSet && user.misc.useSkinWindup !== false,
+        petIds: [],
+        skills: user.skills.equipped.map(x => x.id).filter(id => base.skills.collection[id]),
+    };
+    const p = applyChoice(base, c, libs, space, 0);
+    const petTop = (rarity: string) => Math.max(1, (libs.petUpgradeLibrary as any)?.[rarity]?.LevelInfo?.length ?? 1);
+    p.pets.active = user.pets.active.filter(Boolean).map(pet => ({ rarity: pet.rarity, id: pet.id, level: petTop(pet.rarity), evolution: pet.evolution ?? 0, secondaryStats: [] }));
+    p.pets.collection = Object.fromEntries(p.pets.active.map(pet => [`${pet.rarity}_${pet.id}`, { rarity: pet.rarity, id: pet.id, level: pet.level, evolution: pet.evolution }]));
+    const m = user.mount.active;
+    if (m) {
+        const mountTop = Math.max(1, (libs.mountUpgradeLibrary as any)?.[m.rarity]?.LevelInfo?.length ?? 1);
+        p.mount.active = { rarity: m.rarity, id: m.id, level: mountTop, evolution: m.evolution ?? 0, skills: [], secondaryStats: [] };
+        p.mount.collection = { [`${m.rarity}_${m.id}`]: clone(p.mount.active) };
+    }
+    const fairy = (user.misc.fairy?.name ?? null) as FairyName | null;
+    return buildWithAlloc(p, alloc, fairy, space.fairyLevel, space.stats, substatBodiesOf(p, cfg), 100);
 }
 
 export function buildProfilePresets(version: string, libs: LibraryData, cfg: ConfigFiles, opts: PresetOptions = {}): ProfilePresetsFile {

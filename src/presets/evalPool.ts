@@ -17,13 +17,16 @@ import { PvpBattle } from '../pvp/simulate';
 import type { PvpHpConfig } from '../engine';
 import { survivalDuel } from './survivalDuel';
 import { QuestMeter, type QuestBattle, type QuestOutcome } from './mainProgress';
+import { encodePair, playPair } from './tournament';
 
 /** One whole measurement of one build, for EvalPool.many. */
 export type ScoreTask =
     /** Mean hits survived (survival duels, seeds 1..runs). */
     | { kind: 'survival'; p: UserProfile; attacker: UserProfile; seconds: number; runs: number }
-    /** EvalPool.arena. */
-    | { kind: 'arena'; p: UserProfile; field: UserProfile[]; perSide: number }
+    /** EvalPool.arena; with winRate the share of points alone, without the HP margin tiebreak. */
+    | { kind: 'arena'; p: UserProfile; field: UserProfile[]; perSide: number; winRate?: boolean }
+    /** One tournament pairing (playPair), its counts and HP margin in one number (encodePair). */
+    | { kind: 'pair'; a: UserProfile; b: UserProfile; perSide: number }
     /** QuestMeter score, walking from the given hint (the result can depend on where the walk starts). */
     | { kind: 'quest'; p: UserProfile; runs: number; hint: number };
 
@@ -95,7 +98,11 @@ export class EvalCore {
         if (t.kind === 'arena') {
             const n = t.field.length * t.perSide;
             const [points, margin] = this.arena(t.p, t.field, t.perSide, 0, n - 1);
-            return points / (2 * n) + (margin / (2 * n)) * 1e-3;
+            return points / (2 * n) + (t.winRate ? 0 : (margin / (2 * n)) * 1e-3);
+        }
+        if (t.kind === 'pair') {
+            if (!this.arenaCfg) throw new Error('arena config missing');
+            return encodePair(playPair(this.fighter(t.a, true), this.fighter(t.b, true), this.arenaCfg, t.perSide));
         }
         let m = this.meters.get(t.runs);
         if (!m) { m = new QuestMeter(this.questLibs, t.runs); this.meters.set(t.runs, m); }

@@ -3,13 +3,15 @@
  * Runs "Fight against" (src/presets/challenge.ts) in a browser worker: loads the version's configs
  * and its published preset builds, then plays the player's profile against every build.
  */
-import type { ConfigFiles, ProfilePresetsFile } from './buildPresets';
+import { maxedFromProfile, type ConfigFiles, type ProfilePresetsFile } from './buildPresets';
+import type { Alloc } from '../optimizer/substatOptimizer';
 import { presetLibsFrom, PRESET_CONFIG_FILES } from './presetLibs';
 import { runChallenge, type ChallengeResult } from './challenge';
 import { pvpConfigFromJson } from '../pvp/simulate';
 import type { UserProfile } from '../types/Profile';
 
-export type ChallengeRequest = { version: string; name: string; profile: UserProfile };
+/** alloc: fight with the profile maxed (maxedFromProfile) and these substats at the top roll, not as it is. */
+export type ChallengeRequest = { version: string; name: string; profile: UserProfile; alloc?: Alloc };
 
 export type ChallengeReply =
     | { type: 'progress'; done: number; total: number }
@@ -19,7 +21,7 @@ export type ChallengeReply =
 const post = (m: ChallengeReply) => (self as unknown as DedicatedWorkerGlobalScope).postMessage(m);
 
 self.onmessage = async (e: MessageEvent<ChallengeRequest>) => {
-    const { version, name, profile } = e.data;
+    const { version, name, profile, alloc } = e.data;
     try {
         const base = `${import.meta.env.BASE_URL}parsed_configs/${version}/`;
         const cfg: ConfigFiles = {};
@@ -33,7 +35,9 @@ self.onmessage = async (e: MessageEvent<ChallengeRequest>) => {
         });
         const arena = pvpConfigFromJson(cfg.PvpBaseConfig);
         if (!arena) throw new Error('PvpBaseConfig.json is missing or incomplete');
-        const result = runChallenge({ name, profile }, site, presetLibsFrom(version, cfg), arena, (done, total) => post({ type: 'progress', done, total }));
+        const libs = presetLibsFrom(version, cfg);
+        const fighter = alloc ? maxedFromProfile(profile, alloc, libs, cfg) : profile;
+        const result = runChallenge({ name, profile: fighter }, site, libs, arena, (done, total) => post({ type: 'progress', done, total }));
         post({ type: 'done', result });
     } catch (err) {
         post({ type: 'error', message: err instanceof Error ? err.message : String(err) });

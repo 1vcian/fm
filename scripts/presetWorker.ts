@@ -27,7 +27,8 @@ parentPort!.on('message', (m: PoolMessage) => {
         m.tasks.forEach((t, i) => {
             try {
                 out[m.index[i]] = core.score(t.kind === 'survival' ? { ...t, attacker: profiles.get(t.attacker)! }
-                    : t.kind === 'arena' ? { ...t, field: t.field.map(id => profiles.get(id)!) } : t);
+                    : t.kind === 'arena' ? { ...t, field: t.field.map(id => profiles.get(id)!) }
+                    : t.kind === 'pair' ? { ...t, a: profiles.get(t.a)!, b: profiles.get(t.b)! } : t);
             } catch (e) {
                 console.error(e);
                 out[m.index[i]] = NaN;

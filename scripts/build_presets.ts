@@ -15,7 +15,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildProfilePresets, type ProfilePresetsFile } from '../src/presets/buildPresets';
-import { runTournament } from '../src/presets/tournament';
+import { decodePair, fighterIdOf, tournamentFromPairs, type PairResults } from '../src/presets/tournament';
+import type { UserProfile } from '../src/types/Profile';
 import { pvpConfigFromJson } from '../src/pvp/simulate';
 import { CONFIG_ROOT as ROOT, loadPresetLibs } from './presetLibs';
 import { workerPool } from './presetPool';
@@ -43,8 +44,34 @@ const out: ProfilePresetsFile = tournamentOnly
 if (!tournamentOnly) fs.writeFileSync(file, JSON.stringify(out));
 const arena = pvpConfigFromJson(cfg.PvpBaseConfig);
 if (!arena) throw new Error('PvpBaseConfig.json is missing or incomplete');
+// Every pairing between the published builds and every variant of them (each attack animation of
+// the stat categories, Most Power and the lab builds), played once: the tournament of the
+// published builds, and of any attack skins the page leaves out, is read from these.
+log('pairings');
+const everyBuild: UserProfile[] = [
+    ...out.presets.map(p => p.profile),
+    ...out.presets.flatMap(p => (p.alternatives ?? []).map(v => v.profile)),
+    ...Object.values(out.variants ?? {}).flatMap(vs => (vs ?? []).map(v => v.profile)),
+];
+const byId = new Map<string, UserProfile>();
+for (const p of everyBuild) { const id = fighterIdOf(p, libs); if (!byId.has(id)) byId.set(id, p); }
+// Each build's id in the pairings, so the page does not rebuild every fighter to find it.
+for (const p of out.presets) {
+    p.fighterId = fighterIdOf(p.profile, libs);
+    for (const v of p.alternatives ?? []) v.fighterId = fighterIdOf(v.profile, libs);
+}
+for (const vs of Object.values(out.variants ?? {})) for (const v of vs ?? []) v.fighterId = fighterIdOf(v.profile, libs);
+const ids = [...byId.keys()].sort();
+const tasks: { a: string; b: string }[] = [];
+for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) tasks.push({ a: ids[i], b: ids[j] });
+log(`pairings: ${ids.length} distinct fighters, ${tasks.length} pairs, ${TOURNAMENT_BATTLES_PER_SIDE} battles a side`);
+const codes = pool.many(tasks.map(t => ({ kind: 'pair', a: byId.get(t.a)!, b: byId.get(t.b)!, perSide: TOURNAMENT_BATTLES_PER_SIDE })));
+const pairs: PairResults = { battlesPerSide: TOURNAMENT_BATTLES_PER_SIDE, results: Object.fromEntries(tasks.map((t, i) => [`${t.a}|${t.b}`, decodePair(codes[i])])) };
+out.pairs = pairs;
 log('tournament');
-out.tournament = runTournament(out.presets, libs, arena, TOURNAMENT_BATTLES_PER_SIDE, log);
+const tournament = tournamentFromPairs(out.presets.map(p => ({ key: p.key, name: p.name, id: fighterIdOf(p.profile, libs) })), pairs);
+if (!tournament) throw new Error('a published build has no pairings');
+out.tournament = tournament;
 out.tournament.standings.forEach((s, i) => log(`#${i + 1} ${s.name}: ${s.wins}-${s.draws}-${s.losses}, ${(s.winRate * 100).toFixed(1)}%, HP margin ${s.hpMargin.toFixed(3)}`));
 fs.writeFileSync(file, JSON.stringify(out));
 for (const p of out.presets) {

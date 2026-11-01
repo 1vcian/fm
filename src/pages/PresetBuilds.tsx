@@ -17,9 +17,11 @@ import { SpriteSheetIcon } from '../components/UI/SpriteSheetIcon';
 import { BuildPortrait } from '../components/Presets/BuildPortrait';
 import { applyAnimation, type AnimationSwap } from '../presets/equivalents';
 import { runFightAgainst, runMyVariants } from '../presets/myVariants';
+import { filterAnimations } from '../presets/filterAnimations';
+import { listBuilds, otherSkinRows, type BuildTag, type BuildTagKind, type OtherSkinRow } from '../presets/presetList';
 import { CHALLENGER_KEY, type ChallengeResult } from '../presets/challenge';
 import type { UserProfile } from '../types/Profile';
-import type { PresetCategory, PresetCategoryInfo, ProfilePreset, ProfilePresetsFile } from '../presets/buildPresets';
+import type { ProfilePreset, ProfilePresetsFile } from '../presets/buildPresets';
 import type { TournamentStanding } from '../presets/tournament';
 import { cn } from '../lib/utils';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
@@ -37,6 +39,13 @@ import { AGES } from '../utils/constants';
  */
 
 const pct = (v: number) => `${(v * 100).toFixed(v * 100 >= 100 ? 0 : 1)}%`;
+
+/** Win rates of the same lab build with every attack animation of its kind within this many points: any skin works. */
+const ANY_ANIMATION_POINTS = 0.01;
+const labAnimationText = (a: { best: number; worst: number; bestLabel: string; worstLabel: string }) =>
+    a.best - a.worst <= ANY_ANIMATION_POINTS
+        ? `Any skin works: every attack animation wins ${pct(a.worst)} to ${pct(a.best)}`
+        : `Attack animation matters: best ${a.bestLabel} (${pct(a.best)}), worst ${a.worstLabel} (${pct(a.worst)})`;
 const camel = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2');
 /** How far into the main quest: battles cleared, then how close to the next (win rate, losses by enemy HP removed). */
 const questRank = (q: ProfilePreset['metrics']['quest']) => q.index + q.nextWinRate + (1 - q.nextWinRate) * (q.nextLossProgress ?? 0);
@@ -88,13 +97,39 @@ const weaponName = (p: ProfilePreset, mapping: any) => {
     return name ? camel(name) : `Weapon ${p.animation.weaponIdx}`;
 };
 
-/** How the build attacks: its set's weapon skin, or its weapon's own animation under any hidden skin. */
-function animationText(p: ProfilePreset, mapping: any): string {
-    const a = p.animation;
-    const windup = `${a.windup.toFixed(2)} s windup`;
-    if (a.source === 'skin') return `${setDisplayName(a.setId)} skin animation, ${windup}`;
-    return `${weaponName(p, mapping)} animation, any skin with the animation off, ${windup}`;
+/**
+ * How the build attacks, with its exact equivalents: a weapon's own attack (its own, or one that
+ * hits on the same ticks) means any skin works, so only the weapon is named; otherwise every skin
+ * that attacks the same.
+ */
+function attackOf(p: ProfilePreset, mapping: any): { weapon: string | null; skins: string[]; windup: number } {
+    const eq = p.equivalents?.animations ?? [];
+    if (p.animation.source === 'weapon') return { weapon: weaponName(p, mapping), skins: [], windup: p.animation.windup };
+    const w = eq.find(x => x.source === 'weapon');
+    if (w) return { weapon: swapName(w, p.profile.items.Weapon?.age ?? 0, mapping), skins: [], windup: w.windup };
+    return { weapon: null, skins: [p.animation.setId, ...eq.filter(x => x.source === 'skin').map(x => x.setId)].map(setDisplayName), windup: p.animation.windup };
 }
+
+/** How the build attacks: the skins that attack the same, or a weapon's own animation under any skin. */
+function animationText(p: ProfilePreset, mapping: any): string {
+    const a = attackOf(p, mapping);
+    const windup = `${a.windup.toFixed(2)} s windup`;
+    if (a.weapon) return `${a.weapon} animation, any skin with the animation off, ${windup}`;
+    return `${a.skins.join(' / ')} skin animation, ${windup}`;
+}
+
+/**
+ * Any skin works: the build attacks with a weapon's own animation, or one of its equivalents does
+ * (the same attack row, or the same ticks at its attack speed and double chance).
+ */
+const noSkinNeeded = (p: ProfilePreset | undefined) => !!p && (p.animation.source === 'weapon' || !!p.equivalents?.animations.some(w => w.source === 'weapon'));
+
+/** The attack a build runs, short: the weapon skin shown, or the weapon's own attack. */
+const attackLabel = (p: ProfilePreset | undefined, mapping: any) => {
+    if (!p) return '';
+    const a = attackOf(p, mapping);
+    return a.weapon ? `${a.weapon}, any skin` : `${a.skins.join(' / ')} skin`;
+};
 
 /** Melee or ranged, with the game's own icon for each. */
 function KindTag({ ranged, className }: { ranged: boolean; className?: string }) {
@@ -144,6 +179,37 @@ const SourceTag = ({ source }: { source: keyof typeof SOURCE_TAG }) => (
 /** BaseSetId of the set the build wears (every build wears a complete, maxed one). */
 const setOf = (p: ProfilePreset): string | null => p.animation.setId;
 
+/** Equivalent skins drawn side by side, at most this many (the rest are named). */
+const MAX_LOOKS = 4;
+
+/**
+ * The build drawn once per skin that attacks the same (attackOf): with a weapon's own attack any
+ * skin works, so it is drawn once.
+ */
+function LookPortraits({ preset, width, height, scale }: { preset: ProfilePreset; width: number; height: number; scale: number }) {
+    const { libs } = useStatLibraries();
+    const looks = useMemo(() => {
+        const eq = preset.equivalents?.animations ?? [];
+        if (preset.animation.source === 'weapon' || eq.some(w => w.source === 'weapon')) return [{ profile: preset.profile, setId: setOf(preset) }];
+        return [{ profile: preset.profile, setId: setOf(preset) }, ...eq.filter(w => w.source === 'skin').map(w => ({
+            profile: applyAnimation(preset.profile, w, libs.skinsLibrary, libs.skinUpgradeLibrary), setId: w.setId,
+        }))].slice(0, MAX_LOOKS);
+    }, [preset, libs.skinsLibrary, libs.skinUpgradeLibrary]);
+    if (looks.length === 1) return <BuildPortrait profile={looks[0].profile} setId={looks[0].setId} width={width} height={height} scale={scale} />;
+    // Side by side: every portrait keeps the whole box (its effects are not cut), shifted so the
+    // characters stand at even spacing across it, a little smaller.
+    const n = looks.length;
+    return (
+        <div className="relative" style={{ width, height }}>
+            {looks.map((l, i) => (
+                <div key={l.setId ?? i} className="absolute top-0" style={{ left: (width * (i + 1)) / (n + 1) - width / 2, width, height }}>
+                    <BuildPortrait profile={l.profile} setId={l.setId} width={width} height={height} scale={scale * (n === 2 ? 0.85 : 0.72)} />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 function Icons({ preset, sprites, version }: { preset: ProfilePreset; sprites: any; version: string | null }) {
     const p = preset.profile;
     const textureBase = `${import.meta.env.BASE_URL}Texture2D/${resolveTextureVersion(version ?? undefined) ?? version ?? ''}/`;
@@ -189,7 +255,8 @@ function buildAsText(preset: ProfilePreset, stats: AggregatedStats, mapping: any
     lines.push(`Power ${formatCompactNumber(m.power)}, damage ${formatCompactNumber(m.totalDamage)}, health ${formatCompactNumber(m.totalHealth)}`);
     lines.push(`DPS ${formatCompactNumber(m.testedDps)}, HPS ${formatCompactNumber(m.testedHps)} (24 h test)`);
     lines.push(`Main quest: clears ${m.quest.label}, next ${m.quest.nextLabel} ${pct(m.quest.nextWinRate)}`);
-    if (preset.lab) lines.push(`Arena: wins ${pct(preset.lab.arenaWinRate)} against the category builds`);
+    if (preset.lab) lines.push(`Arena: wins ${pct(preset.lab.arenaWinRate)} against the other builds`);
+    if (preset.lab?.animations) lines.push(labAnimationText(preset.lab.animations));
     lines.push('');
     lines.push(a.source === 'skin'
         ? `Attack: ${setDisplayName(a.setId)} weapon skin, skin animation ON (${secs(a.windup)} windup)`
@@ -377,7 +444,7 @@ function Gear({ preset, mapping, sprites, version, libs }: { preset: ProfilePres
     // With the weapon's own attack the weapon skin is hidden: only its stats count, and every set's
     // pieces carry the same stats, so any skin at its top does the same. A complete set's bonus
     // still needs all three pieces of one set: then any complete set does.
-    const animOff = preset.animation.source === 'weapon';
+    const animOff = noSkinNeeded(preset);
     const setOf3 = (['Weapon', 'Helmet', 'Body'] as const).map(sl => {
         const sk = p.items[sl]?.skin;
         return sk ? skinRow(libs?.skinsLibrary, sk.type ?? SKIN_TYPE_OF[sl], sk.idx)?.BaseSetId ?? null : null;
@@ -483,12 +550,14 @@ function Equivalents({ preset, mapping, sprites, version, libs, ranged, onAddEqu
     const age = weapon?.age ?? 0;
     const items = Object.entries(eq.items).filter(([, idxs]) => idxs.length);
     const current = on ? `the ${setDisplayName(a.setId)} skin animation` : `the ${weaponName(preset, mapping)}'s own attack`;
+    /** An equivalent with another windup: the same ticks at this build's speed, not the same row. */
+    const sameTicks = (w: AnimationSwap) => Math.abs(w.windup - a.windup) > 1e-9;
     return (
         <div className="space-y-3 text-[11px]">
             <p className="text-text-muted">Swaps that change no number of this build, read from the game files: use them if you lack a piece.</p>
             {eq.animations.length > 0 && (
                 <div className="space-y-1">
-                    <div className="font-bold text-text-secondary">Same attack as {current} ({secs(a.windup)} windup, same range, projectile and timing)</div>
+                    <div className="font-bold text-text-secondary">Same attack as {current} ({secs(a.windup)} windup): the same range and projectile, and at this build's attack speed and double chance the hits land on the same ticks, so every battle is the same</div>
                     {eq.animations.map(w => (
                         <div key={`${w.source}-${w.setId}-${w.weaponIdx}`} className="flex items-center gap-2 rounded-lg bg-bg-input/40 px-2 py-1.5">
                             {w.source === 'skin'
@@ -504,8 +573,8 @@ function Equivalents({ preset, mapping, sprites, version, libs, ranged, onAddEqu
                                 </div>
                                 <div className="text-[10px] text-text-muted">
                                     {w.source === 'skin'
-                                        ? `Wear the ${setDisplayName(w.setId)} weapon skin with the skin animation ON instead of ${current}: its ${kind} attack row is the same.`
-                                        : `Use the ${swapName(w, age, mapping)} with the skin animation OFF instead of ${current}: its own attack row is the same.`}
+                                        ? `Wear the ${setDisplayName(w.setId)} weapon skin with the skin animation ON instead of ${current}: ${sameTicks(w) ? `its ${secs(w.windup)} windup lands on the same ticks at this build's attack speed.` : `its ${kind} attack row is the same.`}`
+                                        : `Use the ${swapName(w, age, mapping)} with the skin animation OFF instead of ${current}: ${sameTicks(w) ? `its ${secs(w.windup)} windup lands on the same ticks at this build's attack speed, so any skin works.` : 'its own attack row is the same, so any skin works.'}`}
                                 </div>
                             </div>
                             <button onClick={() => onAddEquivalent(w)} title="Add this build to my profiles" className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg bg-accent-primary/80 text-white hover:brightness-110 shrink-0">
@@ -638,8 +707,8 @@ const CARD_HEIGHT = 'h-[660px]';
  * The best build of a category (or a build lab find): the character, its number, how it attacks.
  * Details and Equivalents are two tabs of the card's back: the card turns over instead of growing.
  */
-function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAddEquivalent, rank, runnersUp, cardFor, categoryName }: CardProps & {
-    rank: number | null; runnersUp: ProfilePreset[]; cardFor: (p: ProfilePreset) => CardProps; categoryName: string;
+function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAddEquivalent, rank, runnersUp, cardFor, tags }: CardProps & {
+    rank: number | null; runnersUp: ProfilePreset[]; cardFor: (p: ProfilePreset) => CardProps; tags: BuildTag[];
 }) {
     const [back, setBack] = useState<'details' | 'equivalents' | null>(null);
     // The back keeps its content while it turns away.
@@ -670,8 +739,12 @@ function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAd
                                 {medal ? `${medal.label} #${rank}` : `#${rank}`}
                             </span>
                         )}
-                        <span className={cn('absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full', isLab ? 'bg-purple-500/25 text-purple-200' : 'bg-black/40 text-text-secondary')}>{categoryName}</span>
-                        <BuildPortrait profile={preset.profile} setId={setOf(preset)} width={260} height={200} scale={58} />
+                        <div className="absolute top-2 right-2 flex flex-wrap justify-end gap-1 max-w-[70%]">
+                            {tags.map(t => (
+                                <span key={t.label} className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', t.kind === 'lab' ? 'bg-purple-500/25 text-purple-200' : t.rank === 1 ? 'bg-amber-400/20 text-amber-200' : 'bg-black/40 text-text-secondary')}>{t.label}</span>
+                            ))}
+                        </div>
+                        <LookPortraits preset={preset} width={260} height={200} scale={58} />
                         <KindTag ranged={ranged} className="absolute bottom-2 left-2 text-[11px] px-2.5 py-1" />
                     </div>
                     <div className="p-4 pt-2 flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto">
@@ -681,7 +754,10 @@ function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAd
                             <div className="text-[11px] text-text-muted">{animationText(preset, mapping)}</div>
                         </div>
                         {isLab && preset.lab && (
-                            <div className="text-xs font-bold text-purple-200">Wins {pct(preset.lab.arenaWinRate)} of its arena battles against the category builds</div>
+                            <div className="text-xs font-bold text-purple-200">Wins {pct(preset.lab.arenaWinRate)} of its arena battles against the other builds</div>
+                        )}
+                        {isLab && preset.lab?.animations && (
+                            <div className="text-[11px] text-purple-200/80">{labAnimationText(preset.lab.animations)}</div>
                         )}
                         <div className="grid grid-cols-2 gap-2">
                             {figures(preset).map(f => (
@@ -826,12 +902,36 @@ function sharedRanks(standings: TournamentStanding[]): { rank: number; tied: boo
 const placeText = (r: { rank: number; tied: boolean }) => `${r.tied ? '=' : ''}${r.rank}`;
 
 /** The builds that are this one in battle (same fighter), by name. */
-const sameNames = (st: TournamentStanding, byKey: Map<string, ProfilePreset>) => (st.same ?? []).map(k => byKey.get(k)?.name ?? k);
+/** The other builds that fight as this one, by name (the same build in another category has the same name: left out). */
+const sameNames = (st: TournamentStanding, byKey: Map<string, ProfilePreset>) => {
+    const own = byKey.get(st.key)?.name ?? st.name;
+    return [...new Set((st.same ?? []).map(k => byKey.get(k)?.name ?? k))].filter(n => n !== own);
+};
 
 /** The full ranking: place (=N for a tie), build, wins-draws-losses, win rate. */
-function RankingList({ standings, byKey, highlight, className }: { standings: TournamentStanding[]; byKey: Map<string, ProfilePreset>; highlight?: string; className?: string }) {
+function RankingList({ standings, byKey, highlight, className, others, owned }: {
+    standings: TournamentStanding[]; byKey: Map<string, ProfilePreset>; highlight?: string; className?: string;
+    /** Sets whose weapon skin the active profile owns: rows it can build are highlighted. */
+    owned?: ReadonlySet<string>;
+    /** "Every skin": the builds with their other skins, placed by their win rate among the builds. */
+    others?: OtherSkinRow[];
+}) {
+    const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const places = sharedRanks(standings);
     const goTo = useContext(GoToBuild);
+    // Published builds and other skins in one order: win rate, then the HP margin.
+    const rows: ({ kind: 'st'; i: number; rate: number; margin: number } | { kind: 'other'; o: OtherSkinRow; rate: number; margin: number })[] = [
+        ...standings.map((st, i) => ({ kind: 'st' as const, i, rate: st.winRate, margin: st.hpMargin })),
+        ...(others ?? []).map(o => ({ kind: 'other' as const, o, rate: o.winRate, margin: o.hpMargin })),
+    ];
+    if (others?.length) rows.sort((a, b) => b.rate - a.rate || b.margin - a.margin);
+    /** The profile can attack this way: a weapon's own attack (any skin), or a weapon skin it owns that attacks the same. */
+    const canBuild = (p: ProfilePreset | undefined) => {
+        if (!p || !owned?.size) return false;
+        if (noSkinNeeded(p)) return true;
+        return [p.animation.setId, ...(p.equivalents?.animations ?? []).filter(w => w.source === 'skin').map(w => w.setId)].some(id => !!id && owned.has(id));
+    };
+    const ownTag = <span className="inline-block ml-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-400/25 text-amber-200" title="You own this weapon skin (or any skin works)">yours</span>;
     return (
         <div className={className}>
             <div className="flex items-center gap-3 px-3 pb-1 text-[10px] uppercase font-bold text-text-muted">
@@ -841,16 +941,39 @@ function RankingList({ standings, byKey, highlight, className }: { standings: To
                 <span className="w-14 text-right" title="(wins + draws / 2) / battles">Win rate</span>
             </div>
             <ol className="space-y-1">
-                {standings.map((st, i) => {
+                {rows.map(row => {
+                    if (row.kind === 'other') {
+                        const o = row.o;
+                        const base = o.baseKey ? byKey.get(o.baseKey) : undefined;
+                        const look = { ...(base ?? {}), animation: o.variant.animation, equivalents: o.variant.equivalents, profile: o.variant.profile } as ProfilePreset;
+                        return (
+                            <li key={`other-${o.variant.fightKey ?? o.name}-${o.variant.animation.setId}-${o.variant.animation.weaponIdx}`}
+                                onClick={base ? () => goTo(base.key) : undefined} title={base ? 'Show the build (with its best skin)' : undefined}
+                                className={cn('flex items-center gap-3 rounded-xl px-3 py-1.5 text-xs bg-white/[0.015] border border-dashed', canBuild(look) ? 'border-amber-400/70 bg-amber-400/10' : 'border-white/10', base && 'cursor-pointer hover:bg-white/[0.06]')}>
+                                <span className="w-7 text-text-muted text-[10px]">&middot;</span>
+                                <span className="flex-1 min-w-0 text-text-secondary">
+                                    <span className="font-semibold">{base?.name ?? o.name}</span>
+                                    <span className="text-text-muted">, {attackLabel(look, mapping)}</span>
+                                    <span className="inline-block ml-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-white/10 text-text-muted">other skin</span>
+                                    {canBuild(look) && ownTag}
+                                </span>
+                                <span className="font-mono text-text-muted">{o.wins}-{o.draws}-{o.losses}</span>
+                                <span className="font-mono font-bold w-14 text-right text-text-secondary">{pct(o.winRate)}</span>
+                            </li>
+                        );
+                    }
+                    const i = row.i, st = standings[i];
                     const same = sameNames(st, byKey);
                     return (
                         <li key={st.key} onClick={st.key === highlight ? undefined : () => goTo(st.key)} title={st.key === highlight ? undefined : 'Show this build'}
-                            className={cn('flex items-center gap-3 rounded-xl px-3 py-1.5 text-xs', st.key === highlight ? 'bg-red-500/20 border border-red-400/50' : 'bg-white/[0.03] cursor-pointer hover:bg-white/[0.08]', byKey.get(st.key)?.animation.source === 'weapon' && 'border border-lime-400/40')}>
+                            className={cn('flex items-center gap-3 rounded-xl px-3 py-1.5 text-xs', st.key === highlight ? 'bg-red-500/20 border border-red-400/50' : 'bg-white/[0.03] cursor-pointer hover:bg-white/[0.08]', noSkinNeeded(byKey.get(st.key)) && 'border border-lime-400/40', st.key !== highlight && canBuild(byKey.get(st.key)) && 'border border-amber-400/70 bg-amber-400/10')}>
                             <span className="w-7 font-black text-text-muted">{placeText(places[i])}</span>
                             <span className="flex-1 min-w-0">
-                                <span className="font-semibold">{st.key === highlight ? `${st.name} (you)` : st.name}</span>
+                                <span className="font-semibold">{st.key === highlight ? `${st.name} (you)` : byKey.get(st.key)?.name ?? st.name}</span>
+                                {st.key !== highlight && byKey.get(st.key) && <span className="text-text-muted">, {attackLabel(byKey.get(st.key), mapping)}</span>}
+                                {st.key !== highlight && canBuild(byKey.get(st.key)) && ownTag}
                                 {same.length > 0 && <span className="block text-[10px] text-text-muted">same build as {same.join(', ')}</span>}
-                                {byKey.get(st.key)?.animation.source === 'weapon' && (
+                                {noSkinNeeded(byKey.get(st.key)) && (
                                     <span className="inline-block mt-0.5 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-lime-400/15 text-lime-200" title="It attacks with the weapon's own animation: any skin at its top gives the same result, so every player can build it">
                                         No skin needed
                                     </span>
@@ -873,6 +996,7 @@ function RankingList({ standings, byKey, highlight, className }: { standings: To
 function PodiumStep({ place, group, byKey, block, tone, size }: {
     place: number; group: TournamentStanding[]; byKey: Map<string, ProfilePreset>; block: string; tone: string; size: number;
 }) {
+    const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const goTo = useContext(GoToBuild);
     const [ref, width] = useWidth();
     const n = group.length;
@@ -887,8 +1011,9 @@ function PodiumStep({ place, group, byKey, block, tone, size }: {
                     return (
                         <button key={st.key} onClick={() => goTo(st.key)} title="Show this build" style={{ width: `${100 / cols}%` }}
                             className="flex flex-col items-center rounded-xl hover:bg-white/[0.06] transition-colors pb-1">
-                            {preset && <BuildPortrait profile={preset.profile} setId={setOf(preset)} width={each} height={each} scale={each / 3.4} />}
+                            {preset && <LookPortraits preset={preset} width={each} height={each} scale={each / 3.4} />}
                             <span className={cn('font-bold text-center leading-tight break-words px-0.5', n === 1 ? 'text-xs sm:text-sm' : 'text-[10px] sm:text-xs')}>{st.name}</span>
+                            {preset && <span className="text-[10px] text-text-muted">{attackLabel(preset, mapping)}</span>}
                             <span className="text-[10px] text-text-secondary">{pct(st.winRate)}</span>
                             {same.length > 0 && <span className="text-[9px] text-text-muted text-center leading-tight">= {same.join(', ')}</span>}
                         </button>
@@ -904,10 +1029,14 @@ function PodiumStep({ place, group, byKey, block, tone, size }: {
 }
 
 /** The arena round robin between every build: podium, then the full table on demand. */
-function Podium({ standings, byKey, battlesPerSide, skins }: {
+function Podium({ standings, byKey, battlesPerSide, skins, others, owned }: {
     standings: TournamentStanding[]; byKey: Map<string, ProfilePreset>; battlesPerSide: number;
     /** With and without skins, when both are published: the toggle in the header. */
     skins?: { f2p: boolean; set: (f2p: boolean) => void };
+    /** Every build with each of its other skins, against the published builds (otherSkinRows). */
+    others?: OtherSkinRow[];
+    /** Sets whose weapon skin the active profile owns: their rows are highlighted. */
+    owned?: ReadonlySet<string>;
 }) {
     const [open, setOpen] = useState(false);
     const noise = noiseOf(standings);
@@ -939,36 +1068,113 @@ function Podium({ standings, byKey, battlesPerSide, skins }: {
                 })}
             </div>
             <div className="relative border-t border-amber-500/20 pt-3">
-                <button onClick={() => setOpen(o => !o)} className="mx-auto flex items-center gap-1 text-xs font-bold text-text-secondary hover:text-text-primary">
-                    Full ranking <ChevronDown className={cn('w-4 h-4 transition-transform', open && 'rotate-180')} />
+                <button onClick={() => setOpen(o => !o)} className="mx-auto flex items-center gap-1.5 text-sm font-black px-5 py-2 rounded-xl border border-amber-400/70 bg-amber-400/15 text-amber-200 hover:bg-amber-400/25 shadow-[0_0_16px_rgba(251,191,36,0.2)]">
+                    {open ? 'Hide the full ranking' : 'View the full ranking, every build and skin'} <ChevronDown className={cn('w-4 h-4 transition-transform', open && 'rotate-180')} />
                 </button>
-                {open && <RankingList standings={standings} byKey={byKey} className="mt-2 max-w-xl mx-auto" />}
+                {open && others && others.length > 0 && (
+                    <div className="mt-2 max-w-xl mx-auto text-[11px] text-text-muted">
+                        The dashed rows are the builds with their other attack skins, each entered against the builds above as Fight against does (the same battles, played ahead):
+                        a build with another skin can beat the next build with its best one. Skins that attack on the same ticks are one row.
+                        {owned && owned.size > 0 && <> The rows you can build with the weapon skins of your profile are highlighted.</>}
+                    </div>
+                )}
+                {open && <RankingList standings={standings} byKey={byKey} others={others} owned={owned} className="mt-2 max-w-xl mx-auto" />}
             </div>
         </section>
     );
 }
 
+/** Discord profile of the site's author: the copied results are sent there in a DM. */
+const AUTHOR_DISCORD = 'https://discord.com/users/267031081591504900';
+
+/**
+ * Substat sliders of the "maxed" fight: one per rollable stat (SecondaryStatLibrary UpperRange >
+ * 0), each at most once per body (items at the top age, pets and mount by their rarity,
+ * SecondaryStatPetUnlockLibrary), all of them together at most every slot.
+ */
+function SubstatSliders({ alloc, onChange, statIds, perStatCap, slots }: {
+    alloc: Record<string, number>; onChange: (next: Record<string, number>) => void; statIds: string[]; perStatCap: number; slots: number;
+}) {
+    const used = Object.values(alloc).reduce((n, v) => n + v, 0);
+    return (
+        <div className="space-y-1.5">
+            <div className={cn('text-[11px] font-bold', used > slots ? 'text-red-300' : 'text-text-secondary')}>{used}/{slots} substat lines</div>
+            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1">
+                {statIds.map(id => {
+                    const v = alloc[id] ?? 0;
+                    const max = Math.min(perStatCap, v + Math.max(0, slots - used));
+                    return (
+                        <label key={id} className="flex items-center gap-2 text-xs">
+                            <span className="w-36 shrink-0 text-text-secondary truncate">{getStatName(id)}</span>
+                            <input type="range" min={0} max={perStatCap} value={v} className="flex-1 accent-red-500"
+                                onChange={e => onChange({ ...alloc, [id]: Math.min(Number(e.target.value), max) })} />
+                            <span className="w-6 text-right font-mono font-bold">{v}</span>
+                        </label>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 /**
  * "Fight against": the active profile plays every build of the tournament, on the same seeds and
- * sides (src/presets/challenge.ts), and lands where that round robin puts it.
+ * sides (src/presets/challenge.ts), and lands where that round robin puts it. As it is, or with
+ * everything it has maxed (maxedFromProfile) and the substats of the sliders at the top roll.
  */
 function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { version: string; profile: UserProfile; total: number; battlesPerSide: number; byKey: Map<string, ProfilePreset> }) {
+    const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const [run, setRun] = useState<{ cancel: () => void; done: number } | null>(null);
-    const [result, setResult] = useState<{ name: string; r: ChallengeResult } | null>(null);
+    const [result, setResult] = useState<{ name: string; maxed: Record<string, number> | null; r: ChallengeResult } | null>(null);
     const [err, setErr] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [shown, setShown] = useState(false);
+    const [maxed, setMaxed] = useState(false);
+    const { libs } = useStatLibraries();
+    const { data: itemUnlock } = useGameData<Record<string, { NumberOfSecondStats: number }>>('SecondaryStatItemUnlockLibrary.json');
+    const { data: petUnlock } = useGameData<Record<string, { NumberOfSecondStats: number }>>('SecondaryStatPetUnlockLibrary.json');
+    const statIds = useMemo(() => Object.keys(libs.secondaryStatLibrary ?? {}).filter(id => (libs.secondaryStatLibrary as any)[id]?.UpperRange > 0)
+        .sort((a, b) => getStatName(a).localeCompare(getStatName(b))), [libs.secondaryStatLibrary]);
+    const bodies = useMemo(() => {
+        const item = Math.max(0, ...Object.values(itemUnlock ?? {}).map(r => r.NumberOfSecondStats));
+        const pet = (rarity?: string) => (rarity ? petUnlock?.[rarity]?.NumberOfSecondStats ?? 0 : 0);
+        return [...Array(8).fill(item), ...profile.pets.active.map(x => pet(x?.rarity)), pet(profile.mount.active?.rarity)] as number[];
+    }, [itemUnlock, petUnlock, profile.pets.active, profile.mount.active]);
+    const slots = bodies.reduce((n, b) => n + b, 0);
+    const perStatCap = bodies.filter(b => b > 0).length;
+    const [alloc, setAlloc] = useState<Record<string, number>>(() => currentAlloc(profile));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => { setAlloc(currentAlloc(profile)); }, [profile.id]);
+    const used = Object.values(alloc).reduce((n, v) => n + v, 0);
     useEffect(() => { setResult(null); }, [version]);
     const start = () => {
-        if (run) return;
+        if (run || (maxed && used > slots)) return;
         setErr(null);
         setShown(true);
         const name = profile.name || 'Your profile';
-        const r = runFightAgainst(version, name, profile, done => setRun(cur => (cur ? { ...cur, done } : cur)));
+        const fightAlloc = maxed ? { ...alloc } : null;
+        const r = runFightAgainst(version, name, profile, done => setRun(cur => (cur ? { ...cur, done } : cur)), fightAlloc ?? undefined);
         setRun({ cancel: r.cancel, done: 0 });
-        r.promise.then(res => { setResult({ name, r: res }); setOpen(true); })
+        r.promise.then(res => { setResult({ name, maxed: fightAlloc, r: res }); setOpen(true); })
             .catch(e => setErr(e instanceof Error && e.message === 'stopped' ? null : String(e)))
             .finally(() => setRun(null));
+    };
+    const copy = () => {
+        if (!result) return;
+        const res = result.r;
+        const meRow = res.standings.find(s => s.key === CHALLENGER_KEY);
+        const at = sharedRanks(res.standings)[res.standings.findIndex(s => s.key === CHALLENGER_KEY)];
+        const subs = Object.entries(result.maxed ?? currentAlloc(profile)).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([id, n]) => `${n} ${getStatName(id)}`).join(', ');
+        const lines = [
+            `Forge Master Calculator, Fight against the preset builds (${version})`,
+            `${result.name}: ${result.maxed ? 'assuming everything maxed, substats at the top roll' : 'the profile as it is'}`,
+            meRow && at ? `Place ${placeText(at)} of ${res.standings.length}${at.tied ? ' (tied)' : ''}: ${meRow.wins}-${meRow.draws}-${meRow.losses}, ${pct(meRow.winRate)} wins, HP margin ${meRow.hpMargin.toFixed(3)}` : '',
+            `Substats: ${subs || 'none'}`,
+            `Fairy: ${profile.misc.fairy?.name ?? 'none'}, skills: ${profile.skills.equipped.map(x => x.id).join(', ') || 'none'}, pets: ${profile.pets.active.map(x => `${x.rarity} ${x.id}`).join(', ') || 'none'}, mount: ${profile.mount.active ? `${profile.mount.active.rarity} ${profile.mount.active.id}` : 'none'}`,
+            '',
+            ...res.matches.map(m => `vs ${byKey.get(m.key)?.name ?? m.name}${byKey.get(m.key) ? ` (${attackLabel(byKey.get(m.key), mapping)})` : ''}: ${m.wins}-${m.draws}-${m.losses} (${pct(m.winRate)})`),
+        ].filter((l, i) => l !== '' || i === 5);
+        navigator.clipboard.writeText(lines.join('\n')).then(() => toast.success('Results copied: paste them in a DM'), () => toast.error('Could not copy'));
     };
     const r = result?.r;
     const me = r?.standings.find(s => s.key === CHALLENGER_KEY);
@@ -981,7 +1187,7 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
                 <div className="flex-1 min-w-[220px]">
                     <div className="font-black text-lg leading-tight">Fight against the preset builds</div>
                     <div className="text-xs text-text-secondary">
-                        Your active profile ({profile.name || 'unnamed'}) enters the tournament as it is: the same game PvP rules, {2 * battlesPerSide} battles against each of the {total} builds, on the same seeds and sides. See if it makes the ranking.
+                        Your active profile ({profile.name || 'unnamed'}) enters the tournament {maxed ? 'assuming everything you have maxed, with the substats below' : 'as it is'}: the same game PvP rules, {2 * battlesPerSide} battles against each of the {total} builds, on the same seeds and sides. See if it makes the ranking.
                     </div>
                 </div>
                 <button onClick={() => setShown(v => !v)} title={shown ? 'Close' : 'Open'} className="p-2 rounded-xl border border-border text-text-secondary hover:bg-bg-input">
@@ -997,6 +1203,24 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
                     </button>
                 )}
             </div>
+            {shown && (
+                <div className="rounded-xl border border-border bg-bg-input/30 px-3 py-2 space-y-2">
+                    <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                        <input type="checkbox" checked={maxed} onChange={e => setMaxed(e.target.checked)} className="accent-red-500" />
+                        Assuming everything you have maxed
+                    </label>
+                    {maxed && (
+                        <>
+                            <div className="text-[11px] text-text-muted">
+                                Your weapon kind and attack animation, skins, pets and mount (their rarity), equipped skills and fairy, everything at its top level like the preset builds,
+                                with these substats at the top roll. They start from your build's.
+                            </div>
+                            <SubstatSliders alloc={alloc} onChange={setAlloc} statIds={statIds} perStatCap={perStatCap} slots={slots} />
+                            <button onClick={() => setAlloc(currentAlloc(profile))} className="text-[11px] font-bold text-accent-primary hover:underline">Back to my build's substats</button>
+                        </>
+                    )}
+                </div>
+            )}
             {shown && err && <div className="text-xs text-red-300">{err}</div>}
             {shown && r && me && result && (
                 <div className="space-y-2">
@@ -1006,9 +1230,12 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
                         </div>
                         <div className="text-xs text-text-secondary font-mono">{me.wins}-{me.draws}-{me.losses}, {pct(me.winRate)} wins, HP margin {me.hpMargin >= 0 ? '+' : ''}{me.hpMargin.toFixed(3)}</div>
                     </div>
-                    <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1 text-xs font-bold text-text-secondary hover:text-text-primary">
-                        Ranking with you and every pairing <ChevronDown className={cn('w-4 h-4 transition-transform', open && 'rotate-180')} />
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1 text-xs font-bold text-text-secondary hover:text-text-primary">
+                            Ranking with you and every pairing <ChevronDown className={cn('w-4 h-4 transition-transform', open && 'rotate-180')} />
+                        </button>
+                        <button onClick={copy} className="text-xs font-bold px-3 py-1.5 rounded-xl border border-border text-text-secondary hover:bg-bg-input">Copy results</button>
+                    </div>
                     {open && (
                         <div className="grid md:grid-cols-2 gap-3">
                             <RankingList standings={r.standings} byKey={byKey} highlight={CHALLENGER_KEY} className="max-h-[420px] overflow-y-auto pr-1" />
@@ -1016,7 +1243,7 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
                                 <div className="text-[11px] font-bold text-text-secondary">Your pairings ({2 * r.battlesPerSide} battles each)</div>
                                 {r.matches.map(m => (
                                     <div key={m.key} className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-1.5 text-xs">
-                                        <span className="flex-1">vs {m.name}</span>
+                                        <span className="flex-1">vs {byKey.get(m.key)?.name ?? m.name}{byKey.get(m.key) && <span className="text-text-muted">, {attackLabel(byKey.get(m.key), mapping)}</span>}</span>
                                         <span className="font-mono text-text-muted">{m.wins}-{m.draws}-{m.losses}</span>
                                         <span className={cn('font-mono font-bold w-14 text-right', m.winRate > 0.5 ? 'text-green-400' : m.winRate < 0.5 ? 'text-red-400' : '')}>{pct(m.winRate)}</span>
                                     </div>
@@ -1027,16 +1254,50 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
                 </div>
             )}
             {shown && <div className="text-xs text-text-secondary rounded-xl bg-bg-input/40 px-3 py-2">
-                Think you have a better build? If it does well here, send it to me in a DM on{' '}
-                <a href="https://discord.gg/forgemaster" target="_blank" rel="noopener noreferrer" className="font-bold text-indigo-300 hover:underline">Discord</a>
+                Think you have a better build? If it does well here, press Copy results and send them to me in a DM on{' '}
+                <a href={AUTHOR_DISCORD} target="_blank" rel="noopener noreferrer" className="font-bold text-indigo-300 hover:underline">Discord</a>
                 {' '}or by <a href="mailto:medrihanlucian@gmail.com" className="font-bold text-accent-primary hover:underline">email</a> and I will add it.
             </div>}
         </section>
     );
 }
 
-/** Order of the cards without a tournament (and between builds it did not rank). */
-const CATEGORY_ORDER: PresetCategory[] = ['power', 'dpsMelee', 'dpsRanged', 'hpsMelee', 'hpsRanged', 'quest', 'lab'];
+type SortKey = 'arena' | 'power' | 'dps' | 'hps' | 'quest';
+/** What the cards can be sorted on: the arena tournament place, or one of the published numbers. */
+const SORTS: { key: SortKey; label: string; value: (p: ProfilePreset) => number }[] = [
+    { key: 'arena', label: 'Strongest in PvP', value: () => 0 },
+    { key: 'power', label: 'Power', value: p => p.metrics.power },
+    { key: 'dps', label: 'DPS', value: p => p.metrics.testedDps },
+    { key: 'hps', label: 'HPS', value: p => p.metrics.testedHps },
+    { key: 'quest', label: 'Main quest', value: p => p.metrics.quest.score ?? questRank(p.metrics.quest) },
+];
+/** The categories as filters: the builds that are among the best five of one. */
+const TAG_FILTERS: { key: BuildTagKind; label: string }[] = [
+    { key: 'power', label: 'Most Power' }, { key: 'dps', label: 'Most DPS' }, { key: 'hps', label: 'Most HPS' },
+    { key: 'quest', label: 'Furthest main quest' }, { key: 'lab', label: 'PvP lab' },
+];
+
+/** One multiselect filter: nothing selected shows everything. */
+function FilterGroup<T extends string>({ label, options, selected, onChange }: {
+    label: string; options: { key: T; label: string }[]; selected: Set<T>; onChange: (next: Set<T>) => void;
+}) {
+    return (
+        <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-text-muted w-20 shrink-0">{label}</span>
+            {options.map(o => {
+                const on = selected.has(o.key);
+                return (
+                    <button key={o.key} onClick={() => { const next = new Set(selected); if (on) next.delete(o.key); else next.add(o.key); onChange(next); }}
+                        className={cn('px-3 py-1.5 rounded-xl border', on ? 'border-accent-primary bg-accent-primary/15 text-text-primary' : 'border-border text-text-secondary hover:bg-bg-input')}>
+                        {o.label}
+                    </button>
+                );
+            })}
+            {selected.size > 0 && <button onClick={() => onChange(new Set())} className="text-accent-primary hover:underline px-1">Any</button>}
+        </div>
+    );
+}
+
 
 interface Column { label: string; value: (p: ProfilePreset, s: AggregatedStats) => number; show: (p: ProfilePreset, s: AggregatedStats) => string }
 const COLUMNS: Column[] = [
@@ -1050,9 +1311,10 @@ const COLUMNS: Column[] = [
     { label: 'Main quest', value: p => questRank(p.metrics.quest), show: p => `${p.metrics.quest.index + 1}/${p.metrics.quest.total}` },
 ];
 
-/** The last "my best variants" result, per game version, in this browser. */
+/** The last "use my skins" result, per game version, in this browser. */
 const MINE_KEY = (version: string) => `fm.myVariants.${version}`;
-interface MineSaved { ownedKey: string; profileName: string; file: ProfilePresetsFile }
+/** leftOutKey: the attack skins left out when it was calculated (missing: none). */
+interface MineSaved { ownedKey: string; leftOutKey?: string; profileName: string; file: ProfilePresetsFile }
 
 function loadMine(version: string | null): MineSaved | null {
     if (!version) return null;
@@ -1061,10 +1323,11 @@ function loadMine(version: string | null): MineSaved | null {
         return raw ? (JSON.parse(raw) as MineSaved) : null;
     } catch { return null; }
 }
-/** Weapon skins left out of the attack animations, and the last result without them, per game version. */
-const LEFT_OUT_KEY = 'fm.presetLeftOutAttackSkins';
-const WITHOUT_KEY = (version: string) => `fm.presetsWithout.${version}`;
-interface WithoutSaved { key: string; file: ProfilePresetsFile }
+/**
+ * Weapon skins left out of the attack animations. A new key: the old tab's choice
+ * ('fm.presetLeftOutAttackSkins') now filters the main view, so everyone starts with every skin on.
+ */
+const LEFT_OUT_KEY = 'fm.presetAttackSkinsOff';
 function loadJson<T>(key: string): T | null {
     try { const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
 }
@@ -1073,9 +1336,8 @@ function saveJson(key: string, v: unknown) {
 }
 
 /**
- * One toggle per weapon skin: a skin turned off is left out as an attack animation (and as a
- * weapon piece). The builds without them are calculated on the device from the published
- * variants, like "my best variants" with every other skin at its top.
+ * One toggle per weapon skin: a skin turned off is left out as an attack animation. The builds
+ * pick again among the published ones with the animations left (src/presets/filterAnimations.ts).
  */
 function AttackSkinToggles({ sets, leftOut, onToggle, sprites, version, skinsLibrary }: {
     sets: string[]; leftOut: Set<string>; onToggle: (setId: string) => void; sprites: any; version: string | null; skinsLibrary: any;
@@ -1109,45 +1371,40 @@ export default function PresetBuilds() {
     // Results depend on the real rolls and levels too.
     const ownedKey = useMemo(() => (profile.skins?.saved ?? []).map(s => `${s.type}:${s.idx}:${s.level}:${JSON.stringify(s.stats)}`).sort().join(','), [profile.skins]);
     const [mine, setMine] = useState<MineSaved | null>(() => loadMine(version));
-    const [view, setView] = useState<'site' | 'f2p' | 'mine' | 'without'>('site');
+    const [f2p, setF2p] = useState(false);
+    const [mySkins, setMySkins] = useState(false);
     const [leftOut, setLeftOut] = useState<Set<string>>(() => new Set(loadJson<string[]>(LEFT_OUT_KEY) ?? []));
-    const toggleLeftOut = (id: string) => setLeftOut(prev => {
-        const next = new Set(prev);
+    const setLeftOutSaved = (next: Set<string>) => { setLeftOut(next); saveJson(LEFT_OUT_KEY, [...next]); };
+    const toggleLeftOut = (id: string) => {
+        const next = new Set(leftOut);
         if (next.has(id)) next.delete(id); else next.add(id);
-        saveJson(LEFT_OUT_KEY, [...next]);
-        return next;
-    });
+        setLeftOutSaved(next);
+    };
     const leftOutKey = [...leftOut].sort().join(',');
-    const [without, setWithout] = useState<WithoutSaved | null>(() => (version ? loadJson<WithoutSaved>(WITHOUT_KEY(version)) : null));
     const [run, setRun] = useState<{ cancel: () => void; log: string; started: number } | null>(null);
     const [runError, setRunError] = useState<string | null>(null);
-    useEffect(() => { setMine(loadMine(version)); setWithout(version ? loadJson<WithoutSaved>(WITHOUT_KEY(version)) : null); }, [version]);
-    const calculateWithout = () => {
-        if (!version || run || !leftOut.size) return;
-        setRunError(null);
-        setView('without');
-        const key = leftOutKey;
-        const r = runMyVariants(version, [], msg => setRun(cur => (cur ? { ...cur, log: msg } : cur)), [...leftOut]);
-        setRun({ cancel: r.cancel, log: 'starting', started: Date.now() });
-        r.promise.then(result => {
-            const w = { key, file: result };
-            setWithout(w);
-            saveJson(WITHOUT_KEY(version), w);
-        }).catch(e => setRunError(e instanceof Error && e.message === 'stopped' ? null : String(e))).finally(() => setRun(null));
-    };
+    useEffect(() => { setMine(loadMine(version)); }, [version]);
+    // "Use my skins": the player's pieces with their real rolls and levels change the numbers, so
+    // these builds are calculated on the device (the attack skins left out stay out).
     const calculate = () => {
         if (!version || run) return;
         setRunError(null);
-        setView('mine');
-        const r = runMyVariants(version, profile.skins?.saved ?? [], msg => setRun(cur => (cur ? { ...cur, log: msg } : cur)));
+        const key = leftOutKey;
+        const r = runMyVariants(version, profile.skins?.saved ?? [], msg => setRun(cur => (cur ? { ...cur, log: msg } : cur)), [...leftOut]);
         setRun({ cancel: r.cancel, log: 'starting', started: Date.now() });
         r.promise.then(result => {
-            const m = { ownedKey, profileName: profile.name, file: result };
+            const m = { ownedKey, leftOutKey: key, profileName: profile.name, file: result };
             setMine(m);
             saveMine(version, m);
         }).catch(e => setRunError(e instanceof Error && e.message === 'stopped' ? null : String(e))).finally(() => setRun(null));
     };
-    const file = view === 'mine' ? (mine?.file ?? null) : view === 'without' ? (without?.file ?? null) : view === 'f2p' ? (siteFile?.noSkins ?? null) : siteFile;
+    const mineFresh = !!mine && mine.ownedKey === ownedKey && (mine.leftOutKey ?? '') === leftOutKey;
+    const { libs: fileLibs, ready: fileReady } = useStatLibraries();
+    // Every skin, or some attack skins left out: picked from the published results at once.
+    const filtered = useMemo(() => (siteFile && fileReady ? filterAnimations(siteFile, leftOut, fileLibs) : siteFile),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [siteFile, leftOutKey, fileLibs, fileReady]);
+    const file = f2p ? (siteFile?.noSkins ?? null) : mySkins ? (mine?.file ?? null) : filtered;
     const { data: sprites } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const { libs, ready } = useStatLibraries();
@@ -1165,26 +1422,49 @@ export default function PresetBuilds() {
 
     // A file from before the categories (no `categories`) is shown as missing, not half drawn.
     const valid = !!file?.categories && file.presets.every(p => p.category && p.animation);
-    const presets = useMemo(() => (valid ? file!.presets : []), [file, valid]);
+    // Every distinct build once, named by its substats and fairy, with its categories as tags.
+    const listed = useMemo(() => (valid ? listBuilds(file!) : null), [file, valid]);
+    const presets = useMemo(() => listed?.renamed.presets ?? [], [listed]);
+    const tournament = listed?.renamed.tournament;
+    // Sets whose weapon skin the active profile's archive has.
+    const ownedWeaponSets = useMemo(() => new Set((profile.skins?.saved ?? []).filter(s => s.type === 'Weapon')
+        .map(s => skinRow(fileLibs.skinsLibrary, 'Weapon', s.idx)?.BaseSetId).filter((x): x is string => !!x)), [profile.skins, fileLibs.skinsLibrary]);
+    // Every build with its other attack skins (not the ones turned off), from the pairings played ahead.
+    const otherRows = useMemo(() => (listed && fileReady
+        ? otherSkinRows(listed.renamed, fileLibs, v => v.animation.source === 'skin' && !!v.animation.setId && leftOut.has(v.animation.setId))
+        : []),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [listed, fileReady, fileLibs, leftOutKey]);
+    const [tagFilter, setTagFilter] = useState<Set<BuildTagKind>>(new Set());
+    const [kindFilter, setKindFilter] = useState<Set<'melee' | 'ranged'>>(new Set());
+    const [fairyFilter, setFairyFilter] = useState<Set<string>>(new Set());
+    const [sortBy, setSortBy] = useState<SortKey>('arena');
     const stats = useMemo(() => {
         if (!ready) return new Map<string, AggregatedStats>();
         return new Map(presets.map(p => [p.key, calculateStats(p.profile, libs)]));
     }, [presets, libs, ready]);
-    const info = useMemo(() => new Map<PresetCategory, PresetCategoryInfo>((file?.categories ?? []).map(c => [c.key, c])), [file]);
     const byKey = useMemo(() => new Map(presets.map(p => [p.key, p])), [presets]);
-    // One card per category winner and per lab find; the category's other ranks go inside its card.
-    const cards = useMemo(() => presets.filter(p => p.rank === 1 || p.category === 'lab'), [presets]);
-    const runnersUp = (p: ProfilePreset) => (p.category === 'lab' ? [] : presets.filter(q => q.category === p.category && q.rank > 1).sort((a, b) => a.rank - b.rank));
+    const noRunnersUp: ProfilePreset[] = [];
     // Shared places (ties within the noise), and builds that are the same fighter take their twin's.
     const rankOf = useMemo(() => {
-        const st = file?.tournament?.standings ?? [];
+        const st = tournament?.standings ?? [];
         const places = sharedRanks(st);
         return new Map(st.flatMap((s, i) => [s.key, ...(s.same ?? [])].map(k => [k, places[i].rank] as const)));
-    }, [file]);
-    // Cards follow the tournament when there is one.
-    const ordered = useMemo(() => [...cards].sort((a, b) =>
-        (rankOf.get(a.key) ?? 999) - (rankOf.get(b.key) ?? 999) || CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.rank - b.rank), [cards, rankOf]);
-    const tableRows = useMemo(() => [...presets].sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.rank - b.rank), [presets]);
+    }, [tournament]);
+    // One card per distinct build: the tag filter, then the chosen sort (ties: the arena place).
+    const ordered = useMemo(() => {
+        const arena = (b: { keys: string[] }) => Math.min(...b.keys.map(k => rankOf.get(k) ?? 999));
+        const value = (p: ProfilePreset) => SORTS.find(x => x.key === sortBy)!.value(p);
+        return (listed?.builds ?? [])
+            .filter(b => !tagFilter.size || b.tags.some(t => tagFilter.has(t.kind)))
+            .filter(b => !kindFilter.size || kindFilter.has(stats.get(b.preset.key)?.isRangedWeapon ? 'ranged' : 'melee'))
+            .filter(b => !fairyFilter.size || fairyFilter.has(b.preset.profile.misc.fairy?.name ?? 'none'))
+            .sort((a, b) => (sortBy === 'arena' ? 0 : value(b.preset) - value(a.preset)) || arena(a) - arena(b));
+    }, [listed, rankOf, sortBy, tagFilter, kindFilter, fairyFilter, stats]);
+    const fairyOptions = useMemo(() => [...new Set((listed?.builds ?? []).map(b => b.preset.profile.misc.fairy?.name ?? 'none'))].sort()
+        .map(f => ({ key: f, label: f === 'none' ? 'No fairy' : f })), [listed]);
+    // The table: every distinct build once, in the cards' order.
+    const tableRows = useMemo(() => ordered.map(b => b.preset), [ordered]);
     const best = useMemo(() => COLUMNS.map(c => (presets.length && stats.size ? Math.max(...presets.map(p => c.value(p, stats.get(p.key)!))) : 0)), [presets, stats]);
 
     const add = (p: ProfilePreset) => {
@@ -1219,79 +1499,89 @@ export default function PresetBuilds() {
 
             <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex rounded-xl border border-border overflow-hidden text-xs font-bold">
-                    <button onClick={() => setView('site')} className={cn('px-3 py-2', view === 'site' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>Best builds (every skin)</button>
+                    <button onClick={() => setF2p(false)} className={cn('px-3 py-2', !f2p ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>With skins</button>
                     {siteFile?.noSkins && (
-                        <button onClick={() => setView('f2p')} className={cn('px-3 py-2', view === 'f2p' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>No skins (F2P)</button>
+                        <button onClick={() => setF2p(true)} className={cn('px-3 py-2', f2p ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>No skins (F2P)</button>
                     )}
-                    <button onClick={() => setView('without')} className={cn('px-3 py-2', view === 'without' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>Without some attack skins</button>
-                    <button onClick={() => setView('mine')} className={cn('px-3 py-2', view === 'mine' ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>My best variants</button>
                 </div>
-                {run ? (
-                    <button onClick={() => run.cancel()} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl border border-red-500/50 text-red-300 hover:bg-red-500/10">Stop</button>
-                ) : view === 'without' ? (
-                    <button onClick={calculateWithout} disabled={!version || !leftOut.size} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 disabled:opacity-50">
-                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} /> {without ? 'Recalculate without them' : 'Calculate without them'}
-                    </button>
-                ) : (
-                    <button onClick={calculate} disabled={!version} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 disabled:opacity-50">
-                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} /> {mine ? 'Recalculate my best variants' : 'Calculate my best variants'}
+                {!f2p && (
+                    <button onClick={() => setMySkins(v => !v)} className={cn('inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border', mySkins ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-border text-text-secondary hover:bg-bg-input')}>
+                        <span className={cn('w-3 h-3 rounded-full border', mySkins ? 'bg-amber-400 border-amber-400' : 'border-text-muted')} /> Use my skins
                     </button>
                 )}
+                {!f2p && mySkins && (run ? (
+                    <button onClick={() => run.cancel()} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl border border-red-500/50 text-red-300 hover:bg-red-500/10">Stop</button>
+                ) : (
+                    <button onClick={calculate} disabled={!version} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 disabled:opacity-50">
+                        <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} /> {mine ? 'Recalculate with my skins' : 'Calculate with my skins'}
+                    </button>
+                ))}
             </div>
 
-            {view === 'mine' && (
+            {!f2p && (
+                <div className="rounded-xl border border-border bg-bg-input/20 px-4 py-3 text-xs text-text-secondary space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-text-primary">Attack skins</span>
+                        <span className="flex-1 min-w-[200px]">Turn off the weapon skins whose attack animation you do not want: the builds pick again among the rest.{!mySkins && ' Nothing is calculated, every result is already published.'}</span>
+                        {leftOut.size > 0 && <button onClick={() => setLeftOutSaved(new Set())} className="font-bold text-accent-primary hover:underline">Turn all on</button>}
+                    </div>
+                    <AttackSkinToggles sets={attackSkinSets} leftOut={leftOut} onToggle={toggleLeftOut} sprites={sprites} version={selectedVersion} skinsLibrary={libs.skinsLibrary} />
+                    {!mySkins && file && !file.tournament && siteFile?.tournament && (
+                        <div className="text-amber-300">This game version's file has no pairings played ahead: the arena tournament is shown with every attack skin on only.</div>
+                    )}
+                </div>
+            )}
+
+            {!f2p && mySkins && (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-text-secondary space-y-1">
                     <div>
-                        Only the <b>{owned.length} skins</b> in the skin archive of your profile <b>{profile.name}</b> are considered (at their top level with the top roll),
-                        plus every weapon with its own animation. Everything else is at its maximum, like the preset builds: it is the most you can reach with the skins you have.
+                        Your own skins from the skin archive of <b>{profile.name}</b> ({owned.length}), with their real levels and rolls, plus every weapon with its own animation.
+                        They change the numbers, so these builds are calculated on your device. Everything else is at its maximum, like the preset builds.
                         A set bonus counts only with all three pieces of one set.
                     </div>
                     {owned.length === 0 && (
                         <div className="text-amber-300">This profile has no skins in its archive yet: add the skins you own to it first, or the results are the builds without any skin.</div>
                     )}
-                    {mine && mine.ownedKey !== ownedKey && !run && (
-                        <div className="text-amber-300">These results were calculated for other skins ({mine.profileName}): recalculate to use this profile's.</div>
+                    {mine && !mineFresh && !run && (
+                        <div className="text-amber-300">These results were calculated for other skins or other attack skins left out ({mine.profileName}): recalculate.</div>
                     )}
                     {run && (
                         <div className="text-amber-300">Calculating on your device ({Math.round((Date.now() - run.started) / 1000)} s): {run.log}</div>
                     )}
                     {runError && <div className="text-red-300">Something went wrong: {runError}</div>}
-                    {!mine && !run && <div>Press Calculate my best variants to start.</div>}
+                    {!mine && !run && <div>Press Calculate with my skins to start.</div>}
                 </div>
             )}
 
-            {view === 'without' && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-xs text-text-secondary space-y-2">
-                    <div>
-                        Turn off the weapon skins whose attack you do not want: the builds are calculated again without them (their attack animation and their weapon piece),
-                        with every other skin at its top and every weapon's own animation. Useful when one skin would win almost everything.
-                    </div>
-                    <AttackSkinToggles sets={attackSkinSets} leftOut={leftOut} onToggle={toggleLeftOut} sprites={sprites} version={selectedVersion} skinsLibrary={libs.skinsLibrary} />
-                    {!leftOut.size && <div className="text-amber-300">Turn off at least one skin.</div>}
-                    {without && without.key !== leftOutKey && !run && leftOut.size > 0 && (
-                        <div className="text-amber-300">These results were calculated without {without.key.split(',').map(setDisplayName).join(', ')}: recalculate for the skins turned off now.</div>
-                    )}
-                    {run && <div className="text-amber-300">Calculating on your device ({Math.round((Date.now() - run.started) / 1000)} s): {run.log}</div>}
-                    {runError && <div className="text-red-300">Something went wrong: {runError}</div>}
-                </div>
-            )}
+            {!mySkins && !valid && (error || file) && <div className="text-sm text-text-muted">No preset builds for this game version yet.</div>}
 
-            {view === 'site' && !valid && (error || file) && <div className="text-sm text-text-muted">No preset builds for this game version yet.</div>}
-
-            {valid && ready && file!.tournament && file!.tournament.standings.length >= 3 && (
-                <Podium standings={file!.tournament.standings} byKey={byKey} battlesPerSide={file!.tournament.battlesPerSide}
-                    skins={siteFile?.noSkins && (view === 'site' || view === 'f2p') ? { f2p: view === 'f2p', set: f2p => setView(f2p ? 'f2p' : 'site') } : undefined} />
+            {valid && ready && tournament && tournament.standings.length >= 3 && (
+                <Podium standings={tournament.standings} byKey={byKey} battlesPerSide={tournament.battlesPerSide} others={otherRows} owned={ownedWeaponSets}
+                    skins={siteFile?.noSkins && !mySkins ? { f2p, set: setF2p } : undefined} />
             )}
-            {view === 'site' && valid && version && file!.tournament && (
+            {file === siteFile && valid && version && file!.tournament && (
                 <FightAgainst version={version} profile={profile} total={file!.tournament.standings.length} battlesPerSide={file!.tournament.battlesPerSide} byKey={byKey} />
             )}
 
             {valid && ready && (
+                <div className="rounded-xl border border-border bg-bg-input/20 px-4 py-3 space-y-2 text-xs font-bold">
+                    <FilterGroup label="Weapon" options={[{ key: 'melee', label: 'Melee' }, { key: 'ranged', label: 'Ranged' }]} selected={kindFilter} onChange={setKindFilter} />
+                    <FilterGroup label="Best at" options={TAG_FILTERS} selected={tagFilter} onChange={setTagFilter} />
+                    <FilterGroup label="Fairy" options={fairyOptions} selected={fairyFilter} onChange={setFairyFilter} />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-text-muted w-20 shrink-0">Sort by</span>
+                        {SORTS.filter(x => x.key !== 'arena' || tournament).map(x => (
+                            <button key={x.key} onClick={() => setSortBy(x.key)} className={cn('px-3 py-1.5 rounded-xl border', sortBy === x.key ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-border text-text-secondary hover:bg-bg-input')}>{x.label}</button>
+                        ))}
+                        <span className="text-text-muted font-normal ml-2">{ordered.length} of {listed?.builds.length ?? 0} builds</span>
+                    </div>
+                </div>
+            )}
+            {valid && ready && (
                 // items-start: opening one card's details grows that card only.
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 items-start">
-                    {ordered.map(p => (
-                        <BuildCard key={p.key} {...cardFor(p)} rank={rankOf.get(p.key) ?? null} runnersUp={runnersUp(p)} cardFor={cardFor}
-                            categoryName={info.get(p.category)?.name ?? p.category} />
+                    {ordered.map(b => (
+                        <BuildCard key={b.preset.key} {...cardFor(b.preset)} rank={rankOf.get(b.preset.key) ?? null} runnersUp={noRunnersUp} cardFor={cardFor} tags={b.tags} />
                     ))}
                 </div>
             )}

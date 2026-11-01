@@ -20,7 +20,8 @@ export type PoolTask =
 /** A ScoreTask with its shared profiles (attacker, field) sent as registered ids. */
 export type WireScoreTask =
     | { kind: 'survival'; p: UserProfile; attacker: number; seconds: number; runs: number }
-    | { kind: 'arena'; p: UserProfile; field: number[]; perSide: number }
+    | { kind: 'arena'; p: UserProfile; field: number[]; perSide: number; winRate?: boolean }
+    | { kind: 'pair'; a: number; b: number; perSide: number }
     | { kind: 'quest'; p: UserProfile; runs: number; hint: number };
 
 export type PoolMessage =
@@ -109,7 +110,8 @@ export function workerPool(version: string, size = Math.max(1, os.availableParal
         many(tasks: ScoreTask[]) {
             if (!tasks.length) return [];
             const wire = tasks.map((t): WireScoreTask => t.kind === 'survival' ? { ...t, attacker: idOf(t.attacker) }
-                : t.kind === 'arena' ? { ...t, field: t.field.map(idOf) } : t);
+                : t.kind === 'arena' ? { ...t, field: t.field.map(idOf) }
+                : t.kind === 'pair' ? { ...t, a: idOf(t.a), b: idOf(t.b) } : t);
             if (!ready) { waitFor(1, size, 'startup'); ready = true; }
             const out = new SharedArrayBuffer(8 * tasks.length);
             const parts = Math.min(size, tasks.length);
