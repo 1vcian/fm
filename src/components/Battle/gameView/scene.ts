@@ -151,17 +151,117 @@ export interface UnitView {
     handPrimary: number;
     aiming: boolean;
     projectile: string | null;
+    /** The shown weapon prefab's WeaponEquipmentItem.WeaponData (windup, range, hand and muzzle offsets). */
+    weaponData: any;
     mount: RigInstance | null;
     mountOffset: [number, number];
     mountClip: string | null;
     pets: { rig: RigInstance; slot: number; x: number; y: number; clip: string | null }[];
     fairy: { rig: RigInstance; clip: string | null; x: number; y: number; hover: number; speed: number; emitters?: Emitter[] } | null;
     prevX: number; prevY: number; x: number; y: number;
+    /** Facing of the last frame drawn. */
+    sign: number;
     tick: number;
     fill: number; prefill: number; prefillFrom: number; prefillT: number;
     seen: number;
     deathDone: boolean;
 }
+
+/** A buff skill's view on its owner: from `start`, until `end` plus the view's own tail. */
+interface BuffView { rig: RigInstance | null; skillId: string; ownerId: number; emitters: { em: Emitter; node: number }[]; start: number; end: number | null }
+
+/** Seconds a buff view outlives its buff: the closing tween or the wait before Destroy (see drawBuff). */
+const BUFF_TAIL: Record<string, number> = { Meat: 0.4, Morale: 0, Berserk: 1.2, Buff: 0.4, HigherMorale: 2.4 };
+
+const outQuad = (t: number) => 1 - (1 - t) * (1 - t);
+
+/** The opening (0.2 s) and closing (0.4 s) scale tweens the buff views share, 0..1. */
+function buffOpen(bv: BuffView, now: number): number {
+    if (bv.end !== null) return 1 - outQuad(Math.max(0, Math.min(1, (now - bv.end) / 0.4)));
+    return outQuad(Math.max(0, Math.min(1, (now - bv.start) / 0.2)));
+}
+
+/** DOTween InBack (overshoot 1.70158). */
+const inBack = (k: number) => 2.70158 * k * k * k - 1.70158 * k * k;
+
+/**
+ * How long a skill view plays from its spawn when it outlives the engine's area: Thorns runs its
+ * spike sequence (3.2 pulses + 0.4 s + up to 0.35 s), Worm its DestroyTime, StrafeRun its flight.
+ * 0: the view goes with the area.
+ */
+function areaViewSeconds(av: AreaView): number {
+    if (av.skillId === 'Worm') return av.rig.nodes[0].mb?.WormSkillView?.DestroyTime ?? 4;
+    if (av.skillId === 'Thorns') { const p = av.last.pulseDuration > 0 ? av.last.pulseDuration : 0.5; return 3.2 * p + 0.4 + 0.35; }
+    if (av.skillId === 'StrafeRun') {
+        const sr = strafePaths(av.rig, av.last.isAllied);
+        return (sr.l0 + sr.l1 + sr.l2) / (15 / (av.last.duration > 0 ? av.last.duration : 1));
+    }
+    return 0;
+}
+
+/** StrafeRunView's three paths (see animateStrafeRun): point and tangent at a distance flown. */
+function strafePaths(rig: RigInstance, ally: boolean) {
+    const dir = rig.nodes[0].mb?.StrafeRunView?.Dir ?? { x: -1, y: 1 };
+    const len = Math.hypot(dir.x, dir.y) || 1;
+    const n = { x: dir.x / len, y: dir.y / len };
+    const d = { x: ally ? n.x : -n.x, y: n.y };
+    const a0 = { x: 30 * d.x, y: 30 * d.y }, a1 = { x: 15 * d.x, y: 15 * d.y };
+    const c = { x: 0, y: 0 }, b2 = { x: -20 * d.x, y: 10 * n.y }, e2 = { x: -40 * d.x, y: 20 * n.y };
+    const bez = (u: number) => ({
+        x: (1 - u) * (1 - u) * a1.x + 2 * (1 - u) * u * c.x + u * u * b2.x,
+        y: (1 - u) * (1 - u) * a1.y + 2 * (1 - u) * u * c.y + u * u * b2.y,
+    });
+    let l1 = 0;
+    for (let k = 0, prev = bez(0); k < 64; k++) { const q = bez((k + 1) / 64); l1 += Math.hypot(q.x - prev.x, q.y - prev.y); prev = q; }
+    const l0 = Math.hypot(a1.x - a0.x, a1.y - a0.y), l2 = Math.hypot(e2.x - b2.x, e2.y - b2.y);
+    const at = (dist: number) => {
+        if (dist < l0) { const u = dist / l0; return { x: a0.x + (a1.x - a0.x) * u, y: a0.y + (a1.y - a0.y) * u, tx: a1.x - a0.x, ty: a1.y - a0.y }; }
+        if (dist < l0 + l1) {
+            const u = (dist - l0) / l1;
+            const p = bez(u);
+            return { ...p, tx: 2 * (1 - u) * (c.x - a1.x) + 2 * u * (b2.x - c.x), ty: 2 * (1 - u) * (c.y - a1.y) + 2 * u * (b2.y - c.y) };
+        }
+        const u = Math.min(1, (dist - l0 - l1) / l2);
+        return { x: b2.x + (e2.x - b2.x) * u, y: b2.y + (e2.y - b2.y) * u, tx: e2.x - b2.x, ty: e2.y - b2.y };
+    };
+    return { l0, l1, l2, at };
+}
+
+/** 2D gradient noise in 0..1, standing in for Mathf.PerlinNoise (same kind of noise, not its exact values). */
+function perlin(x: number, y: number): number {
+    const grad = (ix: number, iy: number, fx: number, fy: number) => {
+        const h = hash01(ix * 374761 + iy * 668265) * Math.PI * 2;
+        return Math.cos(h) * fx + Math.sin(h) * fy;
+    };
+    const x0 = Math.floor(x), y0 = Math.floor(y);
+    const fx = x - x0, fy = y - y0;
+    const s = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+    const n00 = grad(x0, y0, fx, fy), n10 = grad(x0 + 1, y0, fx - 1, fy);
+    const n01 = grad(x0, y0 + 1, fx, fy - 1), n11 = grad(x0 + 1, y0 + 1, fx - 1, fy - 1);
+    const u = s(fx), v = s(fy);
+    const nx0 = n00 + (n10 - n00) * u, nx1 = n01 + (n11 - n01) * u;
+    return Math.max(0, Math.min(1, 0.5 + (nx0 + (nx1 - nx0) * v) * 0.7071));
+}
+
+/**
+ * A mount with its rider inside: the rider's items (the CharacterRig group) sort in the mount's
+ * group at Default / 0, where UnitAnchor puts them, after the mount's own nodes on a tie.
+ */
+export function mountedItems(mount: RigInstance, tex: TextureCache, riderItems: DrawItem[]): DrawItem[] {
+    const sorted = [...riderItems];
+    sortItems(sorted);
+    const anchor = mount.find('UnitOffset');
+    return rigItems(mount, tex, undefined, undefined, undefined, {
+        parent: anchor >= 0 ? anchor : 0, layer: 0, order: 0,
+        draw: c => { for (const it of sorted) it.draw(c); },
+    });
+}
+
+/** DroneView's closing flight: DOVirtual.Float over 2 seconds. */
+const DRONE_EXIT_SECONDS = 2;
+
+/** UnitConstants.CenterOfMass, the engine's default unit centre (engine/scene.ts): where a death effect plays. */
+export const DEATH_EFFECT_OFFSET = { x: 0, y: 0.45 };
 
 function controllerClips(data: BattleVisualData, name: string | null | undefined): Record<string, string> | null {
     if (!name) return null;
@@ -185,6 +285,7 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
     let controller: Record<string, string> | null = null;
     let aiming = false;
     let projectile: string | null = null;
+    let weaponData: any = null;
     if (kind === 'unit') {
         const head = rig.find('Head');
         const body = rig.find('Body');
@@ -205,6 +306,7 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
         if (main) {
             const root = rig.append(main, wp);
             aiming = !!rig.nodes[root]?.mb?.WeaponEquipmentItem?.IsAiming;
+            weaponData = rig.nodes[root]?.mb?.WeaponEquipmentItem?.WeaponData ?? null;
             if (w?.dualWield) rig.append(main, ws);
         }
         if (w?.hasSecondary && w.secondary) rig.append(w.secondary, ws);
@@ -248,13 +350,13 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
         };
     }
     return {
-        rig, kind, controller, charRig, aiming, projectile,
+        rig, kind, controller, charRig, aiming, projectile, weaponData,
         hpBar: rig.find('HpBar'),
         ...(kind === 'thief' ? (() => { const dc = rig.find('Destroyed Cart'); if (dc >= 0) rig.nodes[dc].hidden = true; return {}; })() : {}),
         unitShadow: kind === 'unit' ? rig.find('Shadow') : -1,
         handPrimary: rig.find('[ROT] Hand-Primary'),
         mount, mountOffset, mountClip, pets, fairy,
-        prevX: NaN, prevY: NaN, x: NaN, y: NaN, tick: -1,
+        prevX: NaN, prevY: NaN, x: NaN, y: NaN, sign: 1, tick: -1,
         fill: 1, prefill: 1, prefillFrom: 1, prefillT: 1, seen: 0, deathDone: false,
     };
 }
@@ -293,18 +395,29 @@ interface AreaView {
     skillId: string;
     born: number;
     emitters: Emitter[];
+    /** The node each emitter belongs to, so it follows the node when the view moves. */
+    nodeOf: Map<ParticleDef, number>;
     exploded: boolean;
     lastPulse: number | null;
     clip: string | null;
+    /** The effect as last seen; a view outliving it keeps running on its own clock. */
+    last: VisualEffect;
+    /** Battle time the engine's effect ended, while the view still plays. */
+    goneAt: number | null;
 }
 
 export class BattleSceneRenderer {
     private units = new Map<number, UnitView>();
     private areas = new Map<number, AreaView>();
     private shots = new Map<number, RigInstance | null>();
-    private buffs = new Map<string, RigInstance | null>();
+    private buffViews = new Map<string, BuffView>();
+    /** Where each side's player is drawn this frame (interpolated), for views that follow it. */
+    private playerAt: { ally?: { x: number; y: number }; enemy?: { x: number; y: number } } = {};
     private afterglows: { rig: RigInstance; node: number; t: number; dur: number }[] = [];
-    private buffEmitters = new Map<string, Emitter[]>();
+    /** Drones whose duration ran out, flying off (DroneView's closing tween). */
+    /** How far between the last two engine ticks this frame is (0..1). */
+    private tickAlpha = 1;
+    private leaving: { uv: UnitView; x: number; y: number; sign: number; t: number }[] = [];
     private emitters: Emitter[] = [];
     private maps: { rig: RigInstance; x: number }[] = [];
     private ground: number[] = [0, 0, 0, 1];
@@ -407,10 +520,13 @@ export class BattleSceneRenderer {
         this.wall = nowMs;
         const dt = playing ? dtWall * speed : 0;
         if (v.tick !== this.lastTick) {
+            // Seeking back: drones flying off belong to a moment that has not happened yet.
+            if (v.tick < this.lastTick) this.leaving = [];
             this.lastTick = v.tick;
             this.tickWall = nowMs;
         }
         const alpha = playing ? Math.max(0, Math.min(1, ((nowMs - this.tickWall) / 1000) * speed / 0.1)) : 1;
+        this.tickAlpha = alpha;
         this.battleTime = (v.tick + (playing ? alpha : 0)) * 0.1;
 
         // ---------- camera (MainBattleSystem.UpdateCam / ForceCam; PvP CombatCenter (9, 0))
@@ -490,14 +606,23 @@ export class BattleSceneRenderer {
                         uv.rig.update([1, 0, 0, 1, x, y]);
                         this.emitters.push(...this.spawnEmitters(uv.rig, p => p.startsWith('Destroyed Cart'), true));
                     }
+                    // UnitDeathEffectsView.PlayDeathEffect 0x4043FE4: both systems (DeathEffect, the
+                    // pop, and GroundSplatter) move to the unit's position plus _offset, which Setup
+                    // 0x4043E64 reads from UnitConstants.CenterOfMass, and Emit(1) each.
                     const fx = new RigInstance(data, 'UnitDeathEffectsView');
-                    fx.update([1, 0, 0, 1, x, y]);
-                    this.emitters.push(...this.spawnEmitters(fx, () => true, true));
+                    fx.update([1, 0, 0, 1, x + DEATH_EFFECT_OFFSET.x, y + DEATH_EFFECT_OFFSET.y]);
+                    const pop = this.spawnEmitters(fx, () => true, true);
+                    for (const em of pop) em.burst(1);
+                    this.emitters.push(...pop);
                 }
                 continue;
             }
             const sign = uv.kind === 'thief' ? 1 : u.sign;
-            const root: Mat = [sign, 0, 0, 1, x, y];
+            uv.sign = sign;
+            // BuffSkillView scales the whole UnitView (mount included) while it lasts.
+            const grow = u.isPlayer ? this.buffScale(u.isAlly) : 1;
+            const root: Mat = [sign * grow, 0, 0, grow, x, y];
+            if (u.isPlayer) this.playerAt[u.isAlly ? 'ally' : 'enemy'] = { x, y };
             const rig = uv.rig;
             rig.clearAnimation();
             // UnitAnimationView: idle loops the "Walk" state's clip; an attack plays "Attack" on the
@@ -538,9 +663,10 @@ export class BattleSceneRenderer {
                 uv.mount.clearAnimation();
                 if (uv.mountClip) uv.mount.applyClip(data.clips[uv.mountClip], this.battleTime, true);
                 uv.mount.update(root);
-                const mountItems = rigItems(uv.mount, tex);
-                // Rider and mount sort as one: mount first, the rider on top.
-                const all = [...mountItems, ...unitItems];
+                // UnitRotationView.Update 0x3F1DDF8 parents the CharacterRig under the mount's
+                // UnitAnchor: the rider (its SortingGroup, order 0) sorts among the mount's own
+                // renderers, so parts with a higher order (a bee's near wing, the crab) cover it.
+                const all = mountedItems(uv.mount, tex, unitItems);
                 push([{ layer: 1, order: 0, y, seq: 0, draw: c => { for (const it of all) it.draw(c); } }]);
             } else push(unitItems);
             if (showBar) {
@@ -586,39 +712,40 @@ export class BattleSceneRenderer {
                 }
             }
         }
-        for (const id of [...this.units.keys()]) if (!alive.has(id)) this.units.delete(id);
+        for (const [id, uv] of [...this.units]) {
+            if (alive.has(id)) continue;
+            // A drone is not killed: its duration ends and DroneView flies it away.
+            if (uv.kind === 'drone' && !uv.deathDone && !Number.isNaN(uv.x)) this.leaving.push({ uv, x: uv.x, y: uv.y, sign: uv.sign, t: 0 });
+            this.units.delete(id);
+        }
+        this.drawLeavingDrones(dt, push);
 
-        // ---------- active buffs: the skill's effect prefab on its owner while it lasts
+        // ---------- active buffs: SkillsBattleManager.OnMessage(SkillActivatedMessage) 0x403F154
+        // spawns the skill's view on the player's UnitView; each view then places and times itself.
         const liveBuffs = new Set<string>();
         for (const side of ['ally', 'enemy'] as const) {
             const owner = v.units.find(u => u.isPlayer && u.isAlly === (side === 'ally') && !u.killed);
-            const ov = owner ? this.units.get(owner.id) : undefined;
-            if (!owner || !ov) continue;
+            if (!owner || !this.units.get(owner.id)) continue;
             for (const b of v.buffs[side]) {
                 const key = `${side}:${b.skillId}`;
                 liveBuffs.add(key);
-                let rig = this.buffs.get(key);
-                if (rig === undefined) {
-                    const prefab = this.skillPrefab('animations', b.skillId, side === 'ally');
-                    rig = prefab && data.prefabs[prefab] ? new RigInstance(data, prefab) : null;
-                    this.buffs.set(key, rig);
-                    if (rig) {
-                        rig.update([owner.sign, 0, 0, 1, owner.x, owner.y]);
-                        this.buffEmitters.set(key, this.spawnEmitters(rig, () => true, false));
-                    }
-                }
-                if (!rig) continue;
-                const bx = ov.prevX + (ov.x - ov.prevX) * alpha, by = ov.prevY + (ov.y - ov.prevY) * alpha;
-                rig.update([owner.sign, 0, 0, 1, bx, by]);
-                for (const em of this.buffEmitters.get(key) ?? []) { em.origin = rig.world[0]; em.update(dt); }
-                push(rigItems(rig, tex));
-                for (const em of this.buffEmitters.get(key) ?? []) {
-                    const img = em.texture ? tex.get(em.texture) : null;
-                    push([{ layer: em.layer, order: em.order, y: by, seq: 0, draw: c => em.draw(c, img, tintTexture) }]);
-                }
+                const cur = this.buffViews.get(key);
+                if (cur && cur.end === null) continue;
+                const prefab = this.skillPrefab('animations', b.skillId, side === 'ally');
+                const rig = prefab && data.prefabs[prefab] ? new RigInstance(data, prefab) : null;
+                this.buffViews.set(key, { rig, skillId: b.skillId, ownerId: owner.id, emitters: [], start: this.battleTime, end: null });
             }
         }
-        for (const key of [...this.buffs.keys()]) if (!liveBuffs.has(key)) { this.buffs.delete(key); this.buffEmitters.delete(key); }
+        for (const [key, bv] of [...this.buffViews]) {
+            if (!liveBuffs.has(key) && bv.end === null) {
+                bv.end = this.battleTime;
+                // Berserk and HigherMorale call ParticleSystem.Stop(): live particles finish.
+                for (const e of bv.emitters) e.em.stopped = true;
+            }
+            const ov = this.units.get(bv.ownerId);
+            if (!ov || (bv.end !== null && this.battleTime - bv.end >= (BUFF_TAIL[bv.skillId] ?? 0))) { this.buffViews.delete(key); continue; }
+            this.drawBuff(bv, ov, dt, push);
+        }
 
         // ---------- skill areas
         const liveAreas = new Set<number>();
@@ -629,21 +756,31 @@ export class BattleSceneRenderer {
                 const prefab = this.skillPrefab('animations', e.skillId, e.isAllied);
                 if (!prefab || !data.prefabs[prefab]) continue;
                 const rig = new RigInstance(data, prefab);
-                av = { rig, skillId: e.skillId, born: this.battleTime, emitters: [], exploded: false, lastPulse: null, clip: ownClip(data, rig) };
+                av = { rig, skillId: e.skillId, born: this.battleTime, emitters: [], nodeOf: new Map(), exploded: false, lastPulse: null, clip: ownClip(data, rig), last: e, goneAt: null };
                 this.areas.set(e.id, av);
                 rig.update([e.isAllied ? 1 : -1, 0, 0, 1, e.x, e.y]);
-                // Looping systems that are not the impact play from the start (rings, rain, smoke).
-                av.emitters = this.spawnEmitters(rig, p => !/Explosion|Impact/i.test(p), false);
+                // Every system but the impact (the Explosion and its sub-emitters) plays from the
+                // start: rings, rain, smoke, the strafe's impacts, the worm's rocks.
+                av.emitters = this.spawnEmitters(rig, p => !/(^|\/)Explosion(\/|$)/.test(p), false);
+                rig.nodes.forEach((nd, i) => { if (nd.ps) av!.nodeOf.set(nd.ps as ParticleDef, i); });
             }
+            av.last = e;
             this.drawArea(av, e, push, viewH, camY);
         }
         for (const [id, av] of [...this.areas]) {
-            if (!liveAreas.has(id)) {
-                this.retire(av);
-                for (const em of av.emitters) em.stopped = true;
-                this.emitters.push(...av.emitters);
-                this.areas.delete(id);
+            if (liveAreas.has(id)) continue;
+            // ProjectileBattleManager spawns the view and lets it run its own timers: some outlive
+            // the engine's area (areaViewSeconds).
+            const life = areaViewSeconds(av);
+            if (this.battleTime - av.born < life) {
+                if (av.goneAt === null) av.goneAt = this.battleTime;
+                this.drawArea(av, { ...av.last, timer: av.last.timer + (this.battleTime - av.goneAt) }, push, viewH, camY);
+                continue;
             }
+            this.retire(av);
+            for (const em of av.emitters) em.stopped = true;
+            this.emitters.push(...av.emitters);
+            this.areas.delete(id);
         }
 
         this.afterglows = this.afterglows.filter(a => a.t < a.dur);
@@ -700,42 +837,305 @@ export class BattleSceneRenderer {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
+    /**
+     * How a buff view sits and moves (2026_10_27_09_45):
+     *  - Morale (Setup 0x3F5EB58), Berserk (0x3F5C6A4): on the CharacterRig, so a mount lifts them.
+     *  - Meat (Setup 0x3F5E380, Update 0x3F5E568): on HpBarParent at (0, HeadOffset); IconParent
+     *    scales 0 -> 1 in 0.2 s and back to 0 in 0.4 s at the end; the icon pulses from pulseMax to
+     *    pulseMin over 0.5 s, again and again.
+     *  - HigherMorale (Setup 0x3F5DA34, Update 0x3F5DE50): on the unit root; the Ring moves to
+     *    HpBarParent at (0, 0.4 + 0.05 sin(4 t)) (RingHeadOffset, the constructor's 0.4: the prefab
+     *    data does not carry it), the ground circle turns 100 degrees a second; Ring and circle scale
+     *    to 2 and 3 in 0.2 s and back to 0 in 0.4 s at the end.
+     *  - Buff (Setup 0x3F5CCC0): no picture, it scales the unit (buffScale).
+     * Tweens with no SetEase take DOTween's default, OutQuad.
+     */
+    private drawBuff(bv: BuffView, ov: UnitView, dt: number, push: (l: DrawItem[]) => void): void {
+        const { data, tex } = this.inp;
+        const rig = bv.rig;
+        if (!rig) return;
+        const k = buffOpen(bv, this.battleTime);
+        const urig = ov.rig;
+        const hp = urig.find('HpBarParent');
+        const sign = urig.world[0]?.[0] && urig.world[0][0] < 0 ? -1 : 1;
+        rig.clearAnimation();
+        let at: Mat;
+        if (bv.skillId === 'Meat') {
+            const mb = rig.nodes[0].mb?.MeatSkillView;
+            at = mul(hp >= 0 ? urig.world[hp] : urig.world[0], trs(0, mb?.HeadOffset ?? 1, 0, 1, 1));
+            const icon = rig.find('IconParent');
+            if (icon >= 0) rig.setLocalScale(icon, k, k);
+            const sq = rig.find('Square');
+            const max = mb?.pulseMax ?? 2.5, min = mb?.pulseMin ?? 2;
+            const ph = Math.min(1, (((this.battleTime - bv.start) % 0.5) * 2));
+            if (sq >= 0) rig.setLocalScale(sq, max + (min - max) * ph, max + (min - max) * ph);
+        } else if (bv.skillId === 'HigherMorale') {
+            at = urig.world[0];
+            const ring = rig.find('Ring');
+            if (ring >= 0) {
+                const hpY = hp >= 0 ? (urig.world[hp][5] - at[5]) / (at[3] || 1) : 1.55;
+                rig.setLocalPosition(ring, 0, hpY + 0.4 + 0.05 * Math.sin(4 * this.battleTime));
+                rig.setLocalScale(ring, 2 * k, 2 * k);
+            }
+            const circle = rig.find('GroundCircle');
+            if (circle >= 0) {
+                rig.addRotation(circle, 100 * (this.battleTime - bv.start));
+                rig.setLocalScale(circle, 3 * k, 3 * k);
+            }
+        } else {
+            at = ov.charRig >= 0 ? urig.world[ov.charRig] : urig.world[0];
+        }
+        rig.update(at ?? [sign, 0, 0, 1, 0, 0]);
+        if (!bv.emitters.length && bv.end === null) {
+            rig.nodes.forEach((nd, i) => {
+                if (!nd.ps || !rig.isVisible(i)) return;
+                const ps = nd.ps as ParticleDef;
+                bv.emitters.push({ node: i, em: new Emitter(ps, rig.world[i] ?? IDENTITY, ps.renderer?.order ?? 0, layerIndex(data, ps.renderer?.layer), false) });
+            });
+        }
+        push(rigItems(rig, tex));
+        for (const { em, node } of bv.emitters) {
+            em.origin = rig.world[node] ?? em.origin;
+            em.update(dt);
+            const img = em.texture ? tex.get(em.texture) : null;
+            push([{ layer: em.layer, order: em.order, y: em.origin[5], seq: 0, draw: c => em.draw(c, img, tintTexture) }]);
+        }
+    }
+
+    /** BuffSkillView.Setup 0x3F5CCC0: the UnitView scales to 1.2 in 0.2 s, and back to 1 in 0.4 s at the end. */
+    private buffScale(isAlly: boolean): number {
+        const bv = this.buffViews.get(`${isAlly ? 'ally' : 'enemy'}:Buff`);
+        return bv ? 1 + 0.2 * buffOpen(bv, this.battleTime) : 1;
+    }
+
+    /**
+     * DroneView.Setup 0x3F5D3F4: a sequence of AppendInterval(the skill's Duration), a callback
+     * that stops it following the unit (_blockMove), then DOVirtual.Float(0, 1, 2 s, Linear) moving
+     * the Drone transform to its start + Bezier((0,0), (5,0), (20,10), t) (0x4030BF8, quadratic)
+     * and the Shadow to (Bezier.x, 0), then the view is removed.
+     */
+    private drawLeavingDrones(dt: number, push: (l: DrawItem[]) => void): void {
+        const { data, tex } = this.inp;
+        this.leaving = this.leaving.filter(lv => lv.t < DRONE_EXIT_SECONDS);
+        for (const lv of this.leaving) {
+            lv.t = Math.min(DRONE_EXIT_SECONDS, lv.t + dt);
+            const k = lv.t / DRONE_EXIT_SECONDS;
+            const bx = 2 * (1 - k) * k * 5 + k * k * 20;
+            const by = k * k * 10;
+            const rig = lv.uv.rig;
+            rig.clearAnimation();
+            const clip = lv.uv.controller?.Walk ? data.clips[lv.uv.controller.Walk] : undefined;
+            rig.applyClip(clip, this.battleTime, true);
+            const drone = lv.uv.charRig;
+            const base = rig.nodes[drone].base;
+            rig.setLocalPosition(drone, base.x + bx, base.y + by);
+            const shadow = rig.find('Shadow (1)');
+            if (shadow >= 0) rig.setLocalPosition(shadow, bx, 0);
+            rig.update([lv.sign, 0, 0, 1, lv.x, lv.y]);
+            push(rigItems(rig, tex));
+        }
+    }
+
     private drawArea(av: AreaView, e: VisualEffect, push: (l: DrawItem[]) => void, viewH: number, camY: number) {
         const { data, tex } = this.inp;
         const rig = av.rig;
         const sign = e.isAllied ? 1 : -1;
         rig.clearAnimation();
-        const progress = e.duration > 0 ? Math.max(0, Math.min(1, e.timer / e.duration)) : 1;
+        const D = e.duration;
+        const progress = D > 0 ? Math.max(0, Math.min(1, e.timer / D)) : 1;
         const pulsed = e.sincePulse !== null && e.sincePulse !== undefined;
-        // Final-pulse skills land when Timer reaches Duration: the falling object travels from
-        // above the view to the area while the timer runs, then the impact systems play.
-        const falling = rig.find('Meteorite');
-        if (falling >= 0) {
-            // MeteoriteSkillView.Init 0x3F3EDF4: starts at (Random(-5, 5), 20) and moves to the area
-            // while the timer runs, spinning by a random 360..720 degrees.
-            const nd = rig.nodes[falling];
-            const sx = -5 + 10 * hash01(e.id * 31 + 7);
-            const spin = 360 + 360 * hash01(e.id * 17 + 3);
-            const k = 1 - progress;
-            rig.setLocalPosition(falling, nd.base.x + sx * k, nd.base.y + 20 * k);
-            rig.addRotation(falling, spin * progress);
-            nd.hidden = pulsed || progress >= 1;
+        const landed = pulsed || progress >= 1;
+        const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+        // ProjectileBattleManager.OnMessage(AreaProjectileCreatedMessage) 0x403E3DC places the view at
+        // the area's Position; only the views below turn or flip it themselves.
+        let root: Mat = [sign, 0, 0, 1, e.x, e.y];
+        if (e.skillId === 'Meteorite') {
+            // MeteoriteSkillView.Init 0x3F5E6D8: the rock starts at (IsAlly ? -5 : 5, 20), scale 0,
+            // turned by r1 = Random.Range(0, 360); over f = min(D, 2) (after D - f), Linear, it moves
+            // to (0, 0), turns clockwise by r2 = Random.Range(360, 720) and scales to 2 in f / 2.
+            // At the impact it scales to 0 and the Explosion emits (0x3F5EA64).
+            root = [1, 0, 0, 1, e.x, e.y];
+            const rock = rig.find('Meteorite');
+            if (rock >= 0) {
+                const f = Math.min(D, 2);
+                const k = f > 0 ? clamp01((e.timer - (D - f)) / f) : 1;
+                const r1 = Math.floor(360 * hash01(e.id * 31 + 7));
+                const r2 = 360 + Math.floor(360 * hash01(e.id * 17 + 3));
+                const sx = e.isAllied ? -5 : 5;
+                rig.setLocalPosition(rock, sx * (1 - k), 20 * (1 - k));
+                rig.addRotation(rock, r1 - r2 * k - rig.nodes[rock].base.rot);
+                const sc = 2 * Math.min(1, k * 2);
+                rig.setLocalScale(rock, sc, sc);
+                rig.nodes[rock].hidden = landed;
+            }
+        } else if (e.skillId === 'CannonBarrage') {
+            // CannonBarrageSkillView.Init 0x3F5CEBC: the ball waits at (IsAlly ? -20 : 20, 0) until
+            // D - 1, then flies a straight line to (0, 0) from 6 up over 1 s, Linear, with no turn.
+            root = [1, 0, 0, 1, e.x, e.y];
+            const ball = rig.find('Meteorite');
+            if (ball >= 0) {
+                const x0 = e.isAllied ? -20 : 20;
+                const t = clamp01(e.timer - (D - 1));
+                rig.setLocalPosition(ball, x0 * (1 - t), 6 * (1 - t));
+                rig.nodes[ball].hidden = landed;
+            }
+        } else if (e.skillId === 'Bomb') {
+            // BombSkillView.Init 0x3F5C92C: from (0, 10), scale 0: DOLocalMove to (0, 0) over D with
+            // InQuad, joined with DOScale(2) over 0.1 D (DOTween's default ease, OutQuad).
+            root = [1, 0, 0, 1, e.x, e.y];
+            const bomb = rig.find('Bomb');
+            if (bomb >= 0) {
+                rig.setLocalPosition(bomb, 0, 10 * (1 - progress * progress));
+                const q = clamp01(D > 0 ? e.timer / (0.1 * D) : 1);
+                const sc = 2 * (1 - (1 - q) * (1 - q));
+                rig.setLocalScale(bomb, sc, sc);
+                rig.nodes[bomb].hidden = landed;
+            }
+        } else if (e.skillId === 'Lightning') {
+            // LightningView.Init 0x3F5E014: the root takes a random scale, x = +-Random.Range(0.8,
+            // 1.2) (the sign from Random.value > 0.5), y = Random.Range(1, 1.1); no side mirroring.
+            const sx = (0.8 + 0.4 * hash01(e.id * 13 + 1)) * (hash01(e.id * 7 + 5) > 0.5 ? -1 : 1);
+            const sy = 1 + 0.1 * hash01(e.id * 11 + 9);
+            root = [sx, 0, 0, sy, e.x, e.y];
+            const bolt = rig.find('Square');
+            if (bolt >= 0) rig.nodes[bolt].hidden = !landed;
+        } else if (e.skillId === 'Shout') {
+            // ShoutSkillView.Init 0x3F5F5D4: re-parented next to the caster's CharacterRig (local
+            // zero), so the rings sit on the player and follow them, not on the damage area.
+            const pa = this.playerAt[e.isAllied ? 'ally' : 'enemy'];
+            if (pa) root = [sign, 0, 0, 1, pa.x, pa.y];
+        } else if (e.skillId === 'Thorns') {
+            this.animateThorns(av, e);
+        } else if (e.skillId === 'Worm') {
+            // WormSkillView: the prefab's Animator plays the "Worm" clip once from the spawn.
+            if (av.clip) rig.applyClip(data.clips[av.clip], this.battleTime - av.born, false);
+        } else if (e.skillId === 'StrafeRun') {
+            root = [1, 0, 0, 1, e.x, e.y];
+            this.animateStrafeRun(av, e);
+        } else if (e.skillId === 'Stampede') {
+            // StampedeView.Update 0x3F5F52C moves the herd by Velocity every frame; only each bull
+            // turns to its side (BullView.Setup 0x3F5F2C8), not the formation.
+            const x = av.goneAt === null ? e.x - e.vx * 0.1 * (1 - this.tickAlpha) : e.x;
+            root = [1, 0, 0, 1, x, e.y];
+            this.animateBulls(av, e);
+        } else if (e.skillId === 'RainOfArrows') {
+            // RainOfArrowsSkillView: ArrowParticles play for its Duration (3 s), then Stop().
+            const mb = rig.nodes[0].mb?.RainOfArrowsSkillView;
+            if (this.battleTime - av.born >= (mb?.Duration ?? 3)) for (const em of av.emitters) em.stopped = true;
         }
-        const bomb = rig.find('Bomb');
-        if (bomb >= 0) rig.nodes[bomb].hidden = pulsed || progress >= 1;
-        const lightning = rig.find('Square');
-        if (e.skillId === 'Lightning' && lightning >= 0) rig.nodes[lightning].hidden = !(pulsed || progress >= 1);
-        if (av.clip) rig.applyClip(data.clips[av.clip], e.timer, false);
-        rig.update([sign, 0, 0, 1, e.x, e.y]);
+        if (av.clip && e.skillId !== 'Worm') rig.applyClip(data.clips[av.clip], e.timer, false);
+        rig.update(root);
+        // Systems are children of the view: they move with their node (Shout, Stampede, StrafeRun).
+        for (const em of av.emitters) {
+            const i = av.nodeOf.get(em.def);
+            if (i !== undefined) em.origin = rig.world[i];
+        }
         const pulseKey = e.sincePulse === null ? null : Math.round((this.battleTime - e.sincePulse) * 10);
         if (pulseKey !== null && pulseKey !== av.lastPulse) {
             av.lastPulse = pulseKey;
             if (!av.exploded || e.hasPulse) {
                 av.exploded = true;
-                this.emitters.push(...this.spawnEmitters(rig, p => /Explosion|Impact|Rocks/i.test(p), true));
+                this.explode(rig);
             }
         }
         push(rigItems(rig, tex));
+    }
+
+    /**
+     * ThronsSkillView.Init 0x3F60BFC runs SpikeVisual.Animate(PulseDuration) (0x3F609A4) on every
+     * spike at once. With p the pulse: the hole (the SpikeVisual, which is also the SpriteMask)
+     * scales 0 -> 2 over p (InBack) while the spike waits retracted; the spike rises (0.2 p),
+     * sinks (0.6 p), waits (0.3 p), rises (0.2 p), waits Random.Range(0, 0.35), sinks (0.6 p),
+     * waits (0.3 p), all Linear; then the hole scales 2 -> 0 over 0.4 s (InBack).
+     */
+    private animateThorns(av: AreaView, e: VisualEffect): void {
+        const rig = av.rig;
+        const p = e.pulseDuration > 0 ? e.pulseDuration : 0.5;
+        const t = this.battleTime - av.born;
+        rig.nodes.forEach((nd, i) => {
+            const sv = nd.mb?.SpikeVisual;
+            if (!sv) return;
+            const R = sv.RetractedHeight ?? -0.425, E = sv.ExtendedHeight ?? 0.191;
+            const wait = 0.35 * hash01(av.born * 997 + i * 31);
+            let hole = 2, y = R;
+            const steps: [number, number, number][] = [[0.2 * p, R, E], [0.6 * p, E, R], [0.3 * p, R, R], [0.2 * p, R, E], [wait, E, E], [0.6 * p, E, R], [0.3 * p, R, R]];
+            if (t < p) hole = 2 * inBack(t / p);
+            else {
+                let at = t - p, done = true;
+                for (const [d, a, b] of steps) {
+                    if (at < d) { y = a + (b - a) * (d > 0 ? at / d : 1); done = false; break; }
+                    at -= d;
+                }
+                if (done) hole = 2 - 2 * inBack(Math.min(1, at / 0.4));
+            }
+            rig.setLocalScale(i, hole, hole);
+            const spike = rig.nodes.findIndex(n => n.p === i);
+            if (spike >= 0) rig.setLocalPosition(spike, rig.nodes[spike].base.x, y);
+        });
+    }
+
+    /**
+     * StrafeRunView.Init 0x3F5FA44: with n = normalize(Dir) and d = (IsAlly ? n.x : -n.x, n.y), the
+     * plane flies 30 d -> 15 d in a line, a quadratic Bezier 15 d -> (0, 0) -> (-20 d.x, 10 n.y),
+     * and a line to (-40 d.x, 20 n.y), at 15 / Duration units a second (EvaluateDistance is
+     * Evaluate01(distance / Length), so the curve is walked by its parameter). Its up axis follows
+     * the flight; the shadow sits under it on the ground, scale S = 3 clamp01(1 - y^2 / 400) by S/2.
+     * The impacts, smoke and bullet holes play from the start and stop a quarter into the curve.
+     * The bullet stream (a MeshRenderer) is not drawn: its material is not exported.
+     */
+    private animateStrafeRun(av: AreaView, e: VisualEffect): void {
+        const rig = av.rig;
+        const sr = strafePaths(rig, e.isAllied);
+        const speed = 15 / (e.duration > 0 ? e.duration : 1);
+        const dist = (this.battleTime - av.born) * speed;
+        const at = sr.at(dist);
+        const plane = rig.find('Plane Parent');
+        if (plane >= 0) {
+            rig.setLocalPosition(plane, at.x, at.y);
+            rig.addRotation(plane, (Math.atan2(at.ty, at.tx) * 180) / Math.PI - 90 - rig.nodes[plane].base.rot);
+        }
+        const look = rig.find('Plane (1)');
+        if (look >= 0 && !e.isAllied) rig.setLocalScale(look, -rig.nodes[look].base.sx, rig.nodes[look].base.sy);
+        const shadow = rig.find('Shadow');
+        if (shadow >= 0) {
+            const S = 3 * Math.max(0, Math.min(1, 1 - (at.y * at.y) / 400));
+            rig.setLocalPosition(shadow, at.x, 0);
+            rig.setLocalScale(shadow, S, S / 2);
+        }
+        if (dist >= sr.l0 + 0.25 * sr.l1) for (const em of av.emitters) if (!/Plane Parent/.test(rig.nodes[av.nodeOf.get(em.def) ?? 0]?.path ?? '')) em.stopped = true;
+    }
+
+    /**
+     * BullView (Awake 0x3F5F0E8, Update 0x3F5F174): each bull circles its rest place, speed
+     * Random.Range(30, 100) degrees a second (either way), radius Random.Range(0.2, 0.3), plus
+     * PerlinNoise(t 5 + rest.x, 0) 0.2 up; Setup turns it to its side.
+     */
+    private animateBulls(av: AreaView, e: VisualEffect): void {
+        const rig = av.rig;
+        const t = this.battleTime - av.born;
+        rig.nodes.forEach((nd, i) => {
+            if (!nd.scripts?.includes('BullView')) return;
+            const b = nd.base;
+            const h = av.born * 1000 + i * 17;
+            const speed = (30 + Math.floor(70 * hash01(h + 1))) * (hash01(h + 2) < 0.5 ? -1 : 1);
+            const r = 0.2 + 0.1 * hash01(h + 3);
+            const a = (speed * t * Math.PI) / 180;
+            rig.setLocalPosition(i, b.x - Math.sin(a) * r, b.y + Math.cos(a) * r + perlin(t * 5 + b.x, 0) * 0.2);
+            if (!e.isAllied) rig.setLocalScale(i, -b.sx, b.sy);
+        });
+    }
+
+    /**
+     * The impact: the "Explosion" system Emit(1) (Meteorite 0x3F5EA64, Bomb 0x3F5CBCC, Cannon),
+     * its own particle being the shock wave; the smoke, impact and rock systems are its sub-emitters
+     * and play their bursts.
+     */
+    private explode(rig: RigInstance): void {
+        if (rig.find('Explosion') < 0) return;
+        const ems = this.spawnEmitters(rig, p => /(^|\/)Explosion(\/|$)/.test(p), true);
+        const wave = rig.nodes.find(n => n.n === 'Explosion' && n.ps)?.ps;
+        for (const em of ems) if (em.def === wave) em.burst(1);
+        this.emitters.push(...ems);
     }
 
     /** A skill view outliving its area: the impact (final pulse) and, for Lightning, the fading bolt. */
@@ -743,7 +1143,7 @@ export class BattleSceneRenderer {
         const { data } = this.inp;
         if (!av.exploded) {
             av.exploded = true;
-            this.emitters.push(...this.spawnEmitters(av.rig, p => /Explosion|Impact|Rocks/i.test(p), true));
+            this.explode(av.rig);
         }
         if (av.skillId === 'Lightning') {
             const sq = av.rig.find('Square');
@@ -758,21 +1158,18 @@ export class BattleSceneRenderer {
 
     private shotItem(rig: RigInstance | null, s: VisualShot): DrawItem {
         const ang = Math.atan2(s.vy, s.vx) * 180 / Math.PI;
-        if (!rig) {
-            return {
-                layer: 1, order: 3, y: s.y, seq: 0,
-                draw: c => { c.fillStyle = s.isAllied ? '#facc15' : '#ef4444'; c.beginPath(); c.arc(s.x, s.y, 0.12, 0, Math.PI * 2); c.fill(); },
-            };
-        }
+        // ProjectileBattleManager.OnMessage(ProjectileCreatedMessage) 0x403DF9C reads the shot's
+        // ProjectilePrefab (the weapon's visual config, the skin's when its animation is on) and
+        // spawns no view when it is null: a ranged skin variant has none, so the game draws nothing.
+        if (!rig) return { layer: 1, order: 3, y: s.y, seq: 0, draw: () => { } };
         const pi = rig.nodes[0].mb?.ProjectileItem;
-        let rot = 0, flipY = 1;
-        if (pi?.AlignToVelocity !== false) {
-            rot = ang;
-            // ProjectileView flips shots that fly left so the sprite is not upside down.
-            if (s.vx < 0) flipY = -1;
-        }
-        if (pi?.Rotates) rot += this.battleTime * (pi.RotationSpeed ?? 0);
-        rig.update(mul([1, 0, 0, 1, s.x, s.y], trs(0, 0, rot, 1, flipY)));
+        let rot = 0;
+        // ProjectileView.Update 0x403ED00: aligned shots take LookRotation(Vector3.forward, velocity),
+        // which points the sprite's up axis along the flight (the arrows are drawn pointing up);
+        // spinning ones turn by RotationSpeed a second, the other way round when flying left.
+        if (pi?.AlignToVelocity !== false) rot = ang - 90;
+        else if (pi?.Rotates) rot = this.battleTime * (pi.RotationSpeed ?? 0) * (s.vx < 0 ? -1 : 1);
+        rig.update(mul([1, 0, 0, 1, s.x, s.y], trs(0, 0, rot, 1, 1)));
         const list = rigItems(rig, this.inp.tex);
         return { layer: 1, order: 3, y: s.y, seq: 0, draw: c => { for (const it of list) it.draw(c); } };
     }

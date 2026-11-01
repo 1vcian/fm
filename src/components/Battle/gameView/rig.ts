@@ -29,6 +29,9 @@ export function trs(x: number, y: number, rotDeg: number, sx: number, sy: number
 
 interface Trs { x: number; y: number; rot: number; sx: number; sy: number }
 
+/** A float curve on SpriteRenderer m_Color.a (class 212, attribute hash 304273561): the sprite's alpha. */
+const SPRITE_ALPHA = 'float:212:304273561';
+
 function decompose(m: number[]): Trs {
     const sx = Math.hypot(m[0], m[1]);
     const rot = (Math.atan2(m[1], m[0]) * 180) / Math.PI;
@@ -54,7 +57,7 @@ export class RigInstance {
     nodes: RigNode[] = [];
     world: Mat[] = [];
     /** Local overrides from animation, keyed by node index. */
-    private animated = new Map<number, Partial<Trs>>();
+    private animated = new Map<number, Partial<Trs> & { a?: number }>();
     private animRoot = 0;
     private pathIndex = new Map<string, number>();
 
@@ -134,6 +137,8 @@ export class RigInstance {
             } else if (cv.prop === 'scale') {
                 if (cv.c === 'x') o.sx = val;
                 else if (cv.c === 'y') o.sy = val;
+            } else if (cv.prop.startsWith(SPRITE_ALPHA)) {
+                o.a = val;
             }
             this.animated.set(idx, o);
         }
@@ -144,6 +149,14 @@ export class RigInstance {
         if (node < 0) return;
         const o = this.animated.get(node) ?? {};
         o.rot = (o.rot ?? this.nodes[node].base.rot) + deg;
+        this.animated.set(node, o);
+    }
+
+    setLocalScale(node: number, sx: number, sy: number): void {
+        if (node < 0) return;
+        const o = this.animated.get(node) ?? {};
+        o.sx = sx;
+        o.sy = sy;
         this.animated.set(node, o);
     }
 
@@ -168,6 +181,7 @@ export class RigInstance {
                 : (nd.m as Mat);
             const parent = nd.p >= 0 ? this.world[nd.p] : rootWorld;
             this.world[i] = mul(parent ?? rootWorld, local);
+            if (a?.a !== undefined) nd.alpha = a.a;
         }
     }
 
@@ -238,6 +252,35 @@ export function drawSprite(
     return true;
 }
 
+/** Scratch canvases for masked sprites (the sprite, and the union of the masks). */
+let maskScratch: [HTMLCanvasElement, HTMLCanvasElement] | null = null;
+
+/**
+ * A sprite clipped by SpriteMasks: drawn on a scratch canvas with the same transform, then kept
+ * inside (or outside) the masks' shapes. With no mask drawn, inside means nothing shows.
+ */
+function drawMasked(ctx: CanvasRenderingContext2D, inside: boolean, sprite: (g: CanvasRenderingContext2D) => void, shapes: (g: CanvasRenderingContext2D) => void): void {
+    const w = ctx.canvas.width, h = ctx.canvas.height;
+    if (!maskScratch) maskScratch = [document.createElement('canvas'), document.createElement('canvas')];
+    const [a, b] = maskScratch;
+    for (const c of [a, b]) if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    const ga = a.getContext('2d')!, gb = b.getContext('2d')!;
+    const m = ctx.getTransform();
+    for (const g of [ga, gb]) { g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, w, h); g.setTransform(m); }
+    ga.globalAlpha = ctx.globalAlpha;
+    sprite(ga);
+    shapes(gb);
+    ga.setTransform(1, 0, 0, 1, 0, 0);
+    ga.globalAlpha = 1;
+    ga.globalCompositeOperation = inside ? 'destination-in' : 'destination-out';
+    ga.drawImage(b, 0, 0);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(a, 0, 0);
+    ctx.restore();
+}
+
 export interface DrawItem {
     layer: number;
     order: number;
@@ -258,6 +301,7 @@ export function sortItems(items: DrawItem[]): void {
 export function rigItems(
     rig: RigInstance, tex: TextureCache, tintAll?: number[], skip?: (i: number) => boolean,
     customDraw?: Map<number, (ctx: CanvasRenderingContext2D, m: Mat) => void>,
+    nested?: { parent: number; layer: number; order: number; draw: (ctx: CanvasRenderingContext2D) => void },
 ): DrawItem[] {
     const { nodes, world, data } = rig;
     const groupOf = new Array<number>(nodes.length);
@@ -295,6 +339,8 @@ export function rigItems(
         if (!tintAll) return base;
         return [base[0] * tintAll[0], base[1] * tintAll[1], base[2] * tintAll[2], base[3] * tintAll[3]];
     };
+    // The instance's SpriteMasks: renderers with a mask interaction are clipped to their union.
+    const masks = nodes.map((n, i) => (n.isMask && n.maskSprite ? i : -1)).filter(i => i >= 0);
     const drawNode = (ctx: CanvasRenderingContext2D, i: number) => {
         if (!rig.isVisible(i)) return;
         const nd = nodes[i];
@@ -303,7 +349,11 @@ export function rigItems(
         if (nd.s) {
             let c = tint(nd.c);
             if (nd.alpha !== undefined) c = [c[0], c[1], c[2], c[3] * nd.alpha];
-            drawSprite(ctx, data, tex, nd.s, world[i], c, !!nd.fx, !!nd.fy);
+            const live = nd.mask ? masks.filter(m => rig.isVisible(m)) : [];
+            if (nd.mask === 1 || nd.mask === 2) {
+                drawMasked(ctx, nd.mask === 1, g => drawSprite(g, data, tex, nd.s!, world[i], c, !!nd.fx, !!nd.fy),
+                    g => { for (const m of live) drawSprite(g, data, tex, nodes[m].maskSprite!, world[m]); });
+            } else drawSprite(ctx, data, tex, nd.s, world[i], c, !!nd.fx, !!nd.fy);
         }
     };
     const keyOf = (entry: number) => {
@@ -312,12 +362,18 @@ export function rigItems(
         if (entry < 0) return { layer: layerIndex(data, nd.sg![0]), order: nd.sg![1], i };
         return { layer: layerIndex(data, nd.l), order: nd.o ?? 0, i };
     };
+    // Another sortable parented inside this instance (a rider under its mount's UnitAnchor): it
+    // sorts in the group holding `parent`, after the instance's own nodes on a tie (hierarchy order).
+    let nestedGroup = -2;
+    if (nested) { let k = nested.parent; while (k >= 0 && !isGroup(k)) k = nodes[k].p; nestedGroup = k; }
     const drawGroup = (ctx: CanvasRenderingContext2D, g: number) => {
         if (!rig.isVisible(g)) return;
         const list = (members.get(g) ?? []).map(keyOf);
+        if (nested && g === nestedGroup) list.push({ layer: layerIndex(data, nested.layer), order: nested.order, i: nodes.length });
         list.sort((p, q) => p.layer - q.layer || p.order - q.order || p.i - q.i);
         for (const e of list) {
-            if (nodes[e.i].sg && e.i !== g) drawGroup(ctx, e.i);
+            if (e.i === nodes.length) nested!.draw(ctx);
+            else if (nodes[e.i].sg && e.i !== g) drawGroup(ctx, e.i);
             else drawNode(ctx, e.i);
         }
     };

@@ -43,8 +43,12 @@ export interface ParticleDef {
     /** The system's local rotation when it turns about X or Y, which the 2D matrix cannot hold. */
     q?: [number, number, number, number];
     velocity?: { x: ParticleCurve; y: ParticleCurve; space?: number };
-    uv?: { sprites: string[] };
-    renderer?: { mode: number; order: number; layer: number; material?: { tex: Record<string, string>; colors?: Record<string, number[]> } | null };
+    /**
+     * TextureSheetAnimationModule: mode 0 is a grid of tilesX x tilesY frames on the texture, row 0
+     * at the top, the frame picked by frameOverTime (0..1 of the frames) over each particle's life.
+     */
+    uv?: { sprites: string[]; mode?: number; tilesX?: number; tilesY?: number; frame?: ParticleCurve; startFrame?: ParticleCurve; cycles?: number };
+    renderer?: { mode: number; order: number; layer: number; material?: { tex: Record<string, string>; colors?: Record<string, number[]>; floats?: Record<string, number> } | null };
 }
 
 export interface PrefabNode {
@@ -69,6 +73,11 @@ export interface PrefabNode {
     mat?: { name: string; shader?: string; floats: Record<string, number>; colors: Record<string, number[]> };
     scripts?: string[];
     isMask?: 1;
+    /** SpriteMask: the sprite whose alpha (above maskCutoff) is the mask's shape. */
+    maskSprite?: string | null;
+    maskCutoff?: number;
+    /** SpriteRenderer.maskInteraction: 1 visible inside the masks, 2 visible outside. */
+    mask?: number;
 }
 
 export interface Prefab { nodes: PrefabNode[] }
@@ -151,28 +160,54 @@ export function loadBattleVisuals(): Promise<BattleVisualData> {
             const type = r.headers.get('content-type') || '';
             if (!r.ok || type.includes('text/html')) throw new Error(`BattleVisuals.json: ${r.status}`);
             return r.json();
-        });
+        }).then((d: BattleVisualData) => { textureSizes = d.textures ?? {}; return d; });
         dataPromise.catch(() => { dataPromise = null; });
     }
     return dataPromise;
 }
 
-/** Texture sheets, loaded on first use. `get` returns null until the image is ready. */
+/** BattleVisuals.textures: the size each texture has in the game, to tell same-named files apart. */
+let textureSizes: Record<string, { w: number; h: number }> = {};
+
+/** How many numbered copies of a name the texture export can hold ("Circle", "Circle_0", ...). */
+const NAME_COPIES = 4;
+
+/**
+ * Texture sheets, loaded on first use. `get` returns null until the image is ready.
+ *
+ * Two textures of the game can share a name (the unit shadow's 256 px "Circle" and a 64 px one):
+ * the PNG export keeps one as "Circle.png" and numbers the others ("Circle_0.png"). A file whose
+ * size is not the texture's is the wrong one, so the numbered copies are tried until one matches.
+ */
 export class TextureCache {
     private images = new Map<string, HTMLImageElement | null>();
+    /** Images whose size was checked: a loaded file can still be the wrong same-named one. */
+    private ready = new Set<HTMLImageElement>();
     private failed = new Set<string>();
     onLoad: (() => void) | null = null;
 
     get(name: string): HTMLImageElement | null {
         const hit = this.images.get(name);
-        if (hit !== undefined) return hit && hit.complete && hit.naturalWidth > 0 ? hit : null;
+        if (hit !== undefined) return hit && this.ready.has(hit) ? hit : null;
         if (this.failed.has(name)) return null;
+        this.load(name, -1);
+        return null;
+    }
+
+    /** `copy` -1 is the plain name, 0.. the numbered copies. */
+    private load(name: string, copy: number): void {
         const img = new Image();
         img.decoding = 'async';
         this.images.set(name, img);
-        img.onload = () => this.onLoad?.();
-        img.onerror = () => { this.images.set(name, null); this.failed.add(name); };
-        img.src = `${base()}${encodeURIComponent(name)}.png`;
-        return null;
+        const fail = () => { this.images.set(name, null); this.failed.add(name); };
+        const next = () => { if (copy + 1 < NAME_COPIES) this.load(name, copy + 1); else fail(); };
+        img.onload = () => {
+            const want = textureSizes[name];
+            if (want && (img.naturalWidth !== want.w || img.naturalHeight !== want.h)) { next(); return; }
+            this.ready.add(img);
+            this.onLoad?.();
+        };
+        img.onerror = () => (copy < 0 ? fail() : next());
+        img.src = `${base()}${encodeURIComponent(copy < 0 ? name : `${name}_${copy}`)}.png`;
     }
 }

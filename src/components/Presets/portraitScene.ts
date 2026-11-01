@@ -1,8 +1,9 @@
 import { type BattleVisualData, type ParticleDef, type TextureCache } from '../Battle/gameView/visualData';
-import { RigInstance, rigItems, sortItems, layerIndex, IDENTITY, type DrawItem, type Mat } from '../Battle/gameView/rig';
+import { RigInstance, rigItems, sortItems, layerIndex, mul, trs, IDENTITY, type DrawItem, type Mat } from '../Battle/gameView/rig';
 import { Emitter, tintTexture } from '../Battle/gameView/particles';
-import { buildUnit, lookFromProfile, type UnitView } from '../Battle/gameView/scene';
+import { buildUnit, lookFromProfile, mountedItems, DEATH_EFFECT_OFFSET, type UnitView } from '../Battle/gameView/scene';
 import type { UserProfile } from '../../types/Profile';
+import { ballisticDirection, GRAVITY_Y } from '../../engine/scene';
 
 /**
  * One character drawn the way the battle view draws it (scene.ts): the character with its skins
@@ -13,7 +14,23 @@ import type { UserProfile } from '../../types/Profile';
  *
  * Time moves only through step(dt), so the same scene plays live on a canvas, pauses, steps frame
  * by frame, or renders a GIF at a fixed frame rate. Particles are random, as in the game.
+ *
+ * Without a timeline the character loops its "Walk" state. A timeline plays states in order and
+ * repeats: Walk (the controller's Walk clip while the battlefield scrolls at the default move
+ * speed), Attack (the Attack clip once, and for a weapon with a projectile the shot leaves the
+ * muzzle at the windup and flies the weapon's range) and Death (the unit, its mount, pets and
+ * fairy vanish and UnitDeathEffectsView plays, as the battle view does: the game has no death clip).
  */
+
+/** One state of a timeline. */
+export type TimelineStep = { kind: 'walk'; seconds: number } | { kind: 'attack' } | { kind: 'death' };
+
+/** UnitConstants.DefaultMovespeed (engine/types.ts): world units a second, before MoveSpeed stats. */
+const DEFAULT_MOVE_SPEED = 2.0;
+/** Width of one battlefield tile: MainBattleMapSystem places them 24 units apart. */
+const TILE_WIDTH = 24;
+/** Longest a death effect is allowed to run before the timeline moves on, seconds. */
+const DEATH_MAX = 4;
 
 /** A battlefield: one MapElementView prefab and the ground colour around it. */
 export interface PortraitBackground {
@@ -33,7 +50,14 @@ export interface PortraitOptions {
      * variant, as GetSkinnedItemId (0x77FB0B0) picks the -1001 row for a ranged weapon.
      */
     weaponRanged?: boolean;
+    /** States to play in order, repeating; empty or missing: the Walk state loops. */
+    timeline?: TimelineStep[];
 }
+
+interface Segment { step: TimelineStep; start: number; length: number }
+
+/** A weapon shot of the Attack state: from the muzzle at the windup, along the engine's aim. */
+interface Shot { rig: RigInstance; at: number; x0: number; y0: number; vx: number; vy: number; gravity: boolean; flight: number; align: boolean; spin: number }
 
 /** Height (world units) of the middle of a character standing on a mount, from its feet. */
 const FIGURE_MID = 0.85;
@@ -42,12 +66,12 @@ const GROUP_MID = 1.3;
 /** Where on a map tile the character stands (world units from the tile origin). */
 const MAP_X = 8;
 
-function emittersOf(rig: RigInstance, data: BattleVisualData): Emitter[] {
+function emittersOf(rig: RigInstance, data: BattleVisualData, once = false): Emitter[] {
     const out: Emitter[] = [];
     rig.nodes.forEach((nd, i) => {
         if (!nd.ps || !rig.isVisible(i)) return;
         const ps = nd.ps as ParticleDef;
-        out.push(new Emitter(ps, rig.world[i] ?? IDENTITY, ps.renderer?.order ?? 0, layerIndex(data, ps.renderer?.layer), false));
+        out.push(new Emitter(ps, rig.world[i] ?? IDENTITY, ps.renderer?.order ?? 0, layerIndex(data, ps.renderer?.layer), once));
     });
     return out;
 }
@@ -63,6 +87,12 @@ export class PortraitScene {
     private readonly map: RigInstance | null;
     private readonly laneY: number;
     private readonly ux: number;
+    private readonly segments: Segment[] = [];
+    private readonly total: number = 0;
+    private readonly shot: Shot | null = null;
+    private deathEmitters: Emitter[] = [];
+    /** The segment the last step ended in (loop * segments + index), to spot a new Death. */
+    private lastSegment = -1;
 
     constructor(private readonly data: BattleVisualData, private readonly tex: TextureCache, private readonly opts: PortraitOptions) {
         // lookFromProfile shows the item under a hidden skin (useSkinWindup, misc.skinVisible).
@@ -84,10 +114,113 @@ export class PortraitScene {
         this.map = bg && data.prefabs[bg.prefab] ? new RigInstance(data, bg.prefab) : null;
         const road = this.map?.nodes.find(n => n.n.startsWith('RoadPiece'));
         this.laneY = road ? road.m[5] : 0;
+
+        this.shot = this.makeShot();
+        const attackClip = this.unit.controller?.Attack ? data.clips[this.unit.controller.Attack] : undefined;
+        const attackLength = Math.max(attackClip?.length ?? 1, this.shot ? this.shot.at + this.shot.flight : 0);
+        let start = 0;
+        for (const step of opts.timeline ?? []) {
+            const length = step.kind === 'walk' ? Math.max(0.1, step.seconds) : step.kind === 'attack' ? attackLength : this.deathSeconds();
+            this.segments.push({ step, start, length });
+            start += length;
+        }
+        this.total = start;
+        this.preload();
+        this.step(0);
     }
 
-    /** Length of one loop of the character's own animation (the Walk clip), seconds. */
+    /**
+     * Textures load on first use: the shot and the death effect appear for a fraction of a second,
+     * so their sheets (and the battlefield's) are requested now, not on the frame that needs them.
+     */
+    private preload(): void {
+        const { data, tex } = this;
+        const dying = this.segments.some(s => s.step.kind === 'death');
+        const rigs = [this.map, this.shot?.rig, ...(dying ? this.deathPrefabs().map(p => new RigInstance(data, p)) : [])];
+        for (const rig of rigs) {
+            if (!rig) continue;
+            for (const nd of rig.nodes) {
+                const sp = nd.s ? data.sprites[nd.s] : undefined;
+                if (sp?.tex) tex.get(sp.tex);
+                const mat = (nd.ps as ParticleDef | undefined)?.renderer?.material;
+                const t = mat ? mat.tex._BaseMap ?? mat.tex._MainTex : null;
+                if (t) tex.get(t);
+            }
+        }
+    }
+
+    /** The shot of an Attack: the shown weapon's projectile prefab, windup, range and offsets. */
+    private makeShot(): Shot | null {
+        const { data, unit } = this;
+        const wd = unit.weaponData;
+        if (!unit.projectile || !data.prefabs[unit.projectile] || !wd) return null;
+        const rig = new RigInstance(data, unit.projectile);
+        const pi = rig.nodes[0].mb?.ProjectileItem ?? {};
+        const speed = pi.ProjectileSpeed ?? 0;
+        if (speed <= 0) return null;
+        // ExecuteAttack, not aiming: start = Position + HandOffset + UnitOffSet + WeaponOffset.
+        const x0 = (wd.HandOffset?.x ?? 0) + (wd.WeaponOffset?.x ?? 0) + (unit.mount ? unit.mountOffset[0] : 0);
+        const y0 = (wd.HandOffset?.y ?? 0) + (wd.WeaponOffset?.y ?? 0) + (unit.mount ? unit.mountOffset[1] : 0);
+        // No enemy here: the shot aims at a point its weapon's range ahead, at the muzzle's height.
+        const range = Math.max(1, wd.AttackRange ?? 7);
+        const gravity = !!pi.IsAffectedByGravity;
+        const dir = gravity ? ballisticDirection(range, 0, speed) : { x: 1, y: 0 };
+        const vx = dir.x * speed, vy = dir.y * speed;
+        return {
+            rig, at: wd.WindUpTime ?? 0, x0, y0, vx, vy, gravity, flight: vx > 0 ? range / vx : 0,
+            align: pi.AlignToVelocity !== false, spin: pi.Rotates ? pi.RotationSpeed ?? 0 : 0,
+        };
+    }
+
+    /** The death effects: UnitDeathEffectsView, and the worn maxed set's DeathEffect (UnitSetEffectsView.OnDeath 0x4045894). */
+    private deathPrefabs(): string[] {
+        const set = this.opts.setId ? this.data.setEffects?.[this.opts.setId]?.death : undefined;
+        return ['UnitDeathEffectsView', set].filter((p): p is string => !!p && !!this.data.prefabs[p]);
+    }
+
+    /**
+     * How long the death effects play: their particles' lifetime over the system's speed, after
+     * their burst. A system outliving DEATH_MAX (the ground splatter stays a minute) is left out.
+     */
+    private deathSeconds(): number {
+        let longest = 0.5;
+        for (const prefab of this.deathPrefabs()) {
+            for (const nd of this.data.prefabs[prefab].nodes) {
+                const ps = nd.ps as ParticleDef | undefined;
+                if (!ps) continue;
+                const life = (ps.lifetime?.max ?? 0) / (ps.simSpeed || 1);
+                const at = Math.max(0, ...(ps.bursts ?? []).map(b => b.t)) / (ps.simSpeed || 1);
+                if (life <= DEATH_MAX) longest = Math.max(longest, at + life);
+            }
+        }
+        return longest + 0.1;
+    }
+
+    /** The timeline state at time `t`: its segment, the time into it and the loop it is in. */
+    private at(t: number): { seg: Segment; local: number; key: number } | null {
+        if (!this.segments.length || this.total <= 0) return null;
+        const loop = Math.floor(t / this.total);
+        const tt = t - loop * this.total;
+        const i = Math.max(0, this.segments.findIndex(s => tt < s.start + s.length));
+        const seg = this.segments[i];
+        return { seg, local: tt - seg.start, key: loop * this.segments.length + i };
+    }
+
+    /** World units walked by time `t` in the current loop (the battlefield scrolls by it). */
+    private walked(t: number): number {
+        const now = this.at(t);
+        if (!now) return 0;
+        let d = 0;
+        for (const s of this.segments) {
+            if (s === now.seg) { if (s.step.kind === 'walk') d += now.local; break; }
+            if (s.step.kind === 'walk') d += s.length;
+        }
+        return d * DEFAULT_MOVE_SPEED;
+    }
+
+    /** Length of one loop: the whole timeline, or the character's own Walk clip without one, seconds. */
     get loopSeconds(): number {
+        if (this.total > 0) return this.total;
         const clip = this.walkClip ? this.data.clips[this.walkClip] : undefined;
         return clip?.length && clip.length > 0 ? clip.length : 1;
     }
@@ -100,6 +233,25 @@ export class PortraitScene {
         this.t += dt;
         for (const em of this.auraEmitters) em.update(dt);
         for (const em of this.fairyEmitters ?? []) em.update(dt);
+        const now = this.at(this.t);
+        if (now && now.key !== this.lastSegment) {
+            this.lastSegment = now.key;
+            if (now.seg.step.kind === 'death') {
+                // PlayDeathEffect 0x4043FE4: the pop and the ground splatter Emit(1) at the unit's
+                // centre (UnitConstants.CenterOfMass); a set's DeathEffect prefab plays on its own.
+                const at: Mat = [1, 0, 0, 1, this.ux + DEATH_EFFECT_OFFSET.x, DEATH_EFFECT_OFFSET.y];
+                this.deathEmitters = this.deathPrefabs().flatMap(prefab => {
+                    const fx = new RigInstance(this.data, prefab);
+                    fx.update(at);
+                    const pool = prefab === 'UnitDeathEffectsView';
+                    const ems = emittersOf(fx, this.data, pool);
+                    if (pool) for (const em of ems) em.burst(1);
+                    return ems;
+                });
+            }
+        }
+        for (const em of this.deathEmitters) em.update(dt);
+        this.deathEmitters = this.deathEmitters.filter(em => !em.done);
     }
 
     /**
@@ -121,14 +273,45 @@ export class PortraitScene {
         ctx.setTransform(scale * dpr, 0, 0, -scale * dpr, (width / 2) * dpr, originY * dpr);
 
         const items: DrawItem[] = [];
+        const now = this.at(t);
         if (this.map) {
-            this.map.update([1, 0, 0, 1, -MAP_X, -this.laneY]);
-            items.push(...rigItems(this.map, tex));
+            // Walking, the camera follows the character: the battlefield slides back, tile after tile.
+            const off = this.walked(t) % TILE_WIDTH;
+            for (const k of [-1, 0, 1]) {
+                this.map.update([1, 0, 0, 1, -MAP_X - off + k * TILE_WIDTH, -this.laneY]);
+                items.push(...rigItems(this.map, tex));
+            }
+        }
+        for (const em of this.deathEmitters) {
+            const img = em.texture ? tex.get(em.texture) : null;
+            items.push({ layer: em.layer, order: em.order, y: em.origin[5], seq: 0, draw: c => em.draw(c, img, tintTexture) });
+        }
+        // Dead: UnitView and everything that follows it are gone, only the death effect plays.
+        if (now?.seg.step.kind === 'death') {
+            sortItems(items);
+            for (const it of items) it.draw(ctx);
+            return;
         }
         const root = this.root;
         const rig = unit.rig;
         rig.clearAnimation();
-        rig.applyClip(this.walkClip ? data.clips[this.walkClip] : undefined, t, true);
+        const attacking = now?.seg.step.kind === 'attack';
+        const attackClip = unit.controller?.Attack ? data.clips[unit.controller.Attack] : undefined;
+        if (attacking && attackClip) rig.applyClip(attackClip, now!.local, false);
+        else rig.applyClip(this.walkClip ? data.clips[this.walkClip] : undefined, t, true);
+        if (attacking && this.shot && now!.local >= this.shot.at && now!.local < this.shot.at + this.shot.flight) {
+            const sh = this.shot;
+            const tau = now!.local - sh.at;
+            const g = sh.gravity ? GRAVITY_Y : 0;
+            const x = this.ux + sh.x0 + sh.vx * tau;
+            const y = sh.y0 + sh.vy * tau + 0.5 * g * tau * tau;
+            const vy = sh.vy + g * tau;
+            // As ProjectileView.Update: the sprite's up axis along the flight, or a steady spin.
+            const rot = sh.align ? (Math.atan2(vy, sh.vx) * 180) / Math.PI - 90 : sh.spin * tau;
+            sh.rig.update(mul([1, 0, 0, 1, x, y], trs(0, 0, rot, 1, 1)));
+            const list = rigItems(sh.rig, tex);
+            items.push({ layer: 1, order: 3, y, seq: 0, draw: c => { for (const it of list) it.draw(c); } });
+        }
         if (unit.mount) {
             rig.setLocalPosition(unit.charRig, unit.mountOffset[0], unit.mountOffset[1]);
             if (unit.unitShadow >= 0) rig.nodes[unit.unitShadow].hidden = true;
@@ -139,7 +322,7 @@ export class PortraitScene {
             unit.mount.clearAnimation();
             if (unit.mountClip) unit.mount.applyClip(data.clips[unit.mountClip], t, true);
             unit.mount.update(root);
-            const all = [...rigItems(unit.mount, tex), ...unitItems];
+            const all = mountedItems(unit.mount, tex, unitItems);
             items.push({ layer: 1, order: 0, y: 0, seq: 0, draw: c => { for (const it of all) it.draw(c); } });
         } else items.push(...unitItems);
         for (const p of unit.pets) {

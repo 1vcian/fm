@@ -26,7 +26,7 @@ export type HitOrigin = Pick<CombatEvent, 'source' | 'skillId'>;
 /** The real tick length: floor(2^32/10)/2^32 seconds. Used for all continuous integration. */
 export const DT = SIM_DT_RAW / 4294967296;
 
-const GRAVITY_Y = -9.81;
+export const GRAVITY_Y = -9.81;
 const Y_BOUND = 4;
 /** Collision push weight of a unit whose target is in range (attackers are anchored). */
 const ANCHOR_WEIGHT = 1000;
@@ -557,7 +557,7 @@ export class CombatScene {
  * (AttackRange <= 7 vs v^2/g >= 22.9) never get there, the straight aim only keeps a debug
  * spawn override running.
  */
-function ballisticDirection(dx: number, dy: number, speed: number): Vec2 {
+export function ballisticDirection(dx: number, dy: number, speed: number): Vec2 {
     const g = -GRAVITY_Y; // 9.81, positive
     const v2 = speed * speed;
     const disc = v2 * v2 - g * (g * dx * dx + 2 * dy * v2);

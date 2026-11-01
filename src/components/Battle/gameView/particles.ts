@@ -140,6 +140,11 @@ export class Emitter {
         return (this.stopped || (!this.def.loop && this.time > this.def.duration) || this.emitOnce) && this.particles.length === 0 && this.time > 0;
     }
 
+    /** ParticleSystem.Emit(n): n particles now, whatever the rate and bursts say. */
+    burst(n: number): void {
+        this.emit(n);
+    }
+
     private emit(n: number) {
         const d = this.def;
         const sh = d.shape;
@@ -251,6 +256,11 @@ export class Emitter {
     /** Draw with the camera transform already applied (world units, y up). */
     draw(ctx: CanvasRenderingContext2D, img: CanvasImageSource | null, tintFn: (img: CanvasImageSource, rgb: number[]) => CanvasImageSource): void {
         const d = this.def;
+        // URP particle materials: a transparent surface with _Blend 2 adds its colour (SrcAlpha, One).
+        const f = d.renderer?.material?.floats;
+        const additive = !!f && f._Surface === 1 && f._Blend === 2;
+        const prevOp = ctx.globalCompositeOperation;
+        if (additive) ctx.globalCompositeOperation = 'lighter';
         for (const p of this.particles) {
             const t = p.age / p.life;
             const sizeAt = (c: ParticleCurve | undefined) => (c ? (c.curve?.length ? evalCurve(c.curve, t, c.wrap) : rand(c, p.seed)) : 1);
@@ -266,7 +276,22 @@ export class Emitter {
             ctx.translate(p.x, p.y);
             if (p.rot) ctx.rotate(-p.rot);
             ctx.globalAlpha *= c[3];
-            if (img) {
+            const uv = d.uv;
+            const tiles = uv && uv.mode === 0 ? (uv.tilesX ?? 1) * (uv.tilesY ?? 1) : 1;
+            if (img && uv && tiles > 1) {
+                // One cell of the grid: frameOverTime at the particle's age (times the cycles).
+                const cyc = uv.cycles || 1;
+                const at = (t * cyc) % 1;
+                const f = uv.frame?.curve?.length ? evalCurve(uv.frame.curve, at, uv.frame.wrap) : uv.frame ? rand(uv.frame, p.seed) : 0;
+                const start = uv.startFrame ? Math.floor(rand(uv.startFrame, p.seed)) : 0;
+                const frame = (Math.min(tiles - 1, Math.max(0, Math.floor(f * tiles))) + start) % tiles;
+                const src = tintFn(img, c);
+                const w = (src as HTMLCanvasElement).width || (src as HTMLImageElement).naturalWidth;
+                const h = (src as HTMLCanvasElement).height || (src as HTMLImageElement).naturalHeight;
+                const cw = w / (uv.tilesX ?? 1), ch = h / (uv.tilesY ?? 1);
+                ctx.scale(1, -1);
+                ctx.drawImage(src, (frame % (uv.tilesX ?? 1)) * cw, Math.floor(frame / (uv.tilesX ?? 1)) * ch, cw, ch, -s / 2, -sy / 2, s, sy);
+            } else if (img) {
                 ctx.scale(1, -1);
                 ctx.drawImage(tintFn(img, c), -s / 2, -sy / 2, s, sy);
             } else {
@@ -277,6 +302,7 @@ export class Emitter {
             }
             ctx.restore();
         }
+        if (additive) ctx.globalCompositeOperation = prevOp;
     }
 }
 

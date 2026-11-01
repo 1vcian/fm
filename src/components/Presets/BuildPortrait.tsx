@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { skinMaxLevel } from '../../utils/skinArchive';
 import { loadBattleVisuals, TextureCache } from '../Battle/gameView/visualData';
-import { PortraitScene, isRangedWeapon, type PortraitBackground } from './portraitScene';
+import { PortraitScene, isRangedWeapon, type PortraitBackground, type TimelineStep } from './portraitScene';
 import { useGameData } from '../../hooks/useGameData';
 import type { UserProfile } from '../../types/Profile';
 
@@ -33,6 +33,8 @@ interface Props {
     background?: PortraitBackground | null;
     /** Overrides WeaponLibrary.IsRanged of the equipped weapon (which skin variant is drawn). */
     weaponRanged?: boolean;
+    /** States to play in order (Walk, Attack, Death), repeating; none: the Walk state loops. */
+    timeline?: TimelineStep[];
     /** false: frozen on `frame`. */
     playing?: boolean;
     frame?: number;
@@ -45,7 +47,7 @@ interface Props {
 
 export function BuildPortrait({
     profile, setId, width, height, scale, pets = false, anchor = 'bottom', background = null,
-    weaponRanged: rangedOverride, playing = true, frame = 0, onFrame, canvasHandle, className,
+    weaponRanged: rangedOverride, timeline, playing = true, frame = 0, onFrame, canvasHandle, className,
 }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
@@ -66,7 +68,7 @@ export function BuildPortrait({
         loadBattleVisuals().then((data) => {
             if (!alive) return;
             const tex = new TextureCache();
-            const make = () => new PortraitScene(data, tex, { profile, setId, pets, background, weaponRanged });
+            const make = () => new PortraitScene(data, tex, { profile, setId, pets, background, weaponRanged, timeline });
             let scene = make();
             let shownFrame = 0;
             let last = performance.now();
@@ -91,7 +93,7 @@ export function BuildPortrait({
             raf = requestAnimationFrame(loop);
         }).catch(() => { /* no visuals for this version: the canvas stays empty */ });
         return () => { alive = false; cancelAnimationFrame(raf); io?.disconnect(); };
-    }, [profile, setId, width, height, scale, pets, anchor, background, weaponRanged]);
+    }, [profile, setId, width, height, scale, pets, anchor, background, weaponRanged, timeline]);
 
     useEffect(() => {
         const c = canvasRef.current;

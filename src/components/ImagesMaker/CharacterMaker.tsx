@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Download, User, Shuffle, Play, Pause, ChevronLeft, ChevronRight, Film, X } from 'lucide-react';
+import { Download, User, Shuffle, Play, Pause, ChevronLeft, ChevronRight, Film, X, Footprints, Swords, Skull, Trash2 } from 'lucide-react';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { BuildPortrait, FRAME_RATE } from '../Presets/BuildPortrait';
-import { portraitBackgrounds, isRangedWeapon, type PortraitBackground } from '../Presets/portraitScene';
+import { portraitBackgrounds, isRangedWeapon, type PortraitBackground, type TimelineStep } from '../Presets/portraitScene';
 import { portraitGif } from '../Presets/portraitGif';
-import { loadBattleVisuals } from '../Battle/gameView/visualData';
+import { loadBattleVisuals, type BattleVisualData } from '../Battle/gameView/visualData';
+import { lookFromProfile } from '../Battle/gameView/scene';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { INITIAL_PROFILE, type ItemSlot, type UserProfile } from '../../types/Profile';
 import { AGES, RARITIES } from '../../utils/constants';
@@ -41,6 +42,34 @@ const PREVIEW = 420;
 const EXPORT_SIZES = [256, 512, 1024];
 const GIF_FPS = 20;
 const camel = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2');
+const WALK_SECONDS = [0.5, 1, 2, 3, 4, 5];
+/** Prefab offsets below this (world units, about 2 px on a profile card) are not a visible difference. */
+const VISIBLE_OFFSET = 0.05;
+
+/**
+ * What a weapon skin's ranged variant changes on screen against its melee one (SkinVisualConfig
+ * main vs secondary visual): its animation controller, the body parts it hides, or the sprites and
+ * places of its parts. Empty when the two look the same.
+ */
+function rangedVariantChanges(data: BattleVisualData | null, skinIdx: number | null | undefined): string[] {
+    if (!data || skinIdx === null || skinIdx === undefined) return [];
+    const row = data.skins.find(k => k.itemType === 5 && k.skinVisualId === skinIdx);
+    const a = row?.main ? data.visuals[row.main] : undefined;
+    const b = row?.secondary ? data.visuals[row.secondary] : undefined;
+    if (!a || !b) return [];
+    const out: string[] = [];
+    if (a.controller !== b.controller) out.push('the attack and idle animation');
+    if (JSON.stringify(a.turnOff ?? []) !== JSON.stringify(b.turnOff ?? [])) out.push('which of the character\'s hands show');
+    const parts = (prefab: string | null | undefined) => (prefab ? data.prefabs[prefab]?.nodes ?? [] : []);
+    const differ = (x: string | null | undefined, y: string | null | undefined) => {
+        const p = parts(x), q = parts(y);
+        if (p.length !== q.length) return true;
+        return p.some((n, i) => n.s !== q[i].s || n.o !== q[i].o || n.srOff !== q[i].srOff
+            || Math.hypot(n.m[4] - q[i].m[4], n.m[5] - q[i].m[5]) > VISIBLE_OFFSET || Math.abs(n.m[0] - q[i].m[0]) > 0.01 || Math.abs(n.m[1] - q[i].m[1]) > 0.01);
+    };
+    if (differ(a.prefab, b.prefab) || differ(a.hasSecondary ? a.secondary : null, b.hasSecondary ? b.secondary : null)) out.push('its parts');
+    return out;
+}
 
 function Tile({ selected, onClick, label, children }: { selected: boolean; onClick: () => void; label: string; children: React.ReactNode }) {
     return (
@@ -83,6 +112,8 @@ export function CharacterMaker() {
     const [bgColor, setBgColor] = useState('#1b2330');
     const [mapId, setMapId] = useState<string | null>(null);
     const [maps, setMaps] = useState<{ id: string; label: string; bg: PortraitBackground }[]>([]);
+    const [visuals, setVisuals] = useState<BattleVisualData | null>(null);
+    const [timeline, setTimeline] = useState<TimelineStep[]>([]);
     const [open, setOpen] = useState<PickerId | null>('Helmet');
     const [gearTab, setGearTab] = useState<'skins' | number>('skins');
     const [playing, setPlaying] = useState(true);
@@ -94,7 +125,7 @@ export function CharacterMaker() {
     const canvas = useRef<HTMLCanvasElement | null>(null);
     const handle = useCallback((c: HTMLCanvasElement | null) => { canvas.current = c; }, []);
 
-    useEffect(() => { loadBattleVisuals().then(d => setMaps(portraitBackgrounds(d))).catch(() => setMaps([])); }, []);
+    useEffect(() => { loadBattleVisuals().then(d => { setVisuals(d); setMaps(portraitBackgrounds(d)); }).catch(() => setMaps([])); }, []);
 
     // ---------------------------------------------------------------- option lists (configs)
     const itemsOf = useMemo(() => {
@@ -188,6 +219,14 @@ export function CharacterMaker() {
     // picks the skin's melee or ranged variant (GetSkinnedItemId), animation and parts included.
     const weaponRanged = isRangedWeapon(look, weaponLibrary);
     const unitsTall = companions ? 6.4 : 3.6;
+    const variantChanges = useMemo(() => rangedVariantChanges(visuals, pieces.Weapon?.skin), [visuals, pieces.Weapon?.skin]);
+    // The weapon skins whose ranged variant looks different at all.
+    const changingSkins = useMemo(() => (skinsOf.Weapon ?? []).filter(idx => rangedVariantChanges(visuals, idx).length > 0)
+        .map(idx => skinDisplayName(skinsLib, 'Weapon', idx)), [visuals, skinsOf, skinsLib]);
+    // The weapon drawn: its controller swings it, its projectile (if any) is the shot.
+    const shownWeapon = useMemo(() => (visuals ? lookFromProfile(visuals, look, { weaponRanged, noCompanions: true }).weapon ?? null : null), [visuals, look, weaponRanged]);
+    const shoots = !!shownWeapon?.hasProjectile && !!shownWeapon.projectile;
+    const addStep = (step: TimelineStep) => setTimeline(t => [...t, step]);
 
     // ---------------------------------------------------------------- actions
     const fromProfile = () => {
@@ -241,7 +280,7 @@ export function CharacterMaker() {
         setGifProgress(0);
         try {
             const blob = await portraitGif({
-                profile: look, setId, pets: companions, background, weaponRanged, size: exportSize, scale: exportSize / unitsTall,
+                profile: look, setId, pets: companions, background, weaponRanged, timeline, size: exportSize, scale: exportSize / unitsTall,
                 loops: gifLoops, fps: GIF_FPS, color: bgKind === 'color' ? bgColor : null,
             }, setGifProgress);
             const url = URL.createObjectURL(blob);
@@ -281,15 +320,18 @@ export function CharacterMaker() {
             const ages = [...new Set((itemsOf[type] ?? []).map(i => i.age))];
             return (
                 <div className="space-y-2">
-                    {slot === 'Weapon' && gearTab === 'skins' && (
-                        <div className="flex items-center gap-2 text-[11px] text-text-secondary">
-                            Skin variant
-                            {([false, true] as const).map(r => (
-                                <button key={String(r)} onClick={() => chooseSkinKind(r)}
-                                    className={cn('px-2 py-0.5 rounded-md font-bold', (pieces.Weapon ? weaponRanged : skinRanged) === r ? 'bg-accent-primary text-white' : 'bg-bg-input hover:text-text-primary')}>
-                                    {r ? 'Ranged' : 'Melee'}
-                                </button>
-                            ))}
+                    {slot === 'Weapon' && gearTab === 'skins' && variantChanges.length > 0 && (
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-[11px] text-text-secondary">
+                                Skin variant
+                                {([false, true] as const).map(r => (
+                                    <button key={String(r)} onClick={() => chooseSkinKind(r)}
+                                        className={cn('px-2 py-0.5 rounded-md font-bold', (pieces.Weapon ? weaponRanged : skinRanged) === r ? 'bg-accent-primary text-white' : 'bg-bg-input hover:text-text-primary')}>
+                                        {r ? 'Ranged' : 'Melee'}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-text-muted">On a ranged weapon this skin changes {variantChanges.join(' and ')}. Only {changingSkins.join(', ')} change at all; every other weapon skin looks the same on both.</p>
                         </div>
                     )}
                     <div className="flex flex-wrap gap-1">
@@ -430,7 +472,7 @@ export function CharacterMaker() {
                         background: bgKind === 'color' ? bgColor : 'repeating-conic-gradient(#2a2f3a 0% 25%, #1f232c 0% 50%) 50% / 24px 24px',
                     }}>
                     <BuildPortrait profile={look} setId={setId} width={PREVIEW} height={PREVIEW} scale={PREVIEW / unitsTall}
-                        pets={companions} anchor="center" background={background} weaponRanged={weaponRanged} playing={playing} frame={frame}
+                        pets={companions} anchor="center" background={background} weaponRanged={weaponRanged} timeline={timeline} playing={playing} frame={frame}
                         onFrame={f => { liveFrame.current = f; }} canvasHandle={handle} />
                 </div>
                 <div className="flex items-center justify-center gap-1.5">
@@ -442,6 +484,51 @@ export function CharacterMaker() {
                     <button onClick={() => stepFrame(1)} title="Next frame" className="p-2 rounded-lg border border-border hover:bg-bg-input"><ChevronRight className="w-4 h-4" /></button>
                     <span className="text-[11px] font-mono text-text-muted w-36 text-center whitespace-nowrap">{playing ? 'playing' : `frame ${frame} (${(frame / FRAME_RATE).toFixed(2)} s)`}</span>
                 </div>
+                <div className="rounded-2xl border border-border bg-bg-secondary/30 p-3 space-y-2 max-w-[420px] mx-auto">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-wide">Animation timeline</span>
+                        {timeline.length > 0 && (
+                            <button onClick={() => setTimeline([])} title="Clear the timeline" className="inline-flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary">
+                                <Trash2 className="w-3.5 h-3.5" /> Clear
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => addStep({ kind: 'walk', seconds: 2 })} className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border hover:bg-bg-input">
+                            <Footprints className="w-3.5 h-3.5" /> Walk
+                        </button>
+                        <button onClick={() => addStep({ kind: 'attack' })} className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border hover:bg-bg-input">
+                            <Swords className="w-3.5 h-3.5" /> {shoots ? 'Shoot' : 'Attack'}
+                        </button>
+                        <button onClick={() => addStep({ kind: 'death' })} className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border hover:bg-bg-input">
+                            <Skull className="w-3.5 h-3.5" /> Death
+                        </button>
+                    </div>
+                    {timeline.length === 0
+                        ? <p className="text-[10px] text-text-muted">Empty: the character loops its Walk state. Add states to play them in order, as a looping video.</p>
+                        : (
+                            <div className="flex flex-wrap items-center gap-1">
+                                {timeline.map((st, i) => (
+                                    <span key={i} className="inline-flex items-center gap-1 rounded-lg bg-bg-input/70 border border-border/60 pl-2 pr-1 py-1 text-[11px] font-semibold">
+                                        <span className="text-text-muted">{i + 1}.</span>
+                                        {st.kind === 'walk' ? 'Walk' : st.kind === 'attack' ? (shoots ? 'Shoot' : 'Attack') : 'Death'}
+                                        {st.kind === 'walk' && (
+                                            <select value={st.seconds} onChange={e => { const v = Number(e.target.value); setTimeline(t => t.map((x, j) => (j === i ? { kind: 'walk', seconds: v } : x))); }}
+                                                className="bg-transparent text-[11px] font-mono">
+                                                {WALK_SECONDS.map(v => <option key={v} value={v}>{v} s</option>)}
+                                            </select>
+                                        )}
+                                        <button onClick={() => setTimeline(t => t.filter((_, j) => j !== i))} title="Remove" className="p-0.5 rounded hover:bg-bg-secondary"><X className="w-3 h-3" /></button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    <ul className="text-[10px] text-text-muted space-y-0.5 list-disc pl-4">
+                        <li>Walk: the Walk state's clip; on a battlefield the ground scrolls at the default move speed (2 units a second).</li>
+                        <li>{shoots ? 'Shoot: one attack; the shot leaves the weapon at its windup and flies its range.' : 'Attack: one attack swing.'} {pieces.Weapon?.skin != null && !shoots && weaponRanged ? 'A ranged weapon skin fires no visible shot in game: its visual has no projectile.' : ''}</li>
+                        <li>Death: the character with its mount, pets and fairy disappears and the game's death effect plays. The game has no falling animation.</li>
+                    </ul>
+                </div>
                 <div className="flex flex-wrap items-center gap-2 justify-center">
                     <select value={exportSize} onChange={e => setExportSize(Number(e.target.value))} className="px-2 py-1.5 rounded-lg bg-bg-input border border-border text-xs">
                         {EXPORT_SIZES.map(s => <option key={s} value={s}>{s} px</option>)}
@@ -450,7 +537,7 @@ export function CharacterMaker() {
                         <Download className="w-4 h-4" /> PNG
                     </button>
                     <select value={gifLoops} onChange={e => setGifLoops(Number(e.target.value))} title="Loops of the animation in the GIF" className="px-2 py-1.5 rounded-lg bg-bg-input border border-border text-xs">
-                        {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n} {n === 1 ? 'loop' : 'loops'}</option>)}
+                        {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n} {n === 1 ? 'loop' : 'loops'}{timeline.length ? ' of the timeline' : ''}</option>)}
                     </select>
                     <button onClick={exportGif} disabled={gifProgress !== null} className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg border border-accent-primary/50 text-accent-primary hover:bg-accent-primary/10 disabled:opacity-60">
                         <Film className="w-4 h-4" /> {gifProgress !== null ? `GIF ${Math.round(gifProgress * 100)}%` : 'GIF'}
