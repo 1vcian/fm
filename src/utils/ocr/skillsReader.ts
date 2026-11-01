@@ -112,7 +112,8 @@ interface GridCell {
 interface SkillsGrid { cells: GridCell[]; cw: number; rows: number; cols: number }
 
 /** proto_skills._pure_white_components: isolate near-pure-white glyphs at `upScale`x. */
-function pureWhiteComponents(crop: HTMLCanvasElement, upScale: number): WhiteField {
+function pureWhiteComponents(crop: HTMLCanvasElement, upScale: number, fillMin: number | null = null): WhiteField {
+    const nearWhite = fillMin !== null && fillMin > WHITE_THR;
     const up = upscaleCanvas(crop, upScale);
     const W = up.width, H = up.height;
     const px = up.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, W, H).data;
@@ -132,6 +133,18 @@ function pureWhiteComponents(crop: HTMLCanvasElement, upScale: number): WhiteFie
         // would chain text rows together in clusterRows and corrupt the read.
         if (s.h > 0.32 * H || s.w > 0.30 * W || s.area > 0.025 * W * H) continue;
         if (s.h > 0.8 * H || s.area > 0.12 * H * W) continue;   // background bleed
+        if (nearWhite) {
+            // near-white fill (Common, #F1F1F1): the fill reaches the crop's sides or bottom and
+            // its pockets are fill-bright, a glyph core is pure white (see numberReader.segment)
+            if (s.x <= 0 || s.x + s.w >= W || s.y + s.h >= H) continue;
+            const v: number[] = [];
+            for (let yy = s.y; yy < s.y + s.h; yy++) for (let xx = s.x; xx < s.x + s.w; xx++) {
+                const q = yy * W + xx;
+                if (labels[q] === s.id) v.push(gray[q]);
+            }
+            v.sort((a, b) => a - b);
+            if (!v.length || v[Math.floor(0.9 * (v.length - 1))] < (fillMin! + 255) / 2) continue;
+        }
         comps.push({ ...s, cy: s.y + s.h / 2 });
     }
     return { comps, gray, labels, W, H };
@@ -185,17 +198,23 @@ function readRow(row: WhiteComp[], field: WhiteField, bank: GlyphBank): { value:
  * reads as 'Lv'+digits (proto_skills.read_level row-selection). Exported for the unit tiles,
  * whose overlay layout ("Equipped" + "Lv. NN" + star) matches the skill cells.
  */
-export async function readWhiteLevelRow(crop: HTMLCanvasElement): Promise<number | null> {
+export async function readWhiteLevelRow(crop: HTMLCanvasElement, fill?: [number, number, number] | null): Promise<number | null> {
     const bank = await loadGlyphBank();
-    const field = pureWhiteComponents(crop, 5);
+    // on a near-white fill (Common rarity, #F1F1F1) the fill itself clears WHITE_THR; the fill
+    // colour lets pureWhiteComponents drop it
+    const field = pureWhiteComponents(crop, 5, fill ? Math.min(fill[0], fill[1], fill[2]) : null);
     if (!field.comps.length) return null;
     const rows = clusterRows(field.comps, 0.6);
     const parsed = rows.map(row => readRow(row, field, bank));
     // prefer the row that starts with the 'Lv' prefix (icon residue / the "Equipped" word
     // cluster into their own rows)
+    // A stray '.' (a speck of icon residue that clears the white mask) can sit in front of the
+    // prefix: measured on a real equipped StrafeRun cell, the level row read ".Lv.1" and lost to the
+    // "Equipped" pill row. The level label never starts with a dot, so leading dots are not the row.
     let best: { value: number | null; raw: string } | null = null;
     for (const p of parsed) {
-        if (p.value !== null && (p.raw[0] === 'L' || p.raw.slice(0, 2).includes('v'))) best = p;
+        const r = p.raw.replace(/^\.+/, '');
+        if (p.value !== null && (r[0] === 'L' || r.slice(0, 2).includes('v'))) best = p;
     }
     if (!best) for (const p of parsed) if (p.value !== null) { best = p; break; }
     return best ? best.value : null;

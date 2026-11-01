@@ -393,7 +393,9 @@ export function upscaleCanvas(src: HTMLCanvasElement, scale: number): HTMLCanvas
 interface Glyph { x: number; g: Float32Array; w: number; h: number; hmax: number }
 
 /** Isolate white glyphs on an upscaled crop and return them left→right (star/stray removed). */
-function segment(canvas: HTMLCanvasElement, bank: GlyphBank): Glyph[] {
+function segment(canvas: HTMLCanvasElement, bank: GlyphBank, fillMin: number | null = null): Glyph[] {
+    // near-white fill (see levelFillMin): the fill clears the white-core gate itself
+    const nearWhite = fillMin !== null && fillMin > WHITE_CORE_MIN;
     const scale = 4;
     const c = upscaleCanvas(canvas, scale);
     const W = c.width, H = c.height;
@@ -402,10 +404,20 @@ function segment(canvas: HTMLCanvasElement, bank: GlyphBank): Glyph[] {
     let mask: Uint8Array = new Uint8Array(W * H); const gray = new Float32Array(W * H);
     for (let i = 0, p = 0; p < W * H; i += 4, p++) {
         const r = px[i], gg = px[i + 1], b = px[i + 2]; const mn = Math.min(r, gg, b);
-        gray[p] = mn; if (mn > 185) mask[p] = 1;
+        gray[p] = mn; if (mn > WHITE_CORE_MIN) mask[p] = 1;
     }
     mask = morphClose3(mask, W, H); // digit_proto.glyphs applies a 3x3 close before labeling
-    const { labels, stats } = connectedComponents(mask, W, H);
+    const cc = connectedComponents(mask, W, H);
+    const labels = cc.labels;
+    // On a near-white fill the fill itself is white-core. Two things tell it from a glyph: the fill
+    // (and the white card around the tile's rounded corners) reaches the band's sides or bottom,
+    // which no glyph does (the band's TOP can cut the glyph tops, so it is not used); and a pocket
+    // of fill the art encloses between glyphs is fill-bright (palette 241) where a glyph core is
+    // pure white: measured on real tiles recoloured to #F1F1F1, glyph p90 248..254, pockets 239..247.
+    const stats = nearWhite
+        ? cc.stats.filter(st => st.x > 0 && st.x + st.w < W && st.y + st.h < H
+            && componentP90(gray, cc.labels, st, W) >= (fillMin! + 255) / 2)
+        : cc.stats;
     if (!stats.length) return [];
     const hmax = Math.max(...stats.map(s => s.h));
     const centres = stats.filter(s => s.h > 0.6 * hmax).map(s => s.y + s.h / 2).sort((a, b) => a - b);
@@ -470,9 +482,35 @@ export function levelDigits(raw: string, gaps?: number[]): string {
 }
 
 /** Read an integer (level / count) from a tight crop containing white game-font text. */
-export async function readNumber(canvas: HTMLCanvasElement): Promise<NumberRead> {
+/** White-core gate of the level glyphs (min channel). */
+const WHITE_CORE_MIN = 185;
+
+/**
+ * The min channel of the tile fill behind a level label, for readNumber. On every coloured tile it
+ * is far below the 185 white-core gate and nothing changes. A near-white fill (Primitive / Common,
+ * #F1F1F1 = 241 in the game palette) clears the gate itself, so the fill would read as glyphs
+ * (measured on real tiles recoloured to that colour: "Lv. 104" read 1204, "Lv. 116" 1111); readNumber
+ * then drops the fill (the white region reaching the band's sides) and fill-bright pockets.
+ */
+export function levelFillMin(fill: [number, number, number] | null): number | null {
+    return fill ? Math.min(fill[0], fill[1], fill[2]) : null;
+}
+
+/** 90th percentile of the min-channel values of one labelled component. */
+function componentP90(gray: Float32Array, labels: Int32Array, st: { id: number; x: number; y: number; w: number; h: number }, W: number): number {
+    const v: number[] = [];
+    for (let y = st.y; y < st.y + st.h; y++) for (let x = st.x; x < st.x + st.w; x++) {
+        const p = y * W + x;
+        if (labels[p] === st.id) v.push(gray[p]);
+    }
+    if (!v.length) return 0;
+    v.sort((a, b) => a - b);
+    return v[Math.floor(0.90 * (v.length - 1))];
+}
+
+export async function readNumber(canvas: HTMLCanvasElement, fillMin: number | null = null): Promise<NumberRead> {
     const bank = await loadGlyphBank();
-    const glyphs = segment(canvas, bank);
+    const glyphs = segment(canvas, bank, fillMin);
     if (!glyphs.length) return { value: null, raw: '', confidence: 0 };
     const hmax = Math.max(...glyphs.map(g => g.hmax));
     let raw = '';

@@ -21,8 +21,7 @@
 // somebody else's — a read the caller must never pre-accept). `type` keeps its exact old meaning
 // and value set, so every existing consumer of it is unaffected.
 import { gameScreen, findPopupCards, type PopupKind } from './uiLayout';
-import { loadImage, imageToCanvas, findStarTiles, detectPopupCard, detectPopupTile, type Rect } from './imagePrep';
-import { detectOutlinedTile } from './skinReader';
+import { loadImage, imageToCanvas, findStarTiles, detectPopupCard, detectPopupTile, detectSubjectTile, detectOutlinedTile, type Rect } from './imagePrep';
 
 export type ScreenTemplate = 'item' | 'pet' | 'mount' | 'skills' | 'clanTree' | 'enemy' | 'unknown';
 
@@ -400,22 +399,25 @@ export interface PopupSubject {
  */
 export function subjectFromPopup(src: HTMLCanvasElement, headerCard: boolean): PopupSubject {
     if (headerCard) {
-        // WITH a header the popup sits on an undimmed screen, so imagePrep's near-white card and
-        // saturated-tile finders apply — this branch is byte-for-byte the rule that validated
-        // 17/17 on the example set as guidedSync.refineItemToSkin.
+        // WITH a header the popup sits on an undimmed screen, so imagePrep's near-white card finder
+        // applies. Item and skin popups are told apart by STRUCTURE first, colour second: the skin
+        // modal is the taller container (SkinDetailsPopupUiView 990x645 vs EquippedItemPopupUiView
+        // 896x420; measured on the real 576x1280 fixtures: skin card 338 px = 0.264 of the frame,
+        // item card 218 px = 0.170). Colour alone cannot do it: an Underworld item tile measures
+        // mean chroma 34..42, inside the skins' 12..40, and a Primitive item tile is white.
         const card = detectPopupCard(src);
         if (!card) return { subject: null, card: null, tile: null, chroma: null };
-        const tile = detectPopupTile(src);
-        // no saturated tile in the white card at all -> a skin's near-white tile
-        if (!tile) return { subject: 'skin', card, tile: null, chroma: null };
-        // ignore the round close (X) button that overlaps the card's bottom-centre edge — the same
-        // exclusion findColoredTiles/findStarTiles apply; a real subject tile never sits there
+        const tall = card.h >= SKIN_CARD_MIN_H * src.height;
+        // colour-blind subject tile (outline), the fill finder as a fallback
+        const tile = detectSubjectTile(src, card) ?? detectPopupTile(src);
+        if (!tile) return { subject: tall ? 'skin' : null, card, tile: null, chroma: null };
+        // ignore the round close (X) button that overlaps the card's bottom-centre edge
         const tcx = tile.x + tile.w / 2, tcy = tile.y + tile.h / 2;
         if (tcy > card.y + card.h * 0.85 && Math.abs(tcx - (card.x + card.w / 2)) < card.w * 0.14) {
-            return { subject: 'skin', card, tile: null, chroma: null };
+            return { subject: tall ? 'skin' : null, card, tile: null, chroma: null };
         }
         const chroma = meanChroma(src, tile);
-        return { subject: chroma >= ITEM_TILE_MIN_CHROMA ? 'unit' : 'skin', card, tile, chroma };
+        return { subject: tall && chroma < ITEM_TILE_MIN_CHROMA ? 'skin' : 'unit', card, tile, chroma };
     }
     // WITHOUT a header the whole frame is dimmed behind the popup, so both the card and the tile
     // have to be found relative to the frame. detectOutlinedTile keys on the tile's OUTLINE rather
@@ -552,8 +554,14 @@ export async function classifyScreen(input: HTMLImageElement | HTMLCanvasElement
         const p = subjectFromPopup(canon, header);
         if (p.card) popup = { card: p.card, tile: p.tile, chroma: p.chroma };
         if (type === 'item') {
-            // conservative: with no card found there is nothing to test, so 'item' stands
-            if (p.subject === 'skin') subject = 'skin';
+            // The popup container's prefab PROPORTIONS name it first (uiLayout.POPUP_ASPECT): the
+            // skin modal 0.652 vs the item popup 0.469 (measured 0.648 / 0.458). Only a container
+            // of no known shape falls back to the card-height + tile rule above; with no card at
+            // all there is nothing to test, so 'item' stands.
+            const kind = popupKindOf(canon);
+            if (kind === 'skin') subject = 'skin';
+            else if (kind === null && p.subject === 'skin') subject = 'skin';
+            if (kind) popup = { ...(popup ?? { card: p.card ?? { x: 0, y: 0, w: 0, h: 0 }, tile: p.tile, chroma: p.chroma }), kind };
         } else {
             // No header: the popup container's PROPORTIONS name it (uiLayout.POPUP_ASPECT, from the
             // prefab sizes, so this holds on every device and in every language). Only when no

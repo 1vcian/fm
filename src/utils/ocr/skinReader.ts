@@ -18,7 +18,7 @@
 // This file only ADDS to the OCR toolkit — it imports the shared helpers read-only and
 // changes no behaviour of the existing item/pet/mount/skills readers.
 
-import { cropCanvas, binarize, detectBrightCard, type Rect } from './imagePrep';
+import { cropCanvas, binarize, detectBrightCard, detectOutlinedTile, type Rect } from './imagePrep';
 import { ocrPageLines } from './ocrEngine';
 import { normalizeName, similarity, bestMatch } from './parse';
 import { splitCamel } from './gameDictionary';
@@ -127,6 +127,26 @@ function slotFromText(lines: { text: string }[]): string | null {
     return null;
 }
 
+/** A skin popup's title names one of only THREE types, whose words are mutually far apart
+ *  (pairwise similarity <= 0.17 for helmet / armour / weapon), so a garbled title can still be
+ *  told apart by which of the three it is closest to, provided it is clearly closer to one:
+ *  measured misreads "acmeur" (armour 0.67, others 0.17) and "tieapen" (weapon 0.57). */
+const SKIN_TITLE_MIN = 0.5;
+const SKIN_TITLE_MARGIN = 0.3;
+const SKIN_TITLE_WORDS: [string, string][] = [['helmet', 'Helmet'], ['armour', 'Body'], ['armor', 'Body'], ['weapon', 'Weapon']];
+function skinTypeFromTitle(lines: { text: string }[]): string | null {
+    const best: Record<string, number> = { Helmet: 0, Body: 0, Weapon: 0 };
+    for (const l of lines) {
+        for (const raw of normalizeName(l.text).split(' ')) {
+            const word = raw.replace(/s?kins?$/, '');   // "jatmougskins" -> "jatmoug"
+            if (word.length < 4) continue;
+            for (const [w, slot] of SKIN_TITLE_WORDS) best[slot] = Math.max(best[slot], similarity(word, w));
+        }
+    }
+    const ranked = Object.entries(best).sort((a, b) => b[1] - a[1]);
+    return ranked[0][1] >= SKIN_TITLE_MIN && ranked[0][1] - ranked[1][1] >= SKIN_TITLE_MARGIN ? ranked[0][0] : null;
+}
+
 /** Try to pull the set name out of a set-bonus line via 1..3-word windows vs the set dict. */
 function matchSetInLine(normLine: string, dict: SkinDict): { setId: string; score: number } | null {
     const toks = normLine.split(' ').filter(t => t && !/^\d+$/.test(t));
@@ -198,84 +218,9 @@ function detectSkinDetailCard(src: HTMLCanvasElement): Rect | null {
     return { x: xMin, y: y0, w: xMax - xMin, h: y1 - y0 };
 }
 
-// ---- Outline-based tile localisation (colour-invariant; see detectOutlinedTile).
-// Every gate below is a fraction of the detected card, so nothing here is a pixel literal.
-const INK_PCTL = 0.99;      // luminance percentile taken as the card's own "bright"
-const INK_FRAC = 0.65;      // ink = luminance < this * bright (measured safe over 0.55..0.75)
-const TILE_W_MIN = 0.08, TILE_W_MAX = 0.45;   // tile side as a fraction of card width
-const TILE_H_MIN = 0.10, TILE_H_MAX = 0.90;   // outline bbox height as a fraction of card height
-const TILE_AR_LO = 0.55, TILE_AR_HI = 1.45;   // square-ish (stars/pill overhang stretch it)
-
-/**
- * Locate the SUBJECT TILE inside a popup card, by its outline instead of its fill.
- *
- * The existing tile finders (imagePrep.findColoredTiles / detectPopupTile / findStarTiles) all
- * key on a bright SATURATED fill, because an item tile is age-coloured and a pet/mount tile is
- * rarity-coloured. A skin tile is neither — it is a near-white tile on a white card — so those
- * detectors return nothing usable (measured on the real 3-star skin fixture: detectPopupTile =
- * null, detectUnitTile = a 37x37 fragment of the weapon art, findStarTiles[0] = an unrelated blob)
- * and the star counter never gets a tile rect to work with. That, not the gold isolation, is why
- * skin popups read 0 stars: handed the right rect, the topology counter already returned 3.
- *
- * What every tile in this game DOES share, whatever colour the game ships next, is the shape:
- * a rounded square drawn with a near-black outline. So threshold the card at a fraction of its
- * OWN bright level (invariant to the card and tile colours), take 8-connected components of that
- * ink, and keep the biggest square-ish one whose side is a plausible fraction of the card. The
- * "Lv." pill and the ascension stars hang below the frame, so the component's WIDTH is the honest
- * measure of the tile: the rect is squared off from it (tiles are square).
- *
- * Returns a rect in SOURCE px, or null when the card has no tile-shaped outline in it.
- */
-export function detectOutlinedTile(src: HTMLCanvasElement, card: Rect): Rect | null {
-    const c = clampRect(card, src.width, src.height);
-    if (c.w < 16 || c.h < 16) return null;
-    const px = src.getContext('2d', { willReadFrequently: true })!.getImageData(c.x, c.y, c.w, c.h).data;
-    const n = c.w * c.h;
-    const gray = new Uint8Array(n);
-    const hist = new Int32Array(256);
-    for (let i = 0, p = 0; p < n; i += 4, p++) {
-        const g = Math.min(255, Math.round(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]));
-        gray[p] = g; hist[g]++;
-    }
-    // card's own bright level (99th pct) -> "ink" is anything well below it
-    let acc = 0, bright = 255;
-    for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= INK_PCTL * n) { bright = v; break; } }
-    const inkMax = INK_FRAC * bright;
-
-    // 8-connected components of the ink, iterative (an outline ring can be thousands of px)
-    const seen = new Uint8Array(n);
-    const stack = new Int32Array(n);
-    let best: Rect | null = null, bestArea = 0;
-    for (let s0 = 0; s0 < n; s0++) {
-        if (seen[s0] || gray[s0] >= inkMax) continue;
-        let top = 0;
-        stack[top++] = s0; seen[s0] = 1;
-        let minx = s0 % c.w, maxx = minx, miny = (s0 / c.w) | 0, maxy = miny;
-        while (top > 0) {
-            const p = stack[--top], x = p % c.w, y = (p / c.w) | 0;
-            if (x < minx) minx = x; if (x > maxx) maxx = x;
-            if (y < miny) miny = y; if (y > maxy) maxy = y;
-            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-                const nx = x + dx, ny = y + dy;
-                if (nx < 0 || nx >= c.w || ny < 0 || ny >= c.h) continue;
-                const q = ny * c.w + nx;
-                if (!seen[q] && gray[q] < inkMax) { seen[q] = 1; stack[top++] = q; }
-            }
-        }
-        const bw = maxx - minx + 1, bh = maxy - miny + 1;
-        // gates are all fractions of the CARD, so they hold on any device size
-        if (bw < TILE_W_MIN * c.w || bw > TILE_W_MAX * c.w) continue;
-        if (bh < TILE_H_MIN * c.h || bh > TILE_H_MAX * c.h) continue;
-        const ar = bw / bh;
-        if (ar < TILE_AR_LO || ar > TILE_AR_HI) continue;
-        // the round close (X) button straddles the card's bottom-centre edge and is square too —
-        // the same exclusion imagePrep's tile finders apply
-        const cxf = (minx + bw / 2) / c.w, cyf = (miny + bh / 2) / c.h;
-        if (cyf > 0.85 && Math.abs(cxf - 0.5) < 0.14) continue;
-        if (bw * bh > bestArea) { bestArea = bw * bh; best = { x: c.x + minx, y: c.y + miny, w: bw, h: bw }; }
-    }
-    return best;
-}
+// Outline-based tile localisation (colour-invariant) lives in imagePrep.detectOutlinedTile, shared
+// with the item/pet/mount subject-tile finder; re-exported here for the existing importers.
+export { detectOutlinedTile };
 
 /** The white detail card of a skin popup, with the generic fallbacks readSkin uses. */
 function skinCard(src: HTMLCanvasElement): Rect | null {
@@ -286,6 +231,34 @@ function skinCard(src: HTMLCanvasElement): Rect | null {
 export function detectSkinTile(src: HTMLCanvasElement): Rect | null {
     const card = skinCard(src);
     return card ? detectOutlinedTile(src, card) : null;
+}
+
+/** Dark-on-white canvas -> the same with every white region NOT connected to the border painted
+ *  dark (the counters of hollow outlined letters), i.e. solid glyphs. */
+function fillEnclosed(src: HTMLCanvasElement): HTMLCanvasElement {
+    const W = src.width, H = src.height;
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const octx = out.getContext('2d', { willReadFrequently: true })!;
+    octx.drawImage(src, 0, 0);
+    const img = octx.getImageData(0, 0, W, H);
+    const d = img.data;
+    const white = new Uint8Array(W * H);
+    for (let p = 0, i = 0; p < W * H; p++, i += 4) white[p] = (d[i] + d[i + 1] + d[i + 2]) / 3 >= 128 ? 1 : 0;
+    const reach = new Uint8Array(W * H);
+    const stack: number[] = [];
+    const seed = (p: number) => { if (white[p] && !reach[p]) { reach[p] = 1; stack.push(p); } };
+    for (let x = 0; x < W; x++) { seed(x); seed((H - 1) * W + x); }
+    for (let y = 0; y < H; y++) { seed(y * W); seed(y * W + W - 1); }
+    while (stack.length) {
+        const p = stack.pop()!, x = p % W, y = (p / W) | 0;
+        if (x > 0) seed(p - 1); if (x < W - 1) seed(p + 1);
+        if (y > 0) seed(p - W); if (y < H - 1) seed(p + W);
+    }
+    for (let p = 0, i = 0; p < W * H; p++, i += 4) {
+        if (white[p] && !reach[p]) { d[i] = d[i + 1] = d[i + 2] = 0; }
+    }
+    octx.putImageData(img, 0, 0);
+    return out;
 }
 
 /**
@@ -445,26 +418,37 @@ export async function readSkin(
         try {
             const titleCanvas = prepareTitleBand(src, titleRect);
             if (titleCanvas) slot = slotFromText(await ocrPageLines(titleCanvas));
+            // The title is an OUTLINED font, and the band-pass marks the outline, so the letters
+            // come out hollow; tesseract reads some hollow words ("Weaponlskins") and not others
+            // (measured: "Armour Skins" -> "JAtmougSkins)"). Filling the enclosed counters gives
+            // solid glyphs, read as a second pass only when the first found no slot word.
+            if (titleCanvas && !slot) {
+                const hollow = await ocrPageLines(titleCanvas);
+                const filled = await ocrPageLines(fillEnclosed(titleCanvas));
+                slot = slotFromText(filled) ?? skinTypeFromTitle([...hollow, ...filled]);
+            }
         } catch { /* title unreadable */ }
     }
     if (!slot) warnings.push('Popup title not readable. Confirm the slot.');
 
-    // 5. Resolve (setId, type) -> idx.
+    // 5. Resolve (setId, type) -> idx. Without a readable title the type is resolved only when
+    //    the set has exactly ONE skin type; otherwise the slot stays unset (never a guessed Helmet:
+    //    measured, an Armour skin was written to the Helmet slot that way) and the row is left for
+    //    the user to confirm.
     const skinType = slot ? SLOT_TO_SKIN_TYPE[slot] : undefined;
     let entry: SkinDictEntry | null = null;
     if (setId) {
         if (skinType) entry = skinDict.bySetAndType.get(`${setId}|${skinType}`) ?? null;
-        if (!entry) {
-            // Title missing/mismatched: fall back per set, preferring Helmet like the game's default tab.
-            for (const t of ['Helmet', 'Armour', 'Weapon']) {
-                const e = skinDict.bySetAndType.get(`${setId}|${t}`);
-                if (e) { entry = e; break; }
-            }
+        else {
+            const inSet = ['Helmet', 'Armour', 'Weapon']
+                .map(t => skinDict.bySetAndType.get(`${setId}|${t}`))
+                .filter((e): e is SkinDictEntry => !!e);
+            if (inSet.length === 1) entry = inSet[0];
         }
     }
     if (!entry) {
         warnings.push(setId
-            ? `Matched set "${setId}" but no ${skinType ?? 'known'} skin exists in it.`
+            ? (skinType ? `Matched set "${setId}" but no ${skinType} skin exists in it.` : `Matched set "${setId}". Pick the slot: the popup title was not readable.`)
             : 'Skin not identified. Standalone skins have no set line and cannot be matched by name.');
     }
 

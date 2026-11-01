@@ -488,22 +488,30 @@ export function findStarTiles(src: HTMLCanvasElement): Rect[] {
 }
 
 /**
- * The subject tile of a pet/mount popup. The unit tile sits at the TOP-LEFT of the card header
- * (proto_rarity's header band), while claim buttons / egg icons sit lower — so among the
- * proto_stars tile candidates inside the card, the topmost wins. Falls back to the topmost tile
- * frame-wide when no card is found.
+ * The subject tile of a pet/mount popup. Primary: the colour-blind outline finder
+ * (detectSubjectTile), which also keeps the lock toggle out by its position in the card. Fallback
+ * (no white card or no outlined tile): the proto_stars saturated tiles inside the card, minus
+ * anything outside the prefab's subject-tile column, topmost first.
  */
 export function detectUnitTile(src: HTMLCanvasElement): Rect | null {
-    const tiles = findStarTiles(src);
-    if (!tiles.length) return null;
     const card = detectPopupCard(src);
+    const tiles = findStarTiles(src);
+    if (card) {
+        const subject = detectSubjectTile(src, card, tiles);
+        if (subject) return subject;
+    }
+    if (!tiles.length) return null;
     let pool = tiles;
     if (card) {
         const inCard = tiles.filter(t => {
             const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
             return cx >= card.x && cx <= card.x + card.w && cy >= card.y && cy <= card.y + card.h;
         });
-        if (inCard.length) pool = inCard;
+        // the subject tile sits in the card's left column (see SUBJECT_TILE_MAX_CX); the lock
+        // toggle (top-right corner) and the buttons are elsewhere
+        const inColumn = inCard.filter(t => (t.x + t.w / 2 - card.x) / card.w <= SUBJECT_TILE_MAX_CX);
+        if (inColumn.length) pool = inColumn;
+        else if (inCard.length) pool = inCard;
     }
     return pool.slice().sort((a, b) => a.y - b.y || a.x - b.x)[0];
 }
@@ -555,6 +563,150 @@ export function detectPopupTile(src: HTMLCanvasElement): Rect | null {
         x: Math.round((cx0 + best.x) * sx), y: Math.round((cy0 + best.y) * sy),
         w: Math.round(best.w * sx), h: Math.round(best.h * sy),
     };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Colour-blind subject-tile localisation. Every subject tile in this game (item, pet, mount, skin,
+// whatever its age or rarity colour) is a rounded square drawn with a near-black outline, so it is
+// found by that outline rather than by its fill. The fill finders above key on chroma (max-min > 52)
+// and miss low-chroma ages: measured on real Underworld popups (palette 176,120,121, JPEG fill
+// ~160,112,114, spread ~48) only 25..32% of the tile clears that gate and detectPopupTile returns
+// null; a Primitive / Common tile (241,241,241) has no chroma at all.
+
+// Ink gates, all relative to the card's own brightness or size (no pixel literals).
+const INK_PCTL = 0.99;      // luminance percentile taken as the card's own "bright"
+const INK_FRAC = 0.65;      // ink = luminance < this * bright (measured safe over 0.55..0.75)
+const TILE_W_MIN = 0.08, TILE_W_MAX = 0.45;   // tile side as a fraction of card width
+const TILE_H_MIN = 0.10, TILE_H_MAX = 0.90;   // outline bbox height as a fraction of card height
+const TILE_AR_LO = 0.55, TILE_AR_HI = 1.45;   // square-ish (stars/pill overhang stretch it)
+/** Prefab layout: the subject tile is the card's left column. EquippedItemPopup and the
+ *  PlayerPvpProfile popups put a 150-unit tile at x 35..185 of an 896-unit card (centre 0.12),
+ *  Pet/MountDetails at ~53..197 of 980 (centre 0.13, measured 0.13 on the real fixtures). The lock
+ *  toggle sits in the top-right corner (centre ~0.95) and the buttons are centred, so a centre
+ *  within the left 30% of the card is the subject tile column on every popup. */
+export const SUBJECT_TILE_MAX_CX = 0.30;
+/** Top rows of the outline component used to measure the tile's true side: the "Equipped" pill
+ *  (40..60% of the tile height) and the stars (below the tile) widen the component lower down. */
+const TILE_TOP_ROWS = 0.12;
+/** Outline stroke as a fraction of the tile side, measured on 22 real popups (item 2.5..3 px of
+ *  90..91, pet/mount 1.5..2 px of 79..80): the fill-tile rect is the outline rect inset by it. */
+const TILE_STROKE = 0.025;
+/** Below this fraction of the component width the top run is not the tile's top edge. */
+const TILE_TOP_MIN_FRAC = 0.6;
+
+interface OutlinedCandidate {
+    minx: number; miny: number; bw: number; bh: number;   // component bbox (source px)
+    topX: number; topW: number;                          // widest run over the top rows (source px)
+}
+
+/** Square-ish near-black-outlined components inside `card`, card-size gated, X button excluded. */
+function outlinedCandidates(src: HTMLCanvasElement, card: Rect): OutlinedCandidate[] {
+    const cx0 = Math.max(0, Math.round(card.x)), cy0 = Math.max(0, Math.round(card.y));
+    const cw = Math.min(src.width - cx0, Math.round(card.w)), ch = Math.min(src.height - cy0, Math.round(card.h));
+    if (cw < 16 || ch < 16) return [];
+    const px = src.getContext('2d', { willReadFrequently: true })!.getImageData(cx0, cy0, cw, ch).data;
+    const n = cw * ch;
+    const gray = new Uint8Array(n);
+    const hist = new Int32Array(256);
+    for (let i = 0, p = 0; p < n; i += 4, p++) {
+        const g = Math.min(255, Math.round(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]));
+        gray[p] = g; hist[g]++;
+    }
+    let acc = 0, bright = 255;
+    for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= INK_PCTL * n) { bright = v; break; } }
+    const inkMax = INK_FRAC * bright;
+    const label = new Int32Array(n).fill(-1);
+    const stack = new Int32Array(n);
+    const out: OutlinedCandidate[] = [];
+    let id = 0;
+    for (let s0 = 0; s0 < n; s0++) {
+        if (label[s0] >= 0 || gray[s0] >= inkMax) continue;
+        let top = 0;
+        stack[top++] = s0; label[s0] = id;
+        let minx = s0 % cw, maxx = minx, miny = (s0 / cw) | 0, maxy = miny;
+        while (top > 0) {
+            const p = stack[--top], x = p % cw, y = (p / cw) | 0;
+            if (x < minx) minx = x; if (x > maxx) maxx = x;
+            if (y < miny) miny = y; if (y > maxy) maxy = y;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+                const nx = x + dx, ny = y + dy;
+                if (nx < 0 || nx >= cw || ny < 0 || ny >= ch) continue;
+                const q = ny * cw + nx;
+                if (label[q] < 0 && gray[q] < inkMax) { label[q] = id; stack[top++] = q; }
+            }
+        }
+        const bw = maxx - minx + 1, bh = maxy - miny + 1;
+        const cid = id++;
+        if (bw < TILE_W_MIN * cw || bw > TILE_W_MAX * cw) continue;
+        if (bh < TILE_H_MIN * ch || bh > TILE_H_MAX * ch) continue;
+        const ar = bw / bh;
+        if (ar < TILE_AR_LO || ar > TILE_AR_HI) continue;
+        const cxf = (minx + bw / 2) / cw, cyf = (miny + bh / 2) / ch;
+        if (cyf > 0.85 && Math.abs(cxf - 0.5) < 0.14) continue;   // round close (X) button
+        let tx0 = maxx, tx1 = minx;
+        const rows = Math.max(2, Math.round(TILE_TOP_ROWS * bw));
+        for (let y = miny; y < Math.min(maxy + 1, miny + rows); y++) {
+            for (let x = minx; x <= maxx; x++) if (label[y * cw + x] === cid) { if (x < tx0) tx0 = x; if (x > tx1) tx1 = x; }
+        }
+        out.push({ minx: cx0 + minx, miny: cy0 + miny, bw, bh, topX: cx0 + tx0, topW: Math.max(1, tx1 - tx0 + 1) });
+    }
+    return out;
+}
+
+/**
+ * Largest tile-shaped outline in `card`, squared off from its width (the "Lv." pill and the stars
+ * hang below the frame). Returns the OUTLINE rect in source px, or null. Used by the skin reader,
+ * whose near-white skin tile has no fill for the colour finders to see.
+ */
+export function detectOutlinedTile(src: HTMLCanvasElement, card: Rect): Rect | null {
+    let best: OutlinedCandidate | null = null;
+    for (const c of outlinedCandidates(src, card)) if (!best || c.bw * c.bh > best.bw * best.bh) best = c;
+    return best ? { x: best.minx, y: best.miny, w: best.bw, h: best.bw } : null;
+}
+
+function rectIoU(a: Rect, b: Rect): number {
+    const x0 = Math.max(a.x, b.x), y0 = Math.max(a.y, b.y);
+    const x1 = Math.min(a.x + a.w, b.x + b.w), y1 = Math.min(a.y + a.h, b.y + b.h);
+    const inter = Math.max(0, x1 - x0) * Math.max(0, y1 - y0);
+    const uni = a.w * a.h + b.w * b.h - inter;
+    return uni > 0 ? inter / uni : 0;
+}
+
+/**
+ * The SUBJECT tile of a detail popup (item / pet / mount), found by its outline in the card's
+ * left column (SUBJECT_TILE_MAX_CX), so it works for every age and rarity colour, and returned in
+ * the same rect convention the fill finders use (tile fill plus the star overhang below it), which
+ * is what every downstream band (level, stars, art) is calibrated on: the outline rect inset by
+ * the stroke, its side taken from the top rows of the outline. When a saturated fill tile from
+ * `fillTiles` (findStarTiles) / detectPopupTile agrees with it (IoU >= 0.6), that validated fill
+ * rect is returned unchanged, so reads that worked before are untouched.
+ */
+export function detectSubjectTile(src: HTMLCanvasElement, card: Rect | null = detectPopupCard(src), fillTiles?: Rect[]): Rect | null {
+    if (!card) return null;
+    let best: OutlinedCandidate | null = null;
+    for (const c of outlinedCandidates(src, card)) {
+        const cxf = (c.topX + c.topW / 2 - card.x) / card.w;
+        if (cxf > SUBJECT_TILE_MAX_CX) continue;
+        if (!best || c.bw * c.bh > best.bw * best.bh) best = c;
+    }
+    if (!best) return null;
+    // The top edge spans the tile's full side (measured 79..91 px against a component 80..91 wide,
+    // the "Equipped" pill adding at most 6). A much shorter top run means the top outline is not
+    // ink there (an equipped pet's tile is drawn faded, outline included), so the component's own
+    // width is the better measure of the side.
+    const topOk = best.topW >= TILE_TOP_MIN_FRAC * best.bw;
+    const sideX = topOk ? best.topX : best.minx, side = topOk ? best.topW : best.bw;
+    const t = TILE_STROKE * side;
+    const derived: Rect = {
+        x: Math.round(sideX + t), y: Math.round(best.miny + t),
+        w: Math.max(1, Math.round(side - 2 * t)), h: Math.max(1, Math.round(best.bh - 2 * t)),
+    };
+    const fills = [...(fillTiles ?? findStarTiles(src))];
+    const pt = detectPopupTile(src);
+    if (pt) fills.unshift(pt);
+    let agree: Rect | null = null, agreeIoU = 0;
+    for (const f of fills) { const v = rectIoU(f, derived); if (v > agreeIoU) { agreeIoU = v; agree = f; } }
+    return agree && agreeIoU >= 0.6 ? agree : derived;
 }
 
 /** The ART sub-region of a tile (top ~62%, excluding the "Lv.N" banner) — for embedding. */

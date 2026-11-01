@@ -12,17 +12,17 @@
 // tile (level) are read with the digit-template reader; numbers on the white card go through OCR.
 
 import {
-    cropCanvas, detectPopupTile, detectPopupCard, detectUnitTile, tileArtRect, tileLevelRect,
+    cropCanvas, detectPopupCard, detectUnitTile, detectSubjectTile, tileArtRect, tileLevelRect,
     detectBrightCard, findColorNameBand, findStarTiles, binarize, evidenceCropUrl, type Rect,
 } from './imagePrep';
 import {
-    readNumber, readInkValue, SUBSTAT_VALUE_OPTS, MAINSTAT_VALUE_OPTS, type InkValueOpts,
+    readNumber, readInkValue, levelFillMin, SUBSTAT_VALUE_OPTS, MAINSTAT_VALUE_OPTS, type InkValueOpts,
 } from './numberReader';
 import { countStars } from './starCounter';
 import { readWhiteLevelRow } from './skillsReader';
 import { embedIcon, matchItemIcon } from './iconMatcher';
 import { ocr, ocrPageLines, PSM, type PageLine } from './ocrEngine';
-import { normalizeName, foldText, bestMatch, parsePercent, parseCompactNumber } from './parse';
+import { normalizeName, foldText, bestMatch, similarity, parsePercent, parseCompactNumber } from './parse';
 import { parseMainStatKind, matchSubstat } from './gameDictionary';
 import { AGE_COLORS, RARITY_COLORS, RARITY_NAMES, STAR, nearestColor, type RGB } from './templateParams';
 import { AGES } from '../constants';
@@ -98,6 +98,39 @@ function dominantSaturatedColor(src: HTMLCanvasElement, rect: Rect, vmin = 80, s
 function sampleTileColor(src: HTMLCanvasElement, tile: Rect): RGB | null {
     const core: Rect = { x: tile.x + 0.12 * tile.w, y: tile.y + 0.10 * tile.h, w: 0.76 * tile.w, h: 0.52 * tile.h };
     return dominantSaturatedColor(src, core) ?? dominantSaturatedColor(src, tile);
+}
+
+/**
+ * The tile's FILL colour from the ring just inside its outline (5..15% in from the left, right and
+ * top edges, above the "Lv." pill), with no saturation gate. The art is drawn in the middle of the tile, so the ring is fill on every real
+ * item popup measured (24/24 fixtures, all ages present there: Divine, Space, Modern, Multiverse,
+ * Interstellar, Quantum, Underworld; distance to the true AGE_COLORS entry 1..25, while the closest
+ * two palette entries are > 60 apart). The old core sample (the dominant SATURATED hue of the
+ * centre) followed the art instead: a green-spiked Underworld helmet read Early-Modern and a dark
+ * Interstellar alien head read Underworld. Being gate-free it also sees a white Primitive tile.
+ */
+export function sampleTileRing(src: HTMLCanvasElement, tile: Rect): RGB | null {
+    const s = Math.round(tile.w);
+    const r = clampRect({ x: tile.x, y: tile.y, w: s, h: Math.min(Math.round(tile.h), s) }, src.width, src.height);
+    if (r.w < 8 || r.h < 8) return null;
+    const d = src.getContext('2d', { willReadFrequently: true })!.getImageData(r.x, r.y, r.w, r.h).data;
+    // three strips (left, right, top), each summarised by its median; the fill is the colour at
+    // least two of them agree on, so art that reaches ONE edge (a pet's arc across the top) is
+    // outvoted: the per-channel median of the three strip medians
+    const strips: number[][][] = [[[], [], []], [[], [], []], [[], [], []]];
+    const y0 = Math.round(0.05 * s), y1 = Math.min(r.h, Math.round(0.60 * s));
+    for (let y = y0; y < y1; y++) {
+        for (let x = Math.round(0.05 * s); x < Math.min(r.w, Math.round(0.95 * s)); x++) {
+            const k = x < 0.15 * s ? 0 : x >= 0.85 * s ? 1 : y < 0.15 * s ? 2 : -1;
+            if (k < 0) continue;
+            const i = (y * r.w + x) * 4;
+            strips[k][0].push(d[i]); strips[k][1].push(d[i + 1]); strips[k][2].push(d[i + 2]);
+        }
+    }
+    const med = (v: number[]) => { const c = v.slice().sort((a, b) => a - b); return c[c.length >> 1]; };
+    const sm = strips.filter(st => st[0].length >= 8).map(st => [med(st[0]), med(st[1]), med(st[2])]);
+    if (!sm.length) return null;
+    return [med(sm.map(c => c[0])), med(sm.map(c => c[1])), med(sm.map(c => c[2]))];
 }
 
 /** Classify a sampled fill colour to an age/rarity index. Desaturated -> index 0 (Primitive/Common).
@@ -444,7 +477,7 @@ async function readCardText(src: HTMLCanvasElement, dicts?: GameDictionaries, ti
 
 // ---------------------------------------------------------------- shared level + tag helpers
 async function readTileLevel(src: HTMLCanvasElement, tile: Rect): Promise<number | null> {
-    try { return (await readNumber(cropCanvas(src, tileLevelRect(tile), LEVEL_SCALE))).value; }
+    try { return (await readNumber(cropCanvas(src, tileLevelRect(tile), LEVEL_SCALE), levelFillMin(sampleTileRing(src, tile)))).value; }
     catch { return null; }
 }
 
@@ -597,11 +630,19 @@ function textPlausibility(t: string): number {
  */
 async function readNameBand(
     src: HTMLCanvasElement, want: 'orange' | 'purple', score: (t: string) => number = textPlausibility,
+    card?: Rect | null,
 ): Promise<string> {
     // cheapest first, and every crop is built lazily — a band that already reads well costs the
     // single OCR pass it always did
     const cands: { label: string; make: () => HTMLCanvasElement | null }[] = [];
-    const colored = findColorNameBand(src, want, 0.26);
+    let colored = findColorNameBand(src, want, 0.26);
+    // The name line belongs to the popup card. Frame-wide, the colour search can lock onto other
+    // UI in the same hue (measured: an item popup over the main screen read the orange
+    // "1vcian 2.94t" header pill at y=103 instead of the card's "[Underworld] ..." line at y=865).
+    if (colored && card) {
+        const cy = colored.y + colored.h / 2;
+        if (cy < card.y || cy > card.y + card.h) colored = null;
+    }
     if (colored) {
         const hue = bandHue(src, colored);
         cands.push({ label: 'plain', make: () => cropCanvas(src, colored, BAND_SCALE) });
@@ -647,6 +688,51 @@ function ageFromTag(text: string, words?: string[][]): number {
     return -1;
 }
 
+/** Min similarity for a FUZZY age-tag hit, and the margin it must keep over every other age. The
+ *  real misreads measured on the tag are one or two glyphs in a long word ("Underworid",
+ *  "Ungerworid" for "Underworld": 0.9 / 0.8), while distinct age words in every language of
+ *  Localization.json differ by far more. */
+const AGE_FUZZY_MIN = 0.75;
+const AGE_FUZZY_MARGIN = 0.15;
+/** Words shorter than this are only ever matched exactly (CJK age names are 2..4 characters, where
+ *  one wrong glyph is a different word). */
+const AGE_FUZZY_MIN_LEN = 5;
+
+/** Every age word in every language of Localization.json (plus the dictionaries' own words). */
+function allAgeWords(dicts?: GameDictionaries): string[][] {
+    return AGES.map((en, i) => {
+        const set = new Set<string>([foldText(en), ...(dicts?.words.ages[i] ?? [])]);
+        const tr = (dicts?.loc as any)?.ages?.[String(i)] as Record<string, string> | undefined;
+        if (tr) for (const [lang, w] of Object.entries(tr)) if (lang !== 'en_key' && typeof w === 'string') { const f = foldText(w); if (f) set.add(f); }
+        return [...set];
+    });
+}
+
+/** The "[Age]" token of a tag line: the text between the first bracket-like glyph pair
+ *  (tesseract renders the outlined "[" "]" as "[", "|", "(" or "{"), else the first word. */
+function tagToken(text: string): { token: string; rest: string } {
+    const m = text.match(/[[(|{]\s*([^\])|}[(]{2,}?)\s*[\])|}]/);
+    if (m && m.index !== undefined) return { token: m[1], rest: text.slice(m.index + m[0].length) };
+    const w = text.trim().split(/\s+/);
+    return { token: w[0] ?? '', rest: w.slice(1).join(' ') };
+}
+
+/** Age index from a tag line: an exact word first (ageFromTag), else the bracketed token fuzzy-
+ *  matched against every age word, accepted only with a clear margin over every other age. */
+function ageFromTagFuzzy(text: string, words: string[][]): number {
+    const exact = ageFromTag(text, words);
+    if (exact >= 0) return exact;
+    const squash = (x: string) => foldText(x).replace(/\s+/g, '');
+    const tok = squash(tagToken(text).token);
+    if (tok.length < AGE_FUZZY_MIN_LEN) return -1;
+    const perAge = words.map(ws => Math.max(0, ...ws.map(w => squash(w)).filter(w => w.length >= AGE_FUZZY_MIN_LEN).map(w => similarity(tok, w))));
+    let best = -1;
+    for (let i = 0; i < perAge.length; i++) if (best < 0 || perAge[i] > perAge[best]) best = i;
+    if (best < 0 || perAge[best] < AGE_FUZZY_MIN) return -1;
+    for (let i = 0; i < perAge.length; i++) if (i !== best && perAge[best] - perAge[i] < AGE_FUZZY_MARGIN) return -1;
+    return best;
+}
+
 /** Whether a folded OCR line contains one of the folded phrases (whole words for scripts with
  *  spaces, substring for CJK). */
 function containsAnyWord(text: string, phrases: string[]): boolean {
@@ -657,8 +743,26 @@ function containsAnyWord(text: string, phrases: string[]): boolean {
 function clamp01(x: number): number { return Math.max(0, Math.min(1, x)); }
 
 // ---------------------------------------------------------------- public: item
+/** Item name text match: min similarity for the name printed after the "[Age]" tag to pin the
+ *  identity (the measured misreads are one or two glyphs: "Tarment" for "Torment"). */
+const ITEM_NAME_MIN = 0.8;
+/** Icon-embedding near-tie: when the best two candidates (already narrowed to the age and the
+ *  main-stat group) are closer than this, the icon alone does not decide. Measured on 24 real item
+ *  popups: every top-two gap >= 0.03 had the right item first (gaps 0.031..0.212); below it, two of
+ *  six were wrong (0.011, 0.029) and four right (0.006..0.029), so the icon cannot be trusted there. */
+const ICON_NEAR_TIE = 0.03;
+/** Confidence cap for an identity the reader could not separate: below autoSync's 0.6 "confident"
+ *  and 0.62 ACCEPT_THRESHOLD, so the row starts unchecked for the user to confirm. */
+const UNSURE_CONF = 0.55;
+
+/** The subject tile of an item popup: outline-based, colour-blind (imagePrep.detectSubjectTile). */
+function itemTile(src: HTMLCanvasElement): Rect | null {
+    return detectSubjectTile(src, detectPopupCard(src));
+}
+
 export async function readItem(src: HTMLCanvasElement, dicts?: GameDictionaries): Promise<DetectedItem> {
-    const tile = detectPopupTile(src);
+    const popupCard = detectPopupCard(src);
+    const tile = detectSubjectTile(src, popupCard);
     const card = await readCardText(src, dicts, tile);
     const mainStat = card.main[0];
     const group: 'damage' | 'health' | undefined = mainStat?.kind;
@@ -667,19 +771,14 @@ export async function readItem(src: HTMLCanvasElement, dicts?: GameDictionaries)
         return { ageIdx: 0, age: AGES[0], level: null, stars: 0, mainStat, substats: card.substats, confidence: 0 };
     }
 
-    // AGE — tile fill colour (primary), cross-checked against the "[Age]" tag word.
-    const tileRgb = sampleTileColor(src, tile);
+    // AGE: the "[Age]" tag word (the game printing it) wins; otherwise the tile's fill colour,
+    // sampled on the ring inside the outline (sampleTileRing) and matched to AGE_COLORS.
+    const tileRgb = sampleTileRing(src, tile) ?? sampleTileColor(src, tile);
     const colourAge = classifyColor(tileRgb, AGE_COLORS);
-    // an "[Age]" word IS the whole point of this band, so score candidates on finding one
-    const ageWords = dicts?.words.ages;
-    const tagText = await readNameBand(src, 'orange', t => (ageFromTag(t, ageWords) >= 0 ? 1 : 0.4 * textPlausibility(t)));
-    const tagAge = ageFromTag(tagText, ageWords);
+    const ageWords = allAgeWords(dicts);
+    const tagText = await readNameBand(src, 'orange', t => (ageFromTagFuzzy(t, ageWords) >= 0 ? 1 : 0.4 * textPlausibility(t)), popupCard);
+    const tagAge = ageFromTagFuzzy(tagText, ageWords);
     const tagAgree = tagAge < 0 || tagAge === colourAge;
-    // The tag is the game printing the age word itself; the fill colour is sampled around the
-    // item art, which on a large dark sprite drowns the fill (measured: an Interstellar purple
-    // tile with a dark-green alien head read Underworld, a Multiverse tile read Medieval). A tag
-    // word that matched a dictionary age exactly therefore wins, and a disagreement still lowers
-    // the confidence below.
     const ageIdx = tagAge >= 0 ? tagAge : colourAge;
 
     const level = await readTileLevel(src, tile);
@@ -689,8 +788,17 @@ export async function readItem(src: HTMLCanvasElement, dicts?: GameDictionaries)
     // read 1. Pets/mounts/skins keep countStars' validated default band.
     const stars = readItemTileStars(src, tile);
 
-    // IDENTITY — embed the tile art, cosine-match narrowed to age (+ damage/health group).
+    // IDENTITY. Constraints first: the age and the main-stat group (damage slots vs health slots)
+    // narrow the candidates; the NAME the game prints after the tag, matched against the item
+    // dictionary of that age, pins it when it reads; the icon embedding decides otherwise.
+    let textId: { slot: string; idx: number; name: string; score: number } | null = null;
+    if (dicts?.items?.size && tagText) {
+        const sameAge = new Map([...dicts.items].filter(([, v]) => v.age === ageIdx && (!group || (group === 'damage') === DMG_GROUP.has(v.slot))));
+        const m = bestMatch(tagToken(tagText).rest, sameAge, ITEM_NAME_MIN);
+        if (m) textId = { slot: m.value.slot, idx: m.value.idx, name: m.value.itemName.replace(/\s+/g, ''), score: m.score };
+    }
     let name: string | undefined, slot: string | undefined, itemKey: string | undefined, iconScore = 0;
+    let nearTie = false;
     try {
         const emb = await embedIcon(cropCanvas(src, tileArtRect(tile)));
         const matches = await matchItemIcon(emb, { age: ageIdx, group });
@@ -698,11 +806,26 @@ export async function readItem(src: HTMLCanvasElement, dicts?: GameDictionaries)
         if (top) {
             name = top.row.name; slot = top.row.slot; iconScore = top.score;
             itemKey = `${top.row.age}_${top.row.slot}_${top.row.idx}`;
+            nearTie = matches.length > 1 && top.score - matches[1].score < ICON_NEAR_TIE;
         }
-    } catch { /* embedding unavailable -> identity stays undefined */ }
+        if (textId) {
+            const agreeing = matches.find(mm => mm.row.slot === textId!.slot && mm.row.idx === textId!.idx);
+            if (agreeing) {
+                name = agreeing.row.name; slot = agreeing.row.slot; iconScore = Math.max(agreeing.score, textId.score);
+                itemKey = `${agreeing.row.age}_${agreeing.row.slot}_${agreeing.row.idx}`;
+                nearTie = false;
+            }
+        }
+    } catch { /* embedding unavailable -> identity from the name text only */ }
+    if (textId && (!itemKey || itemKey !== `${ageIdx}_${textId.slot}_${textId.idx}`)) {
+        // the printed name is not among the icon's candidates (or no embedding): the text decides
+        name = textId.name; slot = textId.slot; itemKey = `${ageIdx}_${textId.slot}_${textId.idx}`;
+        iconScore = textId.score; nearTie = false;
+    }
 
     const cropUrl = cropCanvas(src, clampRect(tile, src.width, src.height)).toDataURL();
-    const confidence = clamp01((iconScore > 0 ? iconScore : 0.2) * (tagAgree ? 1 : 0.85));
+    let confidence = clamp01((iconScore > 0 ? iconScore : 0.2) * (tagAgree ? 1 : 0.85));
+    if (nearTie) confidence = Math.min(confidence, UNSURE_CONF);
 
     return { ageIdx, age: AGES[ageIdx] ?? AGES[0], slot, itemKey, name, level, stars, mainStat, substats: card.substats, cropUrl, levelCropUrl, confidence };
 }
@@ -739,14 +862,25 @@ export async function readUnit(src: HTMLCanvasElement, kind: 'pet' | 'mount', di
     // the tile fill when no card is found.
     const popupCard = detectPopupCard(src);
     let headerRgb: RGB | null = null;
-    if (popupCard) {
+    if (popupCard && tile) {
+        // The "[Rarity] Name" line: right of the subject tile, level with its top (measured on the
+        // pet/mount details and profile popups: the name sits within the tile's top 30%), short of
+        // the lock toggle in the card's top-right corner. The old band (the card's top 10%, from its
+        // left edge) mostly covered the TILE's top rows, so the rarity came from the pet art there,
+        // whatever colour that is (a recoloured Common tile with red art read Ultimate).
+        const x0 = tile.x + tile.w + 0.02 * popupCard.w;
+        const band: Rect = { x: x0, y: tile.y, w: popupCard.x + 0.85 * popupCard.w - x0, h: 0.30 * tile.w };
+        headerRgb = dominantSaturatedColor(src, band, 90, 40, true);
+    } else if (popupCard) {
         const band: Rect = {
             x: popupCard.x + 0.02 * popupCard.w, y: popupCard.y + 0.01 * popupCard.h,
             w: 0.70 * popupCard.w, h: 0.10 * popupCard.h,
         };
         headerRgb = dominantSaturatedColor(src, band, 90, 40, true);
     }
-    const tileRgb = headerRgb ?? (tile ? sampleTileColor(src, tile) : null);
+    // no saturated name ink (a Common name is the palette's near-white): the tile fill decides, from
+    // the ring inside its outline (sampleTileRing), which the art does not reach
+    const tileRgb = headerRgb ?? (tile ? (sampleTileRing(src, tile) ?? sampleTileColor(src, tile)) : null);
     const rarityIdx = classifyRarityHue(tileRgb);
     const rarity = RARITY_NAMES[rarityIdx] ?? RARITY_NAMES[0];
 
@@ -779,7 +913,16 @@ export async function readUnit(src: HTMLCanvasElement, kind: 'pet' | 'mount', di
         if (dict && dict.size) {
             const sameRarity = new Map([...dict].filter(([, v]) => v.rarity.toLowerCase() === rarity.toLowerCase()));
             const m = bestMatch(tagText, sameRarity, 0.4) ?? bestMatch(tagText, dict, 0.62);
-            if (m) { id = m.value.id; nameScore = m.score; }
+            if (m) {
+                id = m.value.id; nameScore = m.score;
+                // show the dictionary's name, not the raw OCR ("Hover Dish" for Hover Disk): the
+                // first key of a (rarity, id) is the English one (buildLookup runs before the
+                // translations are added)
+                const hit = m.value;
+                for (const [k, v] of dict) {
+                    if (v.rarity === hit.rarity && v.id === hit.id) { name = k.replace(/\b\p{L}/gu, c => c.toUpperCase()); break; }
+                }
+            }
         }
     }
 
@@ -793,14 +936,16 @@ export async function readUnit(src: HTMLCanvasElement, kind: 'pet' | 'mount', di
             x: tile.x - 0.05 * tile.w, y: tile.y + 0.40 * tile.h,
             w: 1.10 * tile.w, h: 0.68 * tile.h,
         }, src.width, src.height);
-        try { level = await readWhiteLevelRow(cropCanvas(src, band)); } catch { level = null; }
+        try { level = await readWhiteLevelRow(cropCanvas(src, band), sampleTileRing(src, tile)); } catch { level = null; }
         levelCropUrl = evidenceCropUrl(src, band); // evidence of the overlay band the level came from
     }
     const stars = tile ? countStars(src, tile) : 0;
     const cropUrl = tile ? cropCanvas(src, clampRect(tile, src.width, src.height)).toDataURL() : undefined;
     const confidence = clamp01((nameScore > 0 ? nameScore : 0.3) * (rarityAgree ? 1 : 0.85));
 
-    return { kind, rarityIdx, rarity, id, name, level, stars, mainStat, substats: card.substats, cropUrl, levelCropUrl, confidence };
+    // both main stats: a pet / mount popup prints Damage AND Health (one line each)
+    const mainStats = card.main.length ? card.main.slice() : undefined;
+    return { kind, rarityIdx, rarity, id, name, level, stars, mainStat, mainStats, substats: card.substats, cropUrl, levelCropUrl, confidence };
 }
 
 // =============================================================================================
@@ -1047,7 +1192,7 @@ export function readForgeAscension(
         // item tile here and the lattice is not consulted. It must not be: on a dark transition
         // frame the largest same-size blob group was three background sprites, which outvoted the
         // popup tile and dropped the agreement to 3/4 for no reason.
-        const tile = detectPopupTile(src);
+        const tile = itemTile(src);
         if (tile) votes.push({ rect: tile, stars: readItemTileStars(src, tile), row: 0, col: 0 });
     } else {
         // Profile card: the whole 8-slot equipment block is on screen at once.

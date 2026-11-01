@@ -45,6 +45,8 @@ export interface DetectedUnit {
     level: number | null;
     stars: number;
     mainStat?: MainStat;
+    /** Every main-stat line the popup prints (a pet / mount shows Damage and Health). */
+    mainStats?: MainStat[];
     substats: Substat[];
     cropUrl?: string;
     levelCropUrl?: string;   // evidence: JPEG data-URL of the "Lv." band the level was read from

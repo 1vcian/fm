@@ -50,6 +50,7 @@
 // behind; anything else is an explicit unknown.
 
 import { loadImage, imageToCanvas, cropCanvas, evidenceCropUrl, type Rect } from './imagePrep';
+import { HEADER_BAND_UNITS, REF_W } from './uiLayout';
 import {
     loadGlyphBank, scoreGlyphChar, fitGlyph, connectedComponents, morphClose3, upscaleCanvas,
 } from './numberReader';
@@ -137,6 +138,8 @@ const GLYPH_H_MAX = 1.7;             // a component taller than this * expected 
 // How cleanly the run has to match the digit bank. Real pill digits score 0.94-0.98 (worst 0.937
 // across the fixtures); the fabrications that used to reach the modal scored 0.69-0.77 — including
 // the one where the reader turned the words "Equipped Lv.41" into the ticket count "640100".
+/** Smallest decimal point, as a fraction of the digit height (see readPillNumber). */
+const DOT_MIN_H = 0.20;
 const GLYPH_MIN = 0.80;              // worst per-glyph bank score allowed in an accepted run
 const GLYPH_MEAN = 0.86;             // mean per-glyph bank score allowed in an accepted run
 
@@ -241,8 +244,52 @@ function loadIconTemplates(): Promise<Record<CurrencyName, GrayImg>> {
     return tplP;
 }
 
+/** Extra templates of the same currency, cut from other real captures, with the strip start that
+ *  fits their own geometry. The forge hammer is drawn on whatever the forge row's artwork is: the
+ *  original template was cut on the dark-red forge, and on the gold anvil of the current forge
+ *  (captured 2026-11, 576x1280, behind an item popup) it matches at NCC <= 0.42. hammer_gold.png is
+ *  that real gold capture at the original template's geometry; its hammer glyph ends at ~col 26/40
+ *  and the first digit starts at ~col 27, so it keeps 66% and its strip starts right after it. */
+interface TemplateVariant { tpl: GrayImg; stripStart: number }
+const VARIANT_FILES: Partial<Record<CurrencyName, { file: string; keep: number; stripStart: number }[]>> = {
+    hammer: [{ file: 'hammer_gold', keep: 0.66, stripStart: 1.0 }],
+};
+let varP: Promise<Partial<Record<CurrencyName, TemplateVariant[]>>> | null = null;
+function loadTemplateVariants(): Promise<Partial<Record<CurrencyName, TemplateVariant[]>>> {
+    if (!varP) {
+        varP = (async () => {
+            const base = await loadIconTemplates();
+            const out: Partial<Record<CurrencyName, TemplateVariant[]>> = {};
+            for (const name of ALL_CURRENCIES) {
+                const list: TemplateVariant[] = [{ tpl: base[name], stripStart: STRIP_START[name] ?? STRIP_START_DEFAULT }];
+                for (const v of VARIANT_FILES[name] ?? []) {
+                    try {
+                        const full = imageToCanvas(await loadImage(`${import.meta.env.BASE_URL}autosync/tpl/${v.file}.png`));
+                        list.push({ tpl: toGray(cropCanvas(full, { x: 0, y: 0, w: Math.max(6, Math.round(full.width * v.keep)), h: full.height })), stripStart: v.stripStart });
+                    } catch { /* a missing variant only loses that variant */ }
+                }
+                out[name] = list;
+            }
+            return out;
+        })();
+    }
+    return varP;
+}
+
+/** huntFullFrame over every template variant of a currency, merged best first; each location
+ *  carries the strip start of the variant that found it. */
+async function huntVariants(
+    name: CurrencyName, canonGray: GrayImg, coarseGray: GrayImg, scaleFilter?: (s: number) => boolean,
+): Promise<IconLoc[]> {
+    const vars = (await loadTemplateVariants())[name] ?? [];
+    const out: IconLoc[] = [];
+    for (const v of vars) for (const loc of huntFullFrame(canonGray, coarseGray, v.tpl, scaleFilter)) out.push({ ...loc, stripStart: v.stripStart });
+    out.sort((a, b) => b.score - a.score);
+    return out;
+}
+
 /** A located icon. `scale` is the template scale that matched — i.e. the capture's UI scale. */
-interface IconLoc { score: number; x: number; y: number; w: number; h: number; scale: number }
+interface IconLoc { score: number; x: number; y: number; w: number; h: number; scale: number; stripStart?: number }
 const NO_LOC: IconLoc = { score: -1, x: 0, y: 0, w: 0, h: 0, scale: 0 };
 
 /**
@@ -470,6 +517,10 @@ async function readPillNumber(strip: HTMLCanvasElement, expGlyphH: number): Prom
         if (isDot) {
             // a decimal dot: short, sits low near the baseline
             if (!(cy > band && s.area < 0.25 * hmax * hmax && s.w < 0.6 * hmax)) continue;
+            // a real decimal point is 0.29..0.33 of the digit height (measured on coin, gem, egg,
+            // ticket and clockwinder pills); a speck far below that is JPEG noise between two digits
+            // (measured 0.13 on a gold-forge hammer pill, where it turned 154318 into "1.54318")
+            if (s.h < DOT_MIN_H * hmax) continue;
         } else if (s.h < 0.55 * hmax) continue;      // neither full glyph nor plausible dot
         if (Math.abs(cy - band) > 0.9 * hmax) continue;
         const sub = new Float32Array(s.w * s.h);
@@ -500,6 +551,12 @@ async function readPillNumber(strip: HTMLCanvasElement, expGlyphH: number): Prom
     let run = runs[0] ?? [];
     for (const r of runs) if (fullCount(r) > fullCount(run)) run = r;
     if (!fullCount(run)) return NO_PILL;
+    // A pill number never starts or ends with a dot ("19.3k", "483", "2.25m"), so a short speck at
+    // either end of the run is not part of it: measured on a real skills header, the pill's rounded
+    // right end left two specks after "19.3k" that read ".." and failed the glyph floor.
+    run = run.slice();
+    while (run.length > 1 && run[0].h < 0.45 * hmax) run.shift();
+    while (run.length > 1 && run[run.length - 1].h < 0.45 * hmax) run.pop();
     const chars: { c: string; score: number }[] = [];
     for (const { g, h } of run) {
         const cand: Record<string, number> = {};
@@ -565,7 +622,7 @@ async function readPillAt(canon: HTMLCanvasElement, loc: IconLoc, name: Currency
         icon: { score: loc.score, x: loc.x, y: loc.y, w: loc.w, h: loc.h, scale: loc.scale },
     };
     const cy = loc.y + loc.h / 2;
-    const nx0 = Math.round(loc.x + (STRIP_START[name] ?? STRIP_START_DEFAULT) * loc.w);
+    const nx0 = Math.round(loc.x + (loc.stripStart ?? STRIP_START[name] ?? STRIP_START_DEFAULT) * loc.w);
     // strip length in ICON widths — never "to the edge of a frame-fraction band"
     const nx1 = Math.min(Wc, Math.round(nx0 + STRIP_MAX_W * loc.w));
     if (nx1 - nx0 < STRIP_MIN_W * loc.w) { detail.refusal = 'strip clipped by the image edge'; return detail; }
@@ -640,7 +697,7 @@ export async function readCurrenciesDetailed(
     let anchorDetail: CurrencyReadDetail | null = null;
     let anchorNote = 'no anchor icon found in the image';
     for (const name of ANCHOR_ORDER[screen] ?? []) {
-        const cands = huntFullFrame(canonGray, coarseGray, templates[name]);
+        const cands = await huntVariants(name, canonGray, coarseGray);
         const bar = ANCHOR_THRESH_BY[name] ?? ANCHOR_THRESH;
         for (const loc of cands) {
             if (loc.score < bar) break;                  // sorted by score: the rest are worse
@@ -668,17 +725,23 @@ export async function readCurrenciesDetailed(
             if (PANEL_CURR.has(name)) {
                 // own panel: full-frame hunt, gated to the anchor's UI scale and to below the anchor
                 thresh = PANEL_THRESH[name] ?? COMPANION_THRESH;
-                peaks = huntFullFrame(canonGray, coarseGray, templates[name], scaleOk)
+                peaks = (await huntVariants(name, canonGray, coarseGray, scaleOk))
                     .filter(p => p.y >= a.y + BELOW_ANCHOR * a.h);
             } else {
-                // header companion: the ANCHOR'S ROW, full image width, the anchor's scale
+                // header companion: the ANCHOR'S ROW, full image width, the anchor's scale. When
+                // the anchor is itself a PANEL currency (the mount screen's clockwinder sits in the
+                // Mounts panel, ~240 px below the header on a 576x1280 capture) its row holds no
+                // header widget, so the companion is searched in the header band instead: the
+                // edge-anchored header widgets end within HEADER_BAND_UNITS of the top (uiLayout).
                 thresh = COMPANION_THRESH;
+                const panelAnchor = PANEL_CURR.has(anchor.name);
                 const rowCy = a.y + a.h / 2;
-                const y0 = rowCy - (0.5 + ROW_TOL) * a.h, y1 = rowCy + (0.5 + ROW_TOL) * a.h;
+                const y0 = panelAnchor ? 0 : rowCy - (0.5 + ROW_TOL) * a.h;
+                const y1 = panelAnchor ? Math.min(a.y, HEADER_BAND_UNITS * canonGray.w / REF_W) : rowCy + (0.5 + ROW_TOL) * a.h;
                 const band = subGray(canonGray, 0, y0, canonGray.w, y1);
                 peaks = nccPeaks(band, templates[name], SCALES.filter(scaleOk), 2, 3)
                     .map(p => ({ ...p, y: p.y + Math.max(0, Math.round(y0)) }))
-                    .filter(p => Math.abs(p.y + p.h / 2 - rowCy) <= ROW_TOL * a.h);
+                    .filter(p => panelAnchor || Math.abs(p.y + p.h / 2 - rowCy) <= ROW_TOL * a.h);
             }
             const fresh = peaks.filter(p => !overlapsUsed(p, used));
             const loc = fresh.find(p => p.score >= thresh);
