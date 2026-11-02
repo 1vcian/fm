@@ -38,6 +38,10 @@ const PAGE_WAR_CATEGORIES: Record<string, WarCategory[]> = {
     '/calculators/summons': ['skills', 'mounts', 'eggs'],
 };
 
+/** Each group in alphabetical order; My Profile stays on top of its group. */
+const byName = (x: { name: string; isProfile?: boolean }, y: { name: string; isProfile?: boolean }) =>
+    Number(!!y.isProfile) - Number(!!x.isProfile) || x.name.localeCompare(y.name, 'en', { sensitivity: 'base' });
+
 const isRecommended = (path: string, warDays: Partial<Record<WarCategory, number[]>>, today: number) =>
     (PAGE_WAR_CATEGORIES[path] || []).some(c => warDays[c]?.includes(today));
 
@@ -106,6 +110,7 @@ const NAV = {
     progressPass: gameIcon({ icon: 'MainProgressPassIcon' }),
     secondaryStats: gameIcon({ icon: 'UpgradeArrow' }),
     fairies: gameIcon({ icon: 'FairyIconLora' }),
+    attack: gameIcon({ icon: 'IconMedievalWeaponBow' }),
     achievements: gameIcon({ icon: 'PotionsRace' }),
     faq: gameIcon({ icon: 'RoleInfoIcon' }),
     settings: gameIcon({ icon: 'SettingsIcon' }),
@@ -207,6 +212,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Progress Pass', path: '/wiki/progress-pass', icon: NAV.progressPass },
                 { name: 'Secondary Stats', path: '/wiki/secondary-stats', icon: NAV.secondaryStats },
                 { name: 'Fairies', path: '/wiki/fairies', icon: NAV.fairies },
+                { name: 'Attack', path: '/wiki/attack', icon: NAV.attack },
                 { name: 'Achievements', path: '/wiki/achievements', icon: NAV.achievements },
             ]
         },
@@ -406,7 +412,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                             transition={{ duration: 0.2 }}
                                             className="space-y-1"
                                         >
-                                            {group.items.filter((item) => isDebug || !('debugOnly' in item && item.debugOnly)).map((item) => {
+                                            {group.items.filter((item) => isDebug || !('debugOnly' in item && item.debugOnly)).sort(byName).map((item) => {
                                                 const isActive = location.pathname === item.path;
                                                 const Icon = item.icon;
                                                 const recommended = isRecommended(item.path, warDays, warToday);

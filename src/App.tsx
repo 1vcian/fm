@@ -42,6 +42,7 @@ import Shop from './pages/Shop';
 import ProgressPassWiki from './pages/ProgressPassWiki';
 import Gallery from './pages/Gallery';
 import FairiesWiki from './pages/FairiesWiki';
+import AttackWiki from './pages/AttackWiki';
 import AchievementsWiki from './pages/AchievementsWiki';
 import Settings from './pages/Settings';
 import SecondaryStatsWiki from './pages/SecondaryStatsWiki';
@@ -111,6 +112,7 @@ function App() {
                                     <Route path="wiki/progress-pass" element={<ProgressPassWiki />} />
                                     <Route path="wiki/secondary-stats" element={<SecondaryStatsWiki />} />
                                     <Route path="wiki/fairies" element={<FairiesWiki />} />
+                                    <Route path="wiki/attack" element={<AttackWiki />} />
                                     <Route path="wiki/achievements" element={<AchievementsWiki />} />
                                     <Route path="wiki/missions" element={<MissionsWiki />} />
                                     <Route path="skins" element={<SkinsPage />} />
