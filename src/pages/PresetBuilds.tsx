@@ -11,7 +11,8 @@ import { formatCompactNumber } from '../utils/statsCalculator';
 import { getStatName } from '../utils/statNames';
 import { resolvedSkinStats, setDisplayName, skinRow } from '../utils/skinArchive';
 import { getAscensionTexturePath, resolveTextureVersion } from '../utils/ascensionUtils';
-import { FAIRIES, presetsFileName } from '../utils/fairies';
+import { FAIRIES, presetPerfections, presetsFileName } from '../utils/fairies';
+import { usePersistentState } from '../hooks/usePersistentState';
 import { currentAlloc } from '../optimizer/substatOptimizer';
 import { SpriteSheetIcon } from '../components/UI/SpriteSheetIcon';
 import { BuildPortrait } from '../components/Presets/BuildPortrait';
@@ -29,6 +30,7 @@ import { getSkinSpriteStyle } from '../utils/skinSprites';
 import { useSkinIcons } from '../utils/skinIcons';
 import { getItemImage } from '../utils/itemAssets';
 import { AGES } from '../utils/constants';
+import { aimTargetOf, saveAimTarget } from '../utils/substatStatus';
 
 /**
  * Preset Builds: the strongest builds the game allows (parsed_configs/<version>/ProfilePresets.json,
@@ -901,7 +903,6 @@ function sharedRanks(standings: TournamentStanding[]): { rank: number; tied: boo
 }
 const placeText = (r: { rank: number; tied: boolean }) => `${r.tied ? '=' : ''}${r.rank}`;
 
-/** The builds that are this one in battle (same fighter), by name. */
 /** The other builds that fight as this one, by name (the same build in another category has the same name: left out). */
 const sameNames = (st: TournamentStanding, byKey: Map<string, ProfilePreset>) => {
     const own = byKey.get(st.key)?.name ?? st.name;
@@ -909,8 +910,10 @@ const sameNames = (st: TournamentStanding, byKey: Map<string, ProfilePreset>) =>
 };
 
 /** The full ranking: place (=N for a tie), build, wins-draws-losses, win rate. */
-function RankingList({ standings, byKey, highlight, className, others, owned }: {
+function RankingList({ standings, byKey, highlight, className, others, owned, aim }: {
     standings: TournamentStanding[]; byKey: Map<string, ProfilePreset>; highlight?: string; className?: string;
+    /** An "Aim for" button on every build: its substats become the profile page's target. */
+    aim?: boolean;
     /** Sets whose weapon skin the active profile owns: rows it can build are highlighted. */
     owned?: ReadonlySet<string>;
     /** "Every skin": the builds with their other skins, placed by their win rate among the builds. */
@@ -919,12 +922,23 @@ function RankingList({ standings, byKey, highlight, className, others, owned }: 
     const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const places = sharedRanks(standings);
     const goTo = useContext(GoToBuild);
+    const navigate = useNavigate();
+    const { libs: aimLibs } = useStatLibraries();
+    const { selectedVersion: aimVersion } = useGameDataContext();
+    /** "Aim for": the build's substats become the profile page's target. */
+    const aimFor = (e: React.MouseEvent, p: ProfilePreset) => {
+        e.stopPropagation();
+        saveAimTarget(aimTargetOf(p.name, aimVersion, p.profile, aimLibs.secondaryStatLibrary));
+        navigate('/');
+    };
     // Published builds and other skins in one order: win rate, then the HP margin.
     const rows: ({ kind: 'st'; i: number; rate: number; margin: number } | { kind: 'other'; o: OtherSkinRow; rate: number; margin: number })[] = [
         ...standings.map((st, i) => ({ kind: 'st' as const, i, rate: st.winRate, margin: st.hpMargin })),
         ...(others ?? []).map(o => ({ kind: 'other' as const, o, rate: o.winRate, margin: o.hpMargin })),
     ];
     if (others?.length) rows.sort((a, b) => b.rate - a.rate || b.margin - a.margin);
+    /** The place of the published build an other-skin row is another look of. */
+    const placeOf = new Map(standings.flatMap((st, i) => [st.key, ...(st.same ?? [])].map(k => [k, placeText(places[i])] as const)));
     /** The profile can attack this way: a weapon's own attack (any skin), or a weapon skin it owns that attacks the same. */
     const canBuild = (p: ProfilePreset | undefined) => {
         if (!p || !owned?.size) return false;
@@ -954,7 +968,9 @@ function RankingList({ standings, byKey, highlight, className, others, owned }: 
                                 <span className="flex-1 min-w-0 text-text-secondary">
                                     <span className="font-semibold">{base?.name ?? o.name}</span>
                                     <span className="text-text-muted">, {attackLabel(look, mapping)}</span>
-                                    <span className="inline-block ml-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-white/10 text-text-muted">other skin</span>
+                                    <span className="inline-block ml-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-white/10 text-text-muted">
+                                        {base && placeOf.get(base.key) ? `other skin of #${placeOf.get(base.key)}` : 'other skin'}
+                                    </span>
                                     {canBuild(look) && ownTag}
                                 </span>
                                 <span className="font-mono text-text-muted">{o.wins}-{o.draws}-{o.losses}</span>
@@ -981,6 +997,10 @@ function RankingList({ standings, byKey, highlight, className, others, owned }: 
                             </span>
                             <span className="font-mono text-text-muted">{st.wins}-{st.draws}-{st.losses}</span>
                             <span className="font-mono font-bold w-14 text-right">{pct(st.winRate)}</span>
+                            {aim && st.key !== highlight && byKey.get(st.key) && (
+                                <button onClick={e => aimFor(e, byKey.get(st.key)!)} title="Compare your substats with this build's on your profile: what is missing, what to improve, what is not needed"
+                                    className="shrink-0 text-[10px] font-black uppercase px-2 py-1 rounded-lg border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15">Aim for</button>
+                            )}
                         </li>
                     );
                 })}
@@ -1078,7 +1098,7 @@ function Podium({ standings, byKey, battlesPerSide, skins, others, owned }: {
                         {owned && owned.size > 0 && <> The rows you can build with the weapon skins of your profile are highlighted.</>}
                     </div>
                 )}
-                {open && <RankingList standings={standings} byKey={byKey} others={others} owned={owned} className="mt-2 max-w-xl mx-auto" />}
+                {open && <RankingList standings={standings} byKey={byKey} others={others} owned={owned} aim className="mt-2 max-w-xl mx-auto" />}
             </div>
         </section>
     );
@@ -1122,7 +1142,7 @@ function SubstatSliders({ alloc, onChange, statIds, perStatCap, slots }: {
  * sides (src/presets/challenge.ts), and lands where that round robin puts it. As it is, or with
  * everything it has maxed (maxedFromProfile) and the substats of the sliders at the top roll.
  */
-function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { version: string; profile: UserProfile; total: number; battlesPerSide: number; byKey: Map<string, ProfilePreset> }) {
+function FightAgainst({ version, perfection, profile, total, battlesPerSide, byKey }: { version: string; perfection: number; profile: UserProfile; total: number; battlesPerSide: number; byKey: Map<string, ProfilePreset> }) {
     const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const [run, setRun] = useState<{ cancel: () => void; done: number } | null>(null);
     const [result, setResult] = useState<{ name: string; maxed: Record<string, number> | null; r: ChallengeResult } | null>(null);
@@ -1146,14 +1166,14 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { setAlloc(currentAlloc(profile)); }, [profile.id]);
     const used = Object.values(alloc).reduce((n, v) => n + v, 0);
-    useEffect(() => { setResult(null); }, [version]);
+    useEffect(() => { setResult(null); }, [version, perfection]);
     const start = () => {
         if (run || (maxed && used > slots)) return;
         setErr(null);
         setShown(true);
         const name = profile.name || 'Your profile';
         const fightAlloc = maxed ? { ...alloc } : null;
-        const r = runFightAgainst(version, name, profile, done => setRun(cur => (cur ? { ...cur, done } : cur)), fightAlloc ?? undefined);
+        const r = runFightAgainst(version, name, profile, done => setRun(cur => (cur ? { ...cur, done } : cur)), fightAlloc ?? undefined, perfection);
         setRun({ cancel: r.cancel, done: 0 });
         r.promise.then(res => { setResult({ name, maxed: fightAlloc, r: res }); setOpen(true); })
             .catch(e => setErr(e instanceof Error && e.message === 'stopped' ? null : String(e)))
@@ -1167,7 +1187,7 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
         const subs = Object.entries(result.maxed ?? currentAlloc(profile)).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([id, n]) => `${n} ${getStatName(id)}`).join(', ');
         const lines = [
             `Forge Master Calculator, Fight against the preset builds (${version})`,
-            `${result.name}: ${result.maxed ? 'assuming everything maxed, substats at the top roll' : 'the profile as it is'}`,
+            `${result.name}: ${result.maxed ? `assuming everything maxed, substats at ${perfection === 100 ? 'the top roll' : `${perfection}% of the top roll`}` : 'the profile as it is'}`,
             meRow && at ? `Place ${placeText(at)} of ${res.standings.length}${at.tied ? ' (tied)' : ''}: ${meRow.wins}-${meRow.draws}-${meRow.losses}, ${pct(meRow.winRate)} wins, HP margin ${meRow.hpMargin.toFixed(3)}` : '',
             `Substats: ${subs || 'none'}`,
             `Fairy: ${profile.misc.fairy?.name ?? 'none'}, skills: ${profile.skills.equipped.map(x => x.id).join(', ') || 'none'}, pets: ${profile.pets.active.map(x => `${x.rarity} ${x.id}`).join(', ') || 'none'}, mount: ${profile.mount.active ? `${profile.mount.active.rarity} ${profile.mount.active.id}` : 'none'}`,
@@ -1213,7 +1233,7 @@ function FightAgainst({ version, profile, total, battlesPerSide, byKey }: { vers
                         <>
                             <div className="text-[11px] text-text-muted">
                                 Your weapon kind and attack animation, skins, pets and mount (their rarity), equipped skills and fairy, everything at its top level like the preset builds,
-                                with these substats at the top roll. They start from your build's.
+                                with these substats at {perfection === 100 ? 'the top roll' : `${perfection}% of the top roll, like the builds shown`}. They start from your build's.
                             </div>
                             <SubstatSliders alloc={alloc} onChange={setAlloc} statIds={statIds} perStatCap={perStatCap} slots={slots} />
                             <button onClick={() => setAlloc(currentAlloc(profile))} className="text-[11px] font-bold text-accent-primary hover:underline">Back to my build's substats</button>
@@ -1364,7 +1384,11 @@ function saveMine(version: string, m: MineSaved) {
 
 export default function PresetBuilds() {
     const { selectedVersion: version } = useGameDataContext();
-    const { data: siteFile, error } = useGameData<ProfilePresetsFile>(presetsFileName(version));
+    // Substat perfection the builds were searched at: one published file per level (PRESET_PERFECTIONS).
+    const perfections = presetPerfections(version);
+    const [perfectionWanted, setPerfection] = usePersistentState<number>('presets_perfection', 100);
+    const perfection = perfections.includes(perfectionWanted) ? perfectionWanted : 100;
+    const { data: siteFile, error } = useGameData<ProfilePresetsFile>(presetsFileName(version, perfection));
     const { profile } = useProfile();
     // The skins the active profile owns (its archive), as the search keys them.
     const owned = useMemo(() => [...new Set((profile.skins?.saved ?? []).map(s => `${s.type}:${s.idx}`))].sort(), [profile.skins]);
@@ -1390,7 +1414,7 @@ export default function PresetBuilds() {
         if (!version || run) return;
         setRunError(null);
         const key = leftOutKey;
-        const r = runMyVariants(version, profile.skins?.saved ?? [], msg => setRun(cur => (cur ? { ...cur, log: msg } : cur)), [...leftOut]);
+        const r = runMyVariants(version, profile.skins?.saved ?? [], msg => setRun(cur => (cur ? { ...cur, log: msg } : cur)), [...leftOut], perfection);
         setRun({ cancel: r.cancel, log: 'starting', started: Date.now() });
         r.promise.then(result => {
             const m = { ownedKey, leftOutKey: key, profileName: profile.name, file: result };
@@ -1398,7 +1422,7 @@ export default function PresetBuilds() {
             saveMine(version, m);
         }).catch(e => setRunError(e instanceof Error && e.message === 'stopped' ? null : String(e))).finally(() => setRun(null));
     };
-    const mineFresh = !!mine && mine.ownedKey === ownedKey && (mine.leftOutKey ?? '') === leftOutKey;
+    const mineFresh = !!mine && mine.ownedKey === ownedKey && (mine.leftOutKey ?? '') === leftOutKey && (mine.file.perfection ?? 100) === perfection;
     const { libs: fileLibs, ready: fileReady } = useStatLibraries();
     // Every skin, or some attack skins left out: picked from the published results at once.
     const filtered = useMemo(() => (siteFile && fileReady ? filterAnimations(siteFile, leftOut, fileLibs) : siteFile),
@@ -1494,6 +1518,7 @@ export default function PresetBuilds() {
                     The strongest builds the game allows, everything at its maximum level. Each one picks the attack animation
                     (a weapon's own or a skin's), skins, pets, skills, substats and fairy for its goal, with the next best four
                     one click away. Add any of them to your profiles to explore it.
+                    {perfections.length > 1 && ` Substats: every roll at ${perfection}% of its top value (the slider), the builds searched again at each level.`}
                 </p>
             </div>
 
@@ -1504,6 +1529,15 @@ export default function PresetBuilds() {
                         <button onClick={() => setF2p(true)} className={cn('px-3 py-2', f2p ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>No skins (F2P)</button>
                     )}
                 </div>
+                {perfections.length > 1 && (
+                    <label className="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl border border-border" title="Every substat of every build rolled at this % of its top roll">
+                        <span className="text-text-secondary">Substats</span>
+                        <input type="range" min={0} max={perfections.length - 1} step={1} value={perfections.indexOf(perfection)}
+                            onChange={e => setPerfection(perfections[Number(e.target.value)])}
+                            className="w-28 h-2 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary" />
+                        <span className="font-mono text-accent-primary w-10 text-right">{perfection}%</span>
+                    </label>
+                )}
                 {!f2p && (
                     <button onClick={() => setMySkins(v => !v)} className={cn('inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border', mySkins ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-border text-text-secondary hover:bg-bg-input')}>
                         <span className={cn('w-3 h-3 rounded-full border', mySkins ? 'bg-amber-400 border-amber-400' : 'border-text-muted')} /> Use my skins
@@ -1543,7 +1577,7 @@ export default function PresetBuilds() {
                         <div className="text-amber-300">This profile has no skins in its archive yet: add the skins you own to it first, or the results are the builds without any skin.</div>
                     )}
                     {mine && !mineFresh && !run && (
-                        <div className="text-amber-300">These results were calculated for other skins or other attack skins left out ({mine.profileName}): recalculate.</div>
+                        <div className="text-amber-300">These results were calculated for other skins, other attack skins left out or another substat perfection ({mine.profileName}): recalculate.</div>
                     )}
                     {run && (
                         <div className="text-amber-300">Calculating on your device ({Math.round((Date.now() - run.started) / 1000)} s): {run.log}</div>
@@ -1560,7 +1594,7 @@ export default function PresetBuilds() {
                     skins={siteFile?.noSkins && !mySkins ? { f2p, set: setF2p } : undefined} />
             )}
             {file === siteFile && valid && version && file!.tournament && (
-                <FightAgainst version={version} profile={profile} total={file!.tournament.standings.length} battlesPerSide={file!.tournament.battlesPerSide} byKey={byKey} />
+                <FightAgainst version={version} perfection={perfection} profile={profile} total={file!.tournament.standings.length} battlesPerSide={file!.tournament.battlesPerSide} byKey={byKey} />
             )}
 
             {valid && ready && (

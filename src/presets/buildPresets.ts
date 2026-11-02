@@ -18,7 +18,7 @@
  *   misc      forge level, every ascension, the fairy and the egg hatch slots at their highest.
  *   skins     Weapon, Helmet and Armour skins of one set (every set gives the same bonus) at the
  *             top level with the top roll (MaxStatCount stats from PossibleStats at MaxValue).
- *   substats  every item, pet and mount slot rolled at UpperRange (perfection 100%).
+ *   substats  every item, pet and mount slot rolled at UpperRange x perfection (PresetOptions, default 100%).
  *
  * The attack animation is one choice among the distinct combat rows the game can run
  * (animationsFor): a top-age weapon with the skin hidden runs its own WeaponLibrary row; a visible
@@ -186,6 +186,8 @@ export type StatCategory = 'dpsMelee' | 'dpsRanged' | 'hpsMelee' | 'hpsRanged';
 
 export interface ProfilePresetsFile {
     version: string;
+    /** Substat roll quality the builds were made at, % of the top roll (absent: 100). */
+    perfection?: number;
     categories: PresetCategoryInfo[];
     presets: ProfilePreset[];
     /** Per stat category: the search's build without skins (skins are put on afterwards, skinsApply.ts). */
@@ -214,6 +216,8 @@ export interface PresetOptions {
     /** Build lab arena seeds per side and opponent, while ranking and for the published rate. */
     labBattles?: number;
     labFinalBattles?: number;
+    /** Substat roll quality, % of SecondaryStatLibrary UpperRange (default 100). */
+    perfection?: number;
 }
 
 /** No skins (F2P): arena battles per pair and side of its tournament, as the published one. */
@@ -284,6 +288,8 @@ interface Choice {
 }
 
 interface Space {
+    /** Substat roll quality the builds are made at, % of the top roll (PresetOptions.perfection). */
+    perfection: number;
     maxAge: number;
     topRarity: string;
     weaponIdxs: number[];
@@ -302,7 +308,7 @@ interface Space {
     bodies: SubstatBody[];
 }
 
-function readSpace(libs: LibraryData, cfg: ConfigFiles): Space {
+function readSpace(libs: LibraryData, cfg: ConfigFiles, perfection = 100): Space {
     const ib = libs.itemBalancingLibrary as Record<string, any>;
     const ages = Object.keys(ib).map(k => Number(k.match(/'Age': (-?\d+)/)?.[1])).filter(a => Number.isFinite(a));
     // Age 10000 is the default/skin row, not an age a player forges.
@@ -349,6 +355,7 @@ function readSpace(libs: LibraryData, cfg: ConfigFiles): Space {
     ];
     const rangedIdxs = new Set(weaponIdxs.filter(i => (libs.weaponLibrary as any)[libKey(maxAge, 'Weapon', i)]?.IsRanged === true));
     return {
+        perfection,
         maxAge, topRarity, weaponIdxs, rangedIdxs, sets, skinStatTypes, petIds,
         skillIds: Object.keys(skillLib),
         skillSlots: (libs.skillBaseConfig as any).SkillSlotsCount,
@@ -595,7 +602,7 @@ function search(
             const current = build(choice);
             const r = runSubstatOptimizer({
                 base: current, current, reference: current, referenceName: '', objective,
-                withSkills: true, stats: space.stats, bodies: space.bodies, perfection: 100,
+                withSkills: true, stats: space.stats, bodies: space.bodies, perfection: space.perfection,
                 // Round 1 searches every fairy from scratch; later rounds only refine the current
                 // allocation and fairy, since only the other choices moved since then.
                 fairies: round === 1 ? space.fairies : [fairy], fairyLevel: space.fairyLevel, extra: null, pvpConfig: null,
@@ -603,7 +610,7 @@ function search(
                 customScoreBatch: objective === 'custom' ? score.many : undefined,
                 startAllocs: [currentAlloc(current), ...(round === 1 ? choose.substatStarts ?? [] : [])], localOnly: round > 1,
             }, libs);
-            const withAlloc = buildWithAlloc(current, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, 100);
+            const withAlloc = buildWithAlloc(current, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, space.perfection);
             const v = score(withAlloc);
             if (v > best * (1 + 1e-9)) {
                 best = v; bestTie = tieOf(withAlloc); changed = true;
@@ -662,6 +669,7 @@ function withDefaults(opts: PresetOptions, libs: LibraryData, cfg: ConfigFiles):
         maxRounds: opts.maxRounds ?? 6,
         labBattles: opts.labBattles ?? LAB_BATTLES,
         labFinalBattles: opts.labFinalBattles ?? LAB_FINAL_BATTLES,
+        perfection: opts.perfection ?? 100,
         log: opts.log ?? (() => {}),
     };
 }
@@ -733,7 +741,7 @@ export const CATEGORIES: PresetCategoryInfo[] = [
 /** Everything the stages share, built the same way in every thread (deterministic from the configs). */
 export function presetContext(version: string, libs: LibraryData, cfg: ConfigFiles, opts: PresetOptions = {}) {
     const o = withDefaults(opts, libs, cfg);
-    const space = readSpace(libs, cfg);
+    const space = readSpace(libs, cfg, o.perfection);
     const base = maxedBase(libs, cfg, space);
     const petLevel = Math.max(1, (libs.petUpgradeLibrary as any)[space.topRarity].LevelInfo.length);
     const anims = { melee: animationsFor('melee', libs, space), ranged: animationsFor('ranged', libs, space) };
@@ -769,10 +777,10 @@ export function presetContext(version: string, libs: LibraryData, cfg: ConfigFil
         const fairy = (p.misc.fairy?.name ?? null) as FairyName | null;
         const r = runSubstatOptimizer({
             base: p, current: p, reference: p, referenceName: '', objective, withSkills: true,
-            stats: space.stats, bodies: space.bodies, perfection: 100, fairies: [fairy], fairyLevel: space.fairyLevel,
+            stats: space.stats, bodies: space.bodies, perfection: space.perfection, fairies: [fairy], fairyLevel: space.fairyLevel,
             extra: null, pvpConfig: null, battlesPerSide: 0, keep: 1, startAllocs: [currentAlloc(p)], localOnly: true,
         }, libs);
-        return buildWithAlloc(p, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, 100);
+        return buildWithAlloc(p, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, space.perfection);
     };
     const withAnimation = (p: UserProfile, a: Animation) => {
         const c = choiceOf(p, space);
@@ -988,10 +996,10 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
         const withFairy = (p: UserProfile, fairy: FairyName | null) => {
             const r = runSubstatOptimizer({
                 base: p, current: p, reference: p, referenceName: '', objective: 'dps', withSkills: true,
-                stats: space.stats, bodies: space.bodies, perfection: 100, fairies: [fairy], fairyLevel: space.fairyLevel,
+                stats: space.stats, bodies: space.bodies, perfection: space.perfection, fairies: [fairy], fairyLevel: space.fairyLevel,
                 extra: null, pvpConfig: null, battlesPerSide: 0, keep: 1, startAllocs: [currentAlloc(p)],
             }, libs);
-            return buildWithAlloc(p, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, 100);
+            return buildWithAlloc(p, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, space.perfection);
         };
         const withPets = (p: UserProfile, petIds: number[]) => applyChoice(p, { ...choiceOf(p, space), petIds }, libs, space, petLevel);
         const labCandidates = [
@@ -1168,8 +1176,8 @@ export function substatBodiesOf(p: UserProfile, cfg: ConfigFiles): SubstatBody[]
  * skills and fairy, everything else at its maximum like the preset builds, and the given substat
  * allocation at the top roll.
  */
-export function maxedFromProfile(user: UserProfile, alloc: Alloc, libs: LibraryData, cfg: ConfigFiles): UserProfile {
-    const space = readSpace(libs, cfg);
+export function maxedFromProfile(user: UserProfile, alloc: Alloc, libs: LibraryData, cfg: ConfigFiles, perfection = 100): UserProfile {
+    const space = readSpace(libs, cfg, perfection);
     const base = maxedBase(libs, cfg, space);
     const w = user.items.Weapon;
     const ranged = w ? (libs.weaponLibrary as any)?.[libKey(w.age, 'Weapon', w.idx)]?.IsRanged === true : false;
@@ -1195,7 +1203,7 @@ export function maxedFromProfile(user: UserProfile, alloc: Alloc, libs: LibraryD
         p.mount.collection = { [`${m.rarity}_${m.id}`]: clone(p.mount.active) };
     }
     const fairy = (user.misc.fairy?.name ?? null) as FairyName | null;
-    return buildWithAlloc(p, alloc, fairy, space.fairyLevel, space.stats, substatBodiesOf(p, cfg), 100);
+    return buildWithAlloc(p, alloc, fairy, space.fairyLevel, space.stats, substatBodiesOf(p, cfg), space.perfection);
 }
 
 export function buildProfilePresets(version: string, libs: LibraryData, cfg: ConfigFiles, opts: PresetOptions = {}): ProfilePresetsFile {

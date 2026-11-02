@@ -137,7 +137,14 @@ const SEASON_2026_11: Record<FairyName, SeasonFairyStat> = {
 /** When SEASON_2026_11 takes over: 2026-11-03 00:00 UTC. */
 export const NEW_SEASON_FROM = Date.UTC(2026, 10, 3);
 
-export const isNewSeason = (now = Date.now()) => now >= NEW_SEASON_FROM;
+/**
+ * VITE_NEW_FAIRIES_NOW=1 shows the new season at once: in the gitignored .env.local for local
+ * checks, or in the environment of scripts/build_presets.ts (read by its worker threads too).
+ */
+const FORCE_NEW_SEASON = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_NEW_FAIRIES_NOW === '1'
+    || (typeof process !== 'undefined' && process.env?.VITE_NEW_FAIRIES_NOW === '1');
+
+export const isNewSeason = (now = Date.now()) => FORCE_NEW_SEASON || now >= NEW_SEASON_FROM;
 
 const currentSeason = () => (isNewSeason() ? SEASON_2026_11 : SEASON_2026_09);
 
@@ -150,12 +157,27 @@ export const SEASON_STATS: Record<FairyName, SeasonFairyStat> = new Proxy({} as 
 });
 
 /**
- * The preset builds file of a config version: the ones built on SEASON_2026_11 once it is live
- * (scripts/build_presets.ts run with those fairies), ProfilePresets.json otherwise.
+ * The preset builds files of a config version. Built on SEASON_2026_11 once it is live
+ * (scripts/build_presets.ts run with those fairies), at each substat perfection of
+ * PRESET_PERFECTIONS; ProfilePresets.json (100% only) otherwise.
  */
 const NEW_SEASON_PRESETS = new Set(['2026_10_27_09_45']);
-export const presetsFileName = (version: string | null | undefined, now = Date.now()) =>
-    version && isNewSeason(now) && NEW_SEASON_PRESETS.has(version) ? 'ProfilePresets.fairies_2026_11.json' : 'ProfilePresets.json';
+/** Substat perfections (% of the top roll) the preset builds are searched at, for a season with them. */
+export const PRESET_PERFECTIONS = [80, 85, 90, 95, 100];
+const newSeasonPresets = (version: string | null | undefined, now: number) => !!version && isNewSeason(now) && NEW_SEASON_PRESETS.has(version);
+
+/** The perfections a version's preset builds come in. */
+export const presetPerfections = (version: string | null | undefined, now = Date.now()) =>
+    newSeasonPresets(version, now) ? PRESET_PERFECTIONS : [100];
+
+/** "ProfilePresets.json", "ProfilePresets.fairies_2026_11.p90.json": the file of a version at a perfection. */
+export const presetsFileBase = (newSeason: boolean, perfection = 100) =>
+    `${newSeason ? 'ProfilePresets.fairies_2026_11' : 'ProfilePresets'}${perfection < 100 ? `.p${perfection}` : ''}.json`;
+
+export const presetsFileName = (version: string | null | undefined, perfection = 100, now = Date.now()) => {
+    const ok = presetPerfections(version, now).includes(perfection) ? perfection : 100;
+    return presetsFileBase(newSeasonPresets(version, now), ok);
+};
 
 /** The bonus one step grants at a given fairy level (binary: base + growth x (level - 1)). */
 export function fairyPerStep(cfg: SeasonFairyStat, level: number): number {

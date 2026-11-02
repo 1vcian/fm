@@ -214,7 +214,7 @@ export default function SubstatsCalculator() {
     // published with the presets; loading one puts its rolls on the sliders, laid onto this
     // build's own slots (placedCounts: the stats with the most rolls first when slots run short).
     const { selectedVersion } = useGameDataContext();
-    const { data: presetFile } = useGameData<ProfilePresetsFile>(presetsFileName(selectedVersion));
+    const { data: presetFile } = useGameData<ProfilePresetsFile>(presetsFileName(selectedVersion, perfectionPercentage));
     // Every distinct substat allocation and fairy among the preset builds (the same list and names
     // as the Preset Builds page): the strongest build with it in the arena tournament names it,
     // and the tags say what the builds with it are best at.

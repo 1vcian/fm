@@ -15,7 +15,7 @@ export interface VariantsRun {
     cancel: () => void;
 }
 
-export function runMyVariants(version: string, saved: SavedSkin[], onLog: (msg: string) => void, excludeWeaponSets?: string[]): VariantsRun {
+export function runMyVariants(version: string, saved: SavedSkin[], onLog: (msg: string) => void, excludeWeaponSets?: string[], perfection = 100): VariantsRun {
     const worker = new Worker(new URL('./presetsWorker.ts', import.meta.url), { type: 'module' });
     let reject: (e: Error) => void = () => {};
     const promise = new Promise<ProfilePresetsFile>((resolve, rej) => {
@@ -27,7 +27,7 @@ export function runMyVariants(version: string, saved: SavedSkin[], onLog: (msg: 
             else resolve(d.result);
         };
         worker.onerror = ev => rej(new Error(ev.message || 'worker failed'));
-        worker.postMessage({ version, saved: JSON.parse(JSON.stringify(saved)), excludeWeaponSets } satisfies VariantsRequest);
+        worker.postMessage({ version, saved: JSON.parse(JSON.stringify(saved)), excludeWeaponSets, perfection } satisfies VariantsRequest);
     }).finally(() => worker.terminate());
     return { promise, cancel: () => { worker.terminate(); reject(new Error('stopped')); } };
 }
@@ -38,7 +38,7 @@ export interface ChallengeRun {
 }
 
 /** "Fight against": the profile against every preset build, on a browser worker. */
-export function runFightAgainst(version: string, name: string, profile: UserProfile, onProgress: (done: number, total: number) => void, alloc?: Alloc): ChallengeRun {
+export function runFightAgainst(version: string, name: string, profile: UserProfile, onProgress: (done: number, total: number) => void, alloc?: Alloc, perfection = 100): ChallengeRun {
     const worker = new Worker(new URL('./challengeWorker.ts', import.meta.url), { type: 'module' });
     let reject: (e: Error) => void = () => {};
     const promise = new Promise<ChallengeResult>((resolve, rej) => {
@@ -50,7 +50,7 @@ export function runFightAgainst(version: string, name: string, profile: UserProf
             else resolve(d.result);
         };
         worker.onerror = ev => rej(new Error(ev.message || 'worker failed'));
-        worker.postMessage({ version, name, profile: JSON.parse(JSON.stringify(profile)), alloc } satisfies ChallengeRequest);
+        worker.postMessage({ version, name, profile: JSON.parse(JSON.stringify(profile)), alloc, perfection } satisfies ChallengeRequest);
     }).finally(() => worker.terminate());
     return { promise, cancel: () => { worker.terminate(); reject(new Error('stopped')); } };
 }

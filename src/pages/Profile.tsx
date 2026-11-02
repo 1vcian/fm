@@ -17,6 +17,7 @@ import { AutoSyncModal } from '../components/Profile/AutoSyncModal';
 import { PvpModal } from '../components/Profile/PvpModal';
 import { AccountPanel } from '../components/Profile/AccountPanel';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { SubstatStatusPanel } from '../components/Profile/SubstatStatusPanel';
 
 
 export default function Profile() {
@@ -206,6 +207,7 @@ export default function Profile() {
                 ) : (
                     <>
                         <EquipmentPanel />
+                        <SubstatStatusPanel />
                         <SkinArchivePanel />
                         <PetPanel />
                         <SkillPanel />

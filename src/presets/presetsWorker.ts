@@ -14,7 +14,7 @@ import { presetsFileName } from '../utils/fairies';
  * saved: the player's skins ("use my skins"), or none for every set at its top. excludeWeaponSets:
  * without these sets' weapon skins (their attack animation and their weapon piece).
  */
-export type VariantsRequest = { version: string; saved: SavedSkin[]; excludeWeaponSets?: string[] };
+export type VariantsRequest = { version: string; saved: SavedSkin[]; excludeWeaponSets?: string[]; perfection?: number };
 
 export type VariantsReply =
     | { type: 'log'; msg: string }
@@ -27,7 +27,7 @@ const BROWSER_OPTIONS = { questSearchRuns: 4, questFinalRuns: 24, labBattles: 4,
 const post = (m: VariantsReply) => (self as unknown as DedicatedWorkerGlobalScope).postMessage(m);
 
 self.onmessage = async (e: MessageEvent<VariantsRequest>) => {
-    const { version, saved, excludeWeaponSets } = e.data;
+    const { version, saved, excludeWeaponSets, perfection } = e.data;
     try {
         const base = `${import.meta.env.BASE_URL}parsed_configs/${version}/`;
         const cfg: ConfigFiles = {};
@@ -35,7 +35,7 @@ self.onmessage = async (e: MessageEvent<VariantsRequest>) => {
             const r = await fetch(`${base}${name}.json`);
             if (r.ok) cfg[name] = await r.json();
         }));
-        const site = await fetch(`${base}${presetsFileName(version)}`).then(r => {
+        const site = await fetch(`${base}${presetsFileName(version, perfection)}`).then(r => {
             if (!r.ok) throw new Error('no preset builds for this game version');
             return r.json() as Promise<ProfilePresetsFile>;
         });
