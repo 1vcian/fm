@@ -113,8 +113,16 @@ function saveFreePos(key: string, p: FreePos) {
     coffeeChanged(key);
 }
 
-function headerRect(): DOMRect | null {
-    return document.querySelector('header')?.getBoundingClientRect() ?? null;
+/**
+ * Where the header covers the screen when it is shown: from the top of the screen down by its
+ * height, whatever the scroll. Measuring where it is right now let a button dropped while the
+ * header was scrolled away (a phone at the end of a page) slip under it uncounted.
+ */
+function headerRect(): { left: number; right: number; top: number; bottom: number } | null {
+    const el = document.querySelector('header');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { left: r.left, right: r.right, top: 0, bottom: Math.max(r.bottom, el.offsetHeight) };
 }
 function coveredShare(left: number, top: number, w: number, h: number): number {
     const r = headerRect();
