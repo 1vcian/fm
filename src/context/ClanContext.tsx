@@ -108,6 +108,7 @@
  * body push that landed in between is not un-remembered). `useProfileSync.ts` is not touched.
  */
 
+import { CLAN_TREE_RESET } from '../utils/clanTreeReset';
 import { clanNodeCaps as computeClanNodeCaps } from '../utils/clanTechStacking';
 import React, {
     createContext,
@@ -1425,6 +1426,15 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
     }, [canTalk, profileId]);
 
+    // A page open across the clan tree reset reads the shared tree again at that moment, so the
+    // old row turns into the empty one without a reload.
+    useEffect(() => {
+        const wait = CLAN_TREE_RESET - Date.now();
+        if (wait <= 0 || wait > 2 ** 31 - 1) return;
+        const timer = setTimeout(() => { void loadAll(); }, wait + 1000);
+        return () => clearTimeout(timer);
+    }, [loadAll]);
+
     // Reload on: sign-in/out, profile switch, backend appearing. NOT on every `profile` change —
     // that object is a new identity on every keystroke in the app.
     useEffect(() => {
@@ -1790,6 +1800,11 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!row) {
                 return refuse<PullTreeResult>({ kind: 'not-found', message: 'This clan has no shared tree yet.' });
             }
+            // The shared tree was reset (clanTreeReset.ts): nothing to copy, and the profile's own
+            // levels are not reset with it.
+            if (row.reset) {
+                return refuse<PullTreeResult>({ kind: 'not-found', message: 'The clan tree was reset. Nothing to copy until a leader publishes the new one.' });
+            }
             if (mine !== generation.current) {
                 return refuse<PullTreeResult>({
                     kind: 'not-your-profile',
@@ -1933,6 +1948,8 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // No shared row, or the two tree configs have not landed: nothing to pull, and a pull
         // without caps is the unvalidated write `clampLevels` exists to prevent.
         if (!row || clanNodeCaps.size === 0) return;
+        // A shared tree from before the reset reads as empty, and the profile keeps its own levels.
+        if (row.reset) return;
 
         // Our own publish coming back. See `publishedRowSig` for why content is the whole test.
         const rowSig = signLevels(row.levels);
