@@ -20,12 +20,15 @@
  *
  * The per-fairy rows (FairyStatLibrary) are NOT in the client config archive: they arrive
  * inside FairiesEventConfig.Stats with the live event (ServerGameConfig LiveOps template).
- * SEASON_STATS below is transcribed from the in-game picker (2026-09-09 season, expires
- * early November 2026) and must be re-checked each season. The picker screenshots showed
- * MAX level (20) values (Mira 20%, Tira 5%, Lora 15%) and the observed per-level growth is
- * Mira 1%, Tira 0.25%, Lora 0.75%: base equals growth, so perStep = growth x level, which
- * reproduces the max-level values exactly through the binary's
- * TargetStatBonus + TargetStatBonusPerLevel x (level - 1).
+ * SEASON_STATS reads one of two transcribed tables, by the UTC clock (NEW_SEASON_FROM). Both
+ * must be re-checked each season.
+ *   SEASON_2026_09: the event live from 2026-09-07 09:30 to 2026-11-02 18:00 UTC
+ *     (FairiesEventConfig.Stats as the server sent it on 2026-11-01). Base equals growth.
+ *   SEASON_2026_11: transcribed from the in-game descriptions. Only the MAX level (20) values were
+ *     read: Mira +220% Damage on every 5th attack (flat), Tira -14% incoming Critical Damage per
+ *     -4% Skill Cooldown (total capped at 70%), Lora +15% Damage per +10% Health (no cap). The
+ *     same base equals growth split is used, so level 20 is exact and lower levels follow that
+ *     pattern until they are checked in game.
  */
 
 export type FairyName = 'Mira' | 'Tira' | 'Lora';
@@ -40,11 +43,12 @@ export const FAIRIES: { name: FairyName; texture: string }[] = [
 export const FAIRY_MAX_LEVEL = 20;
 
 /**
- * statEngine pools a fairy can grant into (SecondaryStatType in game). The last two exist from
- * build 2026_10_27_09_45, with the description formats FairyCritDamageReductionDescriptionFormat
- * and FairyNthAttackDamageDescriptionFormat (Fairies localization table).
+ * statEngine pools a fairy can grant into (SecondaryStatType in game). criticalDamageReduction
+ * and nthAttackDamageMulti exist from build 2026_10_27_09_45, with the description formats
+ * FairyCritDamageReductionDescriptionFormat and FairyNthAttackDamageDescriptionFormat (Fairies
+ * localization table); damageMulti is the DamageMulti substat pool.
  */
-export type FairyTargetStat = 'criticalChance' | 'blockChance' | 'reflectChance' | 'criticalDamageReduction' | 'nthAttackDamageMulti';
+export type FairyTargetStat = 'criticalChance' | 'blockChance' | 'reflectChance' | 'criticalDamageReduction' | 'nthAttackDamageMulti' | 'damageMulti';
 
 export interface SeasonFairyStat {
     /** statEngine secondaryStats pool the fairy grants into (SecondaryStatType in game). */
@@ -62,7 +66,7 @@ export interface SeasonFairyStat {
     targetStatTotalCap: number | null;
 }
 
-export const SEASON_STATS: Record<FairyName, SeasonFairyStat> = {
+const SEASON_2026_09: Record<FairyName, SeasonFairyStat> = {
     Mira: {
         targetStat: 'criticalChance',
         targetLabel: 'Critical Chance',
@@ -95,6 +99,63 @@ export const SEASON_STATS: Record<FairyName, SeasonFairyStat> = {
         targetStatTotalCap: 0.3,
     },
 };
+
+const SEASON_2026_11: Record<FairyName, SeasonFairyStat> = {
+    Mira: {
+        targetStat: 'nthAttackDamageMulti',
+        targetLabel: 'Damage on every 5th attack',
+        targetStatBonus: 0.11,
+        targetStatBonusPerLevel: 0.11,
+        requiredStat: null,
+        requiredLabel: '',
+        requiredStatValueDivider: 0,
+        targetStatTotalCap: null,
+    },
+    Tira: {
+        targetStat: 'criticalDamageReduction',
+        targetLabel: 'Incoming Critical Damage Reduction',
+        targetStatBonus: 0.007,
+        targetStatBonusPerLevel: 0.007,
+        requiredStat: 'skillCooldownMulti',
+        requiredLabel: 'Skill Cooldown',
+        requiredStatValueDivider: 0.04,
+        requiredStatIsReduction: true,
+        targetStatTotalCap: 0.7,
+    },
+    Lora: {
+        targetStat: 'damageMulti',
+        targetLabel: 'Damage',
+        targetStatBonus: 0.0075,
+        targetStatBonusPerLevel: 0.0075,
+        requiredStat: 'healthMulti',
+        requiredLabel: 'Health',
+        requiredStatValueDivider: 0.1,
+        targetStatTotalCap: null,
+    },
+};
+
+/** When SEASON_2026_11 takes over: 2026-11-03 00:00 UTC. */
+export const NEW_SEASON_FROM = Date.UTC(2026, 10, 3);
+
+export const isNewSeason = (now = Date.now()) => now >= NEW_SEASON_FROM;
+
+const currentSeason = () => (isNewSeason() ? SEASON_2026_11 : SEASON_2026_09);
+
+/** The season's table, read again at every access so a page left open switches at NEW_SEASON_FROM. */
+export const SEASON_STATS: Record<FairyName, SeasonFairyStat> = new Proxy({} as Record<FairyName, SeasonFairyStat>, {
+    get: (_, k) => currentSeason()[k as FairyName],
+    has: (_, k) => k in currentSeason(),
+    ownKeys: () => Reflect.ownKeys(currentSeason()),
+    getOwnPropertyDescriptor: (_, k) => Reflect.getOwnPropertyDescriptor(currentSeason(), k),
+});
+
+/**
+ * The preset builds file of a config version: the ones built on SEASON_2026_11 once it is live
+ * (scripts/build_presets.ts run with those fairies), ProfilePresets.json otherwise.
+ */
+const NEW_SEASON_PRESETS = new Set(['2026_10_27_09_45']);
+export const presetsFileName = (version: string | null | undefined, now = Date.now()) =>
+    version && isNewSeason(now) && NEW_SEASON_PRESETS.has(version) ? 'ProfilePresets.fairies_2026_11.json' : 'ProfilePresets.json';
 
 /** The bonus one step grants at a given fairy level (binary: base + growth x (level - 1)). */
 export function fairyPerStep(cfg: SeasonFairyStat, level: number): number {

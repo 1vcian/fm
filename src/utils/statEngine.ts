@@ -1707,8 +1707,8 @@ export class StatEngine {
         this.debugLogs.push(`Flat Stats: Damage=${flatDamageWithMelee.toFixed(0)} (skillPassive: ${this.stats.skillPassiveDamage.toFixed(0)}, mount: ${this.mountDamage.toFixed(0)}), Health=${flatHealth.toFixed(0)} (skillPassive: ${this.stats.skillPassiveHealth.toFixed(0)}, mount: ${this.mountHealth.toFixed(0)})`);
 
         // Seasonal fairy: converts one equipped substat pool into another. It runs before the
-        // multiplier layers read the pools: ApplyFairyStat writes the SecondaryStatType aggregate
-        // those layers read. Semantics from
+        // multiplier layers read the pools: a fairy can grant into DamageMulti (Lora), and
+        // ApplyFairyStat writes the SecondaryStatType aggregate those layers read. Semantics from
         // FairyHelpers in the binary (see src/utils/fairies.ts): whole steps of the required
         // pool, and the cap clamps the target pool's total rather than the grant. Applied on
         // the secondary pools so the grant merges through the same additive path as substats;

@@ -25,7 +25,7 @@ const MANIFEST_FILE = path.join(PUBLIC_DIR, 'config_manifest.json');
 
 const DELTA_FILE = path.join(PUBLIC_DIR, 'version_delta.json');
 /** Files the site generates into a version folder (scripts/build_presets.ts): not game data. */
-const SITE_GENERATED = new Set(['ProfilePresets.json']);
+const SITE_GENERATED = { has: (f: string) => /^ProfilePresets(\..+)?\.json$/.test(f) };
 /** Beyond this many lines the popup would be a wall of text, so the rest is reported as a count. */
 const MAX_DELTA_LINES = 24;
 

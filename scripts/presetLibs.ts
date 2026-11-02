@@ -16,7 +16,7 @@ export function loadPresetLibs(version: string): { dir: string; cfg: ConfigFiles
     if (!fs.existsSync(dir)) throw new Error(`no config folder ${dir}`);
     const cfg: ConfigFiles = {};
     for (const f of fs.readdirSync(dir)) {
-        if (f.endsWith('.json') && f !== 'ProfilePresets.json') cfg[f.slice(0, -5)] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+        if (f.endsWith('.json') && !f.startsWith('ProfilePresets')) cfg[f.slice(0, -5)] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
     }
 
     const libs = presetLibsFrom(version, cfg);

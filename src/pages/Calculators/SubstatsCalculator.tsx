@@ -4,13 +4,14 @@ import { Button } from '../../components/UI/Button';
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison, FairySelection } from '../../context/ComparisonContext';
 import { useGameData } from '../../hooks/useGameData';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { StatsSummaryPanel } from '../../components/Profile/StatsSummaryPanel';
 import { Link } from 'react-router-dom';
 import { RefreshCw, Hash, User, Check } from 'lucide-react';
 import { getStatName } from '../../utils/statNames';
 import { cn } from '../../lib/utils';
 import { UserProfile } from '../../types/Profile';
-import { FAIRIES, SEASON_STATS, fairyRawBonus, fairyGranted } from '../../utils/fairies';
+import { FAIRIES, SEASON_STATS, fairyRawBonus, fairyGranted, presetsFileName } from '../../utils/fairies';
 import { useStatLibraries } from '../../hooks/useGlobalStats';
 import { distribute, placedCounts, currentAlloc, type SubstatBody } from '../../optimizer/substatOptimizer';
 import type { ProfilePreset, ProfilePresetsFile } from '../../presets/buildPresets';
@@ -48,6 +49,9 @@ const POOL_TO_SUBSTAT: Record<string, string> = {
     healthMulti: 'HealthMulti',
     criticalChance: 'CriticalChance',
     blockChance: 'BlockChance',
+    damageMulti: 'DamageMulti',
+    criticalDamageReduction: 'CriticalDamageReduction',
+    nthAttackDamageMulti: 'NthAttackDamageMulti',
 };
 
 type Body = SubstatBody;
@@ -209,7 +213,8 @@ export default function SubstatsCalculator() {
     // The best allocations are searched once per game version (scripts/build_presets.ts) and
     // published with the presets; loading one puts its rolls on the sliders, laid onto this
     // build's own slots (placedCounts: the stats with the most rolls first when slots run short).
-    const { data: presetFile } = useGameData<ProfilePresetsFile>('ProfilePresets.json');
+    const { selectedVersion } = useGameDataContext();
+    const { data: presetFile } = useGameData<ProfilePresetsFile>(presetsFileName(selectedVersion));
     // Every distinct substat allocation and fairy among the preset builds (the same list and names
     // as the Preset Builds page): the strongest build with it in the arena tournament names it,
     // and the tags say what the builds with it are best at.

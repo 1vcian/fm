@@ -11,7 +11,7 @@ import { formatCompactNumber } from '../utils/statsCalculator';
 import { getStatName } from '../utils/statNames';
 import { resolvedSkinStats, setDisplayName, skinRow } from '../utils/skinArchive';
 import { getAscensionTexturePath, resolveTextureVersion } from '../utils/ascensionUtils';
-import { FAIRIES } from '../utils/fairies';
+import { FAIRIES, presetsFileName } from '../utils/fairies';
 import { currentAlloc } from '../optimizer/substatOptimizer';
 import { SpriteSheetIcon } from '../components/UI/SpriteSheetIcon';
 import { BuildPortrait } from '../components/Presets/BuildPortrait';
@@ -1363,9 +1363,9 @@ function saveMine(version: string, m: MineSaved) {
 }
 
 export default function PresetBuilds() {
-    const { data: siteFile, error } = useGameData<ProfilePresetsFile>('ProfilePresets.json');
-    const { profile } = useProfile();
     const { selectedVersion: version } = useGameDataContext();
+    const { data: siteFile, error } = useGameData<ProfilePresetsFile>(presetsFileName(version));
+    const { profile } = useProfile();
     // The skins the active profile owns (its archive), as the search keys them.
     const owned = useMemo(() => [...new Set((profile.skins?.saved ?? []).map(s => `${s.type}:${s.idx}`))].sort(), [profile.skins]);
     // Results depend on the real rolls and levels too.

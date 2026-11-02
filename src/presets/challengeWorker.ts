@@ -9,6 +9,7 @@ import { presetLibsFrom, PRESET_CONFIG_FILES } from './presetLibs';
 import { runChallenge, type ChallengeResult } from './challenge';
 import { pvpConfigFromJson } from '../pvp/simulate';
 import type { UserProfile } from '../types/Profile';
+import { presetsFileName } from '../utils/fairies';
 
 /** alloc: fight with the profile maxed (maxedFromProfile) and these substats at the top roll, not as it is. */
 export type ChallengeRequest = { version: string; name: string; profile: UserProfile; alloc?: Alloc };
@@ -29,7 +30,7 @@ self.onmessage = async (e: MessageEvent<ChallengeRequest>) => {
             const r = await fetch(`${base}${f}.json`);
             if (r.ok) cfg[f] = await r.json();
         }));
-        const site = await fetch(`${base}ProfilePresets.json`).then(r => {
+        const site = await fetch(`${base}${presetsFileName(version)}`).then(r => {
             if (!r.ok) throw new Error('no preset builds for this game version');
             return r.json() as Promise<ProfilePresetsFile>;
         });

@@ -22,6 +22,7 @@ import { SEASON_STATS, fairyRawBonus, type FairyName } from '../utils/fairies';
 const POOL_TO_ID: Record<string, string> = {
     criticalChance: 'CriticalChance', blockChance: 'BlockChance', reflectChance: 'ReflectChance',
     skillDamageMulti: 'SkillDamageMulti', skillCooldownMulti: 'SkillCooldownMulti', healthMulti: 'HealthMulti',
+    damageMulti: 'DamageMulti', criticalDamageReduction: 'CriticalDamageReduction', nthAttackDamageMulti: 'NthAttackDamageMulti',
 };
 
 export interface CardProfileLibs {
