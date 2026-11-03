@@ -68,7 +68,6 @@
  * clan ids, byte counts and function names.
  */
 
-import { beforeClanTreeReset } from '../utils/clanTreeReset';
 import { getSupabaseClient } from './supabaseClient';
 import type { SupabaseClient } from './supabaseClient';
 // Type-only: erased at compile time. Reusing the existing badge type instead of declaring a second
@@ -231,8 +230,6 @@ export interface ClanTreeRow {
     levels: Record<string, number>;
     updated_by: string | null;
     updated_at: string;
-    /** Set by getClanTree, not stored: published before the clan tree reset, so read as empty. */
-    reset?: true;
 }
 
 const CLAN_TREE_COLUMNS = 'clan_id,levels,updated_by,updated_at';
@@ -958,30 +955,20 @@ export function getRosterDetail(clanId: string): Promise<ClanResult<ClanRosterDe
  * migration if that ever stops being true.
  */
 export function getClanTree(clanId: string): Promise<ClanResult<ClanTreeRow | null>> {
-    return withClient(async client => {
-        const result = await runQuery<ClanTreeRow | null>(
+    return withClient(client =>
+        runQuery<ClanTreeRow | null>(
             table(client, 'clan_tree').select(CLAN_TREE_COLUMNS).eq('clan_id', clanId).maybeSingle(),
-        );
-        // Published before the latest in-game clan tree reset: every level of it is gone.
-        if (result.ok && result.data && beforeClanTreeReset(result.data.updated_at)) {
-            return ok({ ...result.data, levels: {}, reset: true as const });
-        }
-        return result;
-    });
+        ),
+    );
 }
 
 /** Who last wrote the shared tree and when, with the id resolved to a name inside this clan. */
 export function getClanTreeInfo(clanId: string): Promise<ClanResult<ClanTreeInfoRow | null>> {
-    return withClient(async client => {
-        const result = await runQuery<ClanTreeInfoRow | null>(
+    return withClient(client =>
+        runQuery<ClanTreeInfoRow | null>(
             table(client, 'clan_tree_info').select('*').eq('clan_id', clanId).maybeSingle(),
-        );
-        // The same reset as getClanTree: a tree published before it has no nodes left.
-        if (result.ok && result.data && beforeClanTreeReset(result.data.updated_at)) {
-            return ok({ ...result.data, node_count: 0 });
-        }
-        return result;
-    });
+        ),
+    );
 }
 
 /**

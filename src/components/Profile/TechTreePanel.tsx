@@ -5,7 +5,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { Card } from '../UI/Card';
 import { ConfirmModal } from '../UI/ConfirmModal';
-import { Check, Download, Upload, ArrowDownToLine, Loader2 } from 'lucide-react';
+import { Check, Download, Upload, ArrowDownToLine, Loader2, RotateCcw, ChevronsUp } from 'lucide-react';
 import { useClan } from '../../context/ClanContext';
 import { cn } from '../../lib/utils';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -159,6 +159,25 @@ export function TechTreePanel() {
 
     const [showImportModal, setShowImportModal] = useState(false);
     const [importText, setImportText] = useState('');
+
+    // Reset or max the whole clan tree by hand (the game resets it at some season starts).
+    const [clanBulk, setClanBulk] = useState<'reset' | 'max' | null>(null);
+    const applyClanBulk = (mode: 'reset' | 'max') => {
+        const levels: Record<number, number> = {};
+        if (mode === 'max' && guildPositionLibrary && guildUpgradeLibrary) {
+            let id = 0;
+            for (const cat of Object.keys(guildPositionLibrary)) {
+                for (const type of guildPositionLibrary[cat]?.Nodes || []) {
+                    const max = guildUpgradeLibrary[type]?.MaxLevel ?? 0;
+                    if (max > 0) levels[id] = max;
+                    id += 1;
+                }
+            }
+        }
+        updateProfile({ techTree: { ...profile.techTree, Clan: levels } });
+        setClanBulk(null);
+        toast.success(mode === 'reset' ? 'Clan tree reset' : 'Clan tree maxed');
+    };
 
     const exportClanTech = () => {
         const ranks = profile.techTree?.Clan || {};
@@ -617,7 +636,35 @@ export function TechTreePanel() {
                                 <Upload className="w-3.5 h-3.5" />
                                 Import Clan Tech
                             </button>
+                            <button
+                                onClick={() => setClanBulk('reset')}
+                                title="Every clan node back to level 0"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 text-red-300 text-xs font-bold transition-all"
+                            >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                Reset Clan Tech
+                            </button>
+                            <button
+                                onClick={() => setClanBulk('max')}
+                                title="Every clan node at its max level"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/15 border border-green-500/30 hover:bg-green-500/25 text-green-300 text-xs font-bold transition-all"
+                            >
+                                <ChevronsUp className="w-3.5 h-3.5" />
+                                Max Clan Tech
+                            </button>
                             <PullFromClanButton />
+                            <ConfirmModal
+                                isOpen={!!clanBulk}
+                                title={clanBulk === 'max' ? 'Max the clan tree?' : 'Reset the clan tree?'}
+                                message={clanBulk === 'max'
+                                    ? 'Every clan node of this profile goes to its max level.'
+                                    : 'Every clan node of this profile goes back to level 0.'}
+                                confirmText={clanBulk === 'max' ? 'Max it' : 'Reset it'}
+                                cancelText="Cancel"
+                                variant={clanBulk === 'max' ? undefined : 'danger'}
+                                onConfirm={() => clanBulk && applyClanBulk(clanBulk)}
+                                onCancel={() => setClanBulk(null)}
+                            />
                         </>
                     )}
                 </div>
