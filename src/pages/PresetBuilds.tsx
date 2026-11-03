@@ -697,14 +697,14 @@ const AIM_TITLE = "Compare your substats with this build's on your profile: what
 /** The "Aim for" button of a build card or row. */
 const AimButton = ({ onAim, small }: { onAim: () => void; small?: boolean }) => (
     <button onClick={e => { e.stopPropagation(); onAim(); }} title={AIM_TITLE}
-        className={cn('shrink-0 font-black uppercase border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15',
+        className={cn('shrink-0 whitespace-nowrap font-black uppercase border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15',
             small ? 'text-[10px] px-2 py-1 rounded-lg' : 'text-xs px-3 py-2 rounded-xl')}>
         Aim for
     </button>
 );
 
 const AddButton = ({ onAdd }: { onAdd: () => void }) => (
-    <button onClick={onAdd} className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-accent-primary text-white hover:brightness-110">
+    <button onClick={onAdd} className="flex-1 whitespace-nowrap inline-flex items-center justify-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-accent-primary text-white hover:brightness-110">
         <Plus className="w-3.5 h-3.5" /> Add to my profiles
     </button>
 );
@@ -1540,7 +1540,7 @@ export default function PresetBuilds() {
                 </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div data-preset-controls className="sticky -top-4 md:-top-6 z-30 -mx-2 px-2 py-2 rounded-b-xl bg-bg-primary/95 backdrop-blur shadow-lg shadow-black/40 flex flex-wrap items-center gap-2">
                 <div className="inline-flex rounded-xl border border-border overflow-hidden text-xs font-bold">
                     <button onClick={() => setF2p(false)} className={cn('px-3 py-2', !f2p ? 'bg-accent-primary text-white' : 'text-text-secondary hover:bg-bg-input')}>With skins</button>
                     {siteFile?.noSkins && (
@@ -1548,7 +1548,7 @@ export default function PresetBuilds() {
                     )}
                 </div>
                 {perfections.length > 1 && (
-                    <label className="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl border border-border" title="Every substat of every build rolled at this % of its top roll">
+                    <label className="order-last sm:order-none inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl border border-border" title="Every substat of every build rolled at this % of its top roll">
                         <span className="text-text-secondary">Substats</span>
                         <input type="range" min={0} max={perfections.length - 1} step={1} value={perfections.indexOf(perfection)}
                             onChange={e => setPerfection(perfections[Number(e.target.value)])}
