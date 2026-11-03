@@ -1515,10 +1515,15 @@ export default function PresetBuilds() {
             <div>
                 <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-2"><GameAssetIcon asset={{ sheet: 'ArenaRankIcons', index: 0 }} size={28} /> Preset Builds</h1>
                 <p className="text-sm text-text-secondary mt-1 max-w-3xl">
-                    The strongest builds the game allows, everything at its maximum level. Each one picks the attack animation
+                    The strongest builds found so far, everything at its maximum level. Each one picks the attack animation
                     (a weapon's own or a skin's), skins, pets, skills, substats and fairy for its goal, with the next best four
                     one click away. Add any of them to your profiles to explore it.
                     {perfections.length > 1 && ` Substats: every roll at ${perfection}% of its top value (the slider), the builds searched again at each level.`}
+                </p>
+                <p className="text-xs text-text-muted mt-1 max-w-3xl">
+                    Items, skins, pets, skills, substats and fairies combine into far more builds than any computer can try one by one,
+                    so not every build can be calculated. These are the best the search has found for now, with the new fairies,
+                    and they may be beaten as the search goes on.
                 </p>
             </div>
 

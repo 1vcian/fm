@@ -24,11 +24,11 @@
  * must be re-checked each season.
  *   SEASON_2026_09: the event live from 2026-09-07 09:30 to 2026-11-02 18:00 UTC
  *     (FairiesEventConfig.Stats as the server sent it on 2026-11-01). Base equals growth.
- *   SEASON_2026_11: transcribed from the in-game descriptions. Only the MAX level (20) values were
- *     read: Mira +220% Damage on every 5th attack (flat), Tira -14% incoming Critical Damage per
- *     -4% Skill Cooldown (total capped at 70%), Lora +15% Damage per +10% Health (no cap). The
- *     same base equals growth split is used, so level 20 is exact and lower levels follow that
- *     pattern until they are checked in game.
+ *   SEASON_2026_11: read in game on 2026-11-03 (Choose your Fairy screen and the Lv. 1 fairy
+ *     panels, which show the per-level growth in green): Mira -4.5% (+0.5%) incoming Critical
+ *     Damage per -4% Skill Cooldown, total capped at 70%; Tira +5.5% (+0.5%) Damage per +10%
+ *     Health; Lora +30% (+10%) Damage on every 5th attack, flat. With base + growth x (level - 1)
+ *     level 20 is 14%, 15% and 220%, the values of the official Discord teaser.
  */
 
 export type FairyName = 'Mira' | 'Tira' | 'Lora';
@@ -102,34 +102,34 @@ const SEASON_2026_09: Record<FairyName, SeasonFairyStat> = {
 
 const SEASON_2026_11: Record<FairyName, SeasonFairyStat> = {
     Mira: {
-        targetStat: 'nthAttackDamageMulti',
-        targetLabel: 'Damage on every 5th attack',
-        targetStatBonus: 0.11,
-        targetStatBonusPerLevel: 0.11,
-        requiredStat: null,
-        requiredLabel: '',
-        requiredStatValueDivider: 0,
-        targetStatTotalCap: null,
-    },
-    Tira: {
         targetStat: 'criticalDamageReduction',
         targetLabel: 'Incoming Critical Damage Reduction',
-        targetStatBonus: 0.007,
-        targetStatBonusPerLevel: 0.007,
+        targetStatBonus: 0.045,
+        targetStatBonusPerLevel: 0.005,
         requiredStat: 'skillCooldownMulti',
         requiredLabel: 'Skill Cooldown',
         requiredStatValueDivider: 0.04,
         requiredStatIsReduction: true,
         targetStatTotalCap: 0.7,
     },
-    Lora: {
+    Tira: {
         targetStat: 'damageMulti',
         targetLabel: 'Damage',
-        targetStatBonus: 0.0075,
-        targetStatBonusPerLevel: 0.0075,
+        targetStatBonus: 0.055,
+        targetStatBonusPerLevel: 0.005,
         requiredStat: 'healthMulti',
         requiredLabel: 'Health',
         requiredStatValueDivider: 0.1,
+        targetStatTotalCap: null,
+    },
+    Lora: {
+        targetStat: 'nthAttackDamageMulti',
+        targetLabel: 'Damage on every 5th attack',
+        targetStatBonus: 0.3,
+        targetStatBonusPerLevel: 0.1,
+        requiredStat: null,
+        requiredLabel: '',
+        requiredStatValueDivider: 0,
         targetStatTotalCap: null,
     },
 };
