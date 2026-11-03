@@ -155,11 +155,13 @@ export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
             <FairyControls value={value} onChange={onChange} maxLevel={maxLevel} />
 
             {cfg && stats && (
-                <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
-                    <span className="text-text-muted truncate">
-                        {pct(Math.abs(required))} {cfg.requiredLabel} equipped
-                    </span>
-                    <span className="font-mono font-bold text-green-400 shrink-0">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[11px]">
+                    {cfg.requiredStat && (
+                        <span className="text-text-muted">
+                            {pct(Math.abs(required))} {cfg.requiredLabel} equipped
+                        </span>
+                    )}
+                    <span className="font-mono font-bold text-green-400 ml-auto text-right">
                         +{pct(granted)} {cfg.targetLabel}
                     </span>
                 </div>

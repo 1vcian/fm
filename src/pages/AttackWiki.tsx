@@ -55,9 +55,14 @@ const pct = (v: number, digits = 1) => `${(v * 100).toFixed(digits)}%`;
 const SPEED_MAX = 500;
 const DOUBLE_STEPS = [0, 0.25, 0.5, 0.75, 1];
 
-/** Hit-rate gap of the fastest windup over the slowest, at one attack-speed bonus (%) and double chance. */
-const gapAt = (bonus: number, lo: number, hi: number, dc: number) =>
-    weaponHitsPerSecond(1 + bonus / 100, lo, 1.5, dc) / weaponHitsPerSecond(1 + bonus / 100, hi, 1.5, dc) - 1;
+/** The windups with the most and the fewest hits per second at one attack-speed bonus (%) and double chance. */
+function bestWorst(bonus: number, windups: number[], dc: number) {
+    const hits = windups.map(w => ({ w, h: weaponHitsPerSecond(1 + bonus / 100, w, 1.5, dc) }));
+    const top = Math.max(...hits.map(x => x.h)), low = Math.min(...hits.map(x => x.h));
+    return { top, low, best: hits.filter(x => x.h === top).map(x => x.w), worst: hits.filter(x => x.h === low).map(x => x.w) };
+}
+/** Hit-rate gap of the best windup over the worst: because of the ticks they are not always the shortest and the longest. */
+const gapAt = (bonus: number, windups: number[], dc: number) => { const bw = bestWorst(bonus, windups, dc); return bw.top / bw.low - 1; };
 
 /** The weapon's icon (AutoItemMapping) or the weapon skin's, as the game draws them. */
 function Thumb({ e, mapping, sprites, version, size = 28 }: { e: Entry; mapping: any; sprites: any; version: string | null; size?: number }) {
@@ -106,24 +111,30 @@ function TickStrip({ bonus, windup, doubleChance }: { bonus: number; windup: num
     );
 }
 
+const ICONS_SHOWN = 12, NAMES_SHOWN = 4;
+const windupList = (ws: number[]) => (ws.length <= 3 ? ws.map(w => `${w.toFixed(2)} s`).join(', ') : `${ws.length} windups, ${ws[0].toFixed(2)} s to ${ws[ws.length - 1].toFixed(2)} s`);
+
 function ExtremeIcons({ ex, mapping, sprites, version }: { ex: { fast: Entry[]; slow: Entry[] } | null; mapping: any; sprites: any; version: string | null }) {
     if (!ex) return null;
+    if (!ex.slow.length) return <div className="text-[11px] text-text-secondary my-2">Every weapon and skin lands the same hits per second at this attack speed and double chance.</div>;
     const row = (label: string, list: Entry[]) => (
         <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[10px] uppercase text-text-muted w-14">{label}</span>
-            {list.map(e => <Thumb key={e.key} e={e} mapping={mapping} sprites={sprites} version={version} size={24} />)}
-            <span className="text-[11px] text-text-secondary">{list.map(e => e.name).join(', ')}</span>
+            {list.slice(0, ICONS_SHOWN).map(e => <Thumb key={e.key} e={e} mapping={mapping} sprites={sprites} version={version} size={24} />)}
+            <span className="text-[11px] text-text-secondary">
+                {list.length <= NAMES_SHOWN ? list.map(e => e.name).join(', ') : `${list.length} weapons and skins${list.length > ICONS_SHOWN ? `, ${list.length - ICONS_SHOWN} more not drawn` : ''}`}
+            </span>
         </div>
     );
-    return <div className="space-y-1 my-2">{row('Fastest', ex.fast)}{row('Slowest', ex.slow)}</div>;
+    return <div className="space-y-1 my-2">{row('Best', ex.fast)}{row('Worst', ex.slow)}</div>;
 }
 
-function GapChart({ melee, ranged, doubleChance, bonus }: { melee: [number, number] | null; ranged: [number, number] | null; doubleChance: number; bonus: number }) {
+function GapChart({ melee, ranged, doubleChance, bonus }: { melee: number[] | null; ranged: number[] | null; doubleChance: number; bonus: number }) {
     const W = 600, H = 160, P = 28;
     const series = [
-        { name: 'Melee', lohi: melee, color: '#f87171' },
-        { name: 'Ranged', lohi: ranged, color: '#38bdf8' },
-    ].filter(s => s.lohi).map(s => ({ ...s, pts: Array.from({ length: SPEED_MAX + 1 }, (_, b) => gapAt(b, s.lohi![0], s.lohi![1], doubleChance)) }));
+        { name: 'Melee', windups: melee, color: '#f87171' },
+        { name: 'Ranged', windups: ranged, color: '#38bdf8' },
+    ].filter(s => s.windups).map(s => ({ ...s, pts: Array.from({ length: SPEED_MAX + 1 }, (_, b) => gapAt(b, s.windups!, doubleChance)) }));
     const top = Math.max(0.05, ...series.flatMap(s => s.pts));
     const x = (b: number) => P + (b / SPEED_MAX) * (W - P - 8);
     const y = (v: number) => H - 18 - (v / top) * (H - 30);
@@ -186,18 +197,28 @@ export default function AttackWiki() {
         return out;
     }, [weaponLibrary, skinsLibrary, mapping]);
 
+    /** The weapons and skins the ranking filter shows (skins and ages): every comparison on the page is among them. */
+    const shown = useMemo(() => entries.filter(e => shownSources.includes(e.source)), [entries, shownSources]);
     const lohi = (ranged: boolean): [number, number] | null => {
-        const ws = entries.filter(e => e.ranged === ranged).map(e => e.windup);
+        const ws = shown.filter(e => e.ranged === ranged).map(e => e.windup);
         return ws.length ? [Math.min(...ws), Math.max(...ws)] : null;
     };
-    /** The weapons and skins with the fastest and the slowest windup of a kind. */
-    const extremes = (ranged: boolean) => {
-        const of = entries.filter(e => e.ranged === ranged);
-        const lh = lohi(ranged);
-        return lh ? { fast: of.filter(e => e.windup === lh[0]), slow: of.filter(e => e.windup === lh[1]) } : null;
+    /** Every distinct windup of a kind. */
+    const windupsOf = (ranged: boolean): number[] | null => {
+        const ws = [...new Set(shown.filter(e => e.ranged === ranged).map(e => e.windup))].sort((a, b) => a - b);
+        return ws.length ? ws : null;
     };
-    const melee = useMemo(() => lohi(false), [entries]);
-    const ranged = useMemo(() => lohi(true), [entries]);
+    const melee = useMemo(() => windupsOf(false), [shown]);
+    const ranged = useMemo(() => windupsOf(true), [shown]);
+    const ws = isRanged ? ranged : melee;
+    /** At the sliders' attack speed and double chance: the best and the worst windups, and the weapons and skins with them (no worst when all tie). */
+    const bw = ws ? bestWorst(bonus, ws, dc) : null;
+    const extremes = (ranged: boolean) => {
+        if (!bw) return null;
+        const of = shown.filter(e => e.ranged === ranged);
+        const tie = bw.top === bw.low;
+        return { fast: tie ? [] : of.filter(e => bw.best.includes(e.windup)), slow: tie ? [] : of.filter(e => bw.worst.includes(e.windup)) };
+    };
 
     // Every attack-speed bonus where the single interval drops a tick, from +0% to +SPEED_MAX%.
     const breakpoints = useMemo(() => {
@@ -211,10 +232,10 @@ export default function AttackWiki() {
 
     // Over the whole attack-speed range: the largest and the average gap, per double chance.
     const summary = useMemo(() => DOUBLE_STEPS.map(d => {
-        const one = (lh: [number, number] | null) => {
-            if (!lh) return null;
+        const one = (ws: number[] | null) => {
+            if (!ws) return null;
             let max = 0, at = 0, sum = 0;
-            for (let b = 0; b <= SPEED_MAX; b++) { const g = gapAt(b, lh[0], lh[1], d); sum += g; if (g > max) { max = g; at = b; } }
+            for (let b = 0; b <= SPEED_MAX; b++) { const g = gapAt(b, ws, d); sum += g; if (g > max) { max = g; at = b; } }
             return { max, at, avg: sum / (SPEED_MAX + 1) };
         };
         return { d, melee: one(melee), ranged: one(ranged) };
@@ -237,8 +258,7 @@ export default function AttackWiki() {
     };
 
     const single = attackCycleTicks(mult) / 10;
-    const lh = isRanged ? ranged : melee;
-    const nowGap = (lh: [number, number] | null) => (lh ? gapAt(bonus, lh[0], lh[1], dc) : null);
+    const lh = lohi(isRanged);
 
     if (loading) return <div className="p-6 text-text-muted">Loading weapons...</div>;
     if (error || !weaponLibrary) return <div className="p-6 text-red-400">{error ?? 'WeaponLibrary.json is missing for this version'}</div>;
@@ -264,6 +284,24 @@ export default function AttackWiki() {
                     hint={speedCap !== null ? `Substats alone reach +${Math.round(speedCap * 100)}% (every piece at its top roll).` : undefined} />
                 <Slider label="Double chance" value={doublePct} max={100} onChange={setDoublePct}
                     hint={doubleCap !== null ? `Substats alone reach ${Math.round(doubleCap * 100)}%.` : undefined} />
+                <div className="w-full flex gap-1.5 overflow-x-auto md:flex-wrap pb-0.5" aria-label="Weapons and skins shown">
+                    {['Skin', ...AGES].filter(src => entries.some(e => e.ranged === isRanged && e.source === src)).map(src => {
+                        const on = shownSources.includes(src);
+                        const age = AGES.indexOf(src);
+                        return (
+                            <button key={src} onClick={() => toggleSource(src)} aria-pressed={on}
+                                style={on && age >= 0 ? { ...getAgeBgStyle(age), ...getAgeBorderStyle(age) } : undefined}
+                                className={cn('shrink-0 inline-flex items-center gap-1.5 text-[11px] font-bold pl-1 pr-2.5 py-1 rounded-full border transition-colors',
+                                    on ? (age < 0 ? 'bg-purple-500/25 border-purple-400/60 text-purple-100' : 'text-white')
+                                        : 'border-border text-text-muted hover:text-text-primary opacity-70')}>
+                                {age >= 0
+                                    ? <span style={getAgeIconStyle(age, 18, version ?? undefined)} className={cn('shrink-0 rounded bg-white/90', !on && 'grayscale')} />
+                                    : <GameAssetIcon asset={{ icon: 'SteppingStoneCharIcon0' }} size={18} className={cn(!on && 'grayscale')} />}
+                                {age < 0 ? 'Skins' : src}
+                            </button>
+                        );
+                    })}
+                </div>
             </Card>
 
             <Card className="p-4 space-y-3">
@@ -333,14 +371,16 @@ export default function AttackWiki() {
 
             <Card className="p-4 space-y-3">
                 <h2 className="text-lg font-bold text-text-primary">Best vs worst windup</h2>
-                {lh && (
+                {bw && (
                         <div className="bg-black/25 border border-white/5 rounded-lg p-3">
                             <div className="text-[10px] uppercase tracking-wider text-text-muted">{kindName}, +{bonus}% attack speed, {doublePct}% double</div>
-                            <div className="text-2xl font-black text-text-primary">+{pct(nowGap(lh) ?? 0)}</div>
+                            <div className="text-[11px] text-text-muted">Among the weapons and skins picked at the top: {['Skin', ...AGES].filter(src => shownSources.includes(src)).map(src => (src === 'Skin' ? 'Skins' : src)).join(', ') || 'none'}.</div>
+                            <div className="text-2xl font-black text-text-primary">+{pct(bw.top / bw.low - 1)}</div>
                             <ExtremeIcons ex={extremes(isRanged)} mapping={mapping} sprites={sprites} version={version} />
                             <div className="text-[11px] text-text-muted">
-                                hits per second of the fastest windup ({lh[0].toFixed(2)} s) over the slowest ({lh[1].toFixed(2)} s):
-                                {' '}{weaponHitsPerSecond(mult, lh[0], 1.5, dc).toFixed(3)} vs {weaponHitsPerSecond(mult, lh[1], 1.5, dc).toFixed(3)}
+                                {bw.top === bw.low
+                                    ? `hits per second of every windup: ${bw.top.toFixed(3)}`
+                                    : `hits per second of the best windup (${windupList(bw.best)}) over the worst (${windupList(bw.worst)}): ${bw.top.toFixed(3)} vs ${bw.low.toFixed(3)}`}
                             </div>
                         </div>
                 )}
@@ -388,24 +428,6 @@ export default function AttackWiki() {
                             (a {isRanged ? 'ranged' : 'melee'} weapon then attacks with the skin's windup). Ranks and "vs best" are among the rows shown. Equal hits per second share a rank: those
                             windups fight the same at this attack speed.
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {['Skin', ...AGES].filter(src => entries.some(e => e.ranged === isRanged && e.source === src)).map(src => {
-                                const on = shownSources.includes(src);
-                                const age = AGES.indexOf(src);
-                                return (
-                                    <button key={src} onClick={() => toggleSource(src)} aria-pressed={on}
-                                        style={on && age >= 0 ? { ...getAgeBgStyle(age), ...getAgeBorderStyle(age) } : undefined}
-                                        className={cn('inline-flex items-center gap-1.5 text-[11px] font-bold pl-1 pr-2.5 py-1 rounded-full border transition-colors',
-                                            on ? (age < 0 ? 'bg-purple-500/25 border-purple-400/60 text-purple-100' : 'text-white')
-                                                : 'border-border text-text-muted hover:text-text-primary opacity-70')}>
-                                        {age >= 0
-                                            ? <span style={getAgeIconStyle(age, 18, version ?? undefined)} className={cn('shrink-0 rounded bg-white/90', !on && 'grayscale')} />
-                                            : <GameAssetIcon asset={{ icon: 'SteppingStoneCharIcon0' }} size={18} className={cn(!on && 'grayscale')} />}
-                                        {age < 0 ? 'Skins' : src}
-                                    </button>
-                                );
-                            })}
-                        </div>
                         {!rows.length && <div className="text-xs text-text-muted">Turn on skins or an age to see the ranking.</div>}
                         <div className="overflow-x-auto border border-white/5 rounded-lg">
                             <table className="w-full text-xs">

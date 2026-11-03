@@ -683,6 +683,26 @@ function Equivalents({ preset, mapping, sprites, version, libs, ranged, onAddEqu
     );
 }
 
+/** "Aim for": the build's substats become the profile page's target, then the profile page opens. */
+function useAimFor() {
+    const navigate = useNavigate();
+    const { libs } = useStatLibraries();
+    const { selectedVersion } = useGameDataContext();
+    return (p: { name: string; profile: UserProfile }) => {
+        saveAimTarget(aimTargetOf(p.name, selectedVersion, p.profile, libs.secondaryStatLibrary));
+        navigate('/');
+    };
+}
+const AIM_TITLE = "Compare your substats with this build's on your profile: what is missing, what to improve, what is not needed";
+/** The "Aim for" button of a build card or row. */
+const AimButton = ({ onAim, small }: { onAim: () => void; small?: boolean }) => (
+    <button onClick={e => { e.stopPropagation(); onAim(); }} title={AIM_TITLE}
+        className={cn('shrink-0 font-black uppercase border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15',
+            small ? 'text-[10px] px-2 py-1 rounded-lg' : 'text-xs px-3 py-2 rounded-xl')}>
+        Aim for
+    </button>
+);
+
 const AddButton = ({ onAdd }: { onAdd: () => void }) => (
     <button onClick={onAdd} className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-accent-primary text-white hover:brightness-110">
         <Plus className="w-3.5 h-3.5" /> Add to my profiles
@@ -731,6 +751,7 @@ function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAd
     const flip = (to: 'details' | 'equivalents') => { setShownBack(to); setBack(to); };
     const ranged = !!stats.isRangedWeapon;
     const eqCount = equivalentCount(preset, libs);
+    const aimFor = useAimFor();
     return (
         <div ref={cardRef} className={cn('[perspective:1600px] rounded-2xl transition-shadow duration-500 scroll-mt-24', CARD_HEIGHT, flash && 'ring-4 ring-amber-300 shadow-[0_0_40px_rgba(251,191,36,0.5)]')}>
             <div className={cn('grid h-full transition-transform duration-700 ease-in-out [transform-style:preserve-3d]', back && '[transform:rotateY(180deg)]')}>
@@ -772,6 +793,7 @@ function BuildCard({ preset, stats, sprites, mapping, version, libs, onAdd, onAd
                         <Icons preset={preset} sprites={sprites} version={version} />
                         <div className="flex flex-wrap gap-2 mt-auto">
                             <AddButton onAdd={onAdd} />
+                            <AimButton onAim={() => aimFor(preset)} />
                             <FlipButton onClick={() => flip('details')}>Details</FlipButton>
                             {eqCount > 0 && <FlipButton onClick={() => flip('equivalents')}>Equivalents ({eqCount})</FlipButton>}
                         </div>
@@ -842,6 +864,7 @@ function CompactRow({ preset, stats, sprites, mapping, version, libs, onAdd, onA
     const gap = preset.category !== 'quest' && b.raw > 0 ? (h.raw / b.raw - 1) * 100 : null;
     const ranged = !!stats.isRangedWeapon;
     const eqCount = equivalentCount(preset, libs);
+    const aimFor = useAimFor();
     return (
         <div ref={rowRef} className={cn('rounded-xl border border-border bg-bg-secondary/30 overflow-hidden transition-shadow duration-500', flash && 'ring-2 ring-amber-300')}>
             <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-bg-input/40">
@@ -862,7 +885,7 @@ function CompactRow({ preset, stats, sprites, mapping, version, libs, onAdd, onA
                     <Icons preset={preset} sprites={sprites} version={version} />
                     <Gear preset={preset} mapping={mapping} sprites={sprites} version={version} libs={libs} />
                     <Details preset={preset} stats={stats} mapping={mapping} />
-                    <div className="flex"><AddButton onAdd={onAdd} /></div>
+                    <div className="flex gap-2"><AddButton onAdd={onAdd} /><AimButton onAim={() => aimFor(preset)} /></div>
                     {eqCount > 0 && (
                         <div className="border-t border-border pt-2">
                             <button onClick={() => setEqOpen(o => !o)} className="w-full flex items-center justify-between text-xs font-bold text-text-secondary hover:text-text-primary">
@@ -922,15 +945,7 @@ function RankingList({ standings, byKey, highlight, className, others, owned, ai
     const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const places = sharedRanks(standings);
     const goTo = useContext(GoToBuild);
-    const navigate = useNavigate();
-    const { libs: aimLibs } = useStatLibraries();
-    const { selectedVersion: aimVersion } = useGameDataContext();
-    /** "Aim for": the build's substats become the profile page's target. */
-    const aimFor = (e: React.MouseEvent, p: ProfilePreset) => {
-        e.stopPropagation();
-        saveAimTarget(aimTargetOf(p.name, aimVersion, p.profile, aimLibs.secondaryStatLibrary));
-        navigate('/');
-    };
+    const aimFor = useAimFor();
     // Published builds and other skins in one order: win rate, then the HP margin.
     const rows: ({ kind: 'st'; i: number; rate: number; margin: number } | { kind: 'other'; o: OtherSkinRow; rate: number; margin: number })[] = [
         ...standings.map((st, i) => ({ kind: 'st' as const, i, rate: st.winRate, margin: st.hpMargin })),
@@ -975,6 +990,7 @@ function RankingList({ standings, byKey, highlight, className, others, owned, ai
                                 </span>
                                 <span className="font-mono text-text-muted">{o.wins}-{o.draws}-{o.losses}</span>
                                 <span className="font-mono font-bold w-14 text-right text-text-secondary">{pct(o.winRate)}</span>
+                                {aim && <AimButton small onAim={() => aimFor({ name: `${base?.name ?? o.name}, ${attackLabel(look, mapping)}`, profile: o.variant.profile })} />}
                             </li>
                         );
                     }
@@ -997,10 +1013,7 @@ function RankingList({ standings, byKey, highlight, className, others, owned, ai
                             </span>
                             <span className="font-mono text-text-muted">{st.wins}-{st.draws}-{st.losses}</span>
                             <span className="font-mono font-bold w-14 text-right">{pct(st.winRate)}</span>
-                            {aim && st.key !== highlight && byKey.get(st.key) && (
-                                <button onClick={e => aimFor(e, byKey.get(st.key)!)} title="Compare your substats with this build's on your profile: what is missing, what to improve, what is not needed"
-                                    className="shrink-0 text-[10px] font-black uppercase px-2 py-1 rounded-lg border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15">Aim for</button>
-                            )}
+                            {aim && st.key !== highlight && byKey.get(st.key) && <AimButton small onAim={() => aimFor(byKey.get(st.key)!)} />}
                         </li>
                     );
                 })}
@@ -1258,7 +1271,7 @@ function FightAgainst({ version, perfection, profile, total, battlesPerSide, byK
                     </div>
                     {open && (
                         <div className="grid md:grid-cols-2 gap-3">
-                            <RankingList standings={r.standings} byKey={byKey} highlight={CHALLENGER_KEY} className="max-h-[420px] overflow-y-auto pr-1" />
+                            <RankingList standings={r.standings} byKey={byKey} highlight={CHALLENGER_KEY} aim className="max-h-[420px] overflow-y-auto pr-1" />
                             <div className="space-y-1 max-h-[420px] overflow-y-auto pr-1">
                                 <div className="text-[11px] font-bold text-text-secondary">Your pairings ({2 * r.battlesPerSide} battles each)</div>
                                 {r.matches.map(m => (

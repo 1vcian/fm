@@ -38,7 +38,10 @@ export interface WorkerPool extends EvalPool {
 /** No progress for this long means a worker is gone (one range is seconds, not minutes). */
 const STALL_MS = 10 * 60 * 1000;
 
-export function workerPool(version: string, size = Math.max(1, os.availableParallelism() - 1)): WorkerPool {
+/** PRESET_WORKERS=n sets the threads per run, e.g. to run several perfections side by side. */
+const defaultSize = () => Number(process.env.PRESET_WORKERS) || Math.max(1, os.availableParallelism() - 1);
+
+export function workerPool(version: string, size = defaultSize()): WorkerPool {
     // ctl[0]: finished tasks of the current batch, ctl[1]: workers ready. res: two sums per slot.
     const ctl = new Int32Array(new SharedArrayBuffer(8));
     const res = new Float64Array(new SharedArrayBuffer(8 * 2 * size));

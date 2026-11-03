@@ -11,6 +11,9 @@
  *       every substat rolled at 90% of its top roll; written next to the 100% file as
  *       ProfilePresets[.fairies_2026_11].p90.json (src/utils/fairies.ts presetsFileBase)
  *
+ * An existing file's three arena tournament leaders join the build lab, so a rerun only adds
+ * stronger builds (src/presets/buildPresets.ts PresetOptions.previous).
+ *
  * The fairy season is the one live now; VITE_NEW_FAIRIES_NOW=1 in the environment builds on the
  * new one (and writes the .fairies_2026_11 files).
  *
@@ -48,9 +51,16 @@ const TOURNAMENT_BATTLES_PER_SIDE = 100;
 log(`${pool.size} worker threads`);
 const file = path.join(dir, presetsFileBase(isNewSeason(), perfection));
 log(`${path.basename(file)}: substats at ${perfection}%, ${isNewSeason() ? 'new' : 'current'} fairy season`);
+/** The file this run replaces: its arena tournament leaders join the lab (PresetOptions.previous). */
+const PREVIOUS_LEADERS = 3;
+const before: ProfilePresetsFile | null = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+const previous = (before?.tournament?.standings ?? []).slice(0, PREVIOUS_LEADERS)
+    .map(st => before!.presets.find(p => p.key === st.key)?.profile)
+    .filter((p): p is UserProfile => !!p);
+if (!tournamentOnly) log(`previous leaders in the lab: ${previous.length}`);
 const out: ProfilePresetsFile = tournamentOnly
-    ? JSON.parse(fs.readFileSync(file, 'utf8'))
-    : buildProfilePresets(version, libs, cfg, { log, pool, perfection });
+    ? before!
+    : buildProfilePresets(version, libs, cfg, { log, pool, perfection, previous });
 out.perfection = perfection;
 // Checkpoint: the builds are saved before the tournament, so it can rerun alone (--tournament-only).
 if (!tournamentOnly) fs.writeFileSync(file, JSON.stringify(out));

@@ -14,7 +14,7 @@
 import type { SavedSkin, UserProfile } from '../types/Profile';
 import { calculateStats, type LibraryData } from '../utils/statEngine';
 import {
-    CATEGORIES, PRESETS_PER_CATEGORY, battleLibsOf, presetMetrics, testedOf,
+    CATEGORIES, PRESETS_PER_CATEGORY, battleLibsOf, presetMetrics, questFromAll, testedOf,
     type ConfigFiles, type PresetAnimation, type PresetCategory, type ProfilePreset, type ProfilePresetsFile, type StatCategory,
 } from './buildPresets';
 import { applyBestSkins, ownedPieces, wearSkins, type SkinPiece } from './skinsApply';
@@ -156,8 +156,8 @@ export function buildOwnedPresets(site: ProfilePresetsFile, saved: SavedSkin[], 
             });
         });
         opts.log('arena tournament');
-        const file: ProfilePresetsFile = { version: site.version, categories: CATEGORIES, presets };
-        file.tournament = runTournament(presets, libs, arena, opts.tournamentBattles, () => {});
+        const file: ProfilePresetsFile = { version: site.version, categories: CATEGORIES, presets: questFromAll(presets) };
+        file.tournament = runTournament(file.presets, libs, arena, opts.tournamentBattles, () => {});
         return file;
     }
     return { version: site.version, categories: CATEGORIES, presets };

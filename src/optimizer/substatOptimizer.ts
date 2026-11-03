@@ -438,13 +438,15 @@ export function runSubstatOptimizer(input: SubstatOptimizerInput, libs: LibraryD
     const fairySeeds = (fairy: FairyName | null): Alloc[] => {
         if (!fairy) return [];
         const cfg = SEASON_STATS[fairy];
-        // A flat fairy reads nothing and an uncapped one has no fill point: no breakpoint to seed.
-        if (!cfg.requiredStat || cfg.targetStatTotalCap === null) return [];
+        // A flat fairy reads nothing: no breakpoint to seed. An uncapped one has no fill point, so
+        // its required stat is seeded at every count a stat can take.
+        if (!cfg.requiredStat) return [];
         const id = REQUIRED_SUBSTAT[cfg.requiredStat];
         const roll = (upper.get(id) || 0) * perfection / 100;
         if (!id || roll <= 0 || !statIds.includes(id)) return [];
-        const steps = Math.ceil(cfg.targetStatTotalCap / fairyPerStep(cfg, fairyLevel) - 1e-9);
-        const full = Math.min(perStatCap, pool, Math.ceil((steps * Math.abs(cfg.requiredStatValueDivider)) / roll - 1e-9));
+        const full = cfg.targetStatTotalCap === null
+            ? Math.min(perStatCap, pool)
+            : Math.min(perStatCap, pool, Math.ceil((Math.ceil(cfg.targetStatTotalCap / fairyPerStep(cfg, fairyLevel) - 1e-9) * Math.abs(cfg.requiredStatValueDivider)) / roll - 1e-9));
         const out: Alloc[] = [];
         for (let n = 1; n <= full; n++) out.push({ [id]: n });
         return out;

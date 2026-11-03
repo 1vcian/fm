@@ -218,13 +218,19 @@ export interface PresetOptions {
     labFinalBattles?: number;
     /** Substat roll quality, % of SecondaryStatLibrary UpperRange (default 100). */
     perfection?: number;
+    /**
+     * The best builds of the file this run replaces (its arena tournament leaders): the lab fights
+     * them from the first round and ranks them with its own candidates, so a new search can only
+     * add stronger builds, never drop one that was published.
+     */
+    previous?: UserProfile[];
 }
 
 /** No skins (F2P): arena battles per pair and side of its tournament, as the published one. */
 const F2P_TOURNAMENT_BATTLES = 100;
 
 /** Build lab: arena seeds per side and opponent while ranking and for the published rate, extra builds. */
-const LAB_BATTLES = 4;
+const LAB_BATTLES = 20;
 const LAB_FINAL_BATTLES = 50;
 /** Build lab: published builds beyond the Arena Champion. */
 const LAB_UNEXPECTED = 4;
@@ -233,7 +239,7 @@ const LAB_ANIMATION_RETRY = 8;
 /**
  * Build lab: the best candidates of the quick ranking (LAB_BATTLES seeds per side) measured again
  * on LAB_CONFIRM_BATTLES seeds before the Arena Champion is picked. With 4 seeds a side a lucky
- * candidate tops 132 others (a 99% that is 93% on 50 seeds), so the pick needs the long run.
+ * candidate topped 132 others (a 99% that is 93% on 50 seeds), so the pick needs the long run.
  */
 const LAB_CONFIRM = 16;
 const LAB_CONFIRM_BATTLES = 50;
@@ -359,10 +365,22 @@ function readSpace(libs: LibraryData, cfg: ConfigFiles, perfection = 100): Space
         maxAge, topRarity, weaponIdxs, rangedIdxs, sets, skinStatTypes, petIds,
         skillIds: Object.keys(skillLib),
         skillSlots: (libs.skillBaseConfig as any).SkillSlotsCount,
-        fairies: [null, ...FAIRIES.map(f => f.name)],
+        // The season's fairies are free bonuses: for the same substats a build with one is never
+        // weaker than without, so every preset build carries one and the search turns around them.
+        fairies: FAIRIES.map(f => f.name),
         fairyLevel: fairyLevels.length ? Math.max(...fairyLevels) : 0,
         stats, bodies,
     };
+}
+
+/**
+ * The substats worth rolling for a weapon: only the weapon's own kind of damage multiplier counts
+ * (statEngine: MeleeDamageMulti on a melee weapon, RangedDamageMulti on a ranged one), so the
+ * other one is never searched.
+ */
+function statsFor(space: Space, weaponIdx: number | undefined): RollableStat[] {
+    const useless = weaponIdx !== undefined && space.rangedIdxs.has(weaponIdx) ? 'MeleeDamageMulti' : 'RangedDamageMulti';
+    return space.stats.filter(st => st.id !== useless);
 }
 
 /** The maxed base every preset shares (no substats, no skins, choices still open). */
@@ -600,15 +618,21 @@ function search(
         let changed = false;
         if (choose.substats) {
             const current = build(choice);
+            const stats = statsFor(space, choice.weaponIdx);
+            const usable = (a: Alloc) => Object.keys(a).every(id => stats.some(st => st.id === id));
             const r = runSubstatOptimizer({
                 base: current, current, reference: current, referenceName: '', objective,
-                withSkills: true, stats: space.stats, bodies: space.bodies, perfection: space.perfection,
+                withSkills: true, stats, bodies: space.bodies, perfection: space.perfection,
                 // Round 1 searches every fairy from scratch; later rounds only refine the current
                 // allocation and fairy, since only the other choices moved since then.
                 fairies: round === 1 ? space.fairies : [fairy], fairyLevel: space.fairyLevel, extra: null, pvpConfig: null,
                 battlesPerSide: 0, keep: 1, customScore: objective === 'custom' ? score : undefined,
                 customScoreBatch: objective === 'custom' ? score.many : undefined,
-                startAllocs: [currentAlloc(current), ...(round === 1 ? choose.substatStarts ?? [] : [])], localOnly: round > 1,
+                // The current rolls minus any the weapon cannot use (a weapon of the other kind picked
+                // since they were made).
+                startAllocs: [Object.fromEntries(Object.entries(currentAlloc(current)).filter(([id]) => stats.some(st => st.id === id))),
+                    ...(round === 1 ? choose.substatStarts ?? [] : []).filter(usable)],
+                localOnly: round > 1,
             }, libs);
             const withAlloc = buildWithAlloc(current, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, space.perfection);
             const v = score(withAlloc);
@@ -670,6 +694,7 @@ function withDefaults(opts: PresetOptions, libs: LibraryData, cfg: ConfigFiles):
         labBattles: opts.labBattles ?? LAB_BATTLES,
         labFinalBattles: opts.labFinalBattles ?? LAB_FINAL_BATTLES,
         perfection: opts.perfection ?? 100,
+        previous: opts.previous ?? [],
         log: opts.log ?? (() => {}),
     };
 }
@@ -738,6 +763,32 @@ export const CATEGORIES: PresetCategoryInfo[] = [
         description: 'The builds that go furthest in the main quest: the furthest battle cleared (at least 50% wins in the battle simulator, every difficulty in order), searched from where the strongest builds already get.' },
 ];
 
+/**
+ * The Main Quest category from every published build: the build lab runs after the quest search and
+ * its builds can go further, so the category is picked again among all of them (published quest
+ * numbers, ties to the higher tested DPS, each fighter once). The other categories stay as they are.
+ */
+export function questFromAll(presets: ProfilePreset[]): ProfilePreset[] {
+    const old = presets.filter(p => p.category === 'quest');
+    if (!old.length) return presets;
+    const c = CATEGORIES.find(x => x.key === 'quest')!;
+    const score = (p: ProfilePreset) => p.metrics.quest.score ?? p.metrics.quest.index;
+    const ranked = [...presets].sort((x, y) => score(y) - score(x) || y.metrics.testedDps - x.metrics.testedDps
+        || (x.category === 'quest' ? -1 : 0) - (y.category === 'quest' ? -1 : 0));
+    const top: ProfilePreset[] = [];
+    const sig = (p: ProfilePreset) => p.fightKey ?? JSON.stringify({ ...p.profile, id: '', name: '' });
+    for (const p of ranked) {
+        if (top.length >= PRESETS_PER_CATEGORY) break;
+        if (!top.some(t => sig(t) === sig(p))) top.push(p);
+    }
+    const quest = top.map((p, i): ProfilePreset => {
+        const name = top.length > 1 ? `${c.name} #${i + 1}` : c.name;
+        const { lab: _lab, alternatives: _alt, fighterId: _id, ...rest } = p;
+        return { ...rest, key: `quest${i + 1}`, category: 'quest', rank: i + 1, name, goal: c.goal, weapons: 'any', description: old[0].description, profile: { ...p.profile, name } };
+    });
+    return [...presets.filter(p => p.category !== 'quest'), ...quest];
+}
+
 /** Everything the stages share, built the same way in every thread (deterministic from the configs). */
 export function presetContext(version: string, libs: LibraryData, cfg: ConfigFiles, opts: PresetOptions = {}) {
     const o = withDefaults(opts, libs, cfg);
@@ -777,7 +828,7 @@ export function presetContext(version: string, libs: LibraryData, cfg: ConfigFil
         const fairy = (p.misc.fairy?.name ?? null) as FairyName | null;
         const r = runSubstatOptimizer({
             base: p, current: p, reference: p, referenceName: '', objective, withSkills: true,
-            stats: space.stats, bodies: space.bodies, perfection: space.perfection, fairies: [fairy], fairyLevel: space.fairyLevel,
+            stats: statsFor(space, p.items.Weapon?.idx), bodies: space.bodies, perfection: space.perfection, fairies: [fairy], fairyLevel: space.fairyLevel,
             extra: null, pvpConfig: null, battlesPerSide: 0, keep: 1, startAllocs: [currentAlloc(p)], localOnly: true,
         }, libs);
         return buildWithAlloc(p, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, space.perfection);
@@ -988,7 +1039,10 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     // builds are the best ones with an attack animation, a fairy or pets no published build uses.
     // The active skills stay the categories' ones: in battles this short they barely change a result.
     if (pvpConfigFromJson(cfg.PvpBaseConfig)) {
-        const field = presets.filter(p => p.rank === 1).map(p => p.profile);
+        // The best build of every category, and the previous file's leaders: against the category
+        // builds alone the strongest candidates all win every battle and the climb cannot tell
+        // them apart.
+        const field = [...presets.filter(p => p.rank === 1).map(p => p.profile), ...o.previous];
         const arenaWith = (perSide: number, against: UserProfile[] = field): Score => batched(
             p => o.pool.arena(p, against, perSide),
             ps => o.pool.many(ps.map(p => ({ kind: 'arena', p, field: against, perSide }))));
@@ -996,7 +1050,7 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
         const withFairy = (p: UserProfile, fairy: FairyName | null) => {
             const r = runSubstatOptimizer({
                 base: p, current: p, reference: p, referenceName: '', objective: 'dps', withSkills: true,
-                stats: space.stats, bodies: space.bodies, perfection: space.perfection, fairies: [fairy], fairyLevel: space.fairyLevel,
+                stats: statsFor(space, p.items.Weapon?.idx), bodies: space.bodies, perfection: space.perfection, fairies: [fairy], fairyLevel: space.fairyLevel,
                 extra: null, pvpConfig: null, battlesPerSide: 0, keep: 1, startAllocs: [currentAlloc(p)],
             }, libs);
             return buildWithAlloc(p, r.best.alloc, r.best.fairy, space.fairyLevel, space.stats, space.bodies, space.perfection);
@@ -1005,7 +1059,8 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
         const labCandidates = [
             ...dpsMelee.variants, ...dpsRanged.variants, ...hpsMelee.variants, ...hpsRanged.variants,
             ...[dpsMelee.top[0], dpsRanged.top[0]].flatMap(p => space.fairies.map(f => withFairy(p, f))),
-            ...field.flatMap(p => multisets(space.petIds, p.pets.active.length).map(ids => withPets(p, ids))),
+            ...presets.filter(p => p.rank === 1).map(p => p.profile).flatMap(p => multisets(space.petIds, p.pets.active.length).map(ids => withPets(p, ids))),
+            ...o.previous,
         ];
         const labScores = arenaOf.many!(labCandidates);
         const firstRanked = labCandidates.map((p, i) => ({ profile: p, value: labScores[i] })).sort((x, y) => y.value - x.value);
@@ -1069,7 +1124,7 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
         // The ranking: every confirmed and found build against every published category build and
         // every round's winner, on the long run.
         const unique = (ps: UserProfile[]) => ps.filter((p, i) => ps.findIndex(q => buildSig(q) === buildSig(p)) === i);
-        const population = unique([...presets.map(p => p.profile), ...rivals.slice(field.length)]);
+        const population = unique([...presets.map(p => p.profile), ...o.previous, ...rivals.slice(field.length)]);
         const vsPopulation = arenaWith(LAB_CONFIRM_BATTLES, population);
         const ratesVs = (ps: UserProfile[], against: (i: number) => UserProfile[], perSide: number) =>
             o.pool.many(ps.map((p, i) => ({ kind: 'arena', p, field: against(i), perSide, winRate: true })));
@@ -1136,7 +1191,7 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     const bare = { dpsMelee: dpsMelee.bare, dpsRanged: dpsRanged.bare, hpsMelee: hpsMelee.bare, hpsRanged: hpsRanged.bare };
     const variants = Object.fromEntries(([['dpsMelee', dpsMelee], ['dpsRanged', dpsRanged], ['hpsMelee', hpsMelee], ['hpsRanged', hpsRanged]] as const)
         .map(([k, c]) => [k, c.variants.map(p => variantOf(p))]));
-    const file: ProfilePresetsFile = { version, categories: CATEGORIES, presets, bare, variants };
+    const file: ProfilePresetsFile = { version, categories: CATEGORIES, presets: questFromAll(presets), bare, variants };
 
     // The same builds without any skin (every weapon's own attack, no skin stats): what every
     // player can build. Their equivalents are the ones reachable without skins: weapons with the
