@@ -2,7 +2,7 @@
  * Raise it to show the update popup once more to everyone, even to those who already saw the
  * current game data's popup (the app changed, not the data).
  */
-export const RELEASE_NOTES_REVISION = '2026_11_03_fairies';
+export const RELEASE_NOTES_REVISION = '2026_11_03_fairies_attack';
 
 /**
  * What changed in the app itself (not the game data) alongside a game data version. The update
@@ -12,11 +12,7 @@ export const RELEASE_NOTES: Record<string, string[]> = {
     '2026_10_27_09_45': [
         'The new fairies are here: Mira (less damage taken from Critical Hits for your Skill Cooldown), Tira (Damage for your Health) and Lora (more Damage on every 5th attack), with their in-game values in the profile, the calculators, PvP and the Fairies wiki.',
         'Preset Builds now come with the new fairies, at 80, 85, 90, 95 and 100% substat rolls. Not every build can be calculated, there are far too many: these are the best found so far.',
-        'Now you can drag and hide the Buy Me a Coffee button under the header!',
-        'New Preset Builds page: the strongest builds the game allows for power, DPS and HPS (melee and ranged), the main quest and the arena, with their exact equivalents and an arena tournament. Calculate your best variants with only the skins you own, fight against every build with your profile to see where you rank, and add any build to your profiles as your own copy.',
-        'Shop predictor: the daily deals of today and the next days, the same for every player, and the next sets that come after buying all three. Every pack shows what a dollar buys in it and the best one for each resource, the Progress Pass included.',
-        'New Images Maker page: build a character with any items, skins, mount, pets and fairy, next to the clan emblem designer, and export it as a PNG or a looping GIF.',
-        'Graphic improvements: game icons across the whole app, exact skin icons, animated Max set effects, characters drawn as in battle, and late age item backgrounds drawn with the game\'s own shaders.',
+        'New Attack wiki page: the ranking of every weapon and skin windup, ranged and melee, at the attack speed and double chance you set.',
     ],
     '2026_10_08_09_03': [
         'New Achievements wiki with the game\'s own titles and rewards.',
