@@ -5,7 +5,7 @@ import { attackCycleTicks, doubleCycleTicks, doubleSecondStrikeSeconds, weaponHi
 import { cn } from '../../lib/utils';
 
 /** Attack speed bonus searched, in % (the Attack page's slider goes to the same). */
-const SPEED_MAX = 500;
+export const SPEED_MAX = 500;
 /** Breakpoints are given to 3 decimals: the smallest bonus, in steps of 0.001%, that reaches them. */
 const FINE = 1000;
 
@@ -14,7 +14,7 @@ const FINE = 1000;
  * steps of 1% finds the stretches where it drops, and only those are walked at 0.001%, so the
  * modal opens at once instead of evaluating half a million speeds.
  */
-function breakpoints(ticks: (mult: number) => number): { bonus: number; ticks: number }[] {
+export function breakpoints(ticks: (mult: number) => number): { bonus: number; ticks: number }[] {
     const at = (b: number) => ticks(1 + b / 100);
     const out = [{ bonus: 0, ticks: at(0) }];
     let best = out[0].ticks;
@@ -41,7 +41,7 @@ export interface BreakpointWeapon {
  * reached at `bonus` are marked, and the next one to aim for.
  */
 /** One slider of the modal: the same two the Attack page has, and they move the page's too. */
-function Slider({ label, value, max, onChange, suffix }: { label: string; value: number; max: number; onChange: (v: number) => void; suffix: string }) {
+export function Slider({ label, value, max, onChange, suffix }: { label: string; value: number; max: number; onChange: (v: number) => void; suffix: string }) {
     return (
         <label className="flex-1 min-w-[200px] space-y-1">
             <div className="flex justify-between text-xs">

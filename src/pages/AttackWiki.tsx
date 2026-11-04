@@ -11,6 +11,7 @@ import { AGES, attackCycleTicks, attackTimingTicks, doubleCycleSeconds, doubleSe
 import { maxSubstatTotal } from '../utils/substatBodies';
 import { setDisplayName } from '../utils/skinArchive';
 import { WeaponBreakpointsModal } from '../components/Wiki/WeaponBreakpointsModal';
+import { BestCombinationModal } from '../components/Wiki/BestCombinationModal';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getAgeIconStyle } from '../lib/utils';
 
 /**
@@ -176,6 +177,8 @@ export default function AttackWiki() {
     const dc = doublePct / 100;
     /** The weapon or skin whose breakpoints are open. */
     const [shownBreakpoints, setShownBreakpoints] = useState<Entry | null>(null);
+    /** The weapon or skin whose best attack speeds and double chances are open. */
+    const [shownBest, setShownBest] = useState<Entry | null>(null);
     const mult = 1 + bonus / 100;
 
     const speedCap = maxSubstatTotal(secondaryStatLibrary?.AttackSpeed, itemBalancingLibrary, petBaseConfig);
@@ -211,6 +214,8 @@ export default function AttackWiki() {
         const ws = [...new Set(shown.filter(e => e.ranged === ranged).map(e => e.windup))].sort((a, b) => a - b);
         return ws.length ? ws : null;
     };
+    /** The rows a weapon or skin is compared with in "Best at": the ranking's, of its kind. */
+    const bestRivals = useMemo(() => (shownBest ? shown.filter(e => e.ranged === shownBest.ranged) : []), [shown, shownBest]);
     const melee = useMemo(() => windupsOf(false), [shown]);
     const ranged = useMemo(() => windupsOf(true), [shown]);
     const ws = isRanged ? ranged : melee;
@@ -457,7 +462,11 @@ export default function AttackWiki() {
                                             <td className="p-2">{r.cycle.toFixed(1)} s</td>
                                             <td className="p-2">{r.hits.toFixed(3)}</td>
                                             <td className={cn('p-2', r.vsBest < -1e-9 ? 'text-red-300' : 'text-green-400')}>{r.vsBest < -1e-9 ? pct(r.vsBest) : 'best'}</td>
-                                            <td className="p-2 text-right">
+                                            <td className="p-2 text-right whitespace-nowrap space-x-1.5">
+                                                <button onClick={() => setShownBest(entries.find(e => e.key === r.key) ?? null)} title={`The attack speeds and double chances where ${r.name} has the most hits per second`}
+                                                    className="whitespace-nowrap font-sans font-bold text-[10px] uppercase px-2 py-1 rounded-lg border border-green-500/60 text-green-400 hover:bg-green-500/15">
+                                                    Best at
+                                                </button>
                                                 <button onClick={() => setShownBreakpoints(r)} title={`Every attack-speed breakpoint of ${r.name}, normal and double attack`}
                                                     className="whitespace-nowrap font-sans font-bold text-[10px] uppercase px-2 py-1 rounded-lg border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15">
                                                     Breakpoints
@@ -471,6 +480,19 @@ export default function AttackWiki() {
                     </Card>
                 );
             })()}
+            {shownBest && (
+                <BestCombinationModal
+                    target={shownBest}
+                    rivals={bestRivals}
+                    kind={shownBest.ranged ? 'Ranged' : 'Melee'}
+                    bonus={bonus}
+                    doublePct={doublePct}
+                    onBonus={setBonus}
+                    onDouble={setDoublePct}
+                    onClose={() => setShownBest(null)}
+                    icon={<Thumb e={shownBest} mapping={mapping} sprites={sprites} version={version} size={36} />}
+                />
+            )}
             {shownBreakpoints && (
                 <WeaponBreakpointsModal
                     weapon={{ name: shownBreakpoints.name, windup: shownBreakpoints.windup, duration: shownBreakpoints.duration, ranged: shownBreakpoints.ranged }}
