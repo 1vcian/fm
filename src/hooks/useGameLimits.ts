@@ -15,14 +15,15 @@ export function useGameLimits(): GameLimits | null {
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: guildPositionLibrary } = useGameData<any>('GuildTechTreePositionLibrary.json');
     const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
+    const { data: fairyUpgradesLibrary } = useGameData<any>('FairyUpgradesLibrary.json');
     return useMemo(() => {
         const cfg = {
             itemBalancingConfig, techTreePositionLibrary, techNodeValuesLibrary, petUpgradeLibrary,
             mountUpgradeLibrary, skillUpgradeLibrary, ascensionConfigsLibrary, forgeUpgradeLibrary,
-            secondaryStatLibrary, guildPositionLibrary, guildUpgradeLibrary,
+            secondaryStatLibrary, guildPositionLibrary, guildUpgradeLibrary, fairyUpgradesLibrary,
         };
         return limitsReady(cfg) ? buildGameLimits(cfg) : null;
     }, [itemBalancingConfig, techTreePositionLibrary, techNodeValuesLibrary, petUpgradeLibrary,
         mountUpgradeLibrary, skillUpgradeLibrary, ascensionConfigsLibrary, forgeUpgradeLibrary,
-        secondaryStatLibrary, guildPositionLibrary, guildUpgradeLibrary]);
+        secondaryStatLibrary, guildPositionLibrary, guildUpgradeLibrary, fairyUpgradesLibrary]);
 }

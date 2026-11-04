@@ -10,11 +10,9 @@ import type { ChangeRow } from '../../utils/ocr/autoSync';
 /** Lines shown before "and N more". */
 const SHOWN = 8;
 
-const TREE_NAMES: Record<string, string> = { Forge: 'Forge tree', Power: 'Power tree', SkillsPetTech: 'Skills & pets tree', Clan: 'Clan tree' };
 /** Parts of a profile the exchange rows do not cover, by what a player calls them. */
 const OTHER_PARTS: [string, (p: UserProfile) => unknown][] = [
     ['name', p => p.name],
-    ['fairy', p => p.misc?.fairy],
     ['dungeon levels', p => p.misc?.dungeonLevels],
     ['saved items', p => p.savedItems],
     ['pet collection and saved pets', p => [p.pets?.collection, p.pets?.savedBuilds]],
@@ -60,9 +58,8 @@ function lineOf(r: ChangeRow, local: UserProfile): string {
 /**
  * What differs between this browser's copy of a profile and the account's, in a few lines, so a
  * "Changed in both places" row can be decided by looking. The account copy is read once when the
- * row is shown. Gear, pets, mount, skills, forge and currencies are compared as the profile
- * exchange does (the same labels as an AutoSync review); trees by how many nodes differ; the rest
- * by name only.
+ * row is shown. Gear, pets, mount, skills, forge, currencies, trees and fairy are compared as the
+ * profile exchange does (the same labels as an AutoSync review); the rest by name only.
  */
 export function MergeChangePreview({ id }: { id: string }) {
     const { profiles } = useProfile();
@@ -88,13 +85,6 @@ export function MergeChangePreview({ id }: { id: string }) {
         const out: string[] = [];
         // "before" is this browser, "after" is the account.
         for (const r of exchangeRowsV1(profileToExchange(server), local, { autoItemMapping, localization })) out.push(lineOf(r, local));
-        for (const tree of Object.keys(TREE_NAMES) as (keyof UserProfile['techTree'])[]) {
-            const a = local.techTree?.[tree] ?? {}, b = server.techTree?.[tree] ?? {};
-            const ids = new Set([...Object.keys(a), ...Object.keys(b)]);
-            let n = 0;
-            for (const k of ids) if (Number((a as any)[k] ?? 0) !== Number((b as any)[k] ?? 0)) n++;
-            if (n) out.push(`${TREE_NAMES[tree]}: ${n} node${n === 1 ? '' : 's'} at a different level`);
-        }
         const other = OTHER_PARTS.filter(([, get]) => JSON.stringify(get(local) ?? null) !== JSON.stringify(get(server) ?? null)).map(([name]) => name);
         if (other.length) out.push(`Also different: ${other.join(', ')}`);
         return out;

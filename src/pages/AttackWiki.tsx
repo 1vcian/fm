@@ -474,7 +474,16 @@ export default function AttackWiki() {
             {shownBreakpoints && (
                 <WeaponBreakpointsModal
                     weapon={{ name: shownBreakpoints.name, windup: shownBreakpoints.windup, duration: shownBreakpoints.duration, ranged: shownBreakpoints.ranged }}
+                    other={(() => {
+                        // A skin's other attack row: the same skin idx on the other kind (-1000 melee, -1001 ranged).
+                        if (shownBreakpoints.age >= 0) return null;
+                        const o = entries.find(e => e.age < 0 && e.idx === shownBreakpoints.idx && e.ranged !== shownBreakpoints.ranged);
+                        return o ? { name: o.name, windup: o.windup, duration: o.duration, ranged: o.ranged } : null;
+                    })()}
                     bonus={bonus}
+                    onBonus={setBonus}
+                    doublePct={doublePct}
+                    onDouble={setDoublePct}
                     onClose={() => setShownBreakpoints(null)}
                     icon={<Thumb e={shownBreakpoints} mapping={mapping} sprites={sprites} version={version} size={36} />}
                 />

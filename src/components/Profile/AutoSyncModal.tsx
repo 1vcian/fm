@@ -72,7 +72,7 @@ const PRESET_SUBTITLE: Record<ForcedTemplate, string> = {
 
 const CATEGORY_LABEL: Record<ChangeRow['category'], string> = {
     item: 'Equipment', pet: 'Pets', mount: 'Mount', skill: 'Skills', currency: 'Resources', skinEquip: 'Skins',
-    clanTree: 'Clan Tree',
+    clanTree: 'Clan Tree', tree: 'Tech Trees', fairy: 'Fairy',
 };
 const CURRENCY_ICON: Record<string, string> = {
     Coins: 'Coin', Gems: 'GemSquare', Eggshells: 'Eggshell', 'Skill Tickets': 'SkillTicket', 'Clock Winders': 'MountKey',
@@ -769,12 +769,12 @@ export function AutoSyncModal({ onClose, preset, incoming }: { onClose: () => vo
                                                 <span className="px-1.5 py-0.5 rounded-full bg-bg-input text-[9px] font-bold text-text-muted">{list.length}</span>
                                             </div>
                                             <div className="p-2 space-y-2">
-                                            {list.map(r => (r.category === 'currency' || r.category === 'skill' || r.category === 'clanTree') ? (
+                                            {list.map(r => (r.category === 'currency' || r.category === 'skill' || r.category === 'clanTree' || r.category === 'tree' || r.category === 'fairy') ? (
                                                 <label key={r.id} className={cn('flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer flex-wrap', r.accepted ? 'border-accent-primary/40 bg-accent-primary/5' : 'border-border/50 bg-bg-secondary/30 opacity-70')}>
                                                     <input type="checkbox" checked={r.accepted} onChange={() => toggle(r.id)} className="w-4 h-4 accent-accent-primary" />
                                                     {r.category === 'currency'
                                                         ? <SpriteIcon name={CURRENCY_ICON[r.label] || 'Coin'} size={22} />
-                                                        : r.category === 'clanTree'
+                                                        : r.category === 'clanTree' || r.category === 'tree'
                                                             ? <GitBranch className="w-5 h-5 text-accent-primary shrink-0" />
                                                             : <GameAssetIcon asset={{ icon: 'Sparkle' }} size={20} className="shrink-0" />}
                                                     {/* NAME. Must never be squeezed out. On narrow viewports it claims the

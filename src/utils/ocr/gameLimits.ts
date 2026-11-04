@@ -31,6 +31,10 @@ export interface GameLimits {
     statMax: Map<string, number>;
     /** Per-node caps for a clan tree in a given state (globalId -> cap). */
     clanCaps(levels: Record<string | number, number>): Map<number, number>;
+    /** A player tree node's top level (its tier's StatValuePerLevel length), null for an unknown node. */
+    treeNodeMax(tree: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number): number | null;
+    /** The fairy's top level (last FairyUpgradesLibrary key), null until that library is given. */
+    fairyLevel: number | null;
 }
 
 export interface GameLimitConfigs {
@@ -45,6 +49,7 @@ export interface GameLimitConfigs {
     secondaryStatLibrary?: any;
     guildPositionLibrary?: any;
     guildUpgradeLibrary?: any;
+    fairyUpgradesLibrary?: any;
 }
 
 /** *LevelUp node type -> profile item slot. */
@@ -105,6 +110,13 @@ export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
         forgeLevel,
         statMax,
         clanCaps: levels => clanNodeCaps(cfg.guildPositionLibrary, cfg.guildUpgradeLibrary, levels).caps,
+        treeNodeMax: (tree, nodeId) => {
+            const node = (cfg.techTreePositionLibrary?.[tree]?.Nodes || []).find((n: any) => n?.Id === nodeId);
+            if (!node) return null;
+            const per = cfg.techNodeValuesLibrary?.[node.Type]?.Tiers?.[node.Tier ?? 0]?.StatValuePerLevel;
+            return Array.isArray(per) ? per.length : null;
+        },
+        fairyLevel: cfg.fairyUpgradesLibrary ? Math.max(1, ...keys(cfg.fairyUpgradesLibrary)) : null,
     };
 }
 
@@ -206,6 +218,8 @@ export function enforceGameLimits(rows: ChangeRow[], limits: GameLimits, profile
                     forgeLevel: [1, limits.forgeLevel],
                     skillAscensionLevel: [0, limits.ascension.skills],
                     forgeAscensionLevel: [0, limits.ascension.forge],
+                    petAscensionLevel: [0, limits.ascension.pets],
+                    mountAscensionLevel: [0, limits.ascension.mounts],
                 };
                 const b = bound[patch.miscKey];
                 if (b && !inRange(patch.value, b[0], b[1])) {
@@ -234,6 +248,26 @@ export function enforceGameLimits(rows: ChangeRow[], limits: GameLimits, profile
                 }
                 break;
             }
+        }
+
+        if (patch.t === 'treeLevels') {
+            // Node by node: an unknown node or a level past its top is left out, the rest stays.
+            const tp = patch;
+            const state = tp.tree === 'Clan' ? { ...(profile.techTree?.Clan || {}), ...tp.levels } as Record<number, number> : null;
+            const caps = state ? limits.clanCaps(state) : null;
+            const kept: Record<number, number> = {};
+            for (const [k, lv] of Object.entries(tp.levels)) {
+                const id = Number(k);
+                const cap = caps ? caps.get(id) ?? null : limits.treeNodeMax(tp.tree as 'Forge' | 'Power' | 'SkillsPetTech', id);
+                if (cap === null) warn(`${tp.tree} tree: node ${id} does not exist in this game version. It was left out.`);
+                else if (!inRange(lv, 0, cap)) warn(`${tp.tree} tree: node ${id} at Lv.${lv}, the node goes to ${cap}. It was left out.`);
+                else kept[id] = lv;
+            }
+            patch = { ...tp, levels: kept };
+        }
+        if (patch.t === 'fairy' && limits.fairyLevel !== null && !inRange(patch.level, 1, limits.fairyLevel)) {
+            warn(`Fairy Lv.${patch.level}, the game's fairies go from 1 to ${limits.fairyLevel}.`);
+            patch = { ...patch, level: Math.min(limits.fairyLevel, Math.max(1, Math.round(patch.level) || 1)) };
         }
 
         if (!warnings.length) return row;

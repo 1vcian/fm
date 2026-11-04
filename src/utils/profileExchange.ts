@@ -17,6 +17,7 @@
  */
 import type { ItemSlot, MountSlot, PetSlot, UserProfile } from '../types/Profile';
 import { AGES, MAX_ACTIVE_PETS } from './constants';
+import { FAIRIES } from './fairies';
 import { getItemName } from './itemAssets';
 import { substatSummary, skinSummary, type ChangeRow, type Patch } from './ocr/autoSync';
 import { enforceGameLimits, type GameLimits } from './ocr/gameLimits';
@@ -79,9 +80,27 @@ export interface ExchangeV1 {
     /** Skill levels by skill id ("Meat", "Arrows", ...). */
     skills?: Record<string, { level: number; ascension?: number }>;
     forge?: { level?: number; hammers?: number };
-    ascension?: { forge?: number; skills?: number };
+    /**
+     * Ascension stars of each whole category, as the game keeps them (AscensionConfigsLibrary: Forge,
+     * Pets, Mounts, Skills). These are what the stats use; every item, pet, mount or skill tile of a
+     * category shows the same stars.
+     */
+    ascension?: { forge?: number; pets?: number; mounts?: number; skills?: number };
     currencies?: { coins?: number; gems?: number; eggshells?: number; skillTickets?: number; clockWinders?: number; guildPotions?: number };
+    /**
+     * Node levels by tree. Forge, Power and SkillsPetTech: keyed by the node's `Id` in
+     * PlayerTechTreePositionLibrary[tree].Nodes. Clan: keyed by the node's position when the
+     * categories of GuildTechTreePositionLibrary are read in order and their Nodes lists joined
+     * (0 = the first node of the first category). A node left out keeps its level.
+     */
+    techTree?: Partial<Record<ExchangeTree, Record<string, number>>>;
+    /** The fairy in use (null = none) and its level. */
+    fairy?: { name: string | null; level: number };
 }
+
+export const EXCHANGE_TREES = ['Forge', 'Power', 'SkillsPetTech', 'Clan'] as const;
+export type ExchangeTree = typeof EXCHANGE_TREES[number];
+const TREE_LABEL: Record<ExchangeTree, string> = { Forge: 'Forge tree', Power: 'Power tree', SkillsPetTech: 'Skills & pets tree', Clan: 'Clan tree' };
 
 /** currencies key -> profile.misc key (the keys the calculators read). */
 const CURRENCY_MISC: Record<string, string> = {
@@ -150,6 +169,22 @@ export function validateV1(d: unknown): string[] {
         if (!isObj(sec) || !Object.values(sec).every(v => isNum(v) && v >= 0)) e.push(`${k} must hold numbers of 0 or more`);
     }
     if (isObj(d.currencies)) for (const k of Object.keys(d.currencies)) if (!CURRENCY_MISC[k]) e.push(`currencies.${k} is not known (${Object.keys(CURRENCY_MISC).join(', ')})`);
+    if (d.techTree !== undefined) {
+        if (!isObj(d.techTree)) e.push('techTree must be an object by tree');
+        else for (const [tree, nodes] of Object.entries(d.techTree)) {
+            if (!(EXCHANGE_TREES as readonly string[]).includes(tree)) { e.push(`techTree.${tree} is not a tree (${EXCHANGE_TREES.join(', ')})`); continue; }
+            if (!isObj(nodes)) { e.push(`techTree.${tree} must be an object of node -> level`); continue; }
+            for (const [id, lv] of Object.entries(nodes)) {
+                if (!/^\d+$/.test(id) || !isInt(lv) || (lv as number) < 0) { e.push(`techTree.${tree}: node "${id}" needs a whole-number id and a level of 0 or more`); break; }
+            }
+        }
+    }
+    if (d.fairy !== undefined) {
+        const names = FAIRIES.map(f => f.name) as string[];
+        if (!isObj(d.fairy) || (d.fairy.name !== null && !names.includes(d.fairy.name)) || !isInt(d.fairy.level)) {
+            e.push(`fairy needs name (${names.join(', ')} or null) and level (whole number)`);
+        }
+    }
     return e;
 }
 
@@ -282,6 +317,8 @@ export function exchangeRowsV1(d: ExchangeV1, profile: UserProfile, ctx: Exchang
     };
     misc('forgeLevel', 'Forge Level', d.forge?.level);
     misc('forgeAscensionLevel', 'Forge Ascension', d.ascension?.forge);
+    misc('petAscensionLevel', 'Pet Ascension', d.ascension?.pets);
+    misc('mountAscensionLevel', 'Mount Ascension', d.ascension?.mounts);
     misc('skillAscensionLevel', 'Skill Ascension', d.ascension?.skills);
     for (const [k, v] of Object.entries(d.currencies ?? {})) misc(CURRENCY_MISC[k], CURRENCY_LABEL[k], v);
     if (d.forge?.hammers !== undefined) {
@@ -291,7 +328,42 @@ export function exchangeRowsV1(d: ExchangeV1, profile: UserProfile, ctx: Exchang
         }
     }
 
-    return ctx.limits ? enforceGameLimits(rows, ctx.limits, profile) : rows;
+    for (const tree of EXCHANGE_TREES) {
+        const nodes = d.techTree?.[tree];
+        if (!nodes) continue;
+        const cur = (profile.techTree?.[tree] ?? {}) as Record<number, number>;
+        const levels: Record<number, number> = {};
+        for (const [id, lv] of Object.entries(nodes)) if (Number(cur[Number(id)] ?? 0) !== lv) levels[Number(id)] = lv;
+        const n = Object.keys(levels).length;
+        if (!n) continue;
+        const sum = (o: Record<number, number>) => Object.values(o).reduce((t, v) => t + (Number(v) || 0), 0);
+        const after = { ...cur, ...levels };
+        push({
+            category: 'tree', label: TREE_LABEL[tree], detail: `${n} node${n === 1 ? '' : 's'} change`,
+            action: 'update', before: `${sum(cur)} levels`, after: `${sum(after)} levels (${n} node${n === 1 ? '' : 's'})`,
+            patch: { t: 'treeLevels', tree, levels },
+        });
+    }
+    if (d.fairy) {
+        const cur = profile.misc.fairy;
+        if ((cur?.name ?? null) !== d.fairy.name || (cur?.level ?? 0) !== d.fairy.level) {
+            const txt = (f?: { name: string | null; level: number } | null) => (f?.name ? `${f.name} Lv.${f.level}` : 'none');
+            push({
+                category: 'fairy', label: 'Fairy', detail: `${txt(cur)} → ${txt(d.fairy)}`, action: 'update',
+                before: txt(cur), after: txt(d.fairy), patch: { t: 'fairy', name: d.fairy.name, level: d.fairy.level },
+            });
+        }
+    }
+
+    const checked = ctx.limits ? enforceGameLimits(rows, ctx.limits, profile) : rows;
+    // A tree row says what is left after the limits took out the nodes they refused.
+    return checked.map(r => {
+        if (r.patch.t !== 'treeLevels') return r;
+        const cur = (profile.techTree?.[r.patch.tree] ?? {}) as Record<number, number>;
+        const n = Object.keys(r.patch.levels).length;
+        const sum = Object.values({ ...cur, ...r.patch.levels }).reduce((t, v) => t + (Number(v) || 0), 0);
+        return { ...r, after: n ? `${sum} levels (${n} node${n === 1 ? '' : 's'})` : 'no change left', detail: `${n} node${n === 1 ? '' : 's'} change` };
+    });
 }
 
 /** The rows of any supported document, or why it cannot be read. */
@@ -337,7 +409,10 @@ export function profileToExchange(profile: UserProfile): ExchangeV1 {
         mount: profile.mount.active ? unit(profile.mount.active) : null,
         skills,
         forge: { level: m.forgeLevel, ...(num(m.forgeCalculator?.hammers) !== undefined ? { hammers: num(m.forgeCalculator?.hammers) } : {}) },
-        ascension: { forge: m.forgeAscensionLevel ?? 0, skills: m.skillAscensionLevel ?? 0 },
+        ascension: { forge: m.forgeAscensionLevel ?? 0, pets: m.petAscensionLevel ?? 0, mounts: m.mountAscensionLevel ?? 0, skills: m.skillAscensionLevel ?? 0 },
         currencies,
+        techTree: Object.fromEntries(EXCHANGE_TREES.map(t => [t, Object.fromEntries(
+            Object.entries(profile.techTree?.[t] ?? {}).filter(([, lv]) => Number(lv) > 0).map(([id, lv]) => [id, Number(lv)]))])),
+        fairy: { name: m.fairy?.name ?? null, level: m.fairy?.level ?? 0 },
     };
 }

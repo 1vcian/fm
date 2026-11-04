@@ -30,24 +30,29 @@ interface AscensionStarsProps {
     onChange: (newValue: number) => void;
     /** Which AscensionConfigsLibrary track sets the number of stars. */
     type: AscensionType;
+    /** A star count of its own instead of the track's (e.g. a skin's levels, SkinUpgradeLibrary). */
+    max?: number;
+    /** The caption above the stars (default "Ascension"). */
+    label?: string;
     className?: string;
     size?: 'xs' | 'sm' | 'md';
 }
 
-export function AscensionStars({ value, onChange, type, className, size = 'md' }: AscensionStarsProps) {
+export function AscensionStars({ value, onChange, type, max, label = 'Ascension', className, size = 'md' }: AscensionStarsProps) {
     const isXS = size === 'xs';
     const isSM = size === 'sm';
     const { selectedVersion } = useGameDataContext();
-    const maxLevel = useAscensionMax(type);
+    const trackMax = useAscensionMax(type);
+    const maxLevel = max ?? trackMax;
 
     return (
         <div className={cn("flex flex-col items-center", isXS ? "gap-0" : "gap-1", className)}>
-            {!isXS && (
+            {!isXS && label && (
                 <span className={cn(
                     "font-bold uppercase tracking-wider text-amber-500/80",
                     isSM ? "text-[9px]" : "text-[10px]"
                 )}>
-                    Ascension
+                    {label}
                 </span>
             )}
             <div className={cn("flex items-center", isXS || isSM ? "gap-0.5" : "gap-1")}>

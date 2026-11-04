@@ -258,31 +258,36 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </div>
 
                 {/* My Profile and the profile selector: both stay in reach above the scrolling list */}
-                <div className="px-4 py-3 border-b border-border bg-bg-secondary/20 relative z-30 space-y-2">
-                    <Link
-                        to="/"
-                        onClick={() => { setIsDropdownOpen(false); onClose?.(); }}
-                        className={cn(
-                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                            location.pathname === '/'
-                                ? "bg-gradient-to-r from-accent-primary/20 to-transparent text-accent-primary border border-accent-primary/20"
-                                : "text-text-secondary hover:text-text-primary hover:bg-white/5 border border-transparent"
-                        )}
-                    >
-                        <ProfileIcon iconIndex={profile.iconIndex} size={18} className="border-0" />
-                        <span className="flex-1">My Profile</span>
-                    </Link>
-
-                    <button
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-bg-input border border-border hover:border-accent-primary/40 transition-all select-none animate-pulse-subtle"
-                    >
-                        <div className="flex items-center gap-2 min-w-0">
+                <div className="px-4 py-3 border-b border-border bg-bg-secondary/20 relative z-30">
+                    {/* One row: the left part opens My Profile, the chevron opens the profile list. */}
+                    <div className={cn(
+                        "flex items-stretch rounded-xl border transition-all select-none overflow-hidden",
+                        location.pathname === '/'
+                            ? "border-accent-primary/40 bg-gradient-to-r from-accent-primary/20 to-bg-input"
+                            : "border-border bg-bg-input hover:border-accent-primary/40"
+                    )}>
+                        <Link
+                            to="/"
+                            onClick={() => { setIsDropdownOpen(false); onClose?.(); }}
+                            title="My Profile"
+                            className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 hover:bg-white/5"
+                        >
                             <ProfileIcon iconIndex={profile.iconIndex} size={28} className="border-0 shrink-0" />
-                            <span className="font-semibold text-sm text-left whitespace-nowrap overflow-hidden text-clip text-text-primary max-w-[130px]">{profile.name}</span>
-                        </div>
-                        <ChevronDown className={cn("w-4 h-4 text-text-muted transition-transform shrink-0", isDropdownOpen && "rotate-180")} />
-                    </button>
+                            <span className="min-w-0">
+                                <span className={cn("block text-[10px] font-bold uppercase leading-none", location.pathname === '/' ? "text-accent-primary" : "text-text-muted")}>My Profile</span>
+                                <span className="block font-semibold text-sm text-left whitespace-nowrap overflow-hidden text-clip text-text-primary max-w-[130px]">{profile.name}</span>
+                            </span>
+                        </Link>
+                        <button
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            title="Switch profile"
+                            aria-label="Switch profile"
+                            aria-expanded={isDropdownOpen}
+                            className="px-3 border-l border-border/60 hover:bg-white/5 flex items-center"
+                        >
+                            <ChevronDown className={cn("w-4 h-4 text-text-muted transition-transform shrink-0", isDropdownOpen && "rotate-180")} />
+                        </button>
+                    </div>
 
                     {isDropdownOpen && (
                         <div className="absolute top-full left-4 right-4 mt-1 bg-bg-primary border border-border rounded-xl shadow-2xl overflow-hidden z-50">

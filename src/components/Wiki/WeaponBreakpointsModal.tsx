@@ -1,7 +1,7 @@
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { attackCycleTicks, doubleCycleTicks, doubleSecondStrikeSeconds } from '../../utils/constants';
+import { attackCycleTicks, doubleCycleTicks, doubleSecondStrikeSeconds, weaponHitsPerSecond } from '../../utils/constants';
 import { cn } from '../../lib/utils';
 
 /** Attack speed bonus searched, in % (the Attack page's slider goes to the same). */
@@ -40,7 +40,29 @@ export interface BreakpointWeapon {
  * with the same Attack Duration) and the double attack, which depends on the windup. The rows
  * reached at `bonus` are marked, and the next one to aim for.
  */
-export function WeaponBreakpointsModal({ weapon, bonus, onClose, icon }: { weapon: BreakpointWeapon; bonus: number; onClose: () => void; icon?: ReactNode }) {
+/** One slider of the modal: the same two the Attack page has, and they move the page's too. */
+function Slider({ label, value, max, onChange, suffix }: { label: string; value: number; max: number; onChange: (v: number) => void; suffix: string }) {
+    return (
+        <label className="flex-1 min-w-[200px] space-y-1">
+            <div className="flex justify-between text-xs">
+                <span className="font-bold text-text-primary">{label}</span>
+                <span className="font-mono text-accent-primary">{suffix === '%' ? `+${value}%` : `${value}%`}</span>
+            </div>
+            <input type="range" min={0} max={max} value={value} onChange={e => onChange(Number(e.target.value))}
+                className="w-full h-2 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary" />
+        </label>
+    );
+}
+
+export function WeaponBreakpointsModal({ weapon: opened, other, bonus, onBonus, doublePct, onDouble, onClose, icon }: {
+    weapon: BreakpointWeapon;
+    /** A skin's other attack row (its melee one for a ranged row, or the reverse), when it has one: a toggle switches. */
+    other?: BreakpointWeapon | null;
+    bonus: number; onBonus: (v: number) => void; doublePct: number; onDouble: (v: number) => void;
+    onClose: () => void; icon?: ReactNode;
+}) {
+    const [useOther, setUseOther] = useState(false);
+    const weapon = useOther && other ? other : opened;
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
         window.addEventListener('keydown', onKey);
@@ -70,10 +92,33 @@ export function WeaponBreakpointsModal({ weapon, bonus, onClose, icon }: { weapo
                     <div className="flex-1 min-w-0">
                         <h2 className="font-black text-lg leading-tight">{weapon.name} breakpoints</h2>
                         <div className="text-[11px] text-text-muted">
-                            {weapon.ranged ? 'Ranged' : 'Melee'}, windup {weapon.windup.toFixed(3)} s, attack duration {weapon.duration.toFixed(3)} s. Marked at your +{bonus}% attack speed.
+                            {weapon.ranged ? 'Ranged' : 'Melee'}, windup {weapon.windup.toFixed(3)} s, attack duration {weapon.duration.toFixed(3)} s. Rows marked at the attack speed below.
                         </div>
                     </div>
+                    {other && (
+                        <div className="flex rounded-lg bg-bg-input p-1 gap-1 shrink-0" role="tablist" aria-label="Melee or ranged">
+                            {[opened, other].sort((x, y) => Number(x.ranged) - Number(y.ranged)).map(w => {
+                                const on = w === weapon;
+                                return (
+                                    <button key={w.ranged ? 'r' : 'm'} role="tab" aria-selected={on} onClick={() => setUseOther(w === other)}
+                                        className={cn('px-2.5 py-1 rounded-md text-[11px] font-bold', on ? 'bg-accent-primary text-black' : 'text-text-secondary hover:text-text-primary')}>
+                                        {w.ranged ? 'Ranged' : 'Melee'}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                     <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="px-4 py-3 border-b border-border space-y-2">
+                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                        <Slider label="Attack speed bonus" value={bonus} max={SPEED_MAX} onChange={onBonus} suffix="%" />
+                        <Slider label="Double chance" value={doublePct} max={100} onChange={onDouble} suffix="" />
+                    </div>
+                    <div className="text-[11px] text-text-secondary">
+                        At +{bonus}% and {doublePct}% double: <span className="font-mono font-bold text-text-primary">{weaponHitsPerSecond(1 + bonus / 100, weapon.windup, weapon.duration, doublePct / 100).toFixed(3)}</span> hits per second,
+                        a normal attack every <span className="font-mono">{(normal[nRow].ticks / 10).toFixed(1)} s</span>, a double sequence in <span className="font-mono">{(double[dRow].ticks / 10).toFixed(1)} s</span>.
+                    </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
                     <section className="space-y-2">

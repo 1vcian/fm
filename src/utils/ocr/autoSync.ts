@@ -41,7 +41,11 @@ export type Patch =
     | { t: 'skinEquip'; slot: string; skin: NonNullable<ItemSlot['skin']> }
     // clan tech tree node level: globalId is the FLATTENED GuildTechTreePositionLibrary index
     // (the profile.techTree.Clan key); max = library MaxLevel (clamps the editable level)
-    | { t: 'clanTree'; globalId: number; nodeType: string; level: number; max: number };
+    | { t: 'clanTree'; globalId: number; nodeType: string; level: number; max: number }
+    // A whole tree's node levels at once (profile.techTree[tree] keys: player trees by node Id,
+    // Clan by flattened globalId), from a profile link. Merged over the profile's own levels.
+    | { t: 'treeLevels'; tree: 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan'; levels: Record<number, number> }
+    | { t: 'fairy'; name: string | null; level: number };
 
 /** Detected fields kept on the row so the modal can render visuals + rebuild the patch on slot change. */
 export interface Detected {
@@ -56,7 +60,7 @@ export interface Detected {
 
 export interface ChangeRow {
     id: string;
-    category: 'item' | 'pet' | 'mount' | 'currency' | 'skill' | 'skinEquip' | 'clanTree';
+    category: 'item' | 'pet' | 'mount' | 'currency' | 'skill' | 'skinEquip' | 'clanTree' | 'tree' | 'fairy';
     label: string;
     detail: string;
     action: 'replace' | 'add' | 'update';
@@ -297,7 +301,7 @@ export function buildChanges(extractions: ScreenExtraction[], profile: UserProfi
         }
     }
     // sort: highest-confidence, items first
-    const order: Record<ChangeRow['category'], number> = { item: 0, skinEquip: 1, pet: 2, mount: 3, skill: 4, clanTree: 5, currency: 6 };
+    const order: Record<ChangeRow['category'], number> = { item: 0, skinEquip: 1, pet: 2, mount: 3, skill: 4, clanTree: 5, tree: 5, fairy: 6, currency: 7 };
     rows.sort((a, b) => order[a.category] - order[b.category] || b.confidence - a.confidence);
     return rows;
 }
@@ -828,7 +832,7 @@ export function buildChangesFromReads(
 
     // sort: items, skins, pets, mounts, skills, clan tree, currencies; highest-confidence first
     // within a group (clan-tree rows in tree order so the list mirrors the in-game layout)
-    const order = { item: 0, skinEquip: 1, pet: 2, mount: 3, skill: 4, clanTree: 5, currency: 6 };
+    const order = { item: 0, skinEquip: 1, pet: 2, mount: 3, skill: 4, clanTree: 5, tree: 5, fairy: 6, currency: 7 };
     rows.sort((a, b) => order[a.category] - order[b.category]
         || (a.category === 'clanTree' && b.category === 'clanTree' && a.patch.t === 'clanTree' && b.patch.t === 'clanTree'
             ? a.patch.globalId - b.patch.globalId
@@ -855,6 +859,8 @@ interface Resolved {
     equipped: UserProfile['skills']['equipped'];
     skillCollection: UserProfile['skills']['collection'];
     clanLevels: Record<number, number>;
+    /** Whole-tree levels from treeLevels patches, merged over the profile's. */
+    treeLevels: Partial<Record<'Forge' | 'Power' | 'SkillsPetTech' | 'Clan', Record<number, number>>>;
     touched: { items: boolean; pets: boolean; mount: boolean; misc: boolean; skills: boolean; tree: boolean };
     /** Which slots/identities the accepted rows produced, with the rows that produced them. */
     itemTargets: Map<string, { name?: string; rowIds: string[] }>;
@@ -880,6 +886,7 @@ function resolveChanges(profile: UserProfile, rows: ChangeRow[]): Resolved {
     let equipped = [...(profile.skills?.equipped || [])];
     const skillCollection = { ...(profile.skills?.collection || {}) };
     const clanLevels: Record<number, number> = {};
+    const treeLevels: Resolved['treeLevels'] = {};
     let touchedItems = false, touchedPets = false, touchedMount = false, touchedMisc = false, touchedSkills = false, touchedTree = false;
     const itemTargets = new Map<string, { name?: string; rowIds: string[] }>();
     const petTargets = new Map<string, { name?: string; rowIds: string[] }>();
@@ -936,6 +943,14 @@ function resolveChanges(profile: UserProfile, rows: ChangeRow[]): Resolved {
             clanLevels[p.globalId] = Math.max(0, Math.min(p.max || p.level, p.level));
             touchedTree = true;
         }
+        else if (p.t === 'treeLevels') {
+            treeLevels[p.tree] = { ...(treeLevels[p.tree] ?? {}), ...p.levels };
+            touchedTree = true;
+        }
+        else if (p.t === 'fairy') {
+            misc.fairy = { name: p.name, level: p.level };
+            touchedMisc = true;
+        }
         else if (p.t === 'skinEquip') {
             // Skins live ON the slot's item — apply only when the slot has one (an 'item' patch
             // accepted in the same run counts, since `items` is updated in row order above).
@@ -949,7 +964,7 @@ function resolveChanges(profile: UserProfile, rows: ChangeRow[]): Resolved {
     }
 
     return {
-        items, collection, activePets, mount, misc, passives, equipped, skillCollection, clanLevels,
+        items, collection, activePets, mount, misc, passives, equipped, skillCollection, clanLevels, treeLevels,
         touched: { items: touchedItems, pets: touchedPets, mount: touchedMount, misc: touchedMisc, skills: touchedSkills, tree: touchedTree },
         itemTargets, petTargets, mountTarget: mountTargets.get('mount') ?? null,
     };
@@ -1022,9 +1037,13 @@ export function applyChanges(
     if (touched.skills) out.skills = { ...profile.skills, passives: res.passives, equipped: res.equipped, collection: res.skillCollection };
     // clan tree levels: a NEW techTree object so ProfileContext.updateProfile stamps techTreeUpdatedAt
     if (touched.tree) {
+        const t = res.treeLevels;
         out.techTree = {
             ...profile.techTree,
-            Clan: { ...(profile.techTree?.Clan ?? {}), ...res.clanLevels },
+            Forge: { ...(profile.techTree?.Forge ?? {}), ...(t.Forge ?? {}) },
+            Power: { ...(profile.techTree?.Power ?? {}), ...(t.Power ?? {}) },
+            SkillsPetTech: { ...(profile.techTree?.SkillsPetTech ?? {}), ...(t.SkillsPetTech ?? {}) },
+            Clan: { ...(profile.techTree?.Clan ?? {}), ...(t.Clan ?? {}), ...res.clanLevels },
         };
     }
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AscensionStars } from '../UI/AscensionStars';
 import { createPortal } from 'react-dom';
 import { Bookmark, BookmarkCheck, Check, Plus, Trash2, X } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
@@ -398,16 +399,8 @@ function SkinEditorModal({ initial, initialType, skinsLibrary, skinUpgradeLibrar
                             <div className="space-y-1.5">
                                 <div className="text-[10px] font-bold text-text-muted uppercase">Level</div>
                                 <div className="flex flex-wrap items-center gap-1">
-                                    {Array.from({ length: maxLevel + 1 }, (_, lv) => (
-                                        <button
-                                            key={lv}
-                                            onClick={() => setLevel(lv)}
-                                            data-testid={`skin-editor-level-${lv}`}
-                                            className={cn('w-8 h-7 rounded text-[11px] font-bold border', level === lv ? 'border-accent-primary bg-accent-primary/20 text-accent-primary' : 'border-border text-text-secondary hover:bg-white/5')}
-                                        >
-                                            {lv}
-                                        </button>
-                                    ))}
+                                    {/* Stars, as the game draws a skin's level (and as the ascension pickers look). */}
+                                    <AscensionStars value={level} onChange={setLevel} type="Forge" max={maxLevel} label="" size="sm" />
                                     {xpArr && maxLevel > 0 && (
                                         <label className="flex items-center gap-1 text-[10px] text-text-muted ml-2">
                                             or total XP
