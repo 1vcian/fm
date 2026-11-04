@@ -33,6 +33,8 @@ export interface GameLimits {
     clanCaps(levels: Record<string | number, number>): Map<number, number>;
     /** A player tree node's top level (its tier's StatValuePerLevel length), null for an unknown node. */
     treeNodeMax(tree: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number): number | null;
+    /** The nodes a player tree node needs first (PlayerTechTreePositionLibrary Requirements), null for an unknown node. */
+    treeNodeRequirements(tree: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number): number[] | null;
     /** The fairy's top level (last FairyUpgradesLibrary key), null until that library is given. */
     fairyLevel: number | null;
 }
@@ -115,6 +117,10 @@ export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
             if (!node) return null;
             const per = cfg.techNodeValuesLibrary?.[node.Type]?.Tiers?.[node.Tier ?? 0]?.StatValuePerLevel;
             return Array.isArray(per) ? per.length : null;
+        },
+        treeNodeRequirements: (tree, nodeId) => {
+            const node = (cfg.techTreePositionLibrary?.[tree]?.Nodes || []).find((n: any) => n?.Id === nodeId);
+            return node ? (node.Requirements || []).map(Number) : null;
         },
         fairyLevel: cfg.fairyUpgradesLibrary ? Math.max(1, ...keys(cfg.fairyUpgradesLibrary)) : null,
     };
@@ -262,6 +268,30 @@ export function enforceGameLimits(rows: ChangeRow[], limits: GameLimits, profile
                 if (cap === null) warn(`${tp.tree} tree: node ${id} does not exist in this game version. It was left out.`);
                 else if (!inRange(lv, 0, cap)) warn(`${tp.tree} tree: node ${id} at Lv.${lv}, the node goes to ${cap}. It was left out.`);
                 else kept[id] = lv;
+            }
+            // A player tree node counts only when every node it requires is unlocked, all the way
+            // down (the stat engine's checkNodeValidity). One the tree could not have is left out.
+            if (tp.tree !== 'Clan') {
+                const tree = tp.tree;
+                const merged = { ...(profile.techTree?.[tree] || {}), ...kept } as Record<number, number>;
+                const memo = new Map<number, boolean>();
+                const open = (id: number, seen = new Set<number>()): boolean => {
+                    if (memo.has(id)) return memo.get(id)!;
+                    if (seen.has(id) || !(Number(merged[id]) > 0)) return false;
+                    seen.add(id);
+                    const ok = (limits.treeNodeRequirements(tree, id) ?? []).every(req => open(req, seen));
+                    seen.delete(id);
+                    memo.set(id, ok);
+                    return ok;
+                };
+                for (const k of Object.keys(kept)) {
+                    const id = Number(k);
+                    if (kept[id] > 0 && !open(id)) {
+                        const missing = (limits.treeNodeRequirements(tree, id) ?? []).filter(req => !open(req));
+                        warn(`${tree} tree: node ${id} needs node${missing.length === 1 ? '' : 's'} ${missing.join(', ')} unlocked first. It was left out.`);
+                        delete kept[id];
+                    }
+                }
             }
             patch = { ...tp, levels: kept };
         }
