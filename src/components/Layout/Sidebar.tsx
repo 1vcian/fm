@@ -167,7 +167,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {
             title: 'Profile',
             items: [
-                { name: 'My Profile', path: '/', isProfile: true },
                 { name: 'Preset Builds', path: '/presets', icon: NAV.presets },
                 { name: 'Clan', path: '/clan', icon: NAV.clan },
                 { name: 'Progress Prediction', path: '/progress-prediction', icon: NAV.progress },
@@ -260,8 +259,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </span>
                 </div>
 
-                {/* Profile Selector in Sidebar */}
-                <div className="px-4 py-3 border-b border-border bg-bg-secondary/20 relative z-30">
+                {/* My Profile and the profile selector: both stay in reach above the scrolling list */}
+                <div className="px-4 py-3 border-b border-border bg-bg-secondary/20 relative z-30 space-y-2">
+                    <Link
+                        to="/"
+                        onClick={() => { setIsDropdownOpen(false); onClose?.(); }}
+                        className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                            location.pathname === '/'
+                                ? "bg-gradient-to-r from-accent-primary/20 to-transparent text-accent-primary border border-accent-primary/20"
+                                : "text-text-secondary hover:text-text-primary hover:bg-white/5 border border-transparent"
+                        )}
+                    >
+                        <ProfileIcon iconIndex={profile.iconIndex} size={18} className="border-0" />
+                        <span className="flex-1">My Profile</span>
+                    </Link>
+
                     <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-bg-input border border-border hover:border-accent-primary/40 transition-all select-none animate-pulse-subtle"
@@ -309,10 +322,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                         if (profiles.length <= 1) return;
                                                         setToDelete({ id: p.id, name: p.name });
                                                     }}
-                                                    className="p-1 text-text-muted hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                                                    className="p-1.5 -m-0.5 rounded-md text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
                                                     title="Delete profile"
+                                                    aria-label={`Delete profile ${p.name}`}
                                                 >
-                                                    <Trash2 className="w-3 h-3" />
+                                                    <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
                                         </div>

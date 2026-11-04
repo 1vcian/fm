@@ -29,7 +29,7 @@ export interface ItemIdentity {
     age: number;    // 0..9
     idx: number;
     itemName: string;
-    localizationId?: number;
+    localizationId?: string; // text: the ids pass 2^53, a JS number would round them
 }
 
 /** Build normalizedName -> ItemIdentity from AutoItemMapping.json. */

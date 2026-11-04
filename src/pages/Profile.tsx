@@ -1,6 +1,6 @@
 import { useProfile } from '../context/ProfileContext';
 import { useComparison } from '../context/ComparisonContext';
-import { Download, Upload, Trash2, Copy, Clipboard, ScanSearch } from 'lucide-react';
+import { Download, Upload, Trash2, Copy, Clipboard, ScanSearch, Settings } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -15,7 +15,9 @@ import { SkinSetPanel } from '../components/Profile/SkinSetPanel';
 import { SkinArchivePanel } from '../components/Profile/SkinArchivePanel';
 import { AutoSyncModal } from '../components/Profile/AutoSyncModal';
 import { PvpModal } from '../components/Profile/PvpModal';
-import { AccountPanel } from '../components/Profile/AccountPanel';
+import { SettingsModal } from '../components/Profile/SettingsModal';
+import { useAuth } from '../context/AuthContext';
+import { cn } from '../lib/utils';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 import { SubstatStatusPanel } from '../components/Profile/SubstatStatusPanel';
 
@@ -40,6 +42,8 @@ export default function Profile() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const [showAutoSync, setShowAutoSync] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const auth = useAuth();
     const [showPvp, setShowPvp] = useState(false);
     const SHOW_PVP = false; // Simplified PvP hidden until the enemy-panel reader is ready
     const [jsonToImport, setJsonToImport] = useState('');
@@ -66,6 +70,21 @@ export default function Profile() {
             // cap left the rest of a wide screen empty.
             className="w-full space-y-6 animate-fade-in pb-12"
         >
+            {/* Settings: account, sync, clan sync, notifications, linked apps. None without a backend. */}
+            {auth.backendConfigured && (
+                <div className="flex justify-end -mb-3">
+                    <button onClick={() => setShowSettings(true)}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-bg-secondary/40 hover:bg-bg-input text-xs font-bold text-text-secondary hover:text-text-primary">
+                        <Settings className="w-4 h-4 text-accent-primary" />
+                        Settings
+                        <span className={cn('font-normal', auth.status === 'signed-in' ? 'text-green-400' : 'text-text-muted')}>
+                            {auth.status === 'signed-in' ? auth.email ?? 'signed in' : 'not signed in'}
+                        </span>
+                    </button>
+                </div>
+            )}
+            {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-border pb-6">
                 <ProfileHeaderPanel />
@@ -101,8 +120,6 @@ export default function Profile() {
 
             {/* Content */}
             <div className="space-y-6">
-                {/* Account + sync. Renders nothing when the build has no backend configured. */}
-                <AccountPanel />
 
                 {/* AutoSync. Read your profile from screenshots */}
                 <button

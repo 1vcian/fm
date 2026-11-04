@@ -3,6 +3,7 @@ import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fullscreenModalOpen, holdFullscreenModal, showDonationToast } from './donationToast';
+import { ProfileLinksInbox } from '../Profile/ProfileLinksInbox';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Coffee, ExternalLink, Github, Sparkles, X } from 'lucide-react';
@@ -296,6 +297,8 @@ export default function AppShell() {
             {/* Sidebar opens/closes only via the Header menu button (left). The old edge
                 hover-zone auto-opened whenever the cursor grazed the screen edge, which felt random. */}
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            {/* Updates other apps sent through profile links (signed in only). */}
+            <ProfileLinksInbox />
 
             {/* Main Content Area */}
             <div className={cn(

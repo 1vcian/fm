@@ -118,7 +118,16 @@ function ConfidenceChip({ c }: { c: number }) {
     return <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border', cls)}>{label}</span>;
 }
 
-export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset?: ForcedTemplate }) {
+/** Changes that came from elsewhere (an app through a profile link): the modal opens on them, nothing is scanned. */
+export interface IncomingChanges {
+    rows: ChangeRow[];
+    /** Who sent them, for the title: "Update from <source>". */
+    source: string;
+    onApplied: () => void;
+    onDismiss: () => void;
+}
+
+export function AutoSyncModal({ onClose, preset, incoming }: { onClose: () => void; preset?: ForcedTemplate; incoming?: IncomingChanges }) {
     const { profile, updateProfile } = useProfile();
     const { selectedVersion } = useGameDataContext();
     // Re-render once the exact skin icon rects arrive.
@@ -160,10 +169,10 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
 
     const [files, setFiles] = useState<File[]>([]);
     const [urls, setUrls] = useState<string[]>([]);
-    const [stage, setStage] = useState<Stage>('upload');
+    const [stage, setStage] = useState<Stage>(incoming ? 'diff' : 'upload');
     const [review, setReview] = useState<ReviewItem[]>([]);
     const [progress, setProgress] = useState<AutoSyncProgress | null>(null);
-    const [rows, setRows] = useState<ChangeRow[]>([]);
+    const [rows, setRows] = useState<ChangeRow[]>(incoming?.rows ?? []);
     const [error, setError] = useState<string | null>(null);
     // per screenshot: what the reader could not do and why (shown in the diff stage)
     const [fileNotes, setFileNotes] = useState<{ name: string; notes: string[] }[]>([]);
@@ -183,7 +192,11 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
     const scanRef = useRef<Record<string, { stars: number; skillAsc: number | null; after: string }>>({});
     const backdropDown = useRef(false); // pointer went down on the backdrop, not inside the panel
 
-    useEffect(() => { preloadOcr().catch(() => {}); return () => { terminateOcr().catch(() => {}); }; }, []);
+    useEffect(() => {
+        if (incoming) return;
+        preloadOcr().catch(() => {}); return () => { terminateOcr().catch(() => {}); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     useEffect(() => {
         const u = files.map(f => URL.createObjectURL(f));
         setUrls(u);
@@ -440,6 +453,7 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
         // Last gate: whatever was typed or toggled, nothing outside the game's bounds is written.
         const safeRows = limits ? enforceGameLimits(rows, limits, profile).map((r, k) => ({ ...r, accepted: rows[k].accepted })) : rows;
         updateProfile(applyChanges(profile, safeRows, { savePresets }));
+        incoming?.onApplied();
         setStage('done');
     };
     const grouped = useMemo(() => {
@@ -612,8 +626,8 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-accent-primary/20 flex items-center justify-center shrink-0"><ScanSearch className="w-5 h-5 text-accent-primary" /></div>
                         <div className="min-w-0">
-                            <h3 className="font-black text-white tracking-tight">AutoSync</h3>
-                            <p className="text-[11px] text-text-muted whitespace-nowrap overflow-hidden text-clip">{preset ? PRESET_SUBTITLE[preset] : 'Read your gear, pets, mount & resources from screenshots'}</p>
+                            <h3 className="font-black text-white tracking-tight">{incoming ? `Update from ${incoming.source}` : 'AutoSync'}</h3>
+                            <p className="text-[11px] text-text-muted whitespace-nowrap overflow-hidden text-clip">{incoming ? `For ${profile.name}: pick what to apply` : preset ? PRESET_SUBTITLE[preset] : 'Read your gear, pets, mount & resources from screenshots'}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-text-muted hover:text-white"><X className="w-5 h-5" /></button>
@@ -731,8 +745,13 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                             )}
                             {rows.length === 0 ? (
                                 <div className="py-10 text-center text-text-muted">
-                                    <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={32} className="mx-auto mb-2" />Nothing detected. Try clearer, full-screen captures of the item / pet / mount detail popups, and check the game language above.
-                                    <div className="mt-4"><button onClick={() => setStage('review')} className="px-4 py-2 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold">Back to review</button></div>
+                                    <GameAssetIcon asset={{ icon: 'CheckIcon' }} size={32} className="mx-auto mb-2" />
+                                    {incoming ? 'Nothing to change: the profile already matches this update.' : 'Nothing detected. Try clearer, full-screen captures of the item / pet / mount detail popups, and check the game language above.'}
+                                    <div className="mt-4">
+                                        {incoming
+                                            ? <button onClick={() => { incoming.onDismiss(); onClose(); }} className="px-4 py-2 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold">Close</button>
+                                            : <button onClick={() => setStage('review')} className="px-4 py-2 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold">Back to review</button>}
+                                    </div>
                                 </div>
                             ) : (
                                 <>
@@ -954,7 +973,9 @@ export function AutoSyncModal({ onClose, preset }: { onClose: () => void; preset
                             </p>
                         )}
                         <div className="flex gap-2">
-                            <button onClick={() => setStage('upload')} className="px-4 py-2.5 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Add more</button>
+                            {incoming
+                                ? <button onClick={() => { incoming.onDismiss(); onClose(); }} className="px-4 py-2.5 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold">Dismiss</button>
+                                : <button onClick={() => setStage('upload')} className="px-4 py-2.5 rounded-xl bg-bg-input text-text-secondary hover:text-white text-sm font-bold flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Add more</button>}
                             <button onClick={apply} disabled={!acceptedCount || hasPetConflict} className="flex-1 py-2.5 rounded-xl font-bold bg-accent-primary text-white disabled:opacity-40 hover:brightness-110 flex items-center justify-center gap-2"><Check className="w-4 h-4" /> Apply {acceptedCount} change{acceptedCount === 1 ? '' : 's'}</button>
                         </div>
                     </div>
