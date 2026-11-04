@@ -39,7 +39,7 @@ self.onmessage = async (e: MessageEvent<ChallengeRequest>) => {
         const libs = presetLibsFrom(version, cfg);
         const fighter = alloc ? maxedFromProfile(profile, alloc, libs, cfg, site.perfection ?? 100) : profile;
         const result = runChallenge({ name, profile: fighter }, site, libs, arena, (done, total) => post({ type: 'progress', done, total }));
-        post({ type: 'done', result });
+        post({ type: 'done', result: { ...result, fighter } });
     } catch (err) {
         post({ type: 'error', message: err instanceof Error ? err.message : String(err) });
     }

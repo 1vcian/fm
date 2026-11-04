@@ -6,6 +6,7 @@ import { formatVersion } from '../lib/formatVersion';
 import { FileJson, FolderOpen, RefreshCw, Copy, Download, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { makeZip, saveBlob } from '../utils/zip';
 
 export default function Configs() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +29,8 @@ export default function Configs() {
     const [matchIndex, setMatchIndex] = useState(0);
     const [totalMatches, setTotalMatches] = useState(0);
     const [showOnlyChanges, setShowOnlyChanges] = useState(false);
+    /** Files fetched so far while zipping a version (null when no zip is being made). */
+    const [zipping, setZipping] = useState<{ done: number; total: number } | null>(null);
 
     // Initial fetch of versions and manifest
     useEffect(() => {
@@ -449,6 +452,32 @@ export default function Configs() {
         }
     };
 
+    /** Every config file of a version, zipped in a folder named after it, then downloaded. */
+    const downloadVersionZip = async (v: string) => {
+        const names = configManifest[v] ?? [];
+        if (!names.length || zipping) return;
+        setZipping({ done: 0, total: names.length });
+        try {
+            const files: { path: string; data: string }[] = [];
+            for (const name of names) {
+                // The file as published, not the viewer's re-serialised copy: that one turns 0.0 into 0
+                // and would round integers past 2^53.
+                const text = await fetch(`${import.meta.env.BASE_URL}parsed_configs/${v}/${name}`).then(res => {
+                    if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
+                    return res.text();
+                });
+                files.push({ path: `${v}/${name}`, data: text });
+                setZipping({ done: files.length, total: names.length });
+            }
+            saveBlob(await makeZip(files), `fm-configs-${v}.zip`);
+        } catch (err) {
+            console.error('Zip download failed', err);
+            alert(`Could not make the zip: ${(err as Error).message}`);
+        } finally {
+            setZipping(null);
+        }
+    };
+
     const handleDownload = () => {
         const file = selectedFile;
         if (!file) return;
@@ -574,6 +603,17 @@ export default function Configs() {
                                             </option>
                                         ))}
                                     </select>
+                                    <button
+                                        onClick={() => downloadVersionZip(selectedVersion)}
+                                        disabled={!selectedVersion || !configManifest[selectedVersion]?.length || !!zipping}
+                                        title={`Every config file of ${formatVersion(selectedVersion)} in one .zip`}
+                                        className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-text-primary hover:bg-bg-input disabled:opacity-50"
+                                    >
+                                        <Download className="w-3.5 h-3.5" />
+                                        {zipping
+                                            ? `Zipping ${zipping.done}/${zipping.total}`
+                                            : `Download all (${configManifest[selectedVersion]?.length ?? 0} files, .zip)`}
+                                    </button>
                                 </div>
                             )}
                         </div>

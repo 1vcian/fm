@@ -19,6 +19,7 @@ import { BuildPortrait } from '../components/Presets/BuildPortrait';
 import { applyAnimation, type AnimationSwap } from '../presets/equivalents';
 import { runFightAgainst, runMyVariants } from '../presets/myVariants';
 import { filterAnimations } from '../presets/filterAnimations';
+import { BuildDuel, type DuelEntry } from '../components/Presets/BuildDuel';
 import { listBuilds, otherSkinRows, type BuildTag, type BuildTagKind, type OtherSkinRow } from '../presets/presetList';
 import { CHALLENGER_KEY, type ChallengeResult } from '../presets/challenge';
 import type { UserProfile } from '../types/Profile';
@@ -1155,7 +1156,11 @@ function SubstatSliders({ alloc, onChange, statIds, perStatCap, slots }: {
  * sides (src/presets/challenge.ts), and lands where that round robin puts it. As it is, or with
  * everything it has maxed (maxedFromProfile) and the substats of the sliders at the top roll.
  */
-function FightAgainst({ version, perfection, profile, total, battlesPerSide, byKey }: { version: string; perfection: number; profile: UserProfile; total: number; battlesPerSide: number; byKey: Map<string, ProfilePreset> }) {
+function FightAgainst({ version, perfection, profile, total, battlesPerSide, byKey, onBattles }: {
+    version: string; perfection: number; profile: UserProfile; total: number; battlesPerSide: number; byKey: Map<string, ProfilePreset>;
+    /** Opens the duel on one pairing: the profile as it fought (maxed when asked) against that build. */
+    onBattles?: (opponentKey: string, fighter: UserProfile, maxed: boolean) => void;
+}) {
     const { data: mapping } = useGameData<any>('AutoItemMapping.json');
     const [run, setRun] = useState<{ cancel: () => void; done: number } | null>(null);
     const [result, setResult] = useState<{ name: string; maxed: Record<string, number> | null; r: ChallengeResult } | null>(null);
@@ -1214,11 +1219,9 @@ function FightAgainst({ version, perfection, profile, total, battlesPerSide, byK
     const field = r ? r.standings.length : total + 1;
     const place = r ? sharedRanks(r.standings)[r.standings.findIndex(s => s.key === CHALLENGER_KEY)] : null;
     return (
-        <section className="rounded-2xl border border-red-500/30 bg-gradient-to-b from-red-500/10 to-transparent p-4 space-y-3">
+        <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-                <GameAssetIcon asset={{ icon: 'Battle' }} size={28} />
                 <div className="flex-1 min-w-[220px]">
-                    <div className="font-black text-lg leading-tight">Fight against the preset builds</div>
                     <div className="text-xs text-text-secondary">
                         Your active profile ({profile.name || 'unnamed'}) enters the tournament {maxed ? 'assuming everything you have maxed, with the substats below' : 'as it is'}: the same game PvP rules, {2 * battlesPerSide} battles against each of the {total} builds, on the same seeds and sides. See if it makes the ranking.
                     </div>
@@ -1279,6 +1282,10 @@ function FightAgainst({ version, perfection, profile, total, battlesPerSide, byK
                                         <span className="flex-1">vs {byKey.get(m.key)?.name ?? m.name}{byKey.get(m.key) && <span className="text-text-muted">, {attackLabel(byKey.get(m.key), mapping)}</span>}</span>
                                         <span className="font-mono text-text-muted">{m.wins}-{m.draws}-{m.losses}</span>
                                         <span className={cn('font-mono font-bold w-14 text-right', m.winRate > 0.5 ? 'text-green-400' : m.winRate < 0.5 ? 'text-red-400' : '')}>{pct(m.winRate)}</span>
+                                        {onBattles && r.fighter && byKey.get(m.key) && (
+                                            <button onClick={() => onBattles(m.key, r.fighter!, !!result.maxed)} title="See these battles one by one and watch them"
+                                                className="shrink-0 text-[10px] font-black uppercase px-2 py-1 rounded-lg border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15">Battles</button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -1291,6 +1298,43 @@ function FightAgainst({ version, perfection, profile, total, battlesPerSide, byK
                 <a href={AUTHOR_DISCORD} target="_blank" rel="noopener noreferrer" className="font-bold text-indigo-300 hover:underline">Discord</a>
                 {' '}or by <a href="mailto:medrihanlucian@gmail.com" className="font-bold text-accent-primary hover:underline">email</a> and I will add it.
             </div>}
+        </div>
+    );
+}
+
+/**
+ * Fight against the preset builds and Duel two builds, as two tabs of one box. Both stay mounted, so
+ * switching keeps each one's results; "Battles" on a Fight against pairing opens that pairing in the
+ * duel, with the profile exactly as it fought (maxed, when that was asked).
+ */
+function BattleTabs({ duelEntries, fight }: {
+    duelEntries: DuelEntry[];
+    fight: ((onBattles: (key: string, fighter: UserProfile, maxed: boolean) => void) => React.ReactNode) | null;
+}) {
+    const [tab, setTab] = useState<'fight' | 'duel'>(fight ? 'fight' : 'duel');
+    const [fought, setFought] = useState<DuelEntry | null>(null);
+    const [request, setRequest] = useState<{ a: string; b: string; id: number } | null>(null);
+    const onBattles = (key: string, fighter: UserProfile, maxed: boolean) => {
+        setFought({ key: 'fought', name: `${fighter.name || 'You'}${maxed ? ', maxed' : ''} (as in Fight against)`, group: 'Your profile', profile: fighter });
+        setRequest({ a: 'fought', b: key, id: Date.now() });
+        setTab('duel');
+    };
+    const tabs = [...(fight ? [['fight', 'Fight against all'] as const] : []), ['duel', 'Duel two builds'] as const];
+    return (
+        <section className="rounded-2xl border border-red-500/30 bg-gradient-to-b from-red-500/10 to-transparent p-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+                <GameAssetIcon asset={{ icon: 'Battle' }} size={28} />
+                <div className="flex rounded-xl border border-border overflow-hidden text-xs font-bold" role="tablist">
+                    {tabs.map(([k, label]) => (
+                        <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+                            className={cn('px-3 py-2', tab === k ? 'bg-red-600 text-white' : 'text-text-secondary hover:bg-bg-input')}>{label}</button>
+                    ))}
+                </div>
+            </div>
+            {fight && <div className={cn(tab !== 'fight' && 'hidden')}>{fight(onBattles)}</div>}
+            <div className={cn(tab !== 'duel' && 'hidden')}>
+                <BuildDuel presets={duelEntries} extra={fought ? [fought] : []} request={request} />
+            </div>
         </section>
     );
 }
@@ -1481,6 +1525,21 @@ export default function PresetBuilds() {
         return new Map(presets.map(p => [p.key, calculateStats(p.profile, libs)]));
     }, [presets, libs, ready]);
     const byKey = useMemo(() => new Map(presets.map(p => [p.key, p])), [presets]);
+    // The duel's preset side: every build of the tournament once, in its order.
+    const duelEntries = useMemo<DuelEntry[]>(() => (tournament?.standings ?? []).flatMap((st, i) => {
+        const p = byKey.get(st.key);
+        if (!p) return [];
+        // Its other attack skins, from the pairings played ahead (the skins turned off are left out).
+        const keys = new Set([st.key, ...(st.same ?? [])]);
+        const others = otherRows.filter(o => o.baseKey && keys.has(o.baseKey)).map(o => {
+            const look = { ...p, animation: o.variant.animation, equivalents: o.variant.equivalents, profile: o.variant.profile } as ProfilePreset;
+            return { key: `${o.variant.animation.source}:${o.variant.animation.setId ?? o.variant.animation.weaponIdx}`, name: attackLabel(look, mapping), profile: o.variant.profile };
+        });
+        return [{
+            key: st.key, name: p.name, rank: i + 1, group: 'Preset builds', profile: p.profile,
+            variants: [{ key: 'published', name: `${attackLabel(p, mapping)} (published)`, profile: p.profile }, ...others],
+        }];
+    }), [tournament, byKey, otherRows, mapping]);
     const noRunnersUp: ProfilePreset[] = [];
     // Shared places (ties within the noise), and builds that are the same fighter take their twin's.
     const rankOf = useMemo(() => {
@@ -1611,8 +1670,11 @@ export default function PresetBuilds() {
                 <Podium standings={tournament.standings} byKey={byKey} battlesPerSide={tournament.battlesPerSide} others={otherRows} owned={ownedWeaponSets}
                     skins={siteFile?.noSkins && !mySkins ? { f2p, set: setF2p } : undefined} />
             )}
-            {file === siteFile && valid && version && file!.tournament && (
-                <FightAgainst version={version} perfection={perfection} profile={profile} total={file!.tournament.standings.length} battlesPerSide={file!.tournament.battlesPerSide} byKey={byKey} />
+            {valid && ready && version && duelEntries.length > 0 && (
+                <BattleTabs key={`${version}-${perfection}-${f2p}-${mySkins}`} duelEntries={duelEntries}
+                    fight={file === siteFile && file!.tournament ? (onBattles => (
+                        <FightAgainst version={version} perfection={perfection} profile={profile} total={file!.tournament!.standings.length} battlesPerSide={file!.tournament!.battlesPerSide} byKey={byKey} onBattles={onBattles} />
+                    )) : null} />
             )}
 
             {valid && ready && (

@@ -189,7 +189,7 @@ export class PvpVisualEngine {
     private readonly p1Name: string;
     private readonly p2Name: string;
 
-    constructor(p1: PvpFighter, p2: PvpFighter, cfg: PvpHpConfig, seed: number, private readonly p1Stats: unknown) {
+    constructor(p1: PvpFighter, p2: PvpFighter, cfg: PvpHpConfig, seed: bigint | number, private readonly p1Stats: unknown) {
         this.battle = new PvpBattle(p1, p2, cfg, seed, true);
         this.p1Name = p1.name || 'P1';
         this.p2Name = p2.name || 'P2';

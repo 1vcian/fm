@@ -53,7 +53,8 @@ interface BattleVisualizerModalProps {
      * Arena mode: Player 2 takes the enemies' place, with the arena rules (shared HP
      * multiplier, timer, HP % decides a timeout). Everything else is the same visualizer.
      */
-    pvp?: { p1: PvpFighter; p2: PvpFighter; cfg: PvpHpConfig; seed: number };
+    /** `battleSeed`, when given, is the battle's own seed (e.g. runSeed(k) to replay battle k of a batch); `seed` still varies the scenery. */
+    pvp?: { p1: PvpFighter; p2: PvpFighter; cfg: PvpHpConfig; seed: number; battleSeed?: bigint };
     /** "Test against dummy": one infinite-HP dummy that keeps the player at a quarter of HpMax. */
     testDummy?: boolean;
 }
@@ -142,7 +143,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
         setBattleLogs([]);
 
         if (pvp) {
-            const pvpEngine = new PvpVisualEngine(pvp.p1, pvp.p2, pvp.cfg, pvp.seed, playerStats);
+            const pvpEngine = new PvpVisualEngine(pvp.p1, pvp.p2, pvp.cfg, pvp.battleSeed ?? pvp.seed, playerStats);
             lastTickRef.current = NaN;
             setEngine(pvpEngine);
             setEngineGen(g => g + 1);

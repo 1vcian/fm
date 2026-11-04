@@ -32,6 +32,8 @@ export interface ChallengeResult {
     standings: TournamentStanding[];
     /** The player's place (1 is first). */
     rank: number;
+    /** The profile that fought: the player's as it is, or maxed (challengeWorker) when asked. */
+    fighter?: import('../types/Profile').UserProfile;
 }
 
 export function runChallenge(

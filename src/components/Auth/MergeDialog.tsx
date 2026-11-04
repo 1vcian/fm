@@ -27,6 +27,7 @@ import { ArrowDownToLine, ArrowUpFromLine, Copy, Loader2, MinusCircle, Trash2, X
 import { Button } from '../UI/Button';
 import { cn } from '../../lib/utils';
 import type { MergeChoice, MergeRow } from '../../services/useProfileSync';
+import { MergeChangePreview } from './MergeChangePreview';
 
 interface MergeDialogProps {
     rows: MergeRow[];
@@ -175,6 +176,8 @@ export function MergeDialog({ rows, busy, firstLogin, onChoose, onApply, onClose
                                         </div>
                                     )}
                                 </div>
+
+                                {(row.kind === 'diverged' || row.kind === 'unknown-base') && <MergeChangePreview id={row.id} />}
 
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     {row.choices.map(choice => {
