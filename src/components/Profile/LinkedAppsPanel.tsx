@@ -10,6 +10,10 @@ import { cn } from '../../lib/utils';
 
 /** The first app that links profiles; the field starts with its name. */
 const DEFAULT_LABEL = 'Forge Master Companion by Bobski';
+/** Apps that can link a profile today, shown so players know where to get one. */
+export const LINKABLE_APPS = [
+    { name: 'Forge Master Companion by Bobski', store: 'Google Play', url: 'https://play.google.com/store/apps/details?id=com.bobski.forgemastercompanion' },
+];
 
 /** Where an app's developer finds the format and the calls (public/profile-exchange/). */
 const SPEC_URL = `${import.meta.env.BASE_URL}profile-exchange/v1.md`;
@@ -124,6 +128,7 @@ export function LinkedAppsPanel({ defaultOpen = false }: { defaultOpen?: boolean
 
                     <div className="rounded-xl border border-dashed border-border p-3 space-y-2">
                         <div className="font-bold text-text-primary">Link an app</div>
+                        <AppsThatLink />
                         <input value={label} onChange={e => setLabel(e.target.value.slice(0, 40))} placeholder={DEFAULT_LABEL}
                             className="w-full px-3 py-2 rounded-lg bg-bg-input border border-border text-text-primary" />
                         <div className="flex flex-wrap gap-4 text-text-secondary">
@@ -147,6 +152,17 @@ export function LinkedAppsPanel({ defaultOpen = false }: { defaultOpen?: boolean
                 onConfirm={() => { if (toRevoke) revoke(toRevoke); setToRevoke(null); }}
                 onCancel={() => setToRevoke(null)}
             />
+        </div>
+    );
+}
+
+/** Where to get an app that can link: one line per app, with its store link. */
+export function AppsThatLink() {
+    return (
+        <div className="text-[11px] text-text-secondary">
+            Apps that can link: {LINKABLE_APPS.map((a, i) => (
+                <span key={a.url}>{i > 0 && ', '}<a href={a.url} target="_blank" rel="noreferrer" className="font-bold text-accent-primary hover:underline">{a.name}</a> ({a.store})</span>
+            ))}.
         </div>
     );
 }

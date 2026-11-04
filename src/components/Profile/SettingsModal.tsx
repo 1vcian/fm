@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Settings, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { AccountPanel } from './AccountPanel';
-import { LinkedAppsPanel } from './LinkedAppsPanel';
+import { AppsThatLink, LinkedAppsPanel } from './LinkedAppsPanel';
 import { linkedAppsEnabled } from '../../services/profileLinks';
 
 /**
@@ -31,7 +31,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                     <AccountPanel />
                     {!linkedAppsEnabled() ? null : auth.status === 'signed-in'
                         ? <LinkedAppsPanel defaultOpen />
-                        : <div className="rounded-2xl border border-border bg-bg-secondary/30 px-4 py-3 text-xs text-text-secondary"><span className="font-bold text-text-primary">Linked apps.</span> Sign in to let another app read this profile or send it updates.</div>}
+                        : <div className="rounded-2xl border border-border bg-bg-secondary/30 px-4 py-3 text-xs text-text-secondary"><span className="font-bold text-text-primary">Linked apps.</span> Sign in to let another app read this profile or send it updates.<div className="mt-1"><AppsThatLink /></div></div>}
                 </div>
             </div>
         </div>,
