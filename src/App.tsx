@@ -44,12 +44,11 @@ import Gallery from './pages/Gallery';
 import FairiesWiki from './pages/FairiesWiki';
 import AttackWiki from './pages/AttackWiki';
 import AchievementsWiki from './pages/AchievementsWiki';
-import Settings from './pages/Settings';
 import SecondaryStatsWiki from './pages/SecondaryStatsWiki';
 import MissionsWiki from './pages/MissionsWiki';
 import MissionSolo from './pages/MissionSolo';
 
-/** Developer pages (Configs, Verify) exist only with ?debug=true; anyone else lands on the profile. */
+/** Developer pages (Verify) exist only with ?debug=true; anyone else lands on the profile. */
 function DebugOnly({ children }: { children: ReactNode }) {
     const { isDebug } = useGameDataContext();
     return isDebug ? <>{children}</> : <Navigate to="/" replace />;
@@ -117,7 +116,6 @@ function App() {
                                     <Route path="wiki/missions" element={<MissionsWiki />} />
                                     <Route path="skins" element={<SkinsPage />} />
                                     <Route path="gallery" element={<Gallery />} />
-                                    <Route path="settings" element={<Settings />} />
                                     <Route path="*" element={<Navigate to="/" replace />} />
                                 </Route>
                             </Routes>

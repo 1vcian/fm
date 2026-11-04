@@ -113,7 +113,6 @@ const NAV = {
     attack: gameIcon({ icon: 'IconMedievalWeaponBow' }),
     achievements: gameIcon({ icon: 'PotionsRace' }),
     faq: gameIcon({ icon: 'RoleInfoIcon' }),
-    settings: gameIcon({ icon: 'SettingsIcon' }),
     configs: gameIcon({ icon: 'Savegame' }),
     verify: gameIcon({ icon: 'CheckIcon' }),
 };
@@ -220,7 +219,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             items: [
                 { name: 'Gallery', path: '/gallery', icon: Image, theme: 'interstellar' },
                 { name: 'FAQ', path: '/faq', icon: NAV.faq, theme: 'quantum' },
-                { name: 'Settings', path: '/settings', icon: NAV.settings },
                 { name: 'Configs', path: '/configs', icon: NAV.configs, theme: 'multiverse' },
                 // Verify is a developer page: listed (and routed) only with ?debug=true.
                 { name: 'Verify', path: '/verify', icon: NAV.verify, debugOnly: true },

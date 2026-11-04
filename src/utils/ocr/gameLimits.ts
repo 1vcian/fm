@@ -7,7 +7,7 @@
  *   item level          ItemBalancingConfig.ItemBaseMaxLevel + 1, plus every *LevelUp node of the
  *                       player tech trees at its last level (the most any player can unlock)
  *   pet / mount level   PetUpgradeLibrary / MountUpgradeLibrary[rarity].LevelInfo.length
- *   skill level         highest key of SkillUpgradeLibrary
+ *   skill level         highest key of SkillUpgradeLibrary + 1 (keyed by the level an upgrade starts from)
  *   ascension stars     AscensionConfigsLibrary[Forge|Pets|Mounts|Skills].AscensionConfigPerLevel.length
  *   forge level         highest Level of ForgeUpgradeLibrary
  *   substat %           SecondaryStatLibrary.UpperRange * 100 (one roll)
@@ -85,7 +85,10 @@ export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
     };
     const keys = (lib: any) => Object.keys(lib || {}).map(Number).filter(Number.isFinite);
     // Only built once limitsReady() saw every library, so these are read straight from the config.
-    const skillLevel = Math.max(0, ...keys(cfg.skillUpgradeLibrary));
+    // SkillUpgradeLibrary is keyed by the level an upgrade starts FROM ({"Level": 1, "Shards": 2} takes
+    // Lv.1 to Lv.2), so its last key (99) leaves one level above it: the top is 100, the length of
+    // SkillLibrary's DamagePerLevel / HealthPerLevel tables.
+    const skillLevel = Math.max(0, ...keys(cfg.skillUpgradeLibrary)) + 1;
     const forgeLevel = Math.max(0, ...Object.values<any>(cfg.forgeUpgradeLibrary || {}).map(v => Number(v?.Level) || 0));
     const asc = (k: string) => cfg.ascensionConfigsLibrary?.[k]?.AscensionConfigPerLevel?.length ?? 0;
     const statMax = new Map<string, number>();

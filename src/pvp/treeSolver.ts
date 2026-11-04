@@ -141,7 +141,8 @@ export function solveTrees(base: UserProfile, targets: SolveTargets, s: SolverLi
     const hpLadder = buildLadder(HEALTH_TYPES, s);
     const equippedIds = new Set((base.skills?.equipped ?? []).map(sk => sk.id));
     const otherSkills = Object.keys(s.skillLibrary || {}).filter(id => !equippedIds.has(id));
-    const maxSkillLevel = 99;
+    // The top skill level: the length of SkillLibrary's per-level tables (100 in 2026_10_27_09_45).
+    const maxSkillLevel = Math.max(1, ...Object.values<any>(s.skillLibrary || {}).map(d => Math.max(d?.DamagePerLevel?.length || 0, d?.HealthPerLevel?.length || 0)));
     let evaluations = 0;
 
     const build = (a: number, b: number, otherLevel: number): UserProfile => {
