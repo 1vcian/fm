@@ -1,0 +1,18 @@
+{
+  "format": "fm-profile",
+  "current": 1,
+  "supported": [1],
+  "docs": {
+    "1": "https://1vcian.me/fm/profile-exchange/v1.md"
+  },
+  "api": {
+    "base": "https://cwnrucmlxzxzoamyjbhq.supabase.co/rest/v1/rpc/",
+    "read": "profile_link_read",
+    "push": "profile_link_push"
+  },
+  "configs": {
+    "versions": "https://1vcian.me/fm/parsed_configs/versions.json",
+    "perVersion": "https://1vcian.me/fm/parsed_configs/<version>/<File>.json",
+    "global": "https://1vcian.me/fm/parsed_configs/<File>.json"
+  }
+}
