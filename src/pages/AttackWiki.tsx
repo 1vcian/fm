@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card } from '../components/UI/Card';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 import { useGameData } from '../hooks/useGameData';
@@ -10,6 +10,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import { AGES, attackCycleTicks, attackTimingTicks, doubleCycleSeconds, doubleSecondStrikeSeconds, weaponHitsPerSecond } from '../utils/constants';
 import { maxSubstatTotal } from '../utils/substatBodies';
 import { setDisplayName } from '../utils/skinArchive';
+import { WeaponBreakpointsModal } from '../components/Wiki/WeaponBreakpointsModal';
 import { cn, getAgeBgStyle, getAgeBorderStyle, getAgeIconStyle } from '../lib/utils';
 
 /**
@@ -173,6 +174,8 @@ export default function AttackWiki() {
     const toggleSource = (src: string) => setShownSources(cur => (cur.includes(src) ? cur.filter(x => x !== src) : [...cur, src]));
     const kindName = isRanged ? 'Ranged' : 'Melee';
     const dc = doublePct / 100;
+    /** The weapon or skin whose breakpoints are open. */
+    const [shownBreakpoints, setShownBreakpoints] = useState<Entry | null>(null);
     const mult = 1 + bonus / 100;
 
     const speedCap = maxSubstatTotal(secondaryStatLibrary?.AttackSpeed, itemBalancingLibrary, petBaseConfig);
@@ -434,7 +437,7 @@ export default function AttackWiki() {
                                 <thead><tr className="text-text-muted text-[10px] uppercase border-b border-white/5">
                                     <th className="p-2 text-left">#</th><th className="p-2 text-left">Weapon / skin</th><th className="p-2 text-left">Windup</th>
                                     <th className="p-2 text-left">First hit</th><th className="p-2 text-left">2nd hit after</th><th className="p-2 text-left">Double attack</th>
-                                    <th className="p-2 text-left">Hits / s</th><th className="p-2 text-left">vs best</th>
+                                    <th className="p-2 text-left">Hits / s</th><th className="p-2 text-left">vs best</th><th className="p-2" />
                                 </tr></thead>
                                 <tbody className="divide-y divide-white/5 font-mono">
                                     {rows.map(r => (
@@ -454,6 +457,12 @@ export default function AttackWiki() {
                                             <td className="p-2">{r.cycle.toFixed(1)} s</td>
                                             <td className="p-2">{r.hits.toFixed(3)}</td>
                                             <td className={cn('p-2', r.vsBest < -1e-9 ? 'text-red-300' : 'text-green-400')}>{r.vsBest < -1e-9 ? pct(r.vsBest) : 'best'}</td>
+                                            <td className="p-2 text-right">
+                                                <button onClick={() => setShownBreakpoints(r)} title={`Every attack-speed breakpoint of ${r.name}, normal and double attack`}
+                                                    className="whitespace-nowrap font-sans font-bold text-[10px] uppercase px-2 py-1 rounded-lg border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15">
+                                                    Breakpoints
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -462,6 +471,14 @@ export default function AttackWiki() {
                     </Card>
                 );
             })()}
+            {shownBreakpoints && (
+                <WeaponBreakpointsModal
+                    weapon={{ name: shownBreakpoints.name, windup: shownBreakpoints.windup, duration: shownBreakpoints.duration, ranged: shownBreakpoints.ranged }}
+                    bonus={bonus}
+                    onClose={() => setShownBreakpoints(null)}
+                    icon={<Thumb e={shownBreakpoints} mapping={mapping} sprites={sprites} version={version} size={36} />}
+                />
+            )}
         </div>
     );
 }

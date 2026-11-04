@@ -9,7 +9,7 @@ import { ConfirmModal } from '../UI/ConfirmModal';
 import { cn } from '../../lib/utils';
 
 /** The first app that links profiles; the field starts with its name. */
-const DEFAULT_LABEL = 'Forge Master Companion by Bobosky';
+const DEFAULT_LABEL = 'Forge Master Companion by Bobski';
 
 /** Where an app's developer finds the format and the calls (public/profile-exchange/). */
 const SPEC_URL = `${import.meta.env.BASE_URL}profile-exchange/v1.md`;
