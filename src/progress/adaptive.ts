@@ -44,3 +44,14 @@ export function measureAdaptive(batch: (from: number, to: number) => { wins: num
     }
     return { winRate: wins / runs, runs, lossProgress: runs > wins ? lost / (runs - wins) : null, decided };
 }
+
+/**
+ * The same measurement at fixed seeds 1..runs. Two builds measured this way face the same dice, so
+ * the difference between them is the build, which adaptive runs (a different count per build) can't give.
+ */
+export function measureFixed(batch: (from: number, to: number) => { wins: number; lostProgress: number } | null, runs: number): LevelOutcome | null {
+    const r = batch(1, runs);
+    if (!r) return null;
+    const [lo, hi] = wilson(r.wins, runs);
+    return { winRate: r.wins / runs, runs, lossProgress: runs > r.wins ? r.lostProgress / (runs - r.wins) : null, decided: lo >= 0.5 || hi < 0.5 };
+}
