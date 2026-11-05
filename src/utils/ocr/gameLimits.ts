@@ -35,6 +35,11 @@ export interface GameLimits {
     treeNodeMax(tree: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number): number | null;
     /** The nodes a player tree node needs first (PlayerTechTreePositionLibrary Requirements), null for an unknown node. */
     treeNodeRequirements(tree: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number): number[] | null;
+    /**
+     * A player tree's nodes by node type, lowest tier first, each with its tier's StatValuePerLevel
+     * (values[level - 1] is what the node gives at that level).
+     */
+    treeTypeNodes(tree: 'Forge' | 'Power' | 'SkillsPetTech'): Map<string, { id: number; values: number[] }[]>;
     /** The fairy's top level (last FairyUpgradesLibrary key), null until that library is given. */
     fairyLevel: number | null;
 }
@@ -121,6 +126,18 @@ export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
         treeNodeRequirements: (tree, nodeId) => {
             const node = (cfg.techTreePositionLibrary?.[tree]?.Nodes || []).find((n: any) => n?.Id === nodeId);
             return node ? (node.Requirements || []).map(Number) : null;
+        },
+        treeTypeNodes: tree => {
+            const out = new Map<string, { id: number; tier: number; values: number[] }[]>();
+            for (const node of cfg.techTreePositionLibrary?.[tree]?.Nodes || []) {
+                const per = cfg.techNodeValuesLibrary?.[node?.Type]?.Tiers?.[node.Tier ?? 0]?.StatValuePerLevel;
+                if (!Array.isArray(per)) continue;
+                const list = out.get(node.Type) ?? [];
+                list.push({ id: Number(node.Id), tier: node.Tier ?? 0, values: per.map(Number) });
+                out.set(node.Type, list);
+            }
+            for (const list of out.values()) list.sort((a, b) => a.tier - b.tier || a.id - b.id);
+            return out;
         },
         fairyLevel: cfg.fairyUpgradesLibrary ? Math.max(1, ...keys(cfg.fairyUpgradesLibrary)) : null,
     };

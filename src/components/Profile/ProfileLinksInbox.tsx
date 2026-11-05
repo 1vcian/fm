@@ -85,8 +85,9 @@ export function ProfileLinksInbox() {
     }, [signedIn, activeProfileId]);
     const lastExport = useRef('');
     useEffect(() => {
-        if (!readable || profile.isShared || profile.preset) return;
-        const data = profileToExchange(profile);
+        // Wait for the configs so the export carries the trees' totals.
+        if (!readable || !limits || profile.isShared || profile.preset) return;
+        const data = profileToExchange(profile, limits);
         const json = JSON.stringify(data);
         if (json === lastExport.current) return;
         const t = setTimeout(async () => {
@@ -94,7 +95,7 @@ export function ProfileLinksInbox() {
             if (r.ok) lastExport.current = json;
         }, EXPORT_DEBOUNCE_MS);
         return () => clearTimeout(t);
-    }, [readable, profile]);
+    }, [readable, profile, limits]);
 
     const review = pending.find(p => p.id === reviewing) ?? null;
     const reviewRows = useMemo(() => (review && review.profile_id === activeProfileId ? exchangeRows(review.format_version, review.payload, profile, ctx) : null),

@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { ChevronDown, Copy, KeyRound, RefreshCw, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
+import { useGameLimits } from '../../hooks/useGameLimits';
 import { EXCHANGE_CURRENT, profileToExchange } from '../../utils/profileExchange';
 import { createLink, listLinks, revokeLink, rotateLink, setAutoApply, setExport, type ProfileLink } from '../../services/profileLinks';
 import { ConfirmModal } from '../UI/ConfirmModal';
@@ -26,6 +27,7 @@ const SPEC_URL = `${import.meta.env.BASE_URL}profile-exchange/v1.md`;
 export function LinkedAppsPanel({ defaultOpen = false }: { defaultOpen?: boolean }) {
     const auth = useAuth();
     const { profile } = useProfile();
+    const limits = useGameLimits();
     const [open, setOpen] = useState(defaultOpen);
     const [links, setLinks] = useState<ProfileLink[] | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export function LinkedAppsPanel({ defaultOpen = false }: { defaultOpen?: boolean
 
     if (auth.status !== 'signed-in' || profile.isShared || profile.preset) return null;
 
-    const pushExport = () => setExport(profile.id, EXCHANGE_CURRENT, profileToExchange(profile));
+    const pushExport = () => setExport(profile.id, EXCHANGE_CURRENT, profileToExchange(profile, limits));
     const create = async () => {
         setWorking(true);
         const r = await createLink(profile.id, label.trim(), canRead, canWrite);

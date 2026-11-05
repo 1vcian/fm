@@ -94,12 +94,23 @@ export interface ExchangeV1 {
      * (0 = the first node of the first category). A node left out keeps its level.
      */
     techTree?: Partial<Record<ExchangeTree, Record<string, number>>>;
+    /**
+     * For apps that know a player tree's totals but not its node levels: by tree (Forge, Power,
+     * SkillsPetTech) and node type (PlayerTechTreePositionLibrary Nodes[].Type), the sum over that
+     * type's nodes of StatValuePerLevel[level - 1] (PlayerTechTreeNodeValuesLibrary, same unit:
+     * 0.24 for +24%). The site moves the profile's node levels as little as gives that total: new
+     * levels on the lowest tier with room, levels taken off the highest. A type whose nodes are
+     * also in `techTree` follows `techTree`; a type left out keeps its levels.
+     */
+    techTreeTotals?: Partial<Record<ExchangePlayerTree, Record<string, number>>>;
     /** The fairy in use (null = none) and its level. */
     fairy?: { name: string | null; level: number };
 }
 
 export const EXCHANGE_TREES = ['Forge', 'Power', 'SkillsPetTech', 'Clan'] as const;
 export type ExchangeTree = typeof EXCHANGE_TREES[number];
+export type ExchangePlayerTree = Exclude<ExchangeTree, 'Clan'>;
+const PLAYER_TREES: ExchangePlayerTree[] = ['Forge', 'Power', 'SkillsPetTech'];
 const TREE_LABEL: Record<ExchangeTree, string> = { Forge: 'Forge tree', Power: 'Power tree', SkillsPetTech: 'Skills & pets tree', Clan: 'Clan tree' };
 
 /** currencies key -> profile.misc key (the keys the calculators read). */
@@ -177,6 +188,13 @@ export function validateV1(d: unknown): string[] {
             for (const [id, lv] of Object.entries(nodes)) {
                 if (!/^\d+$/.test(id) || !isInt(lv) || (lv as number) < 0) { e.push(`techTree.${tree}: node "${id}" needs a whole-number id and a level of 0 or more`); break; }
             }
+        }
+    }
+    if (d.techTreeTotals !== undefined) {
+        if (!isObj(d.techTreeTotals)) e.push('techTreeTotals must be an object by tree');
+        else for (const [tree, totals] of Object.entries(d.techTreeTotals)) {
+            if (!(PLAYER_TREES as string[]).includes(tree)) { e.push(`techTreeTotals.${tree} is not a player tree (${PLAYER_TREES.join(', ')})`); continue; }
+            if (!isObj(totals) || !Object.values(totals).every(v => isNum(v) && v >= 0)) e.push(`techTreeTotals.${tree} must be an object of node type -> total of 0 or more`);
         }
     }
     if (d.fairy !== undefined) {
@@ -330,19 +348,40 @@ export function exchangeRowsV1(d: ExchangeV1, profile: UserProfile, ctx: Exchang
 
     for (const tree of EXCHANGE_TREES) {
         const nodes = d.techTree?.[tree];
-        if (!nodes) continue;
+        const totals = tree !== 'Clan' ? d.techTreeTotals?.[tree] : undefined;
+        if (!nodes && !totals) continue;
         const cur = (profile.techTree?.[tree] ?? {}) as Record<number, number>;
+        const wanted: Record<number, number> = {};
+        const notes: string[] = [];
+        // Totals need the tree's layout and values: until the configs load they wait (the rows
+        // are worked out again then, and auto apply waits for the configs).
+        if (totals && tree !== 'Clan' && ctx.limits) {
+            const byType = ctx.limits.treeTypeNodes(tree);
+            const named = new Set(Object.keys(nodes ?? {}).map(Number));
+            const moved = new Set<string>();
+            for (const [type, total] of Object.entries(totals)) {
+                const typeNodes = byType.get(type);
+                if (!typeNodes) { notes.push(`${TREE_LABEL[tree]}: ${type} is not a node of this tree in this game version. It was left out.`); continue; }
+                if (typeNodes.some(x => named.has(x.id))) continue;
+                const lv = levelsForTotal(typeNodes, cur, total);
+                if (lv) { Object.assign(wanted, lv); moved.add(type); }
+                else notes.push(`${TREE_LABEL[tree]}: no levels of the ${type} nodes add up to ${total}. It was left out.`);
+            }
+            openRequirements(tree, ctx.limits, { ...cur, ...wanted, ...(nodes ?? {}) }, wanted, moved);
+        }
+        for (const [id, lv] of Object.entries(nodes ?? {})) wanted[Number(id)] = lv;
         const levels: Record<number, number> = {};
-        for (const [id, lv] of Object.entries(nodes)) if (Number(cur[Number(id)] ?? 0) !== lv) levels[Number(id)] = lv;
+        for (const [id, lv] of Object.entries(wanted)) if (Number(cur[Number(id)] ?? 0) !== lv) levels[Number(id)] = lv;
         const n = Object.keys(levels).length;
-        if (!n) continue;
+        if (!n && !notes.length) continue;
         const sum = (o: Record<number, number>) => Object.values(o).reduce((t, v) => t + (Number(v) || 0), 0);
         const after = { ...cur, ...levels };
         push({
             category: 'tree', label: TREE_LABEL[tree], detail: `${n} node${n === 1 ? '' : 's'} change`,
-            action: 'update', before: `${sum(cur)} levels`, after: `${sum(after)} levels (${n} node${n === 1 ? '' : 's'})`,
+            action: 'update', before: `${sum(cur)} levels`, after: n ? `${sum(after)} levels (${n} node${n === 1 ? '' : 's'})` : 'no change left',
             patch: { t: 'treeLevels', tree, levels },
         });
+        if (notes.length) Object.assign(rows[rows.length - 1], { accepted: false, warnings: notes });
     }
     if (d.fairy) {
         const cur = profile.misc.fairy;
@@ -366,6 +405,70 @@ export function exchangeRowsV1(d: ExchangeV1, profile: UserProfile, ctx: Exchang
     });
 }
 
+/** What one node gives at a level (values[level - 1], 0 at level 0). */
+const nodeValue = (values: number[], level: number) => (level > 0 ? Number(values[Math.min(level, values.length) - 1]) || 0 : 0);
+const TOTAL_EPS = 1e-6;
+
+/**
+ * Levels for one node type's nodes (lowest tier first) that add up to `target`, starting from the
+ * profile's levels and moving as few as it can: levels go on the lowest tier with room and come off
+ * the highest. null when no levels give the total.
+ */
+function levelsForTotal(nodes: { id: number; values: number[] }[], cur: Record<number, number>, target: number): Record<number, number> | null {
+    const lv: Record<number, number> = {};
+    for (const x of nodes) lv[x.id] = Math.max(0, Math.min(Number(cur[x.id] ?? 0) || 0, x.values.length));
+    let total = nodes.reduce((t, x) => t + nodeValue(x.values, lv[x.id]), 0);
+    if (total < target - TOTAL_EPS) {
+        for (const x of nodes) {
+            while (lv[x.id] < x.values.length) {
+                const next = total - nodeValue(x.values, lv[x.id]) + nodeValue(x.values, lv[x.id] + 1);
+                if (next > target + TOTAL_EPS) break;
+                total = next; lv[x.id]++;
+            }
+        }
+    } else if (total > target + TOTAL_EPS) {
+        for (const x of [...nodes].reverse()) {
+            while (lv[x.id] > 0) {
+                const next = total - nodeValue(x.values, lv[x.id]) + nodeValue(x.values, lv[x.id] - 1);
+                if (next < target - TOTAL_EPS) break;
+                total = next; lv[x.id]--;
+            }
+        }
+    }
+    return Math.abs(total - target) <= TOTAL_EPS ? lv : null;
+}
+
+/**
+ * Totals filled lowest tier first can leave a node above 0 whose required node is still at 0
+ * (a tier 1 node needs the tier 1 node before it). Each such required node of a type the totals
+ * set gets one level moved from that type's highest node at 2 or more, when the move keeps the
+ * total. What still cannot open is left to the game limits, which leave it out with a warning.
+ */
+function openRequirements(tree: ExchangePlayerTree, limits: GameLimits, state: Record<number, number>, wanted: Record<number, number>, moved: Set<string>) {
+    const typeOf = new Map<number, { type: string; values: number[] }>();
+    const byType = limits.treeTypeNodes(tree);
+    for (const [type, list] of byType) for (const x of list) typeOf.set(x.id, { type, values: x.values });
+    const ids = [...typeOf.keys()].sort((a, b) => a - b);
+    for (let pass = 0, changed = true; changed && pass < ids.length; pass++) {
+        changed = false;
+        for (const id of ids) {
+            if (!(Number(state[id]) > 0)) continue;
+            for (const req of limits.treeNodeRequirements(tree, id) ?? []) {
+                const r = typeOf.get(req);
+                if (!r || Number(state[req]) > 0 || !moved.has(r.type)) continue;
+                const donor = [...byType.get(r.type)!].reverse().find(x => x.id !== req && Number(state[x.id]) >= 2);
+                if (!donor) continue;
+                const dl = Number(state[donor.id]);
+                const delta = nodeValue(donor.values, dl) - nodeValue(donor.values, dl - 1);
+                if (Math.abs(delta - nodeValue(r.values, 1)) > TOTAL_EPS) continue;
+                state[donor.id] = wanted[donor.id] = dl - 1;
+                state[req] = wanted[req] = 1;
+                changed = true;
+            }
+        }
+    }
+}
+
 /** The rows of any supported document, or why it cannot be read. */
 export function exchangeRows(version: number, data: unknown, profile: UserProfile, ctx: ExchangeContext = {}): { rows: ChangeRow[]; errors: string[] } {
     if (version !== 1) return { rows: [], errors: [`format version ${version} is newer than this site reads (${EXCHANGE_VERSIONS.join(', ')}): reload the site`] };
@@ -374,8 +477,11 @@ export function exchangeRows(version: number, data: unknown, profile: UserProfil
     return { rows: exchangeRowsV1(data as ExchangeV1, profile, ctx), errors: [] };
 }
 
-/** The profile in the current exchange format, for the apps that read it (profile_export_set). */
-export function profileToExchange(profile: UserProfile): ExchangeV1 {
+/**
+ * The profile in the current exchange format, for the apps that read it (profile_export_set).
+ * With the game limits it also carries the player trees' totals (techTreeTotals).
+ */
+export function profileToExchange(profile: UserProfile, limits?: GameLimits | null): ExchangeV1 {
     const subs = (s?: { statId: string; value: number }[]) => (s ?? []).map(x => ({ stat: x.statId, value: x.value }));
     const unit = (u: PetSlot | MountSlot): ExchangeUnitV1 => ({
         rarity: u.rarity as ExchangeUnitV1['rarity'], id: u.id, level: u.level, ascension: u.ascensionLevel ?? 0, substats: subs(u.secondaryStats),
@@ -413,6 +519,15 @@ export function profileToExchange(profile: UserProfile): ExchangeV1 {
         currencies,
         techTree: Object.fromEntries(EXCHANGE_TREES.map(t => [t, Object.fromEntries(
             Object.entries(profile.techTree?.[t] ?? {}).filter(([, lv]) => Number(lv) > 0).map(([id, lv]) => [id, Number(lv)]))])),
+        ...(limits ? { techTreeTotals: Object.fromEntries(PLAYER_TREES.map(t => {
+            const levels = (profile.techTree?.[t] ?? {}) as Record<number, number>;
+            const totals: Record<string, number> = {};
+            for (const [type, nodes] of limits.treeTypeNodes(t)) {
+                const total = nodes.reduce((sum, x) => sum + nodeValue(x.values, Number(levels[x.id] ?? 0) || 0), 0);
+                if (total > 0) totals[type] = parseFloat(total.toFixed(10));
+            }
+            return [t, totals];
+        })) } : {}),
         fairy: { name: m.fairy?.name ?? null, level: m.fairy?.level ?? 0 },
     };
 }
