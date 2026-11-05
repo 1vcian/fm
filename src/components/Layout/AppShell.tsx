@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fullscreenModalOpen, holdFullscreenModal, showDonationToast } from './donationToast';
 import { ProfileLinksInbox } from '../Profile/ProfileLinksInbox';
+import { ProfileSyncDialogs } from '../Auth/ProfileSyncDialogs';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Coffee, ExternalLink, Github, Sparkles, X } from 'lucide-react';
@@ -299,6 +300,8 @@ export default function AppShell() {
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             {/* Updates other apps sent through profile links (signed in only). */}
             <ProfileLinksInbox />
+            {/* Account sync review and conflicts, on every page. */}
+            <ProfileSyncDialogs />
 
             {/* Main Content Area */}
             <div className={cn(

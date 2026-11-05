@@ -91,6 +91,11 @@ import { getAuthSnapshot, subscribeAuth } from '../context/AuthContext';
 const DEBOUNCE_MS = 5_000;
 /** Ceiling on how long an edited profile can stay unpushed while the user keeps working. */
 const HARD_FLUSH_MS = 60_000;
+/**
+ * How often a signed-in, visible tab re-reads the account's profile list (summaries only, no
+ * bodies) to notice a profile changed on another device, e.g. edited on the phone.
+ */
+const REMOTE_CHECK_MS = 180_000;
 
 /* ------------------------------------------------------------------------------------------ *
  * Public types
@@ -1125,7 +1130,56 @@ export function useProfileSync({
         })();
     }, [review, bootstrap]);
 
-    const closeReview = useCallback(() => setReviewOpen(false), []);
+    /** The account versions already shown by a check and closed: a check does not show them again. */
+    const seenRemoteRef = useRef<Set<string>>(new Set());
+    const remoteKey = (row: MergeRow) => `${row.id}:${row.serverVersion}`;
+    const reviewRef = useRef(review);
+    reviewRef.current = review;
+    const reviewOpenRef = useRef(reviewOpen);
+    reviewOpenRef.current = reviewOpen;
+
+    const closeReview = useCallback(() => {
+        for (const row of reviewRef.current ?? []) seenRemoteRef.current.add(remoteKey(row));
+        setReviewOpen(false);
+    }, []);
+
+    /**
+     * The periodic check: the same re-read a page load does (`bootstrap`: summaries only, new
+     * profiles pulled, local edits pushed), and when the profile on screen changed or was deleted
+     * on another device since this browser last synced it, the review opens with what differs. Never while
+     * a decision is already on screen or outstanding, and never twice for the same account version.
+     */
+    const checkRemote = useCallback(async () => {
+        const uid = userIdRef.current;
+        if (!remote || !uid) return;
+        if (suspendedRef.current || runningRef.current || mergePendingRef.current || conflictRef.current || reviewOpenRef.current) return;
+        if (bootstrappedRef.current !== uid) return; // the first read of this sign-in is still to come
+        bootstrappedRef.current = null;
+        const rows = await bootstrap(uid);
+        bootstrappedRef.current = uid;
+        // Only the profile on screen: one changed elsewhere that is not being looked at waits for
+        // the next page load or "Review differences", as before.
+        const moved = rows.filter(r => r.id === activeIdRef.current && (r.kind === 'diverged' || r.kind === 'server-deleted') && !seenRemoteRef.current.has(remoteKey(r)));
+        if (moved.length > 0 && !mergePendingRef.current) setReviewOpen(true);
+    }, [remote, bootstrap]);
+
+    useEffect(() => {
+        if (!remote || !userId) return;
+        let last = Date.now();
+        const run = () => {
+            if (document.visibilityState !== 'visible') return;
+            last = Date.now();
+            void checkRemote();
+        };
+        const id = window.setInterval(run, REMOTE_CHECK_MS);
+        // Back on the tab (the phone woken up, another window left): check if one is due.
+        const onVisible = () => { if (document.visibilityState === 'visible' && Date.now() - last >= REMOTE_CHECK_MS) run(); };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            window.clearInterval(id);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
+    }, [remote, userId, checkRemote]);
 
     /* -------------------------------------------------------------------------------------- *
      * Live conflict resolution

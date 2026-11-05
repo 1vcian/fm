@@ -34,8 +34,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
 import { SignInForm } from '../Auth/SignInForm';
 import { SyncIndicator, relativeTime } from '../Auth/SyncIndicator';
-import { MergeDialog } from '../Auth/MergeDialog';
-import { ConflictDialog } from '../Auth/ConflictDialog';
 import { ClanSyncPanel } from './ClanSyncPanel';
 import { PushPanel } from './PushPanel';
 
@@ -226,25 +224,7 @@ export function AccountPanel() {
                     </div>
                 )}
             </div>
-
-            {sync.reviewOpen && sync.review && sync.review.length > 0 && (
-                <MergeDialog
-                    rows={sync.review}
-                    busy={sync.busy}
-                    firstLogin={sync.mergePending}
-                    onChoose={sync.setReviewChoice}
-                    onApply={() => void sync.applyReview()}
-                    onClose={sync.closeReview}
-                />
-            )}
-
-            {sync.conflict && (
-                <ConflictDialog
-                    conflict={sync.conflict}
-                    busy={sync.busy}
-                    onResolve={resolution => void sync.resolveConflict(resolution)}
-                />
-            )}
+            {/* The review and conflict dialogs are mounted once for the whole app (ProfileSyncDialogs). */}
         </>
     );
 }
