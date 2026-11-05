@@ -274,7 +274,7 @@ function buildAsText(preset: ProfilePreset, stats: AggregatedStats, mapping: any
         if (it.skin) {
             const type = SKIN_TYPE_OF[slot];
             const setId = skinRow(libs?.skinsLibrary, it.skin.type ?? type, it.skin.idx)?.BaseSetId;
-            const st = Object.entries(resolvedSkinStats(it.skin, libs?.skinUpgradeLibrary, type)).map(([k, v]) => `+${(v * 100).toFixed(1)}% ${getStatName(k)}`).join(', ');
+            const st = Object.entries(resolvedSkinStats(it.skin, libs?.skinUpgradeLibrary, type)).map(([k, v]) => `+${parseFloat((v * 100).toFixed(4))}% ${getStatName(k)}`).join(', ');
             line += ` | skin ${setDisplayName(setId)}, level ${it.skin.level ?? 0}${st ? `, ${st}` : ''}`;
         }
         lines.push(line);
@@ -484,7 +484,7 @@ function Gear({ preset, mapping, sprites, version, libs }: { preset: ProfilePres
                                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                                         <SourceTag source="skin" />
                                         <span>{setDisplayName(setId)} {SLOT_LABEL[slot] ?? slot}, level {skin.level ?? 0}</span>
-                                        <span className="text-text-muted">{skinStats.map(([k, v]) => `+${(v * 100).toFixed(1)}% ${getStatName(k)}`).join(', ')}</span>
+                                        <span className="text-text-muted">{skinStats.map(([k, v]) => `+${parseFloat((v * 100).toFixed(4))}% ${getStatName(k)}`).join(', ')}</span>
                                     </div>
                                 )}
                                 {skin && anyNote(slot) && <div className="text-[10px] font-semibold text-lime-200/90 mt-0.5">{anyNote(slot)}</div>}

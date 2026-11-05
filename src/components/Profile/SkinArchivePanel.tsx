@@ -19,7 +19,8 @@ import {
 } from '../../utils/skinArchive';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 
-const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+/** A skin stat as stored, in percent: up to 4 decimals, trailing zeros dropped, never rounded to fewer digits than were typed. */
+const pct = (v: number) => `${parseFloat((v * 100).toFixed(4))}%`;
 const statsLine = (stats: Record<string, number>) =>
     Object.entries(stats).map(([k, v]) => `${k} +${pct(v)}`).join(', ') || 'No stats';
 

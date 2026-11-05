@@ -754,7 +754,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 <span className="min-w-0 flex-1">
                                     <span className="font-bold block truncate">{a.customName || skinDisplayName(skinsLibrary, a.type, a.idx)} <span className="text-text-muted font-normal">Lv{a.level || 0}</span></span>
                                     <span className="block text-[10px] text-green-400 truncate">
-                                        {Object.entries(resolved).map(([k, v]) => `${k} +${(v * 100).toFixed(1)}%`).join(', ') || 'No stats'}
+                                        {Object.entries(resolved).map(([k, v]) => `${k} +${parseFloat((v * 100).toFixed(4))}%`).join(', ') || 'No stats'}
                                     </span>
                                 </span>
                             </button>
