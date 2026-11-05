@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { Loader2, Sparkles, X } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useStatLibraries } from '../../hooks/useGlobalStats';
 import { formatStatValue, getStatName } from '../../utils/statNames';
-import { presetPerfections } from '../../utils/fairies';
-import { compareToAim, loadAimTarget, saveAimTarget, substatStatus, suggestedPerfection, type AimRow, type AimVerdict } from '../../utils/substatStatus';
+import { presetPerfections, presetsFileName } from '../../utils/fairies';
+import { useGameData } from '../../hooks/useGameData';
+import { SLOT_TO_SKIN_TYPE } from '../../utils/skinArchive';
+import { aimTargetOf, compareToAim, loadAimTarget, mostSimilarBuilds, saveAimTarget, substatStatus, suggestedPerfection, type AimRow, type AimVerdict } from '../../utils/substatStatus';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
 import { cn } from '../../lib/utils';
+
+/** "Most similar build" is hidden for now: set to true to show the button again. */
+const SHOW_SIMILAR = false;
 
 /** How each verdict reads, most urgent first. */
 const VERDICTS: Record<AimVerdict, { label: string; tone: string; order: number }> = {
@@ -49,6 +54,27 @@ export function SubstatStatusPanel({ className }: { className?: string }) {
     const [aim, setAim] = useState(loadAimTarget);
     const rows = useMemo(() => (aim ? compareToAim(profile, aim, libs.secondaryStatLibrary) : [])
         .sort((a, b) => VERDICTS[a.verdict].order - VERDICTS[b.verdict].order), [aim, profile, libs.secondaryStatLibrary]);
+    // "Most similar build": the builds at the level the rolls fit, read only once asked for.
+    const [similarOpen, setSimilarOpen] = useState(false);
+    const similarLevel = suggested ?? (levels.length ? Math.min(...levels) : 100);
+    const { data: similarFile, loading: similarLoading } = useGameData<any>(similarOpen && status.rolls ? presetsFileName(selectedVersion, similarLevel) : '');
+    const similar = useMemo(() => (similarOpen && similarFile && libs.secondaryStatLibrary
+        ? mostSimilarBuilds(profile, similarFile, libs.secondaryStatLibrary, SLOT_TO_SKIN_TYPE).slice(0, 3) : null),
+    [similarOpen, similarFile, profile, libs.secondaryStatLibrary]);
+    const aimAt = (b: { name: string; profile: any }) => {
+        const t = aimTargetOf(b.name, selectedVersion, b.profile, libs.secondaryStatLibrary);
+        saveAimTarget(t);
+        setAim(t);
+        setSimilarOpen(false);
+    };
+    const similarButton = SHOW_SIMILAR && status.rolls > 0 && (
+        <button onClick={() => setSimilarOpen(o => !o)} aria-expanded={similarOpen}
+            title="The preset build closest to your substats and easiest to reach, with the skins you own (or without skins when you own none of a build's)"
+            className={cn('flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-lg border text-xs',
+                similarOpen ? 'border-green-500 bg-green-500/20 text-green-300' : 'border-green-500/60 text-green-400 hover:bg-green-500/15')}>
+            <Sparkles className="w-3.5 h-3.5" /> Most similar build
+        </button>
+    );
     const done = rows.filter(r => r.verdict === 'done').length;
     const needed = rows.filter(r => r.target).length;
 
@@ -85,7 +111,38 @@ export function SubstatStatusPanel({ className }: { className?: string }) {
                         </Link>
                     </div>
                 )}
+                {!aim && similarButton}
             </div>
+
+            {similarOpen && (
+                <div className="rounded-lg border border-green-500/40 bg-green-500/5 px-3 py-2.5 space-y-2 text-xs">
+                    <div className="text-text-secondary">
+                        The {similarLevel}% preset builds closest to your rolls, fewest rolls to change first: for each substat of the build, how far your total is under the build's, in rolls at {similarLevel}%.
+                        {similar && (similar[0]?.f2p ? ' None of the builds with skins wears only skins you own, so these are the builds without skins (F2P).' : ' Only builds that wear skins you own, all of them.')}
+                    </div>
+                    {!similar ? (
+                        <div className="flex items-center gap-1.5 text-text-muted"><Loader2 className="w-3.5 h-3.5 animate-spin" /> {similarLoading ? 'Loading the builds' : 'No builds for this version'}</div>
+                    ) : !similar.length ? (
+                        <div className="text-text-muted">No build found.</div>
+                    ) : (
+                        <ul className="space-y-1.5">
+                            {similar.map((b, i) => (
+                                <li key={b.name} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <span className="font-black text-text-muted w-4">{i + 1}</span>
+                                    <span className="min-w-0">
+                                        <span className="font-bold text-text-primary">{b.name}</span>
+                                        <span className="text-text-muted"> · {b.category}{b.f2p ? ' · no skins' : b.skins.length ? ` · ${b.skins.length} ${b.skins.length === 1 ? 'skin' : 'skins'} you own` : ''}</span>
+                                    </span>
+                                    <span className={cn('font-mono', b.rollsShort < 0.05 ? 'text-green-400' : 'text-amber-200')}>
+                                        {b.rollsShort < 0.05 ? 'reached' : `${b.rollsShort.toFixed(1)} rolls short`}{b.missing ? `, ${b.missing} ${b.missing === 1 ? 'substat' : 'substats'} missing` : ''}
+                                    </span>
+                                    <button onClick={() => aimAt(b)} className="ml-auto font-bold px-2.5 py-1 rounded-lg border border-accent-primary/60 text-accent-primary hover:bg-accent-primary/15">Aim for</button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
 
             {!aim && status.rows.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1.5">
@@ -106,7 +163,8 @@ export function SubstatStatusPanel({ className }: { className?: string }) {
                         {aim.version && selectedVersion && aim.version !== selectedVersion && (
                             <span className="text-amber-300">picked on game version {aim.version}</span>
                         )}
-                        <Link to="/presets" className="ml-auto font-bold text-accent-primary hover:underline">Pick another build</Link>
+                        <span className="ml-auto">{similarButton}</span>
+                        <Link to="/presets" className="font-bold text-accent-primary hover:underline">Pick another build</Link>
                         <button onClick={clearAim} title="Stop aiming for this build" className="p-1 rounded hover:bg-white/10 text-text-muted"><X className="w-3.5 h-3.5" /></button>
                     </div>
                     <div className="overflow-x-auto">
