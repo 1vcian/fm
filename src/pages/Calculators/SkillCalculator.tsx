@@ -4,9 +4,10 @@ import { useSkillsCalculator } from '../../hooks/useSkillsCalculator';
 import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
-import { Minus, Plus, RefreshCcw, Calculator } from 'lucide-react';
+import { Minus, Plus, RefreshCcw } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
+import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 
@@ -24,7 +25,6 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
         progress, setProgress,
         ticketCount, setTicketCount,
         results,
-        techBonuses,
         maxPossibleLevel,
         levels,
         applyResultsToProfile,
@@ -36,13 +36,6 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
     } = useSkillsCalculator();
     const skillWarBoost = warPointBonuses?.summon || 0;
 
-    // Target Calculator State
-    // Defaults to the top level of SkillSummonConfig.Levels until the player picks one.
-    const [pickedTargetLevel, setTargetLevel] = useState<number | null>(null);
-    const targetLevel = pickedTargetLevel ?? maxPossibleLevel;
-    // Defaults to the last ascension in AscensionConfigsLibrary until the player picks one.
-    const [pickedTargetAscension, setTargetAscension] = useState<number | null>(null);
-    const targetAscension = pickedTargetAscension ?? maxAscension;
 
     // Correct Colors from Tailwind Config
     const RARITY_COLORS: Record<string, string> = {
@@ -94,19 +87,27 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
                         </div>
                     )}
                 </div>
-
-
-                {techBonuses.extraChance > 0 && (
-                    <div className="flex flex-wrap justify-center gap-3 text-xs pt-3">
-                        <span className="px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 font-mono flex items-center gap-1">
-                            <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
-                            +{Math.round(techBonuses.extraChance * 100)}% Extra Skills (Tree)
-                        </span>
-                    </div>
-                )}
             </div>
 
             <SandboxPanel fields={sandbox.fields} onReset={sandbox.reset} />
+
+            <SummonGoalPlanner
+                title="Skill summon levels and ascensions"
+                type="Skills"
+                levels={levels}
+                level={level}
+                progress={progress}
+                startAscension={sandbox.ascension.value}
+                profileAscension={sandbox.ascension.profileValue}
+                onStartAscension={sandbox.ascension.onChange}
+                maxAscension={maxAscension}
+                needed={calculateNeededCurrency}
+                costPerSummon={finalCostPerSummon}
+                currencyIcon="SkillTicket"
+                currencyLabel="Tickets"
+                available={ticketCount}
+                onSetAvailable={setTicketCount}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* INPUTS */}
@@ -210,60 +211,6 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
                                     Estimated cost per summon: <span className="text-accent-primary font-bold">{finalCostPerSummon}</span> <GameAssetIcon asset={{ icon: 'SkillTicket' }} size={14} className="inline-block align-middle" />
                                 </div>
                             </div>
-                            {/* Target Calculator */}
-                            <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-4">
-                                <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
-                                    <Calculator className="w-4 h-4 text-accent-primary" />
-                                    Target Goal Calculator
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] text-text-muted uppercase font-bold">Target Ascension</label>
-                                        <select
-                                            value={targetAscension}
-                                            onChange={(e) => setTargetAscension(Number(e.target.value))}
-                                            className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
-                                        >
-                                            {Array.from({ length: maxAscension + 1 }, (_, a) => a).map(a => (
-                                                <option key={a} value={a}>Ascension {a}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] text-text-muted uppercase font-bold">Target Level</label>
-                                        <select
-                                            value={targetLevel}
-                                            onChange={(e) => setTargetLevel(Number(e.target.value))}
-                                            className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
-                                        >
-                                            {Array.from({ length: maxPossibleLevel }, (_, i) => i + 1).map(lv => {
-                                                const config = levels[lv - 1];
-                                                const rarities = ['Mythic', 'Ultimate', 'Legendary', 'Epic', 'Rare', 'Common'];
-                                                const maxRarity = config ? (rarities.find(r => config[r] > 0) || 'Common') : 'Common';
-                                                const val = config ? (config[maxRarity] * 100) : 0;
-                                                const percentage = val < 0.1 ? val.toFixed(2) : val.toFixed(1);
-                                                return (
-                                                    <option key={lv} value={lv}>
-                                                        Level {lv} ({maxRarity} {percentage}%)
-                                                    </option>
-                                                );
-                                            })}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                                    <div className="text-[10px] text-text-muted">
-                                        Required: <span className="text-white font-bold">{calculateNeededCurrency(targetLevel, targetAscension).toLocaleString()}</span> Tickets
-                                    </div>
-                                    <button
-                                        onClick={() => setTicketCount(calculateNeededCurrency(targetLevel, targetAscension))}
-                                        className="text-[10px] bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary px-3 py-1 rounded border border-accent-primary/30 transition-colors font-bold uppercase active:scale-95"
-                                    >
-                                        Set as Available
-                                    </button>
-                                </div>
-                            </div>
-
                             {/* Ascension Toggle */}
                             <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-3">
                                 <div className="flex items-center justify-between">
@@ -366,7 +313,7 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
                                                 <span className="text-xs opacity-50 font-normal">Lv.{level} ➔</span>
                                                 Lv.{results.endLevel}
                                             </div>
-                                            {results.endAscensionLevel > (profile.misc.skillAscensionLevel || 0) && (
+                                            {results.endAscensionLevel > sandbox.ascension.value && (
                                                 <div className="text-[10px] text-amber-500 font-bold">
                                                     (Ascension {results.endAscensionLevel})
                                                 </div>
@@ -451,7 +398,7 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
                                     className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
                                 >
                                     <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} className="group-hover:rotate-180 transition-transform duration-500" />
-                                    Update Level to Lv.{results.endLevel}{results.endAscensionLevel > (profile.misc.skillAscensionLevel || 0) ? ` (Asc. ${results.endAscensionLevel})` : ''}
+                                    Update Level to Lv.{results.endLevel}{results.endAscensionLevel > sandbox.ascension.value ? ` (Asc. ${results.endAscensionLevel})` : ''}
                                 </button>
                             </>
                         ) : (

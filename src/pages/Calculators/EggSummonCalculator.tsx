@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
+import { SandboxPanel } from '../../components/UI/SandboxPanel';
+import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
 import { useEggSummonCalculator } from '../../hooks/useEggSummonCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
-import { Calculator, Plus, Minus, RefreshCcw } from 'lucide-react';
+import { Plus, Minus, RefreshCcw } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -17,13 +19,6 @@ export default function EggSummonCalculator() {
     const { selectedVersion } = useGameDataContext();
     const eggSummon = useEggSummonCalculator();
 
-    // Target Calculator State
-    // Defaults to the top level of EggSummonConfig.Levels until the player picks one.
-    const [pickedTargetLevel, setTargetLevel] = useState<number | null>(null);
-    const targetLevel = pickedTargetLevel ?? eggSummon.maxPossibleLevel;
-    // Defaults to the last ascension in AscensionConfigsLibrary until the player picks one.
-    const [pickedTargetAscension, setTargetAscension] = useState<number | null>(null);
-    const targetAscension = pickedTargetAscension ?? eggSummon.maxAscension;
 
     if (eggSummon.loading) {
         return (
@@ -45,21 +40,25 @@ export default function EggSummonCalculator() {
 
     return (
             <div className="space-y-6">
-                {/* Tech Status Tag (Consistent with Mount Calculator) */}
-                <div className="flex justify-center gap-3 text-xs -mt-2 mb-4">
-                    {eggSummon.techBonuses.costReduction > 0 && (
-                        <div className="flex items-center gap-2 bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5 font-mono">
-                            <span className="text-text-muted uppercase font-bold">Cost Red.:</span>
-                            <span className="text-accent-primary font-bold">-{Math.round(eggSummon.techBonuses.costReduction * 100)}%</span>
-                        </div>
-                    )}
-                    {eggSummon.techBonuses.extraChance > 0 && (
-                        <div className="flex items-center gap-2 bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5 font-mono">
-                            <span className="text-text-muted uppercase font-bold">Extra Eggs:</span>
-                            <span className="text-accent-secondary font-bold">x{(1 + eggSummon.techBonuses.extraChance).toFixed(2)}</span>
-                        </div>
-                    )}
-                </div>
+                <SandboxPanel fields={eggSummon.sandbox.fields} onReset={eggSummon.sandbox.reset} />
+
+            <SummonGoalPlanner
+                title="Egg summon levels and ascensions"
+                type="Pets"
+                levels={eggSummon.levels}
+                level={eggSummon.level}
+                progress={eggSummon.progress}
+                startAscension={eggSummon.sandbox.ascension.value}
+                profileAscension={eggSummon.sandbox.ascension.profileValue}
+                onStartAscension={eggSummon.sandbox.ascension.onChange}
+                maxAscension={eggSummon.maxAscension}
+                needed={eggSummon.calculateNeededCurrency}
+                costPerSummon={eggSummon.finalCostPerSummon}
+                currencyIcon="Eggshell"
+                currencyLabel="Eggshells"
+                available={eggSummon.eggshellCount}
+                onSetAvailable={eggSummon.setEggshellCount}
+            />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* CONFIGURATION */}
@@ -163,60 +162,6 @@ export default function EggSummonCalculator() {
                                     </div>
                                 </div>
 
-                                {/* Target Calculator */}
-                                <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-4">
-                                    <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
-                                        <Calculator className="w-4 h-4 text-accent-primary" />
-                                        Target Goal Calculator
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] text-text-muted uppercase font-bold">Target Ascension</label>
-                                            <select
-                                                value={targetAscension}
-                                                onChange={(e) => setTargetAscension(Number(e.target.value))}
-                                                className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
-                                            >
-                                                {Array.from({ length: eggSummon.maxAscension + 1 }, (_, a) => a).map(a => (
-                                                    <option key={a} value={a}>Ascension {a}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] text-text-muted uppercase font-bold">Target Level</label>
-                                            <select
-                                                value={targetLevel}
-                                                onChange={(e) => setTargetLevel(Number(e.target.value))}
-                                                className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
-                                            >
-                                                {Array.from({ length: eggSummon.maxPossibleLevel }, (_, i) => i + 1).map(lv => {
-                                                    const config = eggSummon.levels[lv - 1];
-                                                    const rarities = ['Mythic', 'Ultimate', 'Legendary', 'Epic', 'Rare', 'Common'];
-                                                    const maxRarity = config ? (rarities.find(r => config[r] > 0) || 'Common') : 'Common';
-                                                    const val = config ? (config[maxRarity] * 100) : 0;
-                                                    const percentage = val < 0.1 ? val.toFixed(2) : val.toFixed(1);
-                                                    return (
-                                                        <option key={lv} value={lv}>
-                                                            Level {lv} ({maxRarity} {percentage}%)
-                                                        </option>
-                                                    );
-                                                })}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                                        <div className="text-[10px] text-text-muted">
-                                            Required: <span className="text-white font-bold">{eggSummon.calculateNeededCurrency(targetLevel, targetAscension).toLocaleString()}</span> {eggSummon.currency}
-                                        </div>
-                                        <button
-                                            onClick={() => eggSummon.setEggshellCount(eggSummon.calculateNeededCurrency(targetLevel, targetAscension))}
-                                            className="text-[10px] bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary px-3 py-1 rounded border border-accent-primary/30 transition-colors font-bold uppercase active:scale-95"
-                                        >
-                                            Set as Available
-                                        </button>
-                                    </div>
-                                </div>
-
                                 {/* Ascension Toggle */}
                                 <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-3">
                                     <div className="flex items-center justify-between">
@@ -286,7 +231,7 @@ export default function EggSummonCalculator() {
                                                     <span className="text-xs opacity-50 font-normal">Lv.{eggSummon.level} ➔</span>
                                                     Lv.{eggSummon.results.endLevel}
                                                 </div>
-                                                {eggSummon.results.endAscensionLevel > (profile.misc.petAscensionLevel || 0) && (
+                                                {eggSummon.results.endAscensionLevel > eggSummon.sandbox.ascension.value && (
                                                     <div className="text-[10px] text-amber-500 font-bold">
                                                         (Ascension {eggSummon.results.endAscensionLevel})
                                                     </div>
@@ -319,7 +264,7 @@ export default function EggSummonCalculator() {
                                                         <EggIcon
                                                             rarity={item.rarity}
                                                             size={24}
-                                                            ascensionLevel={profile.misc.petAscensionLevel || 0}
+                                                            ascensionLevel={eggSummon.sandbox.ascension.value}
                                                             className="shrink-0"
                                                         />
                                                         <span className="text-sm font-medium text-white">{item.rarity}</span>
@@ -355,7 +300,7 @@ export default function EggSummonCalculator() {
                                         className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
                                     >
                                         <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} className="group-hover:rotate-180 transition-transform duration-500" />
-                                        Update Level to Lv.{eggSummon.results.endLevel}{eggSummon.results.endAscensionLevel > (profile.misc.petAscensionLevel || 0) ? ` (Asc. ${eggSummon.results.endAscensionLevel})` : ''}
+                                        Update Level to Lv.{eggSummon.results.endLevel}{eggSummon.results.endAscensionLevel > eggSummon.sandbox.ascension.value ? ` (Asc. ${eggSummon.results.endAscensionLevel})` : ''}
                                     </button>
                                 </>
                             ) : (

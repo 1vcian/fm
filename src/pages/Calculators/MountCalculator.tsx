@@ -4,9 +4,10 @@ import { useMountsCalculator } from '../../hooks/useMountsCalculator';
 import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
-import { Minus, Plus, RefreshCcw, Calculator } from 'lucide-react';
+import { Minus, Plus, RefreshCcw } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
+import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 
@@ -24,7 +25,6 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
         progress: currentProgress, setProgress,
         windersCount, setWindersCount,
         readyMerges, setReadyMerges,
-        techBonuses,
         results,
         maxPossibleLevel,
         levels,
@@ -37,13 +37,6 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
     } = useMountsCalculator();
     const mountWarBoost = Math.max(warPointBonuses?.summon || 0, warPointBonuses?.merge || 0);
 
-    // Target Calculator State
-    // Defaults to the top level of MountSummonConfig.Levels until the player picks one.
-    const [pickedTargetLevel, setTargetLevel] = useState<number | null>(null);
-    const targetLevel = pickedTargetLevel ?? maxPossibleLevel;
-    // Defaults to the last ascension in AscensionConfigsLibrary until the player picks one.
-    const [pickedTargetAscension, setTargetAscension] = useState<number | null>(null);
-    const targetAscension = pickedTargetAscension ?? maxAscension;
 
     // Colors helper (Consistent with Skill Calculator)
     const RARITY_COLORS: Record<string, string> = {
@@ -92,25 +85,27 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                         </div>
                     )}
                 </div>
-
-                {/* Tech Status Tag */}
-                <div className="flex justify-center gap-3 text-xs pt-3">
-                    {techBonuses.costReduction > 0 && (
-                        <div className="flex items-center gap-2 bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5 font-mono">
-                            <span className="text-text-muted uppercase font-bold">Cost Red.:</span>
-                            <span className="text-accent-primary font-bold">-{Math.round(techBonuses.costReduction * 100)}%</span>
-                        </div>
-                    )}
-                    {techBonuses.extraChance > 0 && (
-                        <div className="flex items-center gap-2 bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5 font-mono">
-                            <span className="text-text-muted uppercase font-bold">Extra Multiplier:</span>
-                            <span className="text-accent-secondary font-bold">x{(1 + techBonuses.extraChance).toFixed(2)}</span>
-                        </div>
-                    )}
-                </div>
             </div>
 
             <SandboxPanel fields={sandbox.fields} onReset={sandbox.reset} />
+
+            <SummonGoalPlanner
+                title="Mount summon levels and ascensions"
+                type="Mounts"
+                levels={levels}
+                level={currentLevel}
+                progress={currentProgress}
+                startAscension={sandbox.ascension.value}
+                profileAscension={sandbox.ascension.profileValue}
+                onStartAscension={sandbox.ascension.onChange}
+                maxAscension={maxAscension}
+                needed={calculateNeededCurrency}
+                costPerSummon={finalCostPerSummon}
+                currencyIcon="MountKey"
+                currencyLabel="Winders"
+                available={windersCount}
+                onSetAvailable={setWindersCount}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* INPUTS */}
@@ -227,60 +222,6 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                                 />
                                 <div className="text-[10px] text-text-muted px-1">
                                     Merges the merge screen already offers from mounts you obtained. Synced with Resources.
-                                </div>
-                            </div>
-
-                            {/* Target Calculator */}
-                            <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-4">
-                                <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
-                                    <Calculator className="w-4 h-4 text-accent-primary" />
-                                    Target Goal Calculator
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] text-text-muted uppercase font-bold">Target Ascension</label>
-                                        <select
-                                            value={targetAscension}
-                                            onChange={(e) => setTargetAscension(Number(e.target.value))}
-                                            className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
-                                        >
-                                            {Array.from({ length: maxAscension + 1 }, (_, a) => a).map(a => (
-                                                <option key={a} value={a}>Ascension {a}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] text-text-muted uppercase font-bold">Target Level</label>
-                                        <select
-                                            value={targetLevel}
-                                            onChange={(e) => setTargetLevel(Number(e.target.value))}
-                                            className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
-                                        >
-                                            {Array.from({ length: maxPossibleLevel }, (_, i) => i + 1).map(lv => {
-                                                const config = levels[lv - 1];
-                                                const rarities = ['Mythic', 'Ultimate', 'Legendary', 'Epic', 'Rare', 'Common'];
-                                                const maxRarity = config ? (rarities.find(r => config[r] > 0) || 'Common') : 'Common';
-                                                const val = config ? (config[maxRarity] * 100) : 0;
-                                                const percentage = val < 0.1 ? val.toFixed(2) : val.toFixed(1);
-                                                return (
-                                                    <option key={lv} value={lv}>
-                                                        Level {lv} ({maxRarity} {percentage}%)
-                                                    </option>
-                                                );
-                                            })}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                                    <div className="text-[10px] text-text-muted">
-                                        Required: <span className="text-white font-bold">{calculateNeededCurrency(targetLevel, targetAscension).toLocaleString()}</span> Winders
-                                    </div>
-                                    <button
-                                        onClick={() => setWindersCount(calculateNeededCurrency(targetLevel, targetAscension))}
-                                        className="text-[10px] bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary px-3 py-1 rounded border border-accent-primary/30 transition-colors font-bold uppercase active:scale-95"
-                                    >
-                                        Set as Available
-                                    </button>
                                 </div>
                             </div>
 
@@ -406,7 +347,7 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                                                 <span className="text-xs opacity-50 font-normal">Lv.{currentLevel} ➔</span>
                                                 Lv.{results.endLevel}
                                             </div>
-                                            {results.endAscensionLevel > (profile.misc.mountAscensionLevel || 0) && (
+                                            {results.endAscensionLevel > sandbox.ascension.value && (
                                                 <div className="text-[10px] text-amber-500 font-bold">
                                                     (Ascension {results.endAscensionLevel})
                                                 </div>
@@ -491,7 +432,7 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
                                     className="w-full py-3 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 rounded-xl text-accent-primary font-bold text-sm transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent-primary/5 active:scale-95"
                                 >
                                     <GameAssetIcon asset={{ icon: 'RefreshArrows' }} size={16} className="group-hover:rotate-180 transition-transform duration-500" />
-                                    Update Level to Lv.{results.endLevel}{results.endAscensionLevel > (profile.misc.mountAscensionLevel || 0) ? ` (Asc. ${results.endAscensionLevel})` : ''}
+                                    Update Level to Lv.{results.endLevel}{results.endAscensionLevel > sandbox.ascension.value ? ` (Asc. ${results.endAscensionLevel})` : ''}
                                 </button>
                             </>
                         ) : (

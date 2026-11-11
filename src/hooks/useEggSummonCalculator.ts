@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeModifiers } from './useCalculatedStats';
+import { useTreeLimits } from './useTreeLimits';
 import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount } from '../utils/summonEngine';
 
 /** Egg summon simulation for a currency pile, shaped for the Summons calculator's Eggs tab. */
@@ -84,12 +85,26 @@ export function useEggSummonCalculator() {
         extraChance: treeModifiers['ExtraEggChance'] || 0,
     }), [treeModifiers]);
 
+    // Sandbox: local overrides of the result-altering tree bonuses (see SandboxPanel).
+    const treeLimits = useTreeLimits();
+    const [sandbox, setSandbox] = useState<Record<string, number>>({});
+    // The ascension the simulation starts from: the planner's start stars, the profile's until picked.
+    const profileAscension = profile?.misc?.petAscensionLevel || 0;
+    const startAscension = sandbox.startAscension ?? profileAscension;
+    const extraChance = sandbox.extraChance ?? techBonuses.extraChance;
+    const sandboxControls = {
+        reset: () => setSandbox({}),
+        fields: [
+            { key: 'extraChance', label: 'Extra egg chance', value: extraChance, profileValue: techBonuses.extraChance, min: 0, ...treeLimits.personal('ExtraEggChance'), onChange: (v: number) => setSandbox(p => ({ ...p, extraChance: v })) },
+        ],
+    };
+
     // Constants from config
     // NaN until EggSummonConfig loads; `ready` stays false meanwhile and the page shows a loading state.
     const BASE_COST: number = eggSummonConfig?.SingleSummonCost?.Amount ?? NaN;
     // SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0].
     const BASE_EGGS_PER_SUMMON = baseSummonCount(eggSummonConfig);
-    const EGGS_PER_SUMMON = BASE_EGGS_PER_SUMMON * (1 + techBonuses.extraChance);
+    const EGGS_PER_SUMMON = BASE_EGGS_PER_SUMMON * (1 + extraChance);
     // SummonConfig.CanAffordSummon (RVA 0x7865EDC): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(BASE_COST, BASE_EGGS_PER_SUMMON, techBonuses.costReduction);
@@ -112,7 +127,7 @@ export function useEggSummonCalculator() {
                 currency: eggshellCount,
                 costPerSummon: finalCostPerSummon,
                 unitsPerSummon: EGGS_PER_SUMMON,
-                startAscension: profile?.misc?.petAscensionLevel || 0,
+                startAscension,
                 simulateAscension: profile?.misc?.simulateAscensionInCalculators ?? true,
                 maxAscension,
             }),
@@ -120,7 +135,7 @@ export function useEggSummonCalculator() {
             baseCost: BASE_COST * BASE_EGGS_PER_SUMMON,
             costReduction: techBonuses.costReduction
         };
-    }, [eggshellCount, level, progress, eggSummonConfig, levels, techBonuses, finalCostPerSummon, BASE_COST, BASE_EGGS_PER_SUMMON, EGGS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators, maxAscension, profile?.misc?.petAscensionLevel]);
+    }, [eggshellCount, level, progress, eggSummonConfig, levels, techBonuses, finalCostPerSummon, BASE_COST, BASE_EGGS_PER_SUMMON, EGGS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Apply results to profile
     const applyResultsToProfile = () => {
@@ -134,7 +149,7 @@ export function useEggSummonCalculator() {
         levels,
         level,
         progress,
-        ascension: profile?.misc?.petAscensionLevel || 0,
+        ascension: startAscension,
         targetLevel,
         targetAscension,
         unitsPerSummon: EGGS_PER_SUMMON,
@@ -159,6 +174,11 @@ export function useEggSummonCalculator() {
         currency: (eggSummonConfig?.SingleSummonCost?.Currency ?? '') as string,
         baseCost: BASE_COST * BASE_EGGS_PER_SUMMON,
         finalCostPerSummon,
-        eggsPerSummon: EGGS_PER_SUMMON
+        eggsPerSummon: EGGS_PER_SUMMON,
+        sandbox: {
+            ...sandboxControls,
+            // The planner's start stars (SummonGoalPlanner), the profile's until picked.
+            ascension: { value: startAscension, profileValue: profileAscension, onChange: (v: number) => setSandbox(p => ({ ...p, startAscension: v })) },
+        },
     };
 }

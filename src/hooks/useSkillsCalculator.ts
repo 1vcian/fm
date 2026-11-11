@@ -131,6 +131,9 @@ export function useSkillsCalculator() {
 
     // Sandbox: local overrides of the result-altering tree bonuses (see SandboxPanel).
     const [sandbox, setSandbox] = useState<Record<string, number>>({});
+    // The ascension the simulation starts from: the planner's start stars, the profile's until picked.
+    const profileAscension = profile?.misc?.skillAscensionLevel || 0;
+    const startAscension = sandbox.startAscension ?? profileAscension;
     const costReduction = sandbox.costReduction ?? techBonuses.costReduction;
     const extraChance = sandbox.extraChance ?? techBonuses.extraChance;
     const skillSummonWarBonus = sandbox.warSummon ?? profileSkillSummonWarBonus;
@@ -188,7 +191,7 @@ export function useSkillsCalculator() {
                 currency: ticketCount,
                 costPerSummon: finalCostPerSummon,
                 unitsPerSummon: SKILLS_PER_SUMMON * (1 + extraChance),
-                startAscension: profile?.misc?.skillAscensionLevel || 0,
+                startAscension,
                 simulateAscension: profile?.misc?.simulateAscensionInCalculators ?? true,
                 maxAscension,
                 pointsPerSkill: warPointsPerSummonSkill,
@@ -197,7 +200,7 @@ export function useSkillsCalculator() {
             baseCost: BASE_SUMMON_COST,
             costReduction: techBonuses.costReduction,
         };
-    }, [ticketCount, level, progress, levels, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, extraChance, costReduction, finalCostPerSummon, BASE_SUMMON_COST, profile?.misc?.simulateAscensionInCalculators, maxAscension, profile?.misc?.skillAscensionLevel]);
+    }, [ticketCount, level, progress, levels, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, extraChance, costReduction, finalCostPerSummon, BASE_SUMMON_COST, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Apply results
     const applyResultsToProfile = () => {
@@ -211,7 +214,7 @@ export function useSkillsCalculator() {
         levels,
         level,
         progress,
-        ascension: profile?.misc?.skillAscensionLevel || 0,
+        ascension: startAscension,
         targetLevel,
         targetAscension,
         unitsPerSummon: SKILLS_PER_SUMMON * (1 + extraChance),
@@ -236,6 +239,10 @@ export function useSkillsCalculator() {
         finalCostPerSummon,
         skillsPerSummon: SKILLS_PER_SUMMON,
         warPointBonuses: { summon: skillSummonWarBonus },
-        sandbox: sandboxControls
+        sandbox: {
+            ...sandboxControls,
+            // The planner's start stars (SummonGoalPlanner), the profile's until picked.
+            ascension: { value: startAscension, profileValue: profileAscension, onChange: (v: number) => setSandbox(p => ({ ...p, startAscension: v })) },
+        },
     };
 }

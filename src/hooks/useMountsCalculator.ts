@@ -145,6 +145,9 @@ export function useMountsCalculator() {
 
     // Sandbox: local overrides of the result-altering tree bonuses (see SandboxPanel).
     const [sandbox, setSandbox] = useState<Record<string, number>>({});
+    // The ascension the simulation starts from: the planner's start stars, the profile's until picked.
+    const profileAscension = profile?.misc?.mountAscensionLevel || 0;
+    const startAscension = sandbox.startAscension ?? profileAscension;
     const costReduction = sandbox.costReduction ?? techBonuses.costReduction;
     const extraChance = sandbox.extraChance ?? techBonuses.extraChance;
     const mountSummonWarBonus = sandbox.warSummon ?? profileSummonWarBonus;
@@ -191,7 +194,7 @@ export function useMountsCalculator() {
                 currency: windersCount,
                 costPerSummon: finalCostPerSummon,
                 unitsPerSummon: MOUNTS_PER_SUMMON,
-                startAscension: profile?.misc?.mountAscensionLevel || 0,
+                startAscension,
                 simulateAscension: profile?.misc?.simulateAscensionInCalculators ?? true,
                 maxAscension,
                 dayConfig: guildWarDayConfigLibrary,
@@ -204,7 +207,7 @@ export function useMountsCalculator() {
             baseCost: BASE_COST * BASE_MOUNTS_PER_SUMMON,
             costReduction: techBonuses.costReduction,
         };
-    }, [windersCount, level, progress, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, BASE_MOUNTS_PER_SUMMON, MOUNTS_PER_SUMMON, mountSummonWarBonus, mountMergeWarBonus, dayBoost, readyMerges, profile?.misc?.simulateAscensionInCalculators, maxAscension, profile?.misc?.mountAscensionLevel]);
+    }, [windersCount, level, progress, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, BASE_MOUNTS_PER_SUMMON, MOUNTS_PER_SUMMON, mountSummonWarBonus, mountMergeWarBonus, dayBoost, readyMerges, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Action to apply results to profile
     const applyResultsToProfile = () => {
@@ -218,7 +221,7 @@ export function useMountsCalculator() {
         levels,
         level,
         progress,
-        ascension: profile?.misc?.mountAscensionLevel || 0,
+        ascension: startAscension,
         targetLevel,
         targetAscension,
         unitsPerSummon: MOUNTS_PER_SUMMON,
@@ -244,6 +247,10 @@ export function useMountsCalculator() {
         finalCostPerSummon,
         mountsPerSummon: MOUNTS_PER_SUMMON,
         warPointBonuses: { summon: mountSummonWarBonus, merge: mountMergeWarBonus },
-        sandbox: sandboxControls
+        sandbox: {
+            ...sandboxControls,
+            // The planner's start stars (SummonGoalPlanner), the profile's until picked.
+            ascension: { value: startAscension, profileValue: profileAscension, onChange: (v: number) => setSandbox(p => ({ ...p, startAscension: v })) },
+        },
     };
 }
