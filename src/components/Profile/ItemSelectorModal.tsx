@@ -13,6 +13,7 @@ import { ModalLevelSelector } from '../UI/ModalLevelSelector';
 import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getAgeBgStyle, getAgeIconStyle, getRarityBgStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
+import { ageColor } from '../../utils/gameTiers';
 import { getItemImage, getItemName } from '../../utils/itemAssets';
 import { getStatName } from '../../utils/statNames';
 import { OPEN_SKIN_ARCHIVE_EVENT, resolvedSkinStats, skinDisplayName } from '../../utils/skinArchive';
@@ -1599,7 +1600,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
                                 style={{ 
                                     ...getAgeBgStyle(ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx), 
-                                    borderColor: `rgb(var(--age-${AGES[ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx].toLowerCase().replace(' ', '')}))` 
+                                    borderColor: ageColor(ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx) 
                                 }}
                             >
                                 {(() => {

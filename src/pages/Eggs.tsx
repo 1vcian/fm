@@ -12,6 +12,7 @@ import { useGameDataContext } from '../context/GameDataContext';
 import { EggIcon } from '../components/UI/EggIcon';
 import { PlannerAlarms } from '../components/Planner/PlannerAlarms';
 import { eggLanes } from '../utils/plannerSchedule';
+import { rarityColor, tierSlug } from '../utils/gameTiers';
 
 export default function Eggs() {
     const { profile, updateNestedProfile } = useProfile();
@@ -296,7 +297,7 @@ export default function Eggs() {
                                                 </div>
                                             )}
                                             <EggIcon rarity={rarity} size={48} ascensionLevel={profile.misc.petAscensionLevel || 0} />
-                                            <span className={cn("text-xs font-bold uppercase", `text-rarity-${rarity}`)}>
+                                            <span className={cn("text-xs font-bold uppercase", `text-rarity-${tierSlug(rarity)}`)}>
                                                 {rarity}
                                             </span>
 
@@ -447,11 +448,11 @@ export default function Eggs() {
                                                                                     "relative flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer group",
                                                                                     isChecked
                                                                                         ? "bg-black/20 border-border/20 opacity-50 grayscale hover:opacity-70 hover:grayscale-0"
-                                                                                        : `border-rarity-${event.rarity}/30 bg-rarity-${event.rarity}/5 hover:bg-white/5`
+                                                                                        : `border-rarity-${tierSlug(event.rarity)}/30 bg-rarity-${tierSlug(event.rarity)}/5 hover:bg-white/5`
                                                                                 )}
                                                                             >
                                                                                 {/* Time Marker */}
-                                                                                <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-lg transition-colors", isChecked ? "bg-text-tertiary" : "")} style={!isChecked ? { backgroundColor: `var(--color-rarity-${event.rarity})` } : {}} />
+                                                                                <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-lg transition-colors", isChecked ? "bg-text-tertiary" : "")} style={!isChecked ? { backgroundColor: rarityColor(event.rarity) } : {}} />
 
                                                                                 {/* Checkbox */}
                                                                                 <div className={cn(
@@ -466,7 +467,7 @@ export default function Eggs() {
                                                                                 <EggIcon rarity={event.rarity} size={32} ascensionLevel={profile.misc.petAscensionLevel || 0} />
 
                                                                                 <div className="flex-1 min-w-0 grid grid-cols-1 gap-1">
-                                                                                    <div className={cn("font-bold text-sm leading-tight break-words", isChecked ? "text-text-muted line-through" : `text-rarity-${event.rarity}`)}>
+                                                                                    <div className={cn("font-bold text-sm leading-tight break-words", isChecked ? "text-text-muted line-through" : `text-rarity-${tierSlug(event.rarity)}`)}>
                                                                                         {event.rarity}
                                                                                     </div>
 

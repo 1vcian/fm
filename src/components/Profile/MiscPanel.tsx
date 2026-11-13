@@ -37,7 +37,7 @@ export function MiscPanel() {
         secondaryStatLibrary
     ), [profile.items, profile.pets.active, profile.mount.active, secondaryStatLibrary]);
     // Determine max forge level from config
-    // If there are 34 upgrade entries, it means we can reach Level 35
+    // N upgrade entries (ForgeUpgradeLibrary) reach level N + 1 (34 entries, level 35, in 2026_10).
     const maxForgeLevel = forgeData ? Math.max(...Object.keys(forgeData).map(Number)) + 1 : 99;
 
     // Fix for "off by one" error reported by user.
@@ -220,7 +220,7 @@ export function MiscPanel() {
                         </div>
                     ) : (
                         <div className="mt-4">
-                            {profile.misc.forgeLevel >= 35 ? (
+                            {profile.misc.forgeLevel >= maxForgeLevel ? (
                                 (() => {
                                     const currentAsc = profile.misc.forgeAscensionLevel || 0;
                                     const nextAscConfig = ascData?.Forge?.AscensionConfigPerLevel?.[currentAsc];

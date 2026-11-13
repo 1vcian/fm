@@ -1,4 +1,5 @@
 import { useProfile } from '../../context/ProfileContext';
+import { RARITIES } from '../../utils/constants';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useGameData } from '../../hooks/useGameData';
@@ -25,7 +26,6 @@ interface SkillInfo {
     rarity: string;
 }
 
-const RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
 
 export function SkillsPassivesPanel() {
     const { profile, updateNestedProfile } = useProfile();

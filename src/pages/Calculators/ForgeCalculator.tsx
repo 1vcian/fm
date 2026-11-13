@@ -13,6 +13,7 @@ import { isWarPointDay, getDayBoostNodeType, getWarPointsForTask } from '../../u
 import { AgeBackground } from '../../components/AgeBackground/AgeBackground';
 import { cn, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
+import { ageIndexOf } from '../../utils/gameTiers';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { ITEM_TYPE_NAMES, computeForgeModel, hammersForCoins, sortBrackets, type ForgeModelInput, type ForgeSlot } from '../../utils/forgeItemLevels';
 
@@ -292,10 +293,8 @@ export default function ForgeCalculator() {
                 const match = task.Task.match(/^Forge(.+)Equipment$/);
                 if (match) {
                     const ageName = match[1];
-                    const ageIdx = AGES.findIndex(a => a.replace('-', '') === ageName || a === ageName);
-
-                    let finalIdx = ageIdx;
-                    if (finalIdx === -1 && ageName === "EarlyModern") finalIdx = 2;
+                    // The game key ("EarlyModern") or the English name.
+                    const finalIdx = ageIndexOf(ageName);
 
                     if (finalIdx !== -1) {
                         const reward = task.Rewards.find(r => r.$type === "WarPointsReward");

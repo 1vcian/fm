@@ -1,3 +1,4 @@
+import { RARITIES } from '../utils/constants';
 import { useState, useMemo } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { usePetNames } from '../hooks/usePetNames';
@@ -12,39 +13,8 @@ import { getAscensionTexturePath } from '../utils/ascensionUtils';
 import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
 import { formatCompactNumber } from '../utils/statsCalculator';
+import { EggIcon } from '../components/UI/EggIcon';
 
-function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity: string; size?: number; className?: string; ascensionLevel?: number }) {
-    const { selectedVersion } = useGameDataContext();
-    const rarityIndex: Record<string, number> = {
-        'Common': 0, 'Rare': 1, 'Epic': 2,
-        'Legendary': 3, 'Ultimate': 4, 'Mythic': 5
-    };
-
-    const idx = rarityIndex[rarity] ?? 0;
-    const col = idx % 4;
-    const row = Math.floor(idx / 4);
-
-    const xPos = (col / 3) * 100;
-    const yPos = (row / 3) * 100;
-
-    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel, selectedVersion);
-
-    return (
-        <div
-            className={cn("inline-block shrink-0", className)}
-            style={{
-                width: size,
-                height: size,
-                backgroundImage: `url(${texturePath})`,
-                backgroundPosition: `${xPos}% ${yPos}%`,
-                backgroundSize: '400% 400%',
-                backgroundRepeat: 'no-repeat',
-                imageRendering: 'pixelated'
-            }}
-            title={rarity}
-        />
-    );
-}
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
@@ -133,7 +103,7 @@ export default function Pets() {
                 return matchSearch && matchRarity;
             })
             .sort((a, b) => {
-                const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+                const rarityOrder = RARITIES;
                 const rDiff = rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
                 return rDiff !== 0 ? rDiff : a.id - b.id;
             });
@@ -192,7 +162,7 @@ export default function Pets() {
         return result;
     }, [petUpgrades]);
 
-    const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+    const rarities = RARITIES;
 
     const { isCompactStats } = useComparison();
 
@@ -273,7 +243,7 @@ export default function Pets() {
                 </div>
 
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-                    {['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].map((rarity) => (
+                    {RARITIES.map((rarity) => (
                         <div key={rarity} className="flex flex-col items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors group">
                             <div className="relative">
                                 <div className={cn(

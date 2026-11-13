@@ -1,36 +1,6 @@
-:root {
-    /* RGB Components (for rgba usage) */
-    --color-primitive-rgb: 241, 241, 241;
-    --color-medieval-rgb: 93, 216, 255;
-    --color-early-modern-rgb: 93, 255, 138;
-    --color-modern-rgb: 252, 255, 93;
-    --color-space-rgb: 255, 93, 93;
-    --color-interstellar-rgb: 213, 93, 255;
-    --color-multiverse-rgb: 117, 255, 238;
-    --color-quantum-rgb: 125, 93, 255;
-    --color-underworld-rgb: 176, 120, 121;
-    --color-divine-rgb: 255, 158, 13;
-
-    /* Hex Variables */
-    --age-primitive: #F1F1F1;
-    --age-medieval: #5DD8FF;
-    --age-early-modern: #5DFF8A;
-    --age-modern: #FCFF5D;
-    --age-space: #FF5D5D;
-    --age-interstellar: #D55DFF;
-    --age-multiverse: #75FFEE;
-    --age-quantum: #7D5DFF;
-    --age-underworld: #B07879;
-    --age-divine: #FF9E0D;
-
-    /* Legacy Rarity Mappings */
-    --rarity-common: var(--color-primitive-rgb);
-    --rarity-rare: var(--color-medieval-rgb);
-    --rarity-epic: var(--color-early-modern-rgb);
-    --rarity-legendary: var(--color-modern-rgb);
-    --rarity-ultimate: var(--color-space-rgb);
-    --rarity-mythic: var(--color-interstellar-rgb);
-}
+/* Age and rarity colours (--age-<key>, --age-<key>-rgb, --rarity-<key>, --rarity-<key>-hex) and their
+   text-/bg-/border-/ring-/from-/shadow- classes are generated from GameTiers.json at startup
+   (src/utils/gameTiers.ts). */
 
 @tailwind base;
 @tailwind components;
@@ -48,8 +18,8 @@
         --text-secondary: 180 180 200;
         --text-muted: 100 100 120;
 
-        --accent-primary-rgb: var(--color-divine-rgb);
-        --accent-secondary-rgb: var(--color-space-rgb);
+        --accent-primary-rgb: 255, 158, 13;
+        --accent-secondary-rgb: 255, 93, 93;
         --accent-tertiary-rgb: 59, 130, 246;
 
         --border: 50 50 70;
@@ -57,122 +27,6 @@
 }
 
 @layer components {
-
-    /* Rarity Text Utilities */
-    .text-rarity-common {
-        color: rgb(var(--rarity-common));
-    }
-
-    .text-rarity-rare {
-        color: rgb(var(--rarity-rare));
-    }
-
-    .text-rarity-epic {
-        color: rgb(var(--rarity-epic));
-    }
-
-    .text-rarity-legendary {
-        color: rgb(var(--rarity-legendary));
-    }
-
-    .text-rarity-ultimate {
-        color: rgb(var(--rarity-ultimate));
-    }
-
-    .text-rarity-mythic {
-        color: rgb(var(--rarity-mythic));
-    }
-
-    /* Rarity Background Gradients */
-    .bg-rarity-common {
-        background: linear-gradient(135deg, rgba(var(--rarity-common), 0.3) 0%, rgba(var(--rarity-common), 0.1) 100%);
-    }
-
-    .bg-rarity-rare {
-        background: linear-gradient(135deg, rgba(var(--rarity-rare), 0.4) 0%, rgba(var(--rarity-rare), 0.15) 100%);
-    }
-
-    .bg-rarity-epic {
-        background: linear-gradient(135deg, rgba(var(--rarity-epic), 0.4) 0%, rgba(var(--rarity-epic), 0.15) 100%);
-    }
-
-    .bg-rarity-legendary {
-        background: linear-gradient(135deg, rgba(var(--rarity-legendary), 0.4) 0%, rgba(var(--rarity-legendary), 0.15) 100%);
-    }
-
-    .bg-rarity-ultimate {
-        background: linear-gradient(135deg, rgba(var(--rarity-ultimate), 0.4) 0%, rgba(var(--rarity-ultimate), 0.15) 100%);
-    }
-
-    .bg-rarity-mythic {
-        background: linear-gradient(135deg, rgba(var(--rarity-mythic), 0.5) 0%, rgba(var(--rarity-mythic), 0.2) 100%);
-    }
-
-    /* Rarity Border Colors */
-    .border-rarity-common {
-        border-color: rgb(var(--rarity-common));
-    }
-
-    .border-rarity-rare {
-        border-color: rgb(var(--rarity-rare));
-    }
-
-    .border-rarity-epic {
-        border-color: rgb(var(--rarity-epic));
-    }
-
-    .border-rarity-legendary {
-        border-color: rgb(var(--rarity-legendary));
-    }
-
-    .border-rarity-ultimate {
-        border-color: rgb(var(--rarity-ultimate));
-    }
-
-    .border-rarity-mythic {
-        border-color: rgb(var(--rarity-mythic));
-    }
-
-    /* Age Text Utilities */
-    .text-age-primitive {
-        color: rgb(var(--age-primitive));
-    }
-
-    .text-age-medieval {
-        color: rgb(var(--age-medieval));
-    }
-
-    .text-age-earlymodern {
-        color: rgb(var(--age-earlymodern));
-    }
-
-    .text-age-modern {
-        color: rgb(var(--age-modern));
-    }
-
-    .text-age-space {
-        color: rgb(var(--age-space));
-    }
-
-    .text-age-interstellar {
-        color: rgb(var(--age-interstellar));
-    }
-
-    .text-age-multiverse {
-        color: rgb(var(--age-multiverse));
-    }
-
-    .text-age-quantum {
-        color: rgb(var(--age-quantum));
-    }
-
-    .text-age-underworld {
-        color: rgb(var(--age-underworld));
-    }
-
-    .text-age-divine {
-        color: rgb(var(--age-divine));
-    }
 
     /* Custom Scrollbar */
     .custom-scrollbar::-webkit-scrollbar {

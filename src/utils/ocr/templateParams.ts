@@ -4,32 +4,10 @@
 
 export type RGB = [number, number, number];
 
-// ---- Item AGE palette (10 ages, index 0..9 = AutoItemMapping.Age) — tile colour encodes the age.
-// From src/index.css --color-*-rgb; matched 24/24 + 8/8 diverse (Interstellar/Space/Modern/Multiverse/Underworld/Divine).
-export const AGE_COLORS: RGB[] = [
-    [241, 241, 241], // 0 Primitive
-    [93, 216, 255],  // 1 Medieval
-    [93, 255, 138],  // 2 Early-Modern
-    [252, 255, 93],  // 3 Modern
-    [255, 93, 93],   // 4 Space
-    [213, 93, 255],  // 5 Interstellar
-    [117, 255, 238], // 6 Multiverse
-    [125, 93, 255],  // 7 Quantum
-    [176, 120, 121], // 8 Underworld
-    [255, 158, 13],  // 9 Divine
-];
-
-// ---- RARITY palette (6, index 0..5) for pets/mounts/skills. Confirmed from game config; it is the
-// first 6 of the age palette (verified: Ultimate=red validated, Mythic=purple validated on 8 examples).
-export const RARITY_COLORS: RGB[] = [
-    [241, 241, 241], // 0 Common   #F1F1F1
-    [93, 216, 255],  // 1 Rare     #5DD8FF
-    [93, 255, 138],  // 2 Epic     #5DFF8A
-    [252, 255, 93],  // 3 Legendary#FCFF5D
-    [255, 93, 93],   // 4 Ultimate #FF5D5D
-    [213, 93, 255],  // 5 Mythic   #D55DFF
-];
-export const RARITY_NAMES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
+// ---- Item AGE and RARITY palettes (index = AutoItemMapping.Age / Rarity enum): the tile colour
+// encodes the age or the rarity. The game's own colours, from GameTiers.json (AgeVisualConfig.Color,
+// DefaultColors via RarityExtensions.GetColor); the rarity palette equals the first ages' colours.
+export { AGE_RGB as AGE_COLORS, RARITY_RGB as RARITY_COLORS, RARITIES as RARITY_NAMES } from '../gameTiers';
 
 // ---- Skills grid: FIXED cell order (rarity-rank then CombatSkill enumId, 3 per rarity). Cell index
 // -> skillId, so the grid is read by position; only per-cell level + which 3 are dimmed(equipped).

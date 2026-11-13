@@ -26,6 +26,8 @@ const MANIFEST_FILE = path.join(PUBLIC_DIR, 'config_manifest.json');
 const DELTA_FILE = path.join(PUBLIC_DIR, 'version_delta.json');
 /** Files the site generates into a version folder (scripts/build_presets.ts): not game data. */
 const SITE_GENERATED = { has: (f: string) => /^ProfilePresets(\..+)?\.json$/.test(f) };
+/** Files derived from the build rather than parsed configs (reverseForge/game_tiers.py): served, but not a config change to report. */
+const NOT_IN_DELTA = { has: (f: string) => SITE_GENERATED.has(f) || f === 'GameTiers.json' };
 /** Beyond this many lines the popup would be a wall of text, so the rest is reported as a count. */
 const MAX_DELTA_LINES = 24;
 
@@ -86,7 +88,7 @@ function generateDelta(versions: string[]): void {
         const dirNew = path.join(PUBLIC_DIR, version);
         const dirOld = path.join(PUBLIC_DIR, previous);
         const listing = (dir: string) => new Set(
-            fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.json') && !SITE_GENERATED.has(f)) : []
+            fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.json') && !NOT_IN_DELTA.has(f)) : []
         );
         const filesNew = listing(dirNew);
         const filesOld = listing(dirOld);

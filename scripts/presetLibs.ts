@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import type { LibraryData } from '../src/utils/statEngine';
 import { presetLibsFrom } from '../src/presets/presetLibs';
 import type { ConfigFiles } from '../src/presets/buildPresets';
+import { setGameTiers } from '../src/utils/gameTiers';
 
 export const CONFIG_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'parsed_configs');
 
@@ -18,6 +19,10 @@ export function loadPresetLibs(version: string): { dir: string; cfg: ConfigFiles
     for (const f of fs.readdirSync(dir)) {
         if (f.endsWith('.json') && !f.startsWith('ProfilePresets')) cfg[f.slice(0, -5)] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
     }
+
+    // Ages and rarities of the build (the app loads them in main.tsx).
+    if (!cfg.GameTiers) throw new Error(`no GameTiers.json in ${dir} (reverseForge/game_tiers.py)`);
+    setGameTiers(cfg.GameTiers as any);
 
     const libs = presetLibsFrom(version, cfg);
     return { dir, cfg, libs };

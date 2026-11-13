@@ -471,7 +471,7 @@
   },
   "2_0_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "BattleHelmet",
     "LocalizationId": "5028483625006",
@@ -481,7 +481,7 @@
   },
   "2_0_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "CaptainsHat",
     "LocalizationId": "5028483625007",
@@ -491,7 +491,7 @@
   },
   "2_0_2": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 2,
     "ItemName": "FeatherHat",
     "LocalizationId": "5028483625008",
@@ -501,7 +501,7 @@
   },
   "2_0_3": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 3,
     "ItemName": "SlavicHat",
     "LocalizationId": "5028483625009",
@@ -511,7 +511,7 @@
   },
   "2_0_4": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 4,
     "ItemName": "TopHat",
     "LocalizationId": "5028483625010",
@@ -521,7 +521,7 @@
   },
   "2_1_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "ArmorSkirt",
     "LocalizationId": "5028483625011",
@@ -531,7 +531,7 @@
   },
   "2_1_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "Cardigan",
     "LocalizationId": "5028483625012",
@@ -541,7 +541,7 @@
   },
   "2_2_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "LeatherGloves",
     "LocalizationId": "5028483625015",
@@ -551,7 +551,7 @@
   },
   "2_2_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "Mitts",
     "LocalizationId": "5028483625016",
@@ -561,7 +561,7 @@
   },
   "2_3_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "Clock",
     "LocalizationId": "5028483625017",
@@ -571,7 +571,7 @@
   },
   "2_3_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "TreasureKey",
     "LocalizationId": "5028483625018",
@@ -581,7 +581,7 @@
   },
   "2_4_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "Emerald",
     "LocalizationId": "5028483625019",
@@ -591,7 +591,7 @@
   },
   "2_4_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "Trinity",
     "LocalizationId": "5028483625020",
@@ -601,7 +601,7 @@
   },
   "2_5_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "Crossbow",
     "LocalizationId": "5028483625023",
@@ -611,7 +611,7 @@
   },
   "2_5_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "Musket",
     "LocalizationId": "5028483625024",
@@ -621,7 +621,7 @@
   },
   "2_5_2": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 2,
     "ItemName": "Executioner",
     "LocalizationId": "5028483625025",
@@ -631,7 +631,7 @@
   },
   "2_5_3": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 3,
     "ItemName": "DualPistols",
     "LocalizationId": "5028483625026",
@@ -641,7 +641,7 @@
   },
   "2_5_4": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 4,
     "ItemName": "PirateSword",
     "LocalizationId": "5028483625027",
@@ -651,7 +651,7 @@
   },
   "2_5_5": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 5,
     "ItemName": "Rapier",
     "LocalizationId": "5028483625028",
@@ -661,7 +661,7 @@
   },
   "2_6_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "LeatherBoots",
     "LocalizationId": "5028483625021",
@@ -671,7 +671,7 @@
   },
   "2_6_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "RidingBoots",
     "LocalizationId": "5028483625022",
@@ -681,7 +681,7 @@
   },
   "2_7_0": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 0,
     "ItemName": "Harness",
     "LocalizationId": "5028483625013",
@@ -691,7 +691,7 @@
   },
   "2_7_1": {
     "Age": 2,
-    "AgeName": "Earlymodern",
+    "AgeName": "EarlyModern",
     "Idx": 1,
     "ItemName": "LeatherBelt",
     "LocalizationId": "5028483625014",

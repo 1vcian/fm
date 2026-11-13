@@ -1,3 +1,4 @@
+import { RARITIES } from './gameTiers';
 /**
  * The one summon simulation shared by the Summons calculator (eggs, mounts, skills) and the
  * war-points engine (`warPoints.ts`).
@@ -26,7 +27,8 @@
  * from the probability row of the level it was made at.
  */
 
-export const SUMMON_RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
+/** Rarities in game order (GameTiers.json): the columns of a summon config's Levels rows. */
+export const SUMMON_RARITIES = RARITIES;
 
 /**
  * Ascensions a collection has: the length of AscensionConfigsLibrary[kind].AscensionConfigPerLevel

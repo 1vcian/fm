@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { AscensionStars, type AscensionType } from '../UI/AscensionStars';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
+import { RARITIES } from '../../utils/constants';
 
-const RARITIES_TOP_FIRST = ['Mythic', 'Ultimate', 'Legendary', 'Epic', 'Rare', 'Common'];
 
 /** The best rarity a summon level can drop and its chance, from the summon config's Levels row. */
 function topRarity(row: any): string {
     if (!row) return '';
-    const r = RARITIES_TOP_FIRST.find(x => row[x] > 0);
+    const r = [...RARITIES].reverse().find(x => row[x] > 0);
     if (!r) return '';
     const pct = row[r] * 100;
     return `${r} ${pct < 0.1 ? pct.toFixed(2) : pct.toFixed(1)}%`;

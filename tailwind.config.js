@@ -6,11 +6,6 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  safelist: [
-    {
-      pattern: /(text|bg|border)-(age|rarity)-.+/,
-    }
-  ],
   theme: {
     extend: {
       colors: {
@@ -35,26 +30,6 @@ export default {
         border: {
           DEFAULT: 'rgba(255, 255, 255, 0.08)',
           hover: 'rgba(245, 158, 11, 0.4)',
-        },
-        rarity: {
-          common: 'var(--age-primitive)',
-          rare: 'var(--age-medieval)',
-          epic: 'var(--age-early-modern)',
-          legendary: 'var(--age-modern)',
-          ultimate: 'var(--age-space)',
-          mythic: 'var(--age-interstellar)',
-        },
-        age: {
-          primitive: 'var(--age-primitive)',
-          medieval: 'var(--age-medieval)',
-          earlymodern: 'var(--age-early-modern)',
-          modern: 'var(--age-modern)',
-          space: 'var(--age-space)',
-          interstellar: 'var(--age-interstellar)',
-          multiverse: 'var(--age-multiverse)',
-          quantum: 'var(--age-quantum)',
-          underworld: 'var(--age-underworld)',
-          divine: 'var(--age-divine)',
         }
       },
       fontFamily: {

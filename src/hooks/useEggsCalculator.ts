@@ -1,3 +1,4 @@
+import { RARITIES } from '../utils/constants';
 import { useState, useMemo, useEffect } from 'react';
 import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
@@ -146,7 +147,7 @@ export function useEggsCalculator() {
     const hatchValuesProfile = useMemo(() => {
         if (!eggLibrary) return null;
         const times: Record<string, number> = {};
-        for (const rarity of ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic']) {
+        for (const rarity of RARITIES) {
             const baseTime = eggLibrary[rarity]?.HatchTime || 0;
             times[rarity] = baseTime / (1 + (treeModifiers[`${rarity}EggTimer`] || 0));
         }
@@ -198,7 +199,7 @@ export function useEggsCalculator() {
         if (!guildWarConfig) return null;
 
         const points: Record<string, { hatch: number, merge: number }> = {};
-        const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+        const rarities = RARITIES;
 
         // Read amounts from whatever day holds the task (independent of day layout),
         // then apply the clan tech tree war-point boosts.
@@ -221,7 +222,7 @@ export function useEggsCalculator() {
     const optimization = useMemo((): EggOptimizationResult | null => {
         if (!hatchValuesProfile || !warPoints || !forgeConfig) return null;
 
-        const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+        const rarities = RARITIES;
 
         // 1. Prepare Pool of All Eggs
         interface EggCandidate {

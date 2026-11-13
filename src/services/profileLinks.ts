@@ -28,12 +28,6 @@ export interface PendingPush {
     created_at: string;
 }
 
-/**
- * App links are a preview for now: shown only with debug=1 (or the site's debug=true) in the URL,
- * before or after the # route.
- */
-export const linkedAppsEnabled = () => typeof window !== 'undefined' && /[?&]debug=(1|true)(?![\w])/.test(window.location.href);
-
 export type LinkResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<LinkResult<T>> {

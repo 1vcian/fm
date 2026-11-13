@@ -1,3 +1,4 @@
+import { RARITIES } from '../utils/constants';
 import { useState, useMemo, useEffect } from 'react';
 import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
@@ -169,7 +170,7 @@ export function useSkillsCalculator() {
         if (!guildWarConfig) return null;
 
         const points: Record<string, number> = {};
-        const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+        const rarities = RARITIES;
 
         // Read from whatever day holds the task (independent of day layout) + clan boost.
         rarities.forEach(rarity => {

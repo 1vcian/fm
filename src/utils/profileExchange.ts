@@ -16,7 +16,7 @@
  * the review, the game-limit checks (utils/ocr/gameLimits.ts) and the apply are shared.
  */
 import type { ItemSlot, MountSlot, PetSlot, UserProfile } from '../types/Profile';
-import { AGES, MAX_ACTIVE_PETS } from './constants';
+import { AGES, MAX_ACTIVE_PETS, RARITIES } from './constants';
 import { FAIRIES } from './fairies';
 import { getItemName } from './itemAssets';
 import { substatSummary, skinSummary, type ChangeRow, type Patch } from './ocr/autoSync';
@@ -29,7 +29,8 @@ export const EXCHANGE_CURRENT = 1;
 
 export const EXCHANGE_SLOTS = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'] as const;
 export type ExchangeSlot = typeof EXCHANGE_SLOTS[number];
-export const EXCHANGE_RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
+/** The build's rarities (GameTiers.json). */
+export const EXCHANGE_RARITIES = RARITIES;
 
 export interface ExchangeSubstatV1 {
     /** SecondaryStatLibrary key, e.g. "CriticalChance". */
@@ -39,7 +40,7 @@ export interface ExchangeSubstatV1 {
 }
 
 export interface ExchangeItemV1 {
-    /** 0 to 9 (Primitive .. Divine), AutoItemMapping.Age. */
+    /** AutoItemMapping.Age: 0 (Primitive) to the build's last age (9, Divine, in 2026_10). */
     age: number;
     /** AutoItemMapping.Idx within its age and slot. */
     idx: number;
@@ -58,7 +59,8 @@ export interface ExchangeItemV1 {
 }
 
 export interface ExchangeUnitV1 {
-    rarity: typeof EXCHANGE_RARITIES[number];
+    /** A rarity of the build: Common, Rare, Epic, Legendary, Ultimate, Mythic in 2026_10. */
+    rarity: string;
     /** PetLibrary / MountLibrary Id within its rarity. */
     id: number;
     level: number;

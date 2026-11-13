@@ -1,25 +1,26 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { AGE_TIERS, RARITY_TIERS, ageColor, hexRgb, rarityColor } from "../utils/gameTiers";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-// Rarity color RGB values (matching CSS variables in index.css)
-const RARITY_COLORS: Record<string, string> = {
-    common: '241, 241, 241',
-    rare: '93, 216, 255',
-    epic: '93, 255, 138',
-    legendary: '252, 255, 93',
-    ultimate: '255, 93, 93',
-    mythic: '213, 93, 255',
-};
+/** "r, g, b" of a rarity (any case) or an age, from the build's GameTiers.json. */
+function rarityRgb(rarity: string): string {
+    const hex = rarityColor(rarity) ?? RARITY_TIERS[0]?.color;
+    return hex ? hexRgb(hex).join(', ') : '255, 255, 255';
+}
+function ageRgb(ageIndex: number): string {
+    const hex = ageColor(ageIndex) ?? AGE_TIERS[0]?.color;
+    return hex ? hexRgb(hex).join(', ') : '255, 255, 255';
+}
 
 /**
  * Returns inline style object for rarity-colored gradient background
  */
 export function getRarityBgStyle(rarity: string): React.CSSProperties {
-    const color = RARITY_COLORS[rarity.toLowerCase()] || RARITY_COLORS.common;
+    const color = rarityRgb(rarity);
     return {
         background: `linear-gradient(135deg, rgba(${color}, 0.5) 0%, rgba(${color}, 0.2) 100%)`,
     };
@@ -29,35 +30,16 @@ export function getRarityBgStyle(rarity: string): React.CSSProperties {
  * Returns inline style object for rarity-colored border
  */
 export function getRarityBorderStyle(rarity: string): React.CSSProperties {
-    const color = RARITY_COLORS[rarity.toLowerCase()] || RARITY_COLORS.common;
     return {
-        borderColor: `rgb(${color})`,
+        borderColor: `rgb(${rarityRgb(rarity)})`,
     };
 }
-
-// Age color RGB values (matching CSS variables in index.css)
-const AGE_COLORS: Record<string, string> = {
-    primitive: '241, 241, 241',
-    medieval: '93, 216, 255',
-    earlymodern: '93, 255, 138',
-    modern: '252, 255, 93',
-    space: '255, 93, 93',
-    interstellar: '213, 93, 255',
-    multiverse: '117, 255, 238',
-    quantum: '125, 93, 255',
-    underworld: '176, 120, 121',
-    divine: '255, 158, 13',
-};
-
-// Age name to index mapping
-const AGE_NAMES = ['primitive', 'medieval', 'earlymodern', 'modern', 'space', 'interstellar', 'multiverse', 'quantum', 'underworld', 'divine'];
 
 /**
  * Returns inline style object for age-colored gradient background
  */
 export function getAgeBgStyle(ageIndex: number): React.CSSProperties {
-    const ageName = AGE_NAMES[ageIndex] || 'primitive';
-    const color = AGE_COLORS[ageName] || AGE_COLORS.primitive;
+    const color = ageRgb(ageIndex);
     return {
         background: `linear-gradient(135deg, rgba(${color}, 0.5) 0%, rgba(${color}, 0.2) 100%)`,
     };
@@ -67,42 +49,33 @@ export function getAgeBgStyle(ageIndex: number): React.CSSProperties {
  * Returns inline style object for age-colored border
  */
 export function getAgeBorderStyle(ageIndex: number): React.CSSProperties {
-    const ageName = AGE_NAMES[ageIndex] || 'primitive';
-    const color = AGE_COLORS[ageName] || AGE_COLORS.primitive;
     return {
-        borderColor: `rgb(${color})`,
+        borderColor: `rgb(${ageRgb(ageIndex)})`,
     };
 }
 
 /**
- * Returns inline style object for Age Icons (AgeIcons.png sprite sheet)
- * Uses 4x4 grid (512x512 total, 128x128 per icon)
+ * Returns inline style object for an age's icon: AgeVisualConfig.Icon, a rect of its texture
+ * (AgeIcons.png), from GameTiers.json. The game's own order, so no index juggling here.
  */
 export function getAgeIconStyle(ageIndex: number, size: number = 32, version?: string): React.CSSProperties {
-    // Fix: Swap Multiverse (6) and Quantum (7) as they are inverted in the sprite sheet
-    let spriteIndex = ageIndex;
-    if (ageIndex === 6) spriteIndex = 7;
-    else if (ageIndex === 7) spriteIndex = 6;
-    if (ageIndex === 8) spriteIndex = 9;
-    else if (ageIndex === 9) spriteIndex = 8;
-
-    const col = spriteIndex % 4;
-    const row = Math.floor(spriteIndex / 4);
-    const spriteSize = 128;
-    const sheetWidth = 512;
-    const sheetHeight = 512;
-    const scale = size / spriteSize;
-
+    const icon = AGE_TIERS[ageIndex]?.icon ?? AGE_TIERS[0]?.icon;
     const versionPath = version ? `${version}/` : '';
-    return {
-        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}AgeIcons.png)`,
-        backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
-        backgroundSize: `${sheetWidth * scale}px ${sheetHeight * scale}px`,
+    const base: React.CSSProperties = {
         width: `${size}px`,
         height: `${size}px`,
         display: 'inline-block',
         verticalAlign: 'middle',
         imageRendering: 'pixelated'
+    };
+    if (!icon) return base;
+    const sx = size / icon.w;
+    const sy = size / icon.h;
+    return {
+        ...base,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}${icon.tex}.png)`,
+        backgroundPosition: `-${icon.x * sx}px -${icon.y * sy}px`,
+        backgroundSize: `${icon.texW * sx}px ${icon.texH * sy}px`,
     };
 }
 

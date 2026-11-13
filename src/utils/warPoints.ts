@@ -86,7 +86,8 @@
  * nothing here calls `calculateStats`. `power` is untouched.
  */
 
-import { AGES } from './constants';
+import { AGES, RARITIES as GAME_RARITIES } from './constants';
+import { ageIndexOf } from './gameTiers';
 import {
     computeWarDaysMap,
     getWarDayIndex,
@@ -110,8 +111,8 @@ export const WAR_CATEGORIES: WarCategory[] = [
     'tech', 'forge', 'forgeSpend', 'dungeons', 'skills', 'mounts', 'eggs', 'pets',
 ];
 
-/** The game's six rarities in ascending order — the suffix of every per-rarity task name. */
-const RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
+/** The game's rarities in ascending order (GameTiers.json): the suffix of every per-rarity task name. */
+const RARITIES = GAME_RARITIES;
 
 /**
  * Which war task each dungeon key spends. Key names are the app's
@@ -489,9 +490,7 @@ function simulateSummonPool(params: {
 /**
  * `Forge<Age>Equipment` reward per age index, straight from the day config.
  *
- * The task names drop the hyphen `AGES` uses ("EarlyModern" vs "Early-Modern"), which is why the
- * match strips it; the explicit `EarlyModern` fallback is carried over from `ForgeCalculator` so a
- * future rename of that one age cannot silently zero a third of the forge total.
+ * The task names carry the age's game key ("EarlyModern"), matched through GameTiers.json.
  */
 function forgePointsPerAge(dayConfig: any): Record<number, number> {
     const out: Record<number, number> = {};
@@ -502,8 +501,8 @@ function forgePointsPerAge(dayConfig: any): Record<number, number> {
             const match = /^Forge(.+)Equipment$/.exec(task?.Task || '');
             if (!match) continue;
             const ageName = match[1];
-            let idx = AGES.findIndex(a => a.replace('-', '') === ageName || a === ageName);
-            if (idx === -1 && ageName === 'EarlyModern') idx = 2;
+            // Task names use the game key ("EarlyModern"), AGES the English name ("Early-Modern").
+            const idx = ageIndexOf(ageName);
             if (idx === -1) continue;
             const reward = (task.Rewards || []).find((r: any) => r?.$type === 'WarPointsReward');
             if (reward?.Amount !== undefined) out[idx] = Number(reward.Amount) || 0;

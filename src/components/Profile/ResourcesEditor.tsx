@@ -1,3 +1,5 @@
+import { RARITIES } from '../../utils/constants';
+import { tierSlug } from '../../utils/gameTiers';
 import type { ReactNode } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { SpriteIcon } from '../UI/SpriteIcon';
@@ -55,14 +57,8 @@ function SectionTitle({ children }: { children: ReactNode }) {
     return <h3 className="text-[11px] font-black uppercase tracking-widest text-accent-primary/90 border-b border-white/5 pb-2 mb-3">{children}</h3>;
 }
 
-const EGG_RARITIES: { key: string; ring: string }[] = [
-    { key: 'Common', ring: 'ring-1 ring-inset ring-slate-400/30' },
-    { key: 'Rare', ring: 'ring-1 ring-inset ring-blue-400/40' },
-    { key: 'Epic', ring: 'ring-1 ring-inset ring-purple-400/40' },
-    { key: 'Legendary', ring: 'ring-1 ring-inset ring-amber-400/40' },
-    { key: 'Ultimate', ring: 'ring-1 ring-inset ring-red-400/40' },
-    { key: 'Mythic', ring: 'ring-1 ring-inset ring-fuchsia-400/40' },
-];
+const eggRarities = (): { key: string; ring: string }[] =>
+    RARITIES.map(key => ({ key, ring: `ring-1 ring-inset ring-rarity-${tierSlug(key)}/40` }));
 type KeyType = 'Hammer' | 'Skill' | 'Egg' | 'Potion';
 const DUNGEON_KEYS: { key: KeyType; icon: string; label: string }[] = [
     { key: 'Hammer', icon: 'HammerKey', label: 'Hammer' },
@@ -117,7 +113,7 @@ export function ResourcesEditor() {
             <div>
                 <SectionTitle>Eggs</SectionTitle>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {EGG_RARITIES.map(({ key, ring }) => (
+                    {eggRarities().map(({ key, ring }) => (
                         <ResourceCard
                             key={key}
                             icon={<EggIcon rarity={key} size={26} />}

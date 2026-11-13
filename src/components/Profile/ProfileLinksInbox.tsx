@@ -7,7 +7,7 @@ import { useGameData } from '../../hooks/useGameData';
 import { useGameLimits } from '../../hooks/useGameLimits';
 import { applyChanges } from '../../utils/ocr/autoSync';
 import { EXCHANGE_CURRENT, exchangeRows, profileToExchange } from '../../utils/profileExchange';
-import { linkedAppsEnabled, listLinks, pendingPushes, resolvePush, setExport, type PendingPush } from '../../services/profileLinks';
+import { listLinks, pendingPushes, resolvePush, setExport, type PendingPush } from '../../services/profileLinks';
 import { AutoSyncModal } from './AutoSyncModal';
 
 /** How often the pending updates are fetched while the site is open (and on focus). */
@@ -23,8 +23,8 @@ const EXPORT_DEBOUNCE_MS = 5_000;
  */
 export function ProfileLinksInbox() {
     const auth = useAuth();
-    // Off unless app links are enabled (debug=1 for now): no polling, no export, no banner.
-    const signedIn = auth.status === 'signed-in' && linkedAppsEnabled();
+    // Off when signed out: no polling, no export, no banner.
+    const signedIn = auth.status === 'signed-in';
     const { profile, profiles, activeProfileId, switchProfile, updateProfile } = useProfile();
     const limits = useGameLimits();
     const { data: autoItemMapping } = useGameData<any>('AutoItemMapping.json');

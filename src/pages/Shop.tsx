@@ -7,6 +7,7 @@ import { cn } from '../lib/utils';
 import { getItemImage, getItemName } from '../utils/itemAssets';
 import { useGameDataContext } from '../context/GameDataContext';
 import type { DailyDealRow } from '../utils/dailyDeals';
+import { AGES } from '../utils/constants';
 
 interface Reward {
     Amount: number;
@@ -33,7 +34,6 @@ interface IAPProduct {
     Type: string;
 }
 
-const AGES = ['Primitive', 'Medieval', 'Early-Modern', 'Modern', 'Space', 'Interstellar', 'Multiverse', 'Quantum', 'Underworld', 'Divine'];
 
 /**
  * Maps game reward data to the correct icon name in Texture2D or IconsMap

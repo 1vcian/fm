@@ -1,24 +1,5 @@
-export const AGES = [
-    "Primitive",
-    "Medieval",
-    "Early-Modern",
-    "Modern",
-    "Space",
-    "Interstellar",
-    "Multiverse",
-    "Quantum",
-    "Underworld",
-    "Divine"
-];
-
-export const RARITIES = [
-    "Common",
-    "Rare",
-    "Epic",
-    "Legendary",
-    "Ultimate",
-    "Mythic"
-];
+// Ages and rarities come from the newest build's GameTiers.json (see gameTiers.ts).
+export { AGES, RARITIES } from './gameTiers';
 
 /**
  * Active pet slots, still used only by the screenshot reader (src/utils/ocr/autoSync.ts and

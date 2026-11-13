@@ -1,3 +1,4 @@
+import { RARITIES } from '../utils/constants';
 import { useState, useMemo } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { useProfile } from '../context/ProfileContext';
@@ -114,7 +115,7 @@ export default function Skills() {
                 return matchSearch && matchRarity;
             })
             .sort((a, b) => {
-                const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+                const rarityOrder = RARITIES;
                 const rDiff = rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
                 return rDiff !== 0 ? rDiff : a.type.localeCompare(b.type);
             });
@@ -156,7 +157,7 @@ export default function Skills() {
         return `${textureBase}SkillIcons.png`;
     };
 
-    const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+    const rarities = RARITIES;
 
     const { isCompactStats } = useComparison();
 

@@ -108,6 +108,7 @@
  * body push that landed in between is not un-remembered). `useProfileSync.ts` is not touched.
  */
 
+import { RARITIES as GAME_RARITIES } from '../utils/gameTiers';
 import { clanNodeCaps as computeClanNodeCaps } from '../utils/clanTechStacking';
 import React, {
     createContext,
@@ -287,11 +288,11 @@ const WAR_FOCUS_REFRESH_MS = 20000;
 export const CLAN_SYNC_KEY = 'forgeMaster_clanSync';
 
 /**
- * The game's six rarity names, in ascending order. One list, because eggs, skills and mounts all
+ * The game's rarity names, in ascending order (GameTiers.json). One list, because eggs, skills and mounts all
  * use it: the war tasks are `Hatch<Rarity>Egg`, `Summon<Rarity>Skill`, `Summon<Rarity>Mount`, and
  * `profile.misc.ownedEggs` is keyed by the same strings (see `ResourcesEditor`).
  */
-const RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] as const;
+const RARITIES = GAME_RARITIES;
 
 /**
  * The four dungeon key names `profile.misc.dungeonKeyCounts` is keyed by, which is also the set
