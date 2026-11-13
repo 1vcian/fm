@@ -281,7 +281,7 @@
       },
       "7": {
         "name": "RainOfArrows",
-        "enum_value": 13
+        "enum_value": 14
       },
       "8": {
         "name": "CannonBarrage",
@@ -289,7 +289,7 @@
       },
       "9": {
         "name": "Morale",
-        "enum_value": 11
+        "enum_value": 1
       },
       "10": {
         "name": "Shuriken",
@@ -309,11 +309,11 @@
       },
       "14": {
         "name": "Lightning",
-        "enum_value": 14
+        "enum_value": 11
       },
       "15": {
         "name": "HigherMorale",
-        "enum_value": 1
+        "enum_value": 13
       },
       "16": {
         "name": "StrafeRun",
