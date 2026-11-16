@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameDataContext } from '../context/GameDataContext';
 import { buildTechTreeMapping, isVarintFixed, migrateLegacyStatValues, normalizeGuildUpgradeLibrary, parseValue, reconstructTechTreeLibrary, SPLIT_TECH_TREE_VERSION } from '../utils/gameDataTransforms';
 
@@ -93,9 +93,18 @@ export function useGameData<T>(fileName: string) {
         return !cacheKey || !dataCache[cacheKey];
     });
     const [error, setError] = useState<string | null>(null);
+    const lastFile = useRef(fileName);
 
     useEffect(() => {
         if (!selectedVersion || !fileName) return;
+        // A different file (not just another version of the same one) must not show the previous
+        // file's data or error while it loads, or a missing file would look like the old one.
+        if (lastFile.current !== fileName) {
+            lastFile.current = fileName;
+            setData(null);
+        }
+        setError(null);
+        let alive = true;
 
         // Create a unique cache key that includes the version
         const isGlobalFile = GLOBAL_CONFIG_FILES.includes(fileName);
@@ -116,11 +125,11 @@ export function useGameData<T>(fileName: string) {
             if (promiseCache[cacheKey]) {
                 try {
                     const json = await promiseCache[cacheKey];
-                    setData(json);
+                    if (alive) setData(json);
                 } catch (err: any) {
-                    setError(err.message);
+                    if (alive) setError(err.message);
                 } finally {
-                    setLoading(false);
+                    if (alive) setLoading(false);
                 }
                 return;
             }
@@ -159,17 +168,18 @@ export function useGameData<T>(fileName: string) {
             try {
                 const json = await fetchPromise;
                 dataCache[cacheKey] = json; // Cache the result
-                setData(json);
+                if (alive) setData(json);
             } catch (err: any) {
-                setError(err.message);
+                if (alive) setError(err.message);
                 // Remove failed promise from cache so we can retry later if needed
                 delete promiseCache[cacheKey];
             } finally {
-                setLoading(false);
+                if (alive) setLoading(false);
             }
         }
 
         fetchData();
+        return () => { alive = false; };
     }, [fileName, selectedVersion]);
 
     return { data, loading, error };
