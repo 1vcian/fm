@@ -4,7 +4,7 @@
  * SortingGroups that sort a subtree as one item. Several prefabs can be merged into one instance
  * (the unit rig plus its helmet, armour and weapon prefabs, parented where the game parents them).
  */
-import type { BattleVisualData, Clip, PrefabNode, SpriteDef, TextureCache } from './visualData';
+import type { BattleVisualData, Clip, PrefabNode, SkinnedMesh, SpriteDef, TextureCache } from './visualData';
 
 export type Mat = [number, number, number, number, number, number];
 
@@ -99,6 +99,11 @@ export class RigInstance {
     sized = false;
     private animRoot = 0;
     private pathIndex = new Map<string, number>();
+    /**
+     * Nodes parented outside this instance: their parent's world matrix. A rider's CharacterRig
+     * hangs under its mount's UnitAnchor this way (UnitRotationView.Update 0x418B344).
+     */
+    parentWorld = new Map<number, Mat>();
 
     constructor(readonly data: BattleVisualData, prefab: string) {
         this.append(prefab, -1);
@@ -111,7 +116,11 @@ export class RigInstance {
         const offset = this.nodes.length;
         p.nodes.forEach((n, i) => {
             const m = i === 0 && localOverride ? localOverride : n.m;
-            this.nodes.push({ ...n, p: n.p < 0 ? parent : n.p + offset, base: decompose(m), m });
+            const node: RigNode = { ...n, p: n.p < 0 ? parent : n.p + offset, base: decompose(m), m };
+            // Node references inside the prefab move with it.
+            if (n.skinned) node.skinned = { ...n.skinned, bones: n.skinned.bones.map(b => (b >= 0 ? b + offset : b)) };
+            if (n.anchorNode !== undefined && n.anchorNode >= 0) node.anchorNode = n.anchorNode + offset;
+            this.nodes.push(node);
         });
         return offset;
     }
@@ -242,7 +251,7 @@ export class RigInstance {
                     a.x ?? b.x, a.y ?? b.y,
                 ];
             } else local = a ? trs(a.x ?? b.x, a.y ?? b.y, a.rot ?? b.rot, a.sx ?? b.sx, a.sy ?? b.sy) : (nd.m as Mat);
-            const parent = nd.p >= 0 ? this.world[nd.p] : rootWorld;
+            const parent = this.parentWorld.get(i) ?? (nd.p >= 0 ? this.world[nd.p] : rootWorld);
             this.world[i] = mul(parent ?? rootWorld, local);
             if (a?.a !== undefined) nd.alpha = a.a;
             nd.live = a ? liveOf(nd, a) : undefined;
@@ -341,6 +350,72 @@ export function drawSprite(
     return true;
 }
 
+/**
+ * A SkinnedMeshRenderer drawn the way Unity skins it: every vertex at
+ * sum(weight * boneWorld * bindPose * vertex), then each triangle of the texture mapped onto its
+ * skinned triangle (an affine map per triangle, clipped to the triangle grown by a hair so the
+ * seams between neighbours do not show).
+ */
+export function drawSkinned(ctx: CanvasRenderingContext2D, rig: RigInstance, mesh: SkinnedMesh, tex: TextureCache, color: number[]): boolean {
+    const img = mesh.tex ? tex.get(mesh.tex) : undefined;
+    if (!img) return false;
+    const bone = mesh.bones.map((b, k) => mul(rig.world[b] ?? IDENTITY, (mesh.bind[k] ?? IDENTITY) as Mat));
+    const n = mesh.v.length / 2;
+    const pos = new Float64Array(n * 2);
+    for (let i = 0; i < n; i++) {
+        const x = mesh.v[2 * i], y = mesh.v[2 * i + 1];
+        let px = 0, py = 0;
+        for (const [b, w] of mesh.w[i] ?? []) {
+            const m = bone[b];
+            if (!m) continue;
+            px += w * (m[0] * x + m[2] * y + m[4]);
+            py += w * (m[1] * x + m[3] * y + m[5]);
+        }
+        pos[2 * i] = px;
+        pos[2 * i + 1] = py;
+    }
+    const W = img.width, H = img.height;
+    ctx.save();
+    ctx.globalAlpha *= color[3] ?? 1;
+    const base = ctx.getTransform();
+    const t = mesh.tris;
+    for (let k = 0; k + 2 < t.length; k += 3) {
+        const a = t[k], b = t[k + 1], c = t[k + 2];
+        const x0 = pos[2 * a], y0 = pos[2 * a + 1], x1 = pos[2 * b], y1 = pos[2 * b + 1], x2 = pos[2 * c], y2 = pos[2 * c + 1];
+        // Texture pixels: UV v runs up, image rows run down.
+        const u0 = mesh.uv[2 * a] * W, v0 = (1 - mesh.uv[2 * a + 1]) * H;
+        const u1 = mesh.uv[2 * b] * W, v1 = (1 - mesh.uv[2 * b + 1]) * H;
+        const u2 = mesh.uv[2 * c] * W, v2 = (1 - mesh.uv[2 * c + 1]) * H;
+        const den = (u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0);
+        if (Math.abs(den) < 1e-9) continue;
+        // The affine map taking (u, v) to (x, y) for this triangle.
+        const ma = ((x1 - x0) * (v2 - v0) - (x2 - x0) * (v1 - v0)) / den;
+        const mb = ((y1 - y0) * (v2 - v0) - (y2 - y0) * (v1 - v0)) / den;
+        const mc = ((x2 - x0) * (u1 - u0) - (x1 - x0) * (u2 - u0)) / den;
+        const md = ((y2 - y0) * (u1 - u0) - (y1 - y0) * (u2 - u0)) / den;
+        const me = x0 - ma * u0 - mc * v0;
+        const mf = y0 - mb * u0 - md * v0;
+        const cx = (x0 + x1 + x2) / 3, cy = (y0 + y1 + y2) / 3;
+        const grow = 1.04;
+        ctx.setTransform(base);
+        ctx.beginPath();
+        ctx.moveTo(cx + (x0 - cx) * grow, cy + (y0 - cy) * grow);
+        ctx.lineTo(cx + (x1 - cx) * grow, cy + (y1 - cy) * grow);
+        ctx.lineTo(cx + (x2 - cx) * grow, cy + (y2 - cy) * grow);
+        ctx.closePath();
+        ctx.save();
+        ctx.clip();
+        ctx.transform(ma, mb, mc, md, me, mf);
+        // Only the triangle's own patch of the texture (plus a pixel), not the whole sheet.
+        const sx = Math.max(0, Math.floor(Math.min(u0, u1, u2)) - 1), sy = Math.max(0, Math.floor(Math.min(v0, v1, v2)) - 1);
+        const sw = Math.min(W, Math.ceil(Math.max(u0, u1, u2)) + 1) - sx, sh = Math.min(H, Math.ceil(Math.max(v0, v1, v2)) + 1) - sy;
+        if (sw > 0 && sh > 0) ctx.drawImage(img, sx, sy, sw, sh, sx, sy, sw, sh);
+        ctx.restore();
+    }
+    ctx.restore();
+    return true;
+}
+
 /** Scratch canvases for masked sprites (the sprite, and the union of the masks). */
 let maskScratch: [HTMLCanvasElement, HTMLCanvasElement] | null = null;
 
@@ -405,7 +480,7 @@ export function rigItems(
     for (let i = 0; i < nodes.length; i++) {
         if (skip?.(i)) continue;
         const nd = nodes[i];
-        const renders = (nd.s && !(nd.live?.srOff ?? nd.srOff)) || customDraw?.has(i);
+        const renders = (nd.s && !(nd.live?.srOff ?? nd.srOff)) || nd.skinned || customDraw?.has(i);
         // A group node's own sprite sorts inside its own group.
         if (isGroup(i)) {
             const parentGroup = groupOf[i];
@@ -435,6 +510,7 @@ export function rigItems(
         const nd = nodes[i];
         const cd = customDraw?.get(i);
         if (cd) { cd(ctx, world[i]); return; }
+        if (nd.skinned) { drawSkinned(ctx, rig, nd.skinned, tex, tint(undefined)); return; }
         if (nd.s) {
             let c = tint(nd.live?.c ?? nd.c);
             if (nd.alpha !== undefined && !nd.live?.c) c = [c[0], c[1], c[2], c[3] * nd.alpha];
@@ -452,6 +528,7 @@ export function rigItems(
         const i = entry < 0 ? -entry - 1 : entry;
         const nd = nodes[i];
         if (entry < 0) return { layer: layerIndex(data, nd.sg![0]), order: nd.sg![1], i };
+        if (nd.skinned && !nd.s) return { layer: layerIndex(data, nd.skinned.l), order: nd.skinned.o, i };
         return { layer: layerIndex(data, nd.l), order: nd.live?.o ?? nd.o ?? 0, i };
     };
     // Another sortable parented inside this instance (a rider under its mount's UnitAnchor): it

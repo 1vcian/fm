@@ -78,6 +78,28 @@ export interface PrefabNode {
     maskCutoff?: number;
     /** SpriteRenderer.maskInteraction: 1 visible inside the masks, 2 visible outside. */
     mask?: number;
+    /** SkinnedMeshRenderer: a mesh bent by bones of the same prefab (rig.ts drawSkinned). */
+    skinned?: SkinnedMesh;
+    /** MountView.UnitAnchor as a node index: where the rider's CharacterRig is parented. */
+    anchorNode?: number;
+}
+
+/**
+ * A SkinnedMeshRenderer's mesh (reverseForge/extract_battle_visuals.py skinned_info): vertices
+ * in bind space and UVs as flat x, y pairs, triangle indices, per-vertex [bone, weight] pairs, a
+ * bind pose per bone in the Mat layout, and the bones as node indices. Unity draws each vertex
+ * at sum(weight * boneWorld * bindPose * vertex), in world space.
+ */
+export interface SkinnedMesh {
+    tex: string | null;
+    v: number[];
+    uv: number[];
+    tris: number[];
+    w: [number, number][][];
+    bind: number[][];
+    bones: number[];
+    o: number;
+    l: number;
 }
 
 export interface Prefab { nodes: PrefabNode[] }
@@ -90,6 +112,11 @@ export interface ItemVisual {
      * shown (BodyPart Head 0, Body 1, Hand 2), e.g. the boxing glove hides the hands.
      */
     turnOff?: number[];
+    /**
+     * EquipmentItemVisualConfig.BodyPartColor: [BodyPart, colour] pairs; while shown, the part's
+     * renderers take exactly that colour (SetBodyPartVisuals 0x42BACC4), e.g. the Skeleton's white hands.
+     */
+    partColor?: [number, number[]][];
     controller?: string | null;
     dualWield?: boolean;
     hasProjectile?: boolean;

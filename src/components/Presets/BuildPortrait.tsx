@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { skinMaxLevel } from '../../utils/skinArchive';
 import { loadBattleVisuals, TextureCache } from '../Battle/gameView/visualData';
 import { PortraitScene, isRangedWeapon, type PortraitBackground, type TimelineStep } from './portraitScene';
 import { useGameData } from '../../hooks/useGameData';
+import { mountCollider } from '../../utils/BattleSimulator';
 import type { UserProfile } from '../../types/Profile';
 
 /**
@@ -51,7 +52,9 @@ export function BuildPortrait({
 }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
+    const { data: mountLibrary } = useGameData<any>('MountLibrary.json');
     const weaponRanged = rangedOverride ?? isRangedWeapon(profile, weaponLibrary);
+    const mountUnitOffset = useMemo(() => mountCollider(profile, { mountLibrary })?.unitOffset ?? null, [profile, mountLibrary]);
     const control = useRef({ playing, frame, onFrame });
     control.current = { playing, frame, onFrame };
 
@@ -68,7 +71,7 @@ export function BuildPortrait({
         loadBattleVisuals().then((data) => {
             if (!alive) return;
             const tex = new TextureCache();
-            const make = () => new PortraitScene(data, tex, { profile, setId, pets, background, weaponRanged, timeline });
+            const make = () => new PortraitScene(data, tex, { profile, setId, pets, background, weaponRanged, timeline, mountUnitOffset });
             let scene = make();
             let shownFrame = 0;
             let last = performance.now();
@@ -93,7 +96,7 @@ export function BuildPortrait({
             raf = requestAnimationFrame(loop);
         }).catch(() => { /* no visuals for this version: the canvas stays empty */ });
         return () => { alive = false; cancelAnimationFrame(raf); io?.disconnect(); };
-    }, [profile, setId, width, height, scale, pets, anchor, background, weaponRanged, timeline]);
+    }, [profile, setId, width, height, scale, pets, anchor, background, weaponRanged, timeline, mountUnitOffset]);
 
     useEffect(() => {
         const c = canvasRef.current;

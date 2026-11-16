@@ -1,7 +1,7 @@
 import { type BattleVisualData, type ParticleDef, type TextureCache } from '../Battle/gameView/visualData';
 import { RigInstance, rigItems, sortItems, layerIndex, mul, trs, IDENTITY, type DrawItem, type Mat } from '../Battle/gameView/rig';
 import { Emitter, tintTexture } from '../Battle/gameView/particles';
-import { buildUnit, lookFromProfile, mountedItems, DEATH_EFFECT_OFFSET, type UnitView } from '../Battle/gameView/scene';
+import { applyFairyHover, buildUnit, lookFromProfile, mountedItems, DEATH_EFFECT_OFFSET, type UnitView } from '../Battle/gameView/scene';
 import type { UserProfile } from '../../types/Profile';
 import { ballisticDirection, GRAVITY_Y } from '../../engine/scene';
 
@@ -52,6 +52,11 @@ export interface PortraitOptions {
     weaponRanged?: boolean;
     /** States to play in order, repeating; empty or missing: the Walk state loops. */
     timeline?: TimelineStep[];
+    /**
+     * MountLibrary.UnitOffset of the profile's mount: the muzzle's UnitOffSet in ExecuteAttack
+     * (UpdateMount, main battles and dungeons). The drawn rider follows the prefab's UnitAnchor instead.
+     */
+    mountUnitOffset?: { x: number; y: number } | null;
 }
 
 interface Segment { step: TimelineStep; start: number; length: number }
@@ -159,8 +164,9 @@ export class PortraitScene {
         const speed = pi.ProjectileSpeed ?? 0;
         if (speed <= 0) return null;
         // ExecuteAttack, not aiming: start = Position + HandOffset + UnitOffSet + WeaponOffset.
-        const x0 = (wd.HandOffset?.x ?? 0) + (wd.WeaponOffset?.x ?? 0) + (unit.mount ? unit.mountOffset[0] : 0);
-        const y0 = (wd.HandOffset?.y ?? 0) + (wd.WeaponOffset?.y ?? 0) + (unit.mount ? unit.mountOffset[1] : 0);
+        const uo = unit.mount ? this.opts.mountUnitOffset ?? null : null;
+        const x0 = (wd.HandOffset?.x ?? 0) + (wd.WeaponOffset?.x ?? 0) + (uo?.x ?? 0);
+        const y0 = (wd.HandOffset?.y ?? 0) + (wd.WeaponOffset?.y ?? 0) + (uo?.y ?? 0);
         // No enemy here: the shot aims at a point its weapon's range ahead, at the muzzle's height.
         const range = Math.max(1, wd.AttackRange ?? 7);
         const gravity = !!pi.IsAffectedByGravity;
@@ -313,15 +319,17 @@ export class PortraitScene {
             items.push({ layer: 1, order: 3, y, seq: 0, draw: c => { for (const it of list) it.draw(c); } });
         }
         if (unit.mount) {
-            rig.setLocalPosition(unit.charRig, unit.mountOffset[0], unit.mountOffset[1]);
+            // As in battle (UnitRotationView.Update 0x418B344): the rider's CharacterRig hangs
+            // under the mount's UnitAnchor, following its animated world transform.
+            unit.mount.clearAnimation();
+            if (unit.mountClip) unit.mount.applyClip(data.clips[unit.mountClip], t, true);
+            unit.mount.update(root);
+            if (unit.mountAnchor >= 0) rig.parentWorld.set(unit.charRig, unit.mount.world[unit.mountAnchor]);
             if (unit.unitShadow >= 0) rig.nodes[unit.unitShadow].hidden = true;
         }
         rig.update(root);
         const unitItems = rigItems(rig, tex, undefined, (i) => i === unit.hpBar);
         if (unit.mount) {
-            unit.mount.clearAnimation();
-            if (unit.mountClip) unit.mount.applyClip(data.clips[unit.mountClip], t, true);
-            unit.mount.update(root);
             const all = mountedItems(unit.mount, tex, unitItems);
             items.push({ layer: 1, order: 0, y: 0, seq: 0, draw: c => { for (const it of all) it.draw(c); } });
         } else items.push(...unitItems);
@@ -336,9 +344,7 @@ export class PortraitScene {
             const f = unit.fairy;
             f.rig.clearAnimation();
             if (f.clip) f.rig.applyClip(data.clips[f.clip], t, true);
-            const body = f.rig.find('Body');
-            const sc = Math.hypot(f.rig.nodes[0].m[0], f.rig.nodes[0].m[1]) || 1;
-            if (body >= 0) f.rig.setLocalPosition(body, 0, (f.hover + Math.sin(t * f.speed * Math.PI) * 0.5 * sc) / sc);
+            applyFairyHover(f.rig, f.hover, t);
             f.rig.update([1, 0, 0, 1, this.ux - 1.0, 0]);
             items.push(...rigItems(f.rig, tex));
             if (!this.fairyEmitters) this.fairyEmitters = emittersOf(f.rig, data);

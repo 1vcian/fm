@@ -39,6 +39,8 @@ export interface Look {
     fairy?: string | null;
     /** BodyParts the shown helmet, armour and weapon turn off (ItemVisual.turnOff, merged). */
     turnOff?: number[];
+    /** Body part colours of the shown helmet, armour and weapon (ItemVisual.partColor, in that order). */
+    partColor?: [number, number[]][];
 }
 
 const ITEM_TYPE = { Helmet: 0, Armour: 1, Weapon: 5 } as const;
@@ -66,6 +68,11 @@ function turnOffOf(shown: (ItemVisual | null | undefined)[]): number[] {
     return [...new Set(shown.flatMap(v => v?.turnOff ?? []))];
 }
 
+/** The body part colours the shown visuals set, in equip order (a later one wins on a part). */
+function partColorOf(shown: (ItemVisual | null | undefined)[]): [number, number[]][] {
+    return shown.flatMap(v => v?.partColor ?? []);
+}
+
 /** The look of a bare character wearing the given skins (Skin Idx per slot), default weapon below. */
 export function lookFromSkins(data: BattleVisualData, skins: { helmet?: number; armour?: number; weapon?: number }): Look {
     const h = skinVisual(data, ITEM_TYPE.Helmet, skins.helmet, false);
@@ -77,6 +84,7 @@ export function lookFromSkins(data: BattleVisualData, skins: { helmet?: number; 
         helmetPrefab: h?.prefab ?? null,
         armourPrefab: a?.prefab ?? null,
         turnOff: turnOffOf([h, a, w]),
+        partColor: partColorOf([h, a, w]),
     };
 }
 
@@ -105,11 +113,13 @@ export function lookFromProfile(data: BattleVisualData, profile: UserProfile | n
     } else {
         look.weapon = data.visuals[data.defaultWeapon];
     }
-    look.turnOff = turnOffOf([
+    const shownVisuals = [
         it.Helmet ? skinVisual(data, ITEM_TYPE.Helmet, shown(profile.misc?.skinVisible?.Helmet, it.Helmet.skin?.idx), false) ?? look.helmet : null,
         it.Body ? skinVisual(data, ITEM_TYPE.Armour, shown(profile.misc?.skinVisible?.Body, it.Body.skin?.idx), false) ?? look.armour : null,
         it.Weapon ? skinVisual(data, ITEM_TYPE.Weapon, shown(profile.misc?.useSkinWindup, it.Weapon.skin?.idx), !!opts?.weaponRanged) ?? look.weapon : null,
-    ]);
+    ];
+    look.turnOff = turnOffOf(shownVisuals);
+    look.partColor = partColorOf(shownVisuals);
     if (opts?.noCompanions) return look;
     // MountVisualConfig.Prefab (0x4185344) and PetVisualConfig.PetPrefab (0x4191410) go through
     // AscensionExtensions.ForAscension (0x48088C4): units added later only fill their top ascension slot.
@@ -159,10 +169,11 @@ export interface UnitView {
     /** The shown weapon prefab's WeaponEquipmentItem.WeaponData (windup, range, hand and muzzle offsets). */
     weaponData: any;
     mount: RigInstance | null;
-    mountOffset: [number, number];
+    /** The mount's UnitAnchor node, or -1: the rider's CharacterRig hangs under it. */
+    mountAnchor: number;
     mountClip: string | null;
     pets: { rig: RigInstance; slot: number; x: number; y: number; clip: string | null }[];
-    fairy: { rig: RigInstance; clip: string | null; x: number; y: number; hover: number; speed: number; emitters?: Emitter[] } | null;
+    fairy: { rig: RigInstance; clip: string | null; x: number; y: number; hover: FairyHover; emitters?: Emitter[] } | null;
     prevX: number; prevY: number; x: number; y: number;
     /** Facing of the last frame drawn. */
     sign: number;
@@ -291,6 +302,28 @@ function ownClip(data: BattleVisualData, rig: RigInstance): string | null {
     return first ?? null;
 }
 
+/** FairyMovementBehaviour's hover of the fairy's Body, in the fairy's own (scaled) space. */
+export interface FairyHover { body: number; x: number; mid: number; amp: number; speed: number }
+
+function fairyHover(rig: RigInstance, fm: any, sc: number): FairyHover {
+    const body = rig.find('Body');
+    return {
+        body, x: body >= 0 ? rig.nodes[body].m[4] : 0,
+        // Without the behaviour, the old fixed 3 world units above the root.
+        mid: fm ? (fm._minHoverY + fm._maxHoverY) / 2 : 3 / sc,
+        amp: fm ? (fm._maxHoverY - fm._minHoverY) / 2 : 0,
+        speed: fm?._hoverSpeed ?? 1,
+    };
+}
+
+/**
+ * FairyMovementBehaviour.Hover (0x42D7024): Body.localPosition.y = (min + max) / 2
+ * + (max - min) / 2 * sin(Time.time * _hoverSpeed), x kept.
+ */
+export function applyFairyHover(rig: RigInstance, h: FairyHover, t: number): void {
+    if (h.body >= 0) rig.setLocalPosition(h.body, h.x, h.mid + h.amp * Math.sin(t * h.speed));
+}
+
 export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['kind']): UnitView {
     const prefab = kind === 'thief' ? 'ThiefView' : kind === 'drone' ? 'DroneView' : 'UnitView';
     const rig = new RigInstance(data, prefab);
@@ -299,6 +332,7 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
     let aiming = false;
     let projectile: string | null = null;
     let weaponData: any = null;
+    let helmetRoot = -1;
     if (kind === 'unit') {
         const head = rig.find('Head');
         const body = rig.find('Body');
@@ -306,7 +340,7 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
         const ws = rig.find('[SCALE] Weapon-Secondary');
         const helmet = look.helmetPrefab ?? look.helmet?.prefab;
         if (helmet) {
-            rig.append(helmet, head);
+            helmetRoot = rig.append(helmet, head);
             if (look.helmet?.hideBodyPart && !look.helmetPrefab) rig.nodes[head].srOff = 1;
         }
         const armour = look.armourPrefab ?? look.armour?.prefab;
@@ -336,14 +370,32 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
         const byPart: Record<number, number[]> = { 0: [parts[0]], 1: [parts[1]], 2: [parts[2], parts[3]] };
         for (const bp of look.turnOff) for (const n of byPart[bp] ?? []) if (n !== undefined && n >= 0 && rig.nodes[n]) rig.nodes[n].srOff = 1;
     }
+    // BodyPartColor (SetBodyPartVisuals 0x42BACC4): SpriteRenderer.color set to the colour itself.
+    if (kind === 'unit' && look.partColor?.length && charRig >= 0) {
+        const parts: number[] = (rig.nodes[charRig] as any).bodyPartNodes ?? [];
+        const byPart: Record<number, number[]> = { 0: [parts[0]], 1: [parts[1]], 2: [parts[2], parts[3]] };
+        for (const [bp, c] of look.partColor) for (const n of byPart[bp] ?? []) if (n !== undefined && n >= 0 && rig.nodes[n]) rig.nodes[n].c = c;
+    }
+    // HelmetEquipmentItem.HpBarOffset (0x42BA240): HpBarParent.localPosition = (0, offset, 0).
+    if (kind === 'unit' && helmetRoot >= 0) {
+        const off = rig.nodes[helmetRoot].mb?.HelmetEquipmentItem?.HpBarOffset;
+        const bar = rig.find('HpBarParent');
+        // Set once on equip, so it is the node's rest pose, not a per-frame override.
+        if (typeof off === 'number' && bar >= 0) {
+            const nd = rig.nodes[bar];
+            nd.base = { ...nd.base, x: 0, y: off };
+            nd.m = [nd.m[0], nd.m[1], nd.m[2], nd.m[3], 0, off];
+        }
+    }
     if (charRig < 0) charRig = 0;
     rig.setAnimRoot(charRig);
     const mount = look.mount && data.prefabs[look.mount] ? new RigInstance(data, look.mount) : null;
-    let mountOffset: [number, number] = [0, 0];
     let mountClip: string | null = null;
+    let mountAnchor = -1;
     if (mount) {
-        const uo = mount.find('UnitOffset');
-        if (uo >= 0) mountOffset = [mount.nodes[uo].m[4], mount.nodes[uo].m[5]];
+        // MountView.UnitAnchor (the extractor's anchorNode; UnitOffset in every mount of build
+        // 2026_11_16_09_55), which can sit under animated nodes (Jade Serpent: MountVisual/Body).
+        mountAnchor = mount.nodes[0].anchorNode ?? mount.find('UnitOffset');
         mountClip = ownClip(data, mount);
     }
     const pets = (look.pets ?? []).map((p, slot) => {
@@ -357,9 +409,7 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
         const sc = Math.hypot(r.nodes[0].m[0], r.nodes[0].m[1]);
         fairy = {
             rig: r, clip: ownClip(data, r), x: NaN, y: NaN,
-            // _minHoverY / _maxHoverY are in the fairy's own (scaled) space.
-            hover: fm ? ((fm._minHoverY + fm._maxHoverY) / 2) * sc : 3,
-            speed: fm?._hoverSpeed ?? 1,
+            hover: fairyHover(r, fm, sc),
         };
     }
     return {
@@ -368,7 +418,7 @@ export function buildUnit(data: BattleVisualData, look: Look, kind: UnitView['ki
         ...(kind === 'thief' ? (() => { const dc = rig.find('Destroyed Cart'); if (dc >= 0) rig.nodes[dc].hidden = true; return {}; })() : {}),
         unitShadow: kind === 'unit' ? rig.find('Shadow') : -1,
         handPrimary: rig.find('[ROT] Hand-Primary'),
-        mount, mountOffset, mountClip, pets, fairy,
+        mount, mountAnchor, mountClip, pets, fairy,
         prevX: NaN, prevY: NaN, x: NaN, y: NaN, sign: 1, tick: -1,
         fill: 1, prefill: 1, prefillFrom: 1, prefillT: 1, seen: 0, deathDone: false,
     };
@@ -663,7 +713,13 @@ export class BattleSceneRenderer {
                 rig.addRotation(uv.handPrimary, (Math.atan2(u.lookY, Math.abs(u.lookX) || 1e-6) * 180) / Math.PI);
             }
             if (uv.mount) {
-                rig.setLocalPosition(uv.charRig, uv.mountOffset[0], uv.mountOffset[1]);
+                // UnitRotationView.Update (0x418B344): the mount sits at the unit's origin, the
+                // CharacterRig is parented under its UnitAnchor with localPosition zero, so the
+                // rider follows the anchor's animated world transform. The unit's shadow goes off.
+                uv.mount.clearAnimation();
+                if (uv.mountClip) uv.mount.applyClip(data.clips[uv.mountClip], this.battleTime, true);
+                uv.mount.update(root);
+                if (uv.mountAnchor >= 0) rig.parentWorld.set(uv.charRig, uv.mount.world[uv.mountAnchor]);
                 if (uv.unitShadow >= 0) rig.nodes[uv.unitShadow].hidden = true;
             }
             rig.update(root);
@@ -685,9 +741,6 @@ export class BattleSceneRenderer {
             const skip = (i: number) => i === uv.hpBar;
             const unitItems = rigItems(rig, tex, undefined, skip, custom);
             if (uv.mount) {
-                uv.mount.clearAnimation();
-                if (uv.mountClip) uv.mount.applyClip(data.clips[uv.mountClip], this.battleTime, true);
-                uv.mount.update(root);
                 // UnitRotationView.Update 0x3F1DDF8 parents the CharacterRig under the mount's
                 // UnitAnchor: the rider (its SortingGroup, order 0) sorts among the mount's own
                 // renderers, so parts with a higher order (a bee's near wing, the crab) cover it.
@@ -703,7 +756,8 @@ export class BattleSceneRenderer {
             // pets: PetVisual.PetOffsets per slot, behind the owner; they catch up at MaxSpeed.
             for (const p of uv.pets) {
                 const offs = p.rig.nodes[0].mb?.PetVisual?.PetOffsets?.[p.slot] ?? { x: -1.5, y: 0 };
-                const tx = x + offs.x * sign, ty = y + offs.y;
+                // PetVisual.UpdatePosition (0x419C798): both offsets times the owner's side sign.
+                const tx = x + offs.x * sign, ty = y + offs.y * sign;
                 if (Number.isNaN(p.x)) { p.x = tx; p.y = ty; }
                 const mv = p.rig.nodes[0].mb?.PetMovementBehaviour;
                 const sp = (mv?.MaxSpeed ?? 1.5) * Math.max(1, Math.hypot(tx - p.x, ty - p.y));
@@ -722,10 +776,7 @@ export class BattleSceneRenderer {
                 f.y += (ty - f.y) * Math.min(1, dt * 2);
                 f.rig.clearAnimation();
                 if (f.clip) f.rig.applyClip(data.clips[f.clip], this.battleTime, true);
-                const body = f.rig.find('Body');
-                const sc = Math.hypot(f.rig.nodes[0].m[0], f.rig.nodes[0].m[1]) || 1;
-                // FairyMovementBehaviour hovers the body between _minHoverY and _maxHoverY (own space).
-                if (body >= 0) f.rig.setLocalPosition(body, 0, (f.hover + Math.sin(this.battleTime * f.speed * Math.PI) * 0.5 * sc) / sc);
+                applyFairyHover(f.rig, f.hover, this.battleTime);
                 f.rig.update([sign, 0, 0, 1, f.x, f.y]);
                 push(rigItems(f.rig, tex));
                 if (!f.emitters) f.emitters = this.spawnEmitters(f.rig, () => true, false);
