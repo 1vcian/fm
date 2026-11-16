@@ -1,0 +1,38 @@
+{
+  "Common": {
+    "PetRarity": "Common",
+    "NumberOfSecondStats": 1
+  },
+  "Rare": {
+    "PetRarity": "Rare",
+    "NumberOfSecondStats": 1
+  },
+  "Epic": {
+    "PetRarity": "Epic",
+    "NumberOfSecondStats": 1
+  },
+  "Legendary": {
+    "PetRarity": "Legendary",
+    "NumberOfSecondStats": 2
+  },
+  "Ultimate": {
+    "PetRarity": "Ultimate",
+    "NumberOfSecondStats": 2
+  },
+  "Mythic": {
+    "PetRarity": "Mythic",
+    "NumberOfSecondStats": 2
+  },
+  "Heroic": {
+    "PetRarity": "Heroic",
+    "NumberOfSecondStats": 2
+  },
+  "Infinite": {
+    "PetRarity": "Infinite",
+    "NumberOfSecondStats": 2
+  },
+  "Eternal": {
+    "PetRarity": "Eternal",
+    "NumberOfSecondStats": 2
+  }
+}

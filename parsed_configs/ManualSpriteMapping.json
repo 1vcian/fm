@@ -13,7 +13,7 @@
       "columns": 4,
       "rows": 4
     },
-    "total_sprites": 15,
+    "total_sprites": 21,
     "mapping": {
       "0": {
         "name": "LilyPad",
@@ -89,6 +89,106 @@
         "name": "HoverBoard",
         "rarity": "Mythic",
         "id": 1
+      },
+      "16": {
+        "name": "WarElephant",
+        "rarity": "Heroic",
+        "id": 0,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfiniteMountIcons.png",
+            "cell": 0
+          }
+        ]
+      },
+      "17": {
+        "name": "IronRaptor",
+        "rarity": "Heroic",
+        "id": 1,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfiniteMountIcons.png",
+            "cell": 5
+          }
+        ]
+      },
+      "18": {
+        "name": "CelestialThrone",
+        "rarity": "Infinite",
+        "id": 0,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfiniteMountIcons.png",
+            "cell": 3
+          }
+        ]
+      },
+      "19": {
+        "name": "SkullBear",
+        "rarity": "Infinite",
+        "id": 1,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfiniteMountIcons.png",
+            "cell": 1
+          }
+        ]
+      },
+      "20": {
+        "name": "SpectralSteed",
+        "rarity": "Eternal",
+        "id": 0,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfiniteMountIcons.png",
+            "cell": 4
+          }
+        ]
+      },
+      "21": {
+        "name": "JadeSerpent",
+        "rarity": "Eternal",
+        "id": 1,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfiniteMountIcons.png",
+            "cell": 2
+          }
+        ]
+      }
+    },
+    "sheets": {
+      "HeroicEternalInfiniteMountIcons.png": {
+        "texture_size": {
+          "width": 1024,
+          "height": 1024
+        },
+        "sprite_size": {
+          "width": 256,
+          "height": 256
+        },
+        "grid": {
+          "columns": 4,
+          "rows": 4
+        }
       }
     }
   },
@@ -106,7 +206,7 @@
       "columns": 8,
       "rows": 8
     },
-    "total_sprites": 25,
+    "total_sprites": 34,
     "mapping": {
       "0": {
         "name": "Panda",
@@ -232,6 +332,148 @@
         "name": "SpectralTiger",
         "rarity": "Mythic",
         "id": 2
+      },
+      "64": {
+        "name": "PrismCrane",
+        "rarity": "Eternal",
+        "id": 0,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 6
+          }
+        ]
+      },
+      "65": {
+        "name": "GoldenWisp",
+        "rarity": "Eternal",
+        "id": 1,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 0
+          }
+        ]
+      },
+      "66": {
+        "name": "CosmicJellyfish",
+        "rarity": "Eternal",
+        "id": 2,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 5
+          }
+        ]
+      },
+      "67": {
+        "name": "HoverBot",
+        "rarity": "Heroic",
+        "id": 0,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 2
+          }
+        ]
+      },
+      "68": {
+        "name": "CrystalGolem",
+        "rarity": "Heroic",
+        "id": 1,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 4
+          }
+        ]
+      },
+      "69": {
+        "name": "WhiteLionCub",
+        "rarity": "Heroic",
+        "id": 2,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 1
+          }
+        ]
+      },
+      "70": {
+        "name": "EclipseMask",
+        "rarity": "Infinite",
+        "id": 0,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 8
+          }
+        ]
+      },
+      "71": {
+        "name": "StarWhale",
+        "rarity": "Infinite",
+        "id": 1,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 3
+          }
+        ]
+      },
+      "72": {
+        "name": "InkStag",
+        "rarity": "Infinite",
+        "id": 2,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "HeroicEternalInfinitePets.png",
+            "cell": 7
+          }
+        ]
+      }
+    },
+    "sheets": {
+      "HeroicEternalInfinitePets.png": {
+        "texture_size": {
+          "width": 1024,
+          "height": 1024
+        },
+        "sprite_size": {
+          "width": 256,
+          "height": 256
+        },
+        "grid": {
+          "columns": 4,
+          "rows": 4
+        }
       }
     }
   },
@@ -249,7 +491,7 @@
       "columns": 8,
       "rows": 8
     },
-    "total_sprites": 18,
+    "total_sprites": 27,
     "mapping": {
       "0": {
         "name": "Meat",
@@ -322,6 +564,123 @@
       "17": {
         "name": "Drone",
         "enum_value": 17
+      },
+      "18": {
+        "name": "DeathStar",
+        "enum_value": 18,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 18
+          }
+        ]
+      },
+      "19": {
+        "name": "Stomp",
+        "enum_value": 19,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 19
+          }
+        ]
+      },
+      "20": {
+        "name": "GhostRush",
+        "enum_value": 20,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 20
+          }
+        ]
+      },
+      "21": {
+        "name": "RisingBlades",
+        "enum_value": 21,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 21
+          }
+        ]
+      },
+      "22": {
+        "name": "GiantForge",
+        "enum_value": 22,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 22
+          }
+        ]
+      },
+      "23": {
+        "name": "InfiniteRenewal",
+        "enum_value": 23,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 23
+          }
+        ]
+      },
+      "24": {
+        "name": "FiringSquad",
+        "enum_value": 24,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 24
+          }
+        ]
+      },
+      "25": {
+        "name": "BarrelRoll",
+        "enum_value": 25,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 25
+          }
+        ]
+      },
+      "26": {
+        "name": "EternalLeaves",
+        "enum_value": 26,
+        "icons": [
+          null,
+          null,
+          null,
+          {
+            "texture": "SkillIcons.png",
+            "cell": 26
+          }
+        ]
       }
     }
   },

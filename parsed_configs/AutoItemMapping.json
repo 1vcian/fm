@@ -2308,5 +2308,645 @@
     "SpriteName": "IconDivineBeltSorcererbelt",
     "Type": 7,
     "TypeName": "Belt"
+  },
+  "10_0_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixCrest",
+    "LocalizationId": "150875089778237440",
+    "SpriteName": "IconHeroicHeadgear1",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "10_0_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "PhoenixVisor",
+    "LocalizationId": "163420664276967424",
+    "SpriteName": "IconHeroicHeadgear2",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "10_0_2": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 2,
+    "ItemName": "BlazingGreathelm",
+    "LocalizationId": "163420664276967425",
+    "SpriteName": "IconHeroicHeadgear3",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "10_0_3": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 3,
+    "ItemName": "EmberHood",
+    "LocalizationId": "163420664276967426",
+    "SpriteName": "IconHeroicHeadgear4",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "10_1_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixPlate",
+    "LocalizationId": "150875089836957696",
+    "SpriteName": "IconHeroicArmor1",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "10_1_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "PhoenixMantle",
+    "LocalizationId": "163420664276967427",
+    "SpriteName": "IconHeroicArmor2",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "10_2_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixGauntlets",
+    "LocalizationId": "150875089836957698",
+    "SpriteName": "IconHeroicGlove1",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "10_2_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "EmberBracer",
+    "LocalizationId": "163420664276967429",
+    "SpriteName": "IconHeroicGlove2",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "10_3_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixPendant",
+    "LocalizationId": "150875089836957701",
+    "SpriteName": "IconHeroicNeck1",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "10_3_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "EmberChain",
+    "LocalizationId": "163420664276967430",
+    "SpriteName": "IconHeroicNeck2",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "10_4_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixSignet",
+    "LocalizationId": "150875089836957702",
+    "SpriteName": "IconHeroicRing1",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "10_4_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "EmberRing",
+    "LocalizationId": "163420664276967431",
+    "SpriteName": "IconHeroicRing2",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "10_5_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixBlade",
+    "LocalizationId": "150875089836957697",
+    "SpriteName": "IconHeroicWeapon1",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "10_5_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "EmberAxe",
+    "LocalizationId": "163420664276967433",
+    "SpriteName": "IconHeroicWeapon2",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "10_5_2": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 2,
+    "ItemName": "PhoenixBow",
+    "LocalizationId": "163420664276967434",
+    "SpriteName": "IconHeroicWeapon3",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "10_5_3": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 3,
+    "ItemName": "EmberHammer",
+    "LocalizationId": "163420664276967435",
+    "SpriteName": "IconHeroicWeapon4",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "10_5_4": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 4,
+    "ItemName": "Flamefang",
+    "LocalizationId": "163420664276967436",
+    "SpriteName": "IconHeroicWeapon5",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "10_5_5": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 5,
+    "ItemName": "TorchOfRebirth",
+    "LocalizationId": "163420664276967437",
+    "SpriteName": "IconHeroicWeapon6",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "10_6_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixTreads",
+    "LocalizationId": "150875089836957699",
+    "SpriteName": "IconHeroicFoot1",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "10_6_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "EmberBoots",
+    "LocalizationId": "163420664276967432",
+    "SpriteName": "IconHeroicFoot2",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "10_7_0": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 0,
+    "ItemName": "PhoenixBelt",
+    "LocalizationId": "150875089836957700",
+    "SpriteName": "IconHeroicBelt1",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "10_7_1": {
+    "Age": 10,
+    "AgeName": "Heroic",
+    "Idx": 1,
+    "ItemName": "EmberGirdle",
+    "LocalizationId": "163420664276967428",
+    "SpriteName": "IconHeroicBelt2",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "11_0_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralHelm",
+    "LocalizationId": "150875089836957703",
+    "SpriteName": "IconInfiniteHeadgear1",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "11_0_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "NebulaWarhelm",
+    "LocalizationId": "163420664276967438",
+    "SpriteName": "IconInfiniteHeadgear2",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "11_0_2": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 2,
+    "ItemName": "OrbitalVisor",
+    "LocalizationId": "163420664276967439",
+    "SpriteName": "IconInfiniteHeadgear3",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "11_0_3": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 3,
+    "ItemName": "CometWingcap",
+    "LocalizationId": "163420664276967440",
+    "SpriteName": "IconInfiniteHeadgear4",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "11_1_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralPlate",
+    "LocalizationId": "150875089836957704",
+    "SpriteName": "IconInfiniteArmor1",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "11_1_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "OrbitalCuirass",
+    "LocalizationId": "163420664276967441",
+    "SpriteName": "IconInfiniteArmor2",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "11_2_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralGauntlets",
+    "LocalizationId": "150875089836957706",
+    "SpriteName": "IconInfiniteGlove1",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "11_2_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "NebulaGrips",
+    "LocalizationId": "163420664276967443",
+    "SpriteName": "IconInfiniteGlove2",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "11_3_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralPendant",
+    "LocalizationId": "150875089836957709",
+    "SpriteName": "IconInfiniteNeck1",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "11_3_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "ConstellationTorc",
+    "LocalizationId": "163420664276967444",
+    "SpriteName": "IconInfiniteNeck2",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "11_4_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralSignet",
+    "LocalizationId": "150875089836957710",
+    "SpriteName": "IconInfiniteRing1",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "11_4_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "OrbitRing",
+    "LocalizationId": "163420664276967445",
+    "SpriteName": "IconInfiniteRing2",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "11_5_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralSpear",
+    "LocalizationId": "150875089836957705",
+    "SpriteName": "IconInfiniteWeapon4",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "11_5_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "StarlightSword",
+    "LocalizationId": "163420664276967447",
+    "SpriteName": "IconInfiniteWeapon1",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "11_5_2": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 2,
+    "ItemName": "GravityHammer",
+    "LocalizationId": "163420664276967448",
+    "SpriteName": "IconInfiniteWeapon2",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "11_5_3": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 3,
+    "ItemName": "CometBow",
+    "LocalizationId": "163420664276967449",
+    "SpriteName": "IconInfiniteWeapon3",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "11_5_4": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 4,
+    "ItemName": "OrbitScepter",
+    "LocalizationId": "163420664276967450",
+    "SpriteName": "IconInfiniteWeapon5",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "11_6_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralTreads",
+    "LocalizationId": "150875089836957707",
+    "SpriteName": "IconInfiniteFoot1",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "11_6_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "CometGreaves",
+    "LocalizationId": "163420664276967446",
+    "SpriteName": "IconInfiniteFoot2",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "11_7_0": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 0,
+    "ItemName": "AstralBelt",
+    "LocalizationId": "150875089836957708",
+    "SpriteName": "IconInfiniteBelt1",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "11_7_1": {
+    "Age": 11,
+    "AgeName": "Infinite",
+    "Idx": 1,
+    "ItemName": "GravityGirdle",
+    "LocalizationId": "163420664276967442",
+    "SpriteName": "IconInfiniteBelt2",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "12_0_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "VerdantCrown",
+    "LocalizationId": "150875089836957711",
+    "SpriteName": "IconEternalHeadgear1",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "12_0_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "ThornshadeHelm",
+    "LocalizationId": "163420664276967451",
+    "SpriteName": "IconEternalHeadgear2",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "12_0_2": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 2,
+    "ItemName": "SylvanCrest",
+    "LocalizationId": "163420664276967452",
+    "SpriteName": "IconEternalHeadgear3",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "12_0_3": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 3,
+    "ItemName": "LeafguardHelm",
+    "LocalizationId": "163420664276967453",
+    "SpriteName": "IconEternalHeadgear4",
+    "Type": 0,
+    "TypeName": "Helmet"
+  },
+  "12_1_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "VerdantRobe",
+    "LocalizationId": "150875089836957712",
+    "SpriteName": "IconEternalArmor1",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "12_1_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "ElderwoodMail",
+    "LocalizationId": "163420664276967454",
+    "SpriteName": "IconEternalArmor2",
+    "Type": 1,
+    "TypeName": "Armour"
+  },
+  "12_2_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "VerdantGloves",
+    "LocalizationId": "150875089836957714",
+    "SpriteName": "IconEternalGlove1",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "12_2_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "ThornGrasp",
+    "LocalizationId": "163420664276967456",
+    "SpriteName": "IconEternalGlove2",
+    "Type": 2,
+    "TypeName": "Gloves"
+  },
+  "12_3_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "VerdantPendant",
+    "LocalizationId": "150875089836957717",
+    "SpriteName": "IconEternalNeck1",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "12_3_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "LeafsongAmulet",
+    "LocalizationId": "163420664276967457",
+    "SpriteName": "IconEternalNeck2",
+    "Type": 3,
+    "TypeName": "Necklace"
+  },
+  "12_4_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "VerdantRing",
+    "LocalizationId": "150875089836957718",
+    "SpriteName": "IconEternalRing1",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "12_4_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "BloomBand",
+    "LocalizationId": "163420664276967458",
+    "SpriteName": "IconEternalRing2",
+    "Type": 4,
+    "TypeName": "Ring"
+  },
+  "12_5_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "BloomStaff",
+    "LocalizationId": "150875089836957713",
+    "SpriteName": "IconEternalWeapon4",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "12_5_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "Leafblade",
+    "LocalizationId": "163420664276967460",
+    "SpriteName": "IconEternalWeapon1",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "12_5_2": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 2,
+    "ItemName": "SylvanBow",
+    "LocalizationId": "163420664276967461",
+    "SpriteName": "IconEternalWeapon2",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "12_5_3": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 3,
+    "ItemName": "ThornSickle",
+    "LocalizationId": "163420664276967462",
+    "SpriteName": "IconEternalWeapon3",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "12_5_4": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 4,
+    "ItemName": "SeedburstMace",
+    "LocalizationId": "163420664276967463",
+    "SpriteName": "IconEternalWeapon5",
+    "Type": 5,
+    "TypeName": "Weapon"
+  },
+  "12_6_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "VerdantBoots",
+    "LocalizationId": "150875089836957715",
+    "SpriteName": "IconEternalFoot1",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "12_6_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "RootwalkerGreaves",
+    "LocalizationId": "163420664276967459",
+    "SpriteName": "IconEternalFoot2",
+    "Type": 6,
+    "TypeName": "Shoes"
+  },
+  "12_7_0": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 0,
+    "ItemName": "VerdantBelt",
+    "LocalizationId": "150875089836957716",
+    "SpriteName": "IconEternalBelt1",
+    "Type": 7,
+    "TypeName": "Belt"
+  },
+  "12_7_1": {
+    "Age": 12,
+    "AgeName": "Eternal",
+    "Idx": 1,
+    "ItemName": "EmeraldSash",
+    "LocalizationId": "163420664276967455",
+    "SpriteName": "IconEternalBelt2",
+    "Type": 7,
+    "TypeName": "Belt"
   }
 }
