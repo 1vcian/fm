@@ -13,6 +13,8 @@ import { EggIcon } from '../components/UI/EggIcon';
 import { PlannerAlarms } from '../components/Planner/PlannerAlarms';
 import { eggLanes } from '../utils/plannerSchedule';
 import { rarityColor, tierSlug } from '../utils/gameTiers';
+import { useRarityAscensionFrom } from '../hooks/useAscensionUnlocks';
+import { FromAscensionBadge } from '../components/UI/FromAscensionBadge';
 
 export default function Eggs() {
     const { profile, updateNestedProfile } = useProfile();
@@ -29,6 +31,8 @@ export default function Eggs() {
     } = useEggsCalculator();
     const eggWarBoost = Math.max(warPointBonuses?.hatch || 0, warPointBonuses?.merge || 0);
     const { selectedVersion } = useGameDataContext();
+    // Rarity -> first pet ascension whose egg summon table can roll it.
+    const eggRarityFrom = useRarityAscensionFrom('EggSummonConfig.json');
 
     // The eggshell summon calculator lives in the Summons calculator (Eggs tab); this page links there.
     const [activeTab, setActiveTab] = useState<'calculator'>('calculator');
@@ -300,6 +304,7 @@ export default function Eggs() {
                                             <span className={cn("text-xs font-bold uppercase", `text-rarity-${tierSlug(rarity)}`)}>
                                                 {rarity}
                                             </span>
+                                            <FromAscensionBadge ascension={eggRarityFrom[rarity]} source="pet" />
 
                                             <div className="flex items-center gap-1 w-full">
                                                 <button

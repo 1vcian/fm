@@ -9,7 +9,9 @@ import { cn, getRarityBgStyle } from '../lib/utils';
 import { BookOpen, TrendingUp } from 'lucide-react';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
-import { getAscensionTexturePath } from '../utils/ascensionUtils';
+import { ascensionMultiplierFor } from '../utils/ascensionUnlocks';
+import { useRarityAscensionFrom } from '../hooks/useAscensionUnlocks';
+import { FromAscensionBadge } from '../components/UI/FromAscensionBadge';
 import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
 import { formatCompactNumber } from '../utils/statsCalculator';
@@ -44,23 +46,14 @@ export default function Pets() {
     const loading = l1 || l2 || l3 || l3b || l4 || l5;
     const petsConfig = spriteMapping?.pets;
 
-    // Compute ascension multiplier from JSON
-    const ascensionMulti = useMemo(() => {
-        let dmg = 1, hp = 1;
-        if (ascensionLevel > 0 && ascensionConfigs?.Pets?.AscensionConfigPerLevel) {
-            const configs = ascensionConfigs.Pets.AscensionConfigPerLevel;
-            const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
-            if (config) {
-                for (const s of config.StatContributions || []) {
-                    const val = s.Value;
-                    const statType = s.StatNode?.UniqueStat?.StatType;
-                    if (statType === 'Damage' || statType === 'AscensionDamage') dmg = val + 1;
-                    if (statType === 'Health' || statType === 'AscensionHealth') hp = val + 1;
-                }
-            }
-        }
-        return { dmg, hp };
-    }, [ascensionLevel, ascensionConfigs]);
+    // Ascensions-layer multiplier of the picked pet ascension (utils/ascensionUnlocks.ts): only
+    // AscensionConfigPerLevel[Level - 1], applied to every pet rarity (Target Pet, no qualifier).
+    const ascensionMulti = useMemo(
+        () => ascensionMultiplierFor(ascensionConfigs, 'Pets', ascensionLevel, 'PetStatTarget'),
+        [ascensionLevel, ascensionConfigs]
+    );
+    // Rarity -> first pet ascension whose egg summon table can roll it (pets hatch from eggs).
+    const rarityFrom = useRarityAscensionFrom('EggSummonConfig.json');
 
     // Build lookup from ManualSpriteMapping
     const spriteLookup = useMemo(() => {
@@ -191,12 +184,17 @@ export default function Pets() {
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
                         <AscensionStars type="Pets" value={ascensionLevel} onChange={setAscensionLevel} />
-                        {/* Ascensions-layer Multiplier: x(1 + Value) of AscensionConfigPerLevel[Level - 1] only (AscensionModel.GetLevelStats 0x77E7364; layer math in docs/skill-verification-2026_10.md section 2). */}
+                        {/* Ascensions-layer Multiplier: x(1 + Value) of AscensionConfigPerLevel[Level - 1] only (AscensionModel.GetLevelStats 0x7C79F80; layer math in docs/skill-verification-2026_10.md section 2). */}
                         {ascensionLevel > 0 && (
                             <span className="text-xs text-amber-400 font-mono">x{formatNumber(ascensionMulti.dmg)}</span>
                         )}
                     </div>
                 </div>
+                <p className="text-[11px] text-text-muted mt-2">
+                    {ascensionLevel > 0
+                        ? `Damage and Health at level ${globalLevel} with the pet ascension ${ascensionLevel} bonus (x${formatNumber(ascensionMulti.dmg)}), pet type multiplier included. Tech tree and other bonuses are not added.`
+                        : `Base Damage and Health at level ${globalLevel}, pet type multiplier included, no ascension bonus. Pick an ascension to apply its bonus.`}
+                </p>
             </Card>
 
             {/* Egg Ascension Preview */}
@@ -232,6 +230,7 @@ export default function Pets() {
                             )}>
                                 {rarity}
                             </span>
+                            <FromAscensionBadge ascension={rarityFrom[rarity]} source="pet" />
                             <div className="text-[10px] font-mono text-text-muted bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
                                 Base Exp: {(petUpgrades?.[rarity]?.LevelInfo?.[0]?.Experience || 0).toLocaleString()}
                             </div>
@@ -256,15 +255,23 @@ export default function Pets() {
                         const baseHp = baseStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === 'Health')?.Value || 0;
 
                         const typeMod = petBalancing?.[pet.type] || { DamageMultiplier: 1, HealthMultiplier: 1 };
-                        const finalDmg = baseDmg * (typeMod.DamageMultiplier || 1) * ascensionMulti.dmg;
-                        const finalHp = baseHp * (typeMod.HealthMultiplier || 1) * ascensionMulti.hp;
+                        // Not obtainable at the picked ascension: shown dimmed, not hidden, with the
+                        // stats of the first ascension that can obtain it (the qualifier-less Pet
+                        // target reaches every rarity, so that ascension's multiplier applies to it).
+                        const fromAsc = rarityFrom[pet.rarity];
+                        const lockedHere = !!fromAsc && ascensionLevel < fromAsc;
+                        const shownAsc = lockedHere ? fromAsc : ascensionLevel;
+                        const multi = lockedHere ? ascensionMultiplierFor(ascensionConfigs, 'Pets', fromAsc, 'PetStatTarget') : ascensionMulti;
+                        const finalDmg = baseDmg * (typeMod.DamageMultiplier || 1) * multi.dmg;
+                        const finalHp = baseHp * (typeMod.HealthMultiplier || 1) * multi.hp;
 
                         const spriteStyle = getSpriteStyle(pet.spriteIndex);
 
                         return (
                             <Card key={pet.key} variant="hover" className={cn(
                                 "flex flex-col p-4 relative overflow-hidden transition-all",
-                                isActive ? "border-accent-primary ring-2 ring-accent-primary" : ""
+                                isActive ? "border-accent-primary ring-2 ring-accent-primary" : "",
+                                lockedHere && !isActive ? "opacity-60" : ""
                             )}>
                                 {/* Glow */}
                                 <div className={cn(
@@ -310,15 +317,21 @@ export default function Pets() {
                                                     pet.type === 'Health' ? <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 1 }} size={12} className="align-middle mr-0.5" /> : null}
                                                 {pet.type}
                                             </span>
+                                            <FromAscensionBadge ascension={fromAsc} source="pet" />
                                         </div>
                                     </div>
                                 </div>
 
+                                {lockedHere && (
+                                    <div className="relative z-10 mb-3 text-[10px] text-amber-300/90 bg-amber-400/5 border border-amber-400/20 rounded px-2 py-1">
+                                        Not obtainable at pet ascension {ascensionLevel}. Stats shown at ascension {fromAsc}, the first one that can obtain it.
+                                    </div>
+                                )}
                                 {/* Stats at global level */}
                                 <div className="grid grid-cols-2 gap-2 mt-auto">
                                     <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                         <div className="flex items-center gap-1 text-[10px] text-text-muted mb-0.5 uppercase font-bold">
-                                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} /> Base Dmg
+                                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} /> Damage
                                         </div>
                                         <div className="font-mono font-bold text-red-200">
                                             +{formatStatValue(finalDmg)}
@@ -361,7 +374,7 @@ export default function Pets() {
                                         otherwise the row of the pet's rarity; its NumberOfSecondStats is the count. */}
                                     <div className="text-[10px] font-bold text-text-muted uppercase">Substats</div>
                                     <div className="bg-accent-primary/10 text-accent-primary px-2 py-0.5 rounded text-xs font-mono font-bold">
-                                        {(ascensionLevel > 0 ? lastPetUnlockRow : petUnlockLib?.[pet.rarity])?.NumberOfSecondStats || 0}
+                                        {(shownAsc > 0 ? lastPetUnlockRow : petUnlockLib?.[pet.rarity])?.NumberOfSecondStats || 0}
                                     </div>
                                 </div>
                             </Card>

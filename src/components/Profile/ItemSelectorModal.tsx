@@ -1,3 +1,4 @@
+import { ascensionMultiplierFor } from '../../utils/ascensionUnlocks';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
@@ -136,20 +137,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         let total = 0;
         const ascLevel = forgeAscensionLevel || profile.misc.forgeAscensionLevel || 0;
 
-        if (ascLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
-            const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
-            const config = configs[Math.min(ascLevel - 1, configs.length - 1)];
-            if (config) {
-                const contributions = config.StatContributions || [];
-                for (const stat of contributions) {
-                    const statType = stat.StatNode?.UniqueStat?.StatType;
-                    if (statType === 'Damage' || statType === 'AscensionDamage') {
-                        total = stat.Value + 1;
-                        break;
-                    }
-                }
-            }
-        }
+        // Ascensions layer, Target Equipment: the player's CURRENT forge ascension applies to every
+        // item at view time (no ascension is stored per item; AscensionModel.GetLevelStats 0x7C79F80
+        // takes AscensionConfigPerLevel[Level - 1] only). See utils/ascensionUnlocks.ts.
+        if (ascLevel > 0) total = ascensionMultiplierFor(ascensionConfigs, 'Forge', ascLevel, 'EquipmentStatTarget').dmg;
         return total;
     }, [forgeAscensionLevel, profile.misc.forgeAscensionLevel, ascensionConfigs]);
 

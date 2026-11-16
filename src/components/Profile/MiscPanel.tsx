@@ -124,7 +124,12 @@ export function MiscPanel() {
                         <AscensionStars
                             type="Forge"
                             value={profile.misc.forgeAscensionLevel || 0}
-                            onChange={(val) => updateMisc('forgeAscensionLevel', val)}
+                            onChange={(val) => {
+                                // A lower forge ascension has a lower top level (MaxForgeLevelByAscension):
+                                // keep the level inside it.
+                                const top = forgeUpgrades ? maxDisplayedForgeLevel(forgeUpgrades, val) : 99;
+                                updateNestedProfile('misc', { forgeAscensionLevel: val, forgeLevel: Math.min(profile.misc.forgeLevel, top) });
+                            }}
                         />
                     </div>
                     <div className="flex items-center justify-between bg-bg-input p-2 rounded-lg border border-border">

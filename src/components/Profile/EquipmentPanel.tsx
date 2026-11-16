@@ -1,3 +1,4 @@
+import { ascensionMultiplierFor } from '../../utils/ascensionUnlocks';
 import { useProfile } from '../../context/ProfileContext';
 import { DummyTestButton } from './DummyTestButton';
 import { AutoBestButton } from './AutoBestButton';
@@ -20,6 +21,7 @@ import { cn, getInventoryIconStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
 import { AGES } from '../../utils/constants';
+import { parseForgeUpgrades, maxDisplayedForgeLevel } from '../../utils/forgeConfig';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { personalTechShare } from '../../utils/clanTechStacking';
 
@@ -157,6 +159,8 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: forgeUpgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
+    const forgeUpgrades = useMemo(() => parseForgeUpgrades(forgeUpgradeData), [forgeUpgradeData]);
 
     const techModifiers = useTreeModifiers();
     const clanModifiers = useClanTreeModifiers();
@@ -168,19 +172,10 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
             if (variant === 'original' && originalForgeAscension !== null) ascLevel = originalForgeAscension;
             else if (variant === 'test' && testForgeAscension !== null) ascLevel = testForgeAscension;
         }
-        if (ascLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
-            const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
-            const config = configs[Math.min(ascLevel - 1, configs.length - 1)];
-            if (config) {
-                const contributions = config.StatContributions || [];
-                for (const stat of contributions) {
-                    if (stat.StatNode?.UniqueStat?.StatType === 'AscensionDamage' || stat.StatNode?.UniqueStat?.StatType === 'Damage') {
-                        total = stat.Value + 1;
-                        break; 
-                    }
-                }
-            }
-        }
+        // Ascensions layer, Target Equipment: the player's CURRENT forge ascension applies to every
+        // item at view time (no ascension is stored per item; AscensionModel.GetLevelStats 0x7C79F80
+        // takes AscensionConfigPerLevel[Level - 1] only). See utils/ascensionUnlocks.ts.
+        if (ascLevel > 0) total = ascensionMultiplierFor(ascensionConfigs, 'Forge', ascLevel, 'EquipmentStatTarget').dmg;
         return total;
     }, [profile.misc.forgeAscensionLevel, ascensionConfigs, isComparing, variant, originalForgeAscension, testForgeAscension]);
 
@@ -316,7 +311,9 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                         if (variant === 'original') updateOriginalForgeAscension(val);
                                         else if (variant === 'test') updateTestForgeAscension(val);
                                     } else {
-                                        updateNestedProfile('misc', { forgeAscensionLevel: val });
+                                        // A lower forge ascension has a lower top level: keep the level inside it.
+                                        const top = forgeUpgrades ? maxDisplayedForgeLevel(forgeUpgrades, val) : Infinity;
+                                        updateNestedProfile('misc', { forgeAscensionLevel: val, forgeLevel: Math.min(profile.misc.forgeLevel, top) });
                                     }
                                 }}
                                 size="sm"

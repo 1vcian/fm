@@ -14,6 +14,10 @@ import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 import { unitIcon, unitIconStyle } from '../utils/unitIcons';
+import { formatNumber } from '../utils/format';
+import { ascensionMultiplierFor } from '../utils/ascensionUnlocks';
+import { useRarityAscensionFrom } from '../hooks/useAscensionUnlocks';
+import { FromAscensionBadge } from '../components/UI/FromAscensionBadge';
 
 export default function Mounts() {
     const { profile } = useProfile();
@@ -33,23 +37,20 @@ export default function Mounts() {
     const loading = l1 || l1b || l1c || l2 || l3;
     const mountsConfig = spriteMapping?.mounts;
 
-    // Compute ascension multiplier from JSON
-    const ascensionMulti = useMemo(() => {
-        let dmg = 1, hp = 1;
-        if (ascensionLevel > 0 && ascensionConfigs?.Mounts?.AscensionConfigPerLevel) {
-            const configs = ascensionConfigs.Mounts.AscensionConfigPerLevel;
-            const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
-            if (config) {
-                for (const s of config.StatContributions || []) {
-                    const val = s.Value;
-                    const statType = s.StatNode?.UniqueStat?.StatType;
-                    if (statType === 'Damage' || statType === 'AscensionDamage') dmg = val + 1;
-                    if (statType === 'Health' || statType === 'AscensionHealth') hp = val + 1;
-                }
-            }
-        }
-        return { dmg, hp };
-    }, [ascensionLevel, ascensionConfigs]);
+    // Ascensions-layer multiplier of the picked mount ascension (utils/ascensionUnlocks.ts): only
+    // AscensionConfigPerLevel[Level - 1], applied to every mount rarity (Target Mount, no qualifier).
+    const ascensionMulti = useMemo(
+        () => ascensionMultiplierFor(ascensionConfigs, 'Mounts', ascensionLevel, 'MountStatTarget'),
+        [ascensionLevel, ascensionConfigs]
+    );
+    // Rarity -> first mount ascension whose summon table can roll it.
+    const rarityFrom = useRarityAscensionFrom('MountSummonConfig.json');
+    // MountExtensions.CreateMount (RVA 0x7CDD2F0): with mounts ascended the substat count comes from
+    // the LAST SecondaryStatPetUnlockLibrary row, otherwise from the mount's rarity row.
+    const lastUnlockRow = useMemo(() => {
+        const rows = petUnlockLib ? Object.values(petUnlockLib) : [];
+        return rows.length ? (rows[rows.length - 1] as any) : undefined;
+    }, [petUnlockLib]);
 
     // Build sprite lookup
     const spriteLookup = useMemo(() => {
@@ -184,10 +185,15 @@ export default function Mounts() {
                         <span className="text-sm font-bold text-text-secondary whitespace-nowrap">Ascension:</span>
                         <AscensionStars type="Mounts" value={ascensionLevel} onChange={setAscensionLevel} />
                         {ascensionLevel > 0 && (
-                            <span className="text-xs text-amber-400 font-mono">+{((ascensionMulti.dmg) * 100).toFixed(0)}%</span>
+                            <span className="text-xs text-amber-400 font-mono">x{formatNumber(ascensionMulti.dmg)}</span>
                         )}
                     </div>
                 </div>
+                <p className="text-[11px] text-text-muted mt-2">
+                    {ascensionLevel > 0
+                        ? `Damage and Health at level ${globalLevel} with the mount ascension ${ascensionLevel} bonus (x${formatNumber(ascensionMulti.dmg)}). Tech tree and other bonuses are not added.`
+                        : `Base Damage and Health at level ${globalLevel}, no ascension bonus. Pick an ascension to apply its bonus.`}
+                </p>
             </Card>
 
             {loading ? (
@@ -197,11 +203,18 @@ export default function Mounts() {
                     {mounts.map(mount => {
                         const isActive = isActiveInProfile(mount.rarity, mount.id);
                         const spriteStyle = getSpriteStyle(mount.spriteIndex);
+                        // Not obtainable at the picked ascension: shown dimmed, not hidden.
+                        const fromAsc = rarityFrom[mount.rarity];
+                        const lockedHere = !!fromAsc && ascensionLevel < fromAsc;
+                        // A locked mount shows the stats of the first ascension that can obtain it.
+                        const shownAsc = lockedHere ? fromAsc : ascensionLevel;
+                        const multi = lockedHere ? ascensionMultiplierFor(ascensionConfigs, 'Mounts', fromAsc, 'MountStatTarget') : ascensionMulti;
 
                         return (
                             <Card key={mount.key} variant="hover" className={cn(
                                 "p-4 relative overflow-hidden transition-all flex flex-col",
-                                isActive ? "border-accent-primary ring-2 ring-accent-primary" : ""
+                                isActive ? "border-accent-primary ring-2 ring-accent-primary" : "",
+                                lockedHere && !isActive ? "opacity-60" : ""
                             )}>
                                 {/* Glow */}
                                 <div className={cn(
@@ -236,9 +249,15 @@ export default function Mounts() {
                                         )}>
                                             {mount.rarity}
                                         </span>
+                                        <FromAscensionBadge ascension={fromAsc} source="mount" className="ml-1 align-middle" />
                                     </div>
                                 </div>
 
+                                {lockedHere && (
+                                    <div className="relative z-10 mb-3 text-[10px] text-amber-300/90 bg-amber-400/5 border border-amber-400/20 rounded px-2 py-1">
+                                        Not obtainable at mount ascension {ascensionLevel}. Stats shown at ascension {fromAsc}, the first one that can obtain it.
+                                    </div>
+                                )}
                                 {/* Mount Stats */}
                                 <div className="grid grid-cols-2 gap-2 mb-3">
                                     {(() => {
@@ -252,15 +271,15 @@ export default function Mounts() {
                                         return (
                                             <>
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
-                                                    <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base Dmg</span>
+                                                    <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Damage</span>
                                                     <span className="font-mono font-bold text-red-200">
-                                                        +{formatStatValue((damageStat?.Value || 0) * ascensionMulti.dmg)}
+                                                        +{formatStatValue((damageStat?.Value || 0) * multi.dmg)}
                                                     </span>
                                                 </div>
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
-                                                    <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base HP</span>
+                                                    <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Health</span>
                                                     <span className="font-mono font-bold text-green-200">
-                                                        +{formatStatValue((healthStat?.Value || 0) * ascensionMulti.hp)}
+                                                        +{formatStatValue((healthStat?.Value || 0) * multi.hp)}
                                                     </span>
                                                 </div>
                                             </>
@@ -271,7 +290,7 @@ export default function Mounts() {
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="text-[10px] font-bold text-text-muted uppercase">Skills</div>
                                     <div className="bg-accent-primary/10 text-accent-primary px-2 py-0.5 rounded text-xs font-mono font-bold">
-                                        {ascensionLevel > 0 ? 2 : (petUnlockLib?.[mount.rarity]?.NumberOfSecondStats || 0)}
+                                        {(shownAsc > 0 ? lastUnlockRow : petUnlockLib?.[mount.rarity])?.NumberOfSecondStats || 0}
                                     </div>
                                 </div>
 

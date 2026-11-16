@@ -16,6 +16,9 @@ import { useComparison } from '../context/ComparisonContext';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { ascensionMultiplierFor } from '../utils/ascensionUnlocks';
+import { useAgeAscensionFrom } from '../hooks/useAscensionUnlocks';
+import { FromAscensionBadge } from '../components/UI/FromAscensionBadge';
 
 const SLOTS = ['Weapon', 'Helmet', 'Armour', 'Gloves', 'Shoes', 'Necklace', 'Ring', 'Belt'];
 
@@ -62,24 +65,28 @@ export default function Items() {
         return base + bonus;
     }, [balancingConfig, selectedSlot, techModifiers]);
 
-    // Ascension Multiplier calculation
-    const forgeAscensionMulti = useMemo(() => {
-        let multi = 1;
-        if (ascensionLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
-            const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
-            const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
-            if (config) {
-                for (const stat of config.StatContributions || []) {
-                    const statType = stat.StatNode?.UniqueStat?.StatType;
-                    if (statType === 'Damage' || statType === 'AscensionDamage' || statType === 'Health' || statType === 'AscensionHealth') {
-                        multi = stat.Value + 1;
-                        break;
-                    }
-                }
-            }
-        }
-        return multi;
-    }, [ascensionLevel, ascensionConfigs]);
+    // Ascensions-layer multiplier of the picked forge ascension (utils/ascensionUnlocks.ts): only
+    // AscensionConfigPerLevel[Level - 1], applied to every item of every age (Target Equipment, no qualifier).
+    const forgeAscensionMulti = useMemo(
+        () => ascensionMultiplierFor(ascensionConfigs, 'Forge', ascensionLevel, 'EquipmentStatTarget').dmg,
+        [ascensionLevel, ascensionConfigs]
+    );
+    // Age index -> first forge ascension that can forge it.
+    const ageFrom = useAgeAscensionFrom();
+    // An age the picked ascension cannot forge yet is shown at the first ascension that can
+    // (the Equipment target has no qualifier, so that ascension's multiplier reaches every age).
+    const ageLocked = !!ageFrom[selectedAgeIdx] && ascensionLevel < ageFrom[selectedAgeIdx];
+    const shownAscension = ageLocked ? ageFrom[selectedAgeIdx] : ascensionLevel;
+    const shownForgeMulti = useMemo(
+        () => ascensionMultiplierFor(ascensionConfigs, 'Forge', shownAscension, 'EquipmentStatTarget').dmg,
+        [shownAscension, ascensionConfigs]
+    );
+    // ForgeAction.CreateRandomItem (RVA 0x7CD3A84): with the forge ascended the substat count comes
+    // from the LAST SecondaryStatItemUnlockLibrary row, otherwise from the item's age row.
+    const lastItemUnlockRow = useMemo(() => {
+        const rows = secondaryParams ? Object.values(secondaryParams) : [];
+        return rows.length ? (rows[rows.length - 1] as any) : undefined;
+    }, [secondaryParams]);
 
     // Scaling factor from config
     // ItemBalancingConfig; the table waits for it (see `loading`), so no guessed fallback.
@@ -153,10 +160,12 @@ export default function Items() {
                 <div className="flex gap-2 overflow-x-auto pb-4 custom-scrollbar">
                     {AGES.map((ageName, idx) => (
                         <button
+                            title={ageFrom[idx] ? `Forged only from forge ascension ${ageFrom[idx]}` : undefined}
                             key={idx}
                             onClick={() => setSelectedAgeIdx(idx)}
                             className={cn(
-                                "flex flex-col items-center gap-2 p-3 min-w-[100px] rounded-xl border-2 transition-all duration-200",
+                                "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200",
+                                ageFrom[idx] ? "min-w-[118px]" : "min-w-[100px]",
                                 selectedAgeIdx === idx
                                     ? "border-accent-primary bg-accent-primary/10 shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.3)]"
                                     : "border-border bg-bg-secondary hover:border-accent-primary/50 hover:bg-bg-input"
@@ -173,10 +182,12 @@ export default function Items() {
                             />
                             <span className={cn(
                                 "text-xs font-bold whitespace-nowrap",
-                                selectedAgeIdx === idx ? "text-accent-primary" : "text-text-secondary"
+                                selectedAgeIdx === idx ? "text-accent-primary" : "text-text-secondary",
+                                ageFrom[idx] && ascensionLevel < ageFrom[idx] && selectedAgeIdx !== idx ? "opacity-60" : ""
                             )}>
                                 {ageName}
                             </span>
+                            <FromAscensionBadge ascension={ageFrom[idx]} source="forge" />
                         </button>
                     ))}
                 </div>
@@ -240,6 +251,13 @@ export default function Items() {
                             )}
                         </div>
                     </div>
+                    <p className="text-[11px] text-text-muted mt-3">
+                        {`Level ${selectedLevel} stats`}
+                        {statMultiplier !== 1 ? `, with your tech tree ${selectedSlot} bonus (+${((statMultiplier - 1) * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%)` : ''}
+                        {shownAscension > 0 ? `, with the forge ascension ${shownAscension} bonus (x${shownForgeMulti.toLocaleString()})` : ', no forge ascension bonus'}
+                        {selectedSlot === 'Weapon' && meleeBaseMulti ? `. Melee weapons include the melee damage multiplier (x${meleeBaseMulti.toLocaleString(undefined, { maximumFractionDigits: 2 })}).` : '.'}
+                        {ageLocked ? ` ${AGES[selectedAgeIdx]} items are not obtainable at forge ascension ${ascensionLevel}: they unlock at forge ascension ${ageFrom[selectedAgeIdx]}, and their stats are shown at that ascension.` : ''}
+                    </p>
                 </Card>
             </div>
 
@@ -254,12 +272,12 @@ export default function Items() {
                         const stats = item.EquipmentStats || [];
                         // We can also extract secondary stat info from SecondaryStatItemUnlockLibrary based on age
                         const secondaryData = secondaryParams?.[String(selectedAgeIdx)];
-                        const numSecondary = (ascensionLevel > 0) ? 2 : (secondaryData?.NumberOfSecondStats || 0);
+                        const numSecondary = ((shownAscension > 0 ? lastItemUnlockRow : secondaryData)?.NumberOfSecondStats) || 0;
                         const itemName = getItemName(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping, localization)
                             ?? `${selectedSlot} ${item.ItemId?.Idx + 1}`;
 
                         return (
-                            <Card key={i} className="flex flex-col h-full hover:border-accent-primary/50 transition-all duration-300 group overflow-hidden">
+                            <Card key={i} className={cn("flex flex-col h-full hover:border-accent-primary/50 transition-all duration-300 group overflow-hidden", ageLocked && "opacity-60")}>
                                 <div className="p-5 flex-1 space-y-5">
                                     <div className="flex items-center gap-4">
                                         <div
@@ -300,7 +318,7 @@ export default function Items() {
                                             scaledValue *= statMultiplier;
 
                                             // Apply Forge Ascension multiplier
-                                            scaledValue *= forgeAscensionMulti;
+                                            scaledValue *= shownForgeMulti;
 
                                             // Apply Melee multiplier for weapons if applicable
                                             if (selectedSlot === 'Weapon' && (statType === 'Damage' || statType === 'Attack')) {
@@ -315,7 +333,7 @@ export default function Items() {
                                             return (
                                                 <div key={idx} className="flex flex-col bg-bg-input/50 p-2 rounded border border-border/30">
                                                     <div className="flex justify-between items-center">
-                                                        <span className="text-xs text-text-secondary">Base {statType}</span>
+                                                        <span className="text-xs text-text-secondary">{statType}</span>
                                                         <span className="font-mono font-bold text-text-primary">
                                                             {formatStatValue(scaledValue)}
                                                         </span>

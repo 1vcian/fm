@@ -5,9 +5,9 @@ import { useFeatureUnlocks, type FeatureUnlock } from '../hooks/useFeatureUnlock
 import { AlertCircle, Shield, ListChecks } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { AGES } from '../utils/constants';
+import { ageColor } from '../utils/gameTiers';
 import { stageLabel } from '../utils/difficulty';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
-const AGE_COLORS = ['#F1F1F1', '#5DD8FF', '#5CFE89', '#FDFF5D', '#FF5D5D', '#D55DFF', '#75FFEE', '#886DFF', '#A77373', '#FF9E0D'];
 
 
 export default function Unlocks() {
@@ -37,7 +37,8 @@ export default function Unlocks() {
                 return {
                     age,
                     ageName: AGES[age] || `Age ${age + 1}`,
-                    color: AGE_COLORS[age] || '#FFF',
+                    // Age colours from GameTiers.json (WorldVisualConfig.AgeConfigs), every age of the build.
+                    color: ageColor(age) || '#FFF',
                     features: entries
                 };
             })

@@ -10,6 +10,8 @@ import { AGES, RARITIES } from '../utils/constants';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 import { summonLevelsByAscension, summonLevelsAt } from '../utils/summonEngine';
 import { ageChances, parseForgeUpgrades, ascensionForDisplayedLevel } from '../utils/forgeConfig';
+import { ageAscensionFromForge, rarityAscensionFromSummon } from '../utils/ascensionUnlocks';
+import { FromAscensionBadge } from '../components/UI/FromAscensionBadge';
 
 type TabType = 'forge' | 'eggs' | 'mounts' | 'skills';
 const TABS: TabType[] = ['forge', 'eggs', 'mounts', 'skills'];
@@ -148,6 +150,8 @@ export default function BaseDrops() {
         if (activeTab === 'forge') {
             const levels = Object.keys(targetData || {}).sort((a, b) => Number(a) - Number(b));
             const targetUpgrades = parseForgeUpgrades(dataCache[targetVersion]?.[RELEVANT_FILES.forgeUpgrades]);
+            // Age index -> first forge ascension that can forge it (empty for configs without per-ascension levels).
+            const ageFrom = ageAscensionFromForge(dataCache[targetVersion]?.[RELEVANT_FILES.forgeUpgrades], targetData);
             return (
                 <div className="overflow-auto custom-scrollbar max-h-[70vh] bg-bg-primary">
                     <table className="w-full text-sm text-left border-collapse table-fixed">
@@ -164,6 +168,7 @@ export default function BaseDrops() {
                                         <div className="flex flex-col items-center gap-1">
                                             <div style={getAgeIconStyle(idx, 24, targetVersion)} className="group-hover:scale-110 transition-transform" />
                                             <span className="text-[10px] uppercase tracking-wider text-text-muted group-hover:text-text-primary transition-colors">{age}</span>
+                                            <FromAscensionBadge ascension={ageFrom[idx]} source="forge" />
                                         </div>
                                     </th>
                                 ))}
@@ -215,6 +220,9 @@ export default function BaseDrops() {
             // every earlier non-null entry plus its own, and GetLevels (RVA 0x7D03870) clamps the
             // ascension to the last table.
             const targetTables = summonLevelsByAscension(summonConfigTarget);
+            // Rarity -> first ascension whose table can roll it (empty for configs with one table).
+            const rarityFrom = rarityAscensionFromSummon(summonConfigTarget);
+            const ascSource = activeTab === 'eggs' ? 'pet' : activeTab === 'mounts' ? 'mount' : 'skill';
             const baseTables = summonLevelsByAscension(summonConfigBase);
             const shownAscension = Math.min(summonAscension, Math.max(0, targetTables.length - 1));
             const targetLevels: any[] | null = targetTables.length ? summonLevelsAt(targetTables, shownAscension) : null;
@@ -309,6 +317,7 @@ export default function BaseDrops() {
                                             <span className="text-[10px] uppercase tracking-widest" style={{ color: getRarityBorderStyle(rarity).borderColor as string }}>
                                                 {rarity}
                                             </span>
+                                            <FromAscensionBadge ascension={rarityFrom[rarity]} source={ascSource} />
                                         </div>
                                     </th>
                                 ))}
