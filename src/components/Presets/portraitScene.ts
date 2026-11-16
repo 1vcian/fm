@@ -57,6 +57,12 @@ export interface PortraitOptions {
      * (UpdateMount, main battles and dungeons). The drawn rider follows the prefab's UnitAnchor instead.
      */
     mountUnitOffset?: { x: number; y: number } | null;
+    /**
+     * Seconds after which the picture must repeat exactly (a GIF's length). Every cycle of its own
+     * length (mount, pet and fairy clips, the fairy's hover, the battlefield's scroll) is then
+     * stretched by a hair to fit a whole number of times in it, so the last frame meets the first.
+     */
+    loopPeriod?: number;
 }
 
 interface Segment { step: TimelineStep; start: number; length: number }
@@ -84,6 +90,8 @@ function emittersOf(rig: RigInstance, data: BattleVisualData, once = false): Emi
 export class PortraitScene {
     /** Seconds of animation played so far. */
     t = 0;
+    /** Particles to draw instead of the live emitters' (portraitGif's wrapped recording). */
+    particleOverride: { em: Emitter; particles: Emitter['particles'] }[] | null = null;
     private readonly unit: UnitView;
     private readonly walkClip: string | undefined;
     private readonly aura: RigInstance | null;
@@ -224,6 +232,36 @@ export class PortraitScene {
         return d * DEFAULT_MOVE_SPEED;
     }
 
+    /**
+     * The battlefield's scroll at `t`: the walk so far over the loops played. With a loopPeriod,
+     * scaled so the whole period scrolls a whole number of tiles.
+     */
+    private scrolled(t: number): number {
+        if (this.total <= 0) return 0;
+        const perLoop = this.walked(this.total - 1e-9);
+        const tl = this.cyc(t, this.total);
+        const d = Math.floor(tl / this.total) * perLoop + this.walked(tl);
+        const T = this.opts.loopPeriod;
+        if (!T || perLoop <= 0) return d;
+        const span = Math.max(1, Math.round(T / this.total)) * perLoop;
+        return d * (Math.max(1, Math.round(span / TILE_WIDTH)) * TILE_WIDTH) / span;
+    }
+
+    /**
+     * The time a cycle of `length` seconds reads at `t`: `t` itself, or with a loopPeriod, `t`
+     * stretched so the period holds a whole number of cycles.
+     */
+    private cyc(t: number, length: number | undefined): number {
+        const T = this.opts.loopPeriod;
+        if (!T || !length || length <= 0) return t;
+        return (t * Math.max(1, Math.round(T / length)) * length) / T;
+    }
+
+    /** Every particle emitter running now (aura, fairy, death effect). */
+    get emitters(): Emitter[] {
+        return [...this.auraEmitters, ...(this.fairyEmitters ?? []), ...this.deathEmitters];
+    }
+
     /** Length of one loop: the whole timeline, or the character's own Walk clip without one, seconds. */
     get loopSeconds(): number {
         if (this.total > 0) return this.total;
@@ -239,7 +277,7 @@ export class PortraitScene {
         this.t += dt;
         for (const em of this.auraEmitters) em.update(dt);
         for (const em of this.fairyEmitters ?? []) em.update(dt);
-        const now = this.at(this.t);
+        const now = this.at(this.cyc(this.t, this.total));
         if (now && now.key !== this.lastSegment) {
             this.lastSegment = now.key;
             if (now.seg.step.kind === 'death') {
@@ -279,16 +317,24 @@ export class PortraitScene {
         ctx.setTransform(scale * dpr, 0, 0, -scale * dpr, (width / 2) * dpr, originY * dpr);
 
         const items: DrawItem[] = [];
-        const now = this.at(t);
+        const now = this.at(this.cyc(t, this.total));
         if (this.map) {
             // Walking, the camera follows the character: the battlefield slides back, tile after tile.
-            const off = this.walked(t) % TILE_WIDTH;
+            const off = this.scrolled(t) % TILE_WIDTH;
             for (const k of [-1, 0, 1]) {
                 this.map.update([1, 0, 0, 1, -MAP_X - off + k * TILE_WIDTH, -this.laneY]);
                 items.push(...rigItems(this.map, tex));
             }
         }
-        for (const em of this.deathEmitters) {
+        if (this.particleOverride) {
+            for (const { em, particles } of this.particleOverride) {
+                const img = em.texture ? tex.get(em.texture) : null;
+                items.push({
+                    layer: em.layer, order: em.order, y: em.origin[5], seq: 0,
+                    draw: c => { const live = em.particles; em.particles = particles; em.draw(c, img, tintTexture); em.particles = live; },
+                });
+            }
+        } else for (const em of this.deathEmitters) {
             const img = em.texture ? tex.get(em.texture) : null;
             items.push({ layer: em.layer, order: em.order, y: em.origin[5], seq: 0, draw: c => em.draw(c, img, tintTexture) });
         }
@@ -304,7 +350,10 @@ export class PortraitScene {
         const attacking = now?.seg.step.kind === 'attack';
         const attackClip = unit.controller?.Attack ? data.clips[unit.controller.Attack] : undefined;
         if (attacking && attackClip) rig.applyClip(attackClip, now!.local, false);
-        else rig.applyClip(this.walkClip ? data.clips[this.walkClip] : undefined, t, true);
+        else {
+            const walk = this.walkClip ? data.clips[this.walkClip] : undefined;
+            rig.applyClip(walk, this.cyc(t, walk?.length), true);
+        }
         if (attacking && this.shot && now!.local >= this.shot.at && now!.local < this.shot.at + this.shot.flight) {
             const sh = this.shot;
             const tau = now!.local - sh.at;
@@ -322,7 +371,7 @@ export class PortraitScene {
             // As in battle (UnitRotationView.Update 0x418B344): the rider's CharacterRig hangs
             // under the mount's UnitAnchor, following its animated world transform.
             unit.mount.clearAnimation();
-            if (unit.mountClip) unit.mount.applyClip(data.clips[unit.mountClip], t, true);
+            if (unit.mountClip) unit.mount.applyClip(data.clips[unit.mountClip], this.cyc(t, data.clips[unit.mountClip]?.length), true);
             unit.mount.update(root);
             if (unit.mountAnchor >= 0) rig.parentWorld.set(unit.charRig, unit.mount.world[unit.mountAnchor]);
             if (unit.unitShadow >= 0) rig.nodes[unit.unitShadow].hidden = true;
@@ -336,15 +385,15 @@ export class PortraitScene {
         for (const p of unit.pets) {
             const offs = p.rig.nodes[0].mb?.PetVisual?.PetOffsets?.[p.slot] ?? { x: -1.5, y: 0 };
             p.rig.clearAnimation();
-            if (p.clip) p.rig.applyClip(data.clips[p.clip], t, true);
+            if (p.clip) p.rig.applyClip(data.clips[p.clip], this.cyc(t, data.clips[p.clip]?.length), true);
             p.rig.update([1, 0, 0, 1, this.ux + offs.x, offs.y]);
             items.push(...rigItems(p.rig, tex));
         }
         if (unit.fairy) {
             const f = unit.fairy;
             f.rig.clearAnimation();
-            if (f.clip) f.rig.applyClip(data.clips[f.clip], t, true);
-            applyFairyHover(f.rig, f.hover, t);
+            if (f.clip) f.rig.applyClip(data.clips[f.clip], this.cyc(t, data.clips[f.clip]?.length), true);
+            applyFairyHover(f.rig, f.hover, this.cyc(t, f.hover.speed ? (2 * Math.PI) / f.hover.speed : undefined));
             f.rig.update([1, 0, 0, 1, this.ux - 1.0, 0]);
             items.push(...rigItems(f.rig, tex));
             if (!this.fairyEmitters) this.fairyEmitters = emittersOf(f.rig, data);
@@ -352,9 +401,11 @@ export class PortraitScene {
             f.rig.nodes.forEach((nd, i) => { if (nd.ps) { const em = fe.find(e => e.def === nd.ps); if (em) em.origin = f.rig.world[i]; } });
         }
         if (this.aura) items.push(...rigItems(this.aura, tex));
-        for (const em of [...this.auraEmitters, ...(this.fairyEmitters ?? [])]) {
-            const img = em.texture ? tex.get(em.texture) : null;
-            items.push({ layer: em.layer, order: em.order, y: em.origin[5], seq: 0, draw: c => em.draw(c, img, tintTexture) });
+        if (!this.particleOverride) {
+            for (const em of [...this.auraEmitters, ...(this.fairyEmitters ?? [])]) {
+                const img = em.texture ? tex.get(em.texture) : null;
+                items.push({ layer: em.layer, order: em.order, y: em.origin[5], seq: 0, draw: c => em.draw(c, img, tintTexture) });
+            }
         }
         sortItems(items);
         for (const it of items) it.draw(ctx);
