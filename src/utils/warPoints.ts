@@ -88,6 +88,7 @@
 
 import { AGES, RARITIES as GAME_RARITIES } from './constants';
 import { ageIndexOf } from './gameTiers';
+import { parseForgeUpgrades, maxForgeLevel as forgeLevelCap, ageChancesAtForgeLevel } from './forgeConfig';
 import {
     computeWarDaysMap,
     getWarDayIndex,
@@ -97,8 +98,9 @@ import {
 } from './guildWarUtils';
 import { getTechNodeName } from './techUtils';
 import { clanNodeValueAtLevel } from './clanTechStacking';
+import { techNodeTierStats } from './gameDataTransforms';
 import { optimizeTechTree, type TechTreeLevels } from './techOptimizer';
-import { simulateSummons, baseSummonCount, summonCost, maxAscensionFrom } from './summonEngine';
+import { simulateSummons, baseSummonCount, summonCost, maxAscensionFrom, summonLevelsByAscension, summonLevelsAt } from './summonEngine';
 
 /* ------------------------------------------------------------------------------------------ *
  * Public shape
@@ -373,7 +375,7 @@ function readClanBonuses(configs: WarPointsConfigs, clanLevels: Record<number, n
  * Sum of a PLAYER tree node type over the three player trees.
  *
  * Walks `TechTreeMapping.trees[*].nodes`, takes the levels straight out of the profile, and values
- * a level as `Stats[0].Value + (level - 1) * ValueIncrease`. It does NOT validate a node's unlock
+ * a level as `Value + (level - 1) * ValueIncrease` of the node's own tier (StatsByTier). It does NOT validate a node's unlock
  * requirements and ignores the header's tree mode. The calculators (`useSkillsCalculator`,
  * `useMountsCalculator`, `useEggSummonCalculator`, `useForgeCalculator`, `ForgeCalculator`) now
  * read `useTreeModifiers`, which applies the tree mode and drops any node whose requirements are
@@ -388,8 +390,7 @@ function sumPlayerNode(configs: WarPointsConfigs, profile: WarPointsProfile, nod
     if (!techTreeMapping || !techTreeLibrary) return 0;
 
     const def = techTreeLibrary[nodeType];
-    const stat = def?.Stats?.[0];
-    if (!stat) return 0;
+    if (!def?.Stats?.[0]) return 0;
 
     let total = 0;
     for (const treeName of ['Forge', 'Power', 'SkillsPetTech'] as const) {
@@ -399,7 +400,9 @@ function sumPlayerNode(configs: WarPointsConfigs, profile: WarPointsProfile, nod
         for (const node of nodes) {
             if (node.type !== nodeType) continue;
             const level = Number(levels[node.id]) || 0;
-            if (level > 0) total += (stat.Value || 0) + ((level - 1) * (stat.ValueIncrease || 0));
+            // The node's own tier: Tier 5 egg timers are worth far more than their Tier 0 values.
+            const stat = techNodeTierStats(def, node.tier)[0];
+            if (level > 0 && stat) total += (stat.Value || 0) + ((level - 1) * (stat.ValueIncrease || 0));
         }
     }
     return total;
@@ -416,7 +419,7 @@ function singleSummonCost(config: any): number {
  *
  * The first entry is the single-summon size: 5 for skills, 1 for mounts and eggs (the later entries
  * are the bulk buttons, which cost proportionally more and so cannot change points per currency).
- * This is SummonConfig.BaseSummonCount (RVA 0x7865E88), shared with the Summons calculator through
+ * This is SummonConfig.BaseSummonCount (RVA 0x7D034D4), shared with the Summons calculator through
  * `summonEngine.ts`.
  */
 const unitsPerSummon = baseSummonCount;
@@ -451,7 +454,8 @@ interface SummonPool {
  * it, which keeps an endgame bank synchronous; `maxIterations` bounds the rest.
  */
 function simulateSummonPool(params: {
-    levels: any[];
+    /** The level table of each ascension (`summonLevelsByAscension`). */
+    levelsByAscension: any[][];
     startLevel: number;
     startProgress: number;
     startAscension: number;
@@ -461,9 +465,10 @@ function simulateSummonPool(params: {
     unitsPerSummon: number;
     maxIterations?: number;
 }): SummonPool {
-    const maxLevel = params.levels.length; // SummonConfig.Levels: the top level is its length
+    // SummonConfig.GetLevels(ascension) (RVA 0x7D03870): the top level is the length of the start ascension's table.
+    const maxLevel = summonLevelsAt(params.levelsByAscension, Math.max(0, params.startAscension || 0)).length;
     const sim = simulateSummons({
-        levels: params.levels,
+        levelsByAscension: params.levelsByAscension,
         startLevel: Math.max(1, Math.min(params.startLevel || 1, maxLevel)),
         startProgress: Math.max(0, params.startProgress || 0),
         startAscension: Math.max(0, params.startAscension || 0),
@@ -693,9 +698,9 @@ export function computeWarPoints(
 
     /* ---- forge: hammers through the age drop table ---------------------------------------- */
     //
-    // NOT a simulation. One forge yields exactly one item (the AgeN chances of a row sum to 1), the
+    // NOT a simulation. One forge yields exactly one item (the age chances of a row sum to 1), the
     // item's age decides the reward, and `FreeForgeChance` turns one hammer into 1/(1-p) forges. So
-    // the whole thing is ten multiply-adds over `ItemAgeDropChancesLibrary[forgeLevel-1]`. The
+    // the whole thing is one multiply-add per age over `ItemAgeDropChancesLibrary[forgeLevel-1]`. The
     // expensive machinery on the Forge Calculator page — the `profile.items` scan, the level
     // brackets, `SellBasePrice` over 8 slots × 10 ages — exists only for the COIN columns and has
     // no bearing on points; copying it in would have bought nothing but drift.
@@ -703,9 +708,12 @@ export function computeWarPoints(
         const hammersRaw = misc.forgeCalculator?.hammers;
         const hammers = parseInt(String(hammersRaw ?? ''), 10);
         const forgeLevel = Number(misc.forgeLevel);
-        const dropRow = configs.itemAgeDropChances
-            ? (configs.itemAgeDropChances[String(forgeLevel - 1)] ?? configs.itemAgeDropChances[String(forgeLevel)])
-            : null;
+        // Either config format (Age<n> columns or the Ages list), utils/forgeConfig.ts.
+        const dropRowAt = (lv: number) => ageChancesAtForgeLevel(configs.itemAgeDropChances, lv);
+        const dropChances = configs.itemAgeDropChances
+            ? (dropRowAt(forgeLevel - 1).length ? dropRowAt(forgeLevel - 1) : dropRowAt(forgeLevel))
+            : [];
+        const dropRow = dropChances.length ? dropChances : null;
 
         if (!dayConfig || !configs.itemAgeDropChances) {
             emit('forge', 0, 'WarPointsFromForging', 'unavailable', 'The forge age drop table for this game version has not loaded.');
@@ -723,15 +731,12 @@ export function computeWarPoints(
             const perAge = forgePointsPerAge(dayConfig);
             let pointsPerForge = 0;
             const parts: Record<string, number> = {};
-            for (const [key, value] of Object.entries(dropRow)) {
-                if (!key.startsWith('Age')) continue;
-                const chance = Number(value) || 0;
-                if (chance <= 0) continue;
-                const ageIdx = parseInt(key.slice(3), 10);
+            dropRow.forEach((chance, ageIdx) => {
+                if (chance <= 0) return;
                 const reward = perAge[ageIdx] || 0;
                 pointsPerForge += chance * reward;
-                if (reward > 0) parts[AGES[ageIdx] || key] = totalForges * chance * reward;
-            }
+                if (reward > 0) parts[AGES[ageIdx] || `Age${ageIdx}`] = totalForges * chance * reward;
+            });
 
             emit('forge', totalForges * pointsPerForge, 'WarPointsFromForging', 'exact',
                 `Exact: ${Math.round(totalForges).toLocaleString()} forges from ${hammers.toLocaleString()} hammers `
@@ -751,7 +756,8 @@ export function computeWarPoints(
     // points than the forge can ever pay.
     //
     // So coins are capped by the coin sink that is actually KNOWN to exist: the upgrades this member
-    // still has ahead of them, `Σ ForgeUpgradeLibrary[level].Cost` from `misc.forgeLevel` up, less
+    // still has ahead of them, `Σ ForgeUpgradesByLevel[level].Cost` from `misc.forgeLevel` up to the
+    // top level of their forge ascension (MaxForgeLevel, utils/forgeConfig.ts), less
     // the `ForgeUpgradeCost` tech node. That makes the coin half a LOWER bound rather than a wrong
     // number: if the game also charges coins for item enhancement inside the forge (nothing in the
     // parsed configs prices that, so it cannot be checked here), the true figure is higher, and the
@@ -771,11 +777,14 @@ export function computeWarPoints(
                 'No coin balance recorded. Fill it in under Resources.');
         } else {
             const forgeLevel = Number(misc.forgeLevel) || 1;
-            const costReduction = sumPlayerNode(configs, profile, 'ForgeUpgradeCost'); // unclamped: GetForgeTierUpgradeCost 0x77B2C74 rounds the summed stat
+            const costReduction = sumPlayerNode(configs, profile, 'ForgeUpgradeCost'); // unclamped: GetForgeTierUpgradeCost 0x7C44E28 rounds the summed stat
             let sink = 0;
-            for (const [levelKey, def] of Object.entries<any>(configs.forgeUpgradeLibrary)) {
-                if (Number(levelKey) < forgeLevel) continue;
-                // Per tier: RoundToInt((Cost / Tiers as int) * (1 - reduction)), ForgeExtensions.GetForgeTierUpgradeCost (RVA 0x77B2C74).
+            const forgeUpgrades = parseForgeUpgrades(configs.forgeUpgradeLibrary);
+            // ForgeUpgradesByLevel keys up to MaxForgeLevel at the forge ascension (ForgeLevelsMaxed, RVA 0x7CD5254).
+            const lastKey = forgeUpgrades ? forgeLevelCap(forgeUpgrades, Number(misc.forgeAscensionLevel) || 0) : 0;
+            for (const [levelKey, def] of Object.entries<any>(forgeUpgrades?.byLevel ?? {})) {
+                if (Number(levelKey) < forgeLevel || Number(levelKey) > lastKey) continue;
+                // Per tier: RoundToInt((Cost / Tiers as int) * (1 - reduction)), ForgeExtensions.GetForgeTierUpgradeCost (RVA 0x7C44E28).
                 const tiers = Math.max(1, Number(def?.Tiers) || 1);
                 sink += tiers * Math.round(Math.floor((Number(def?.Cost) || 0) / tiers) * (1 - costReduction));
             }
@@ -838,7 +847,7 @@ export function computeWarPoints(
                 'This game data version does not say how many skills one summon gives.');
         } else {
             const perSummon = unitsPerSummon(configs.skillSummonConfig);
-            const costReduction = sumPlayerNode(configs, profile, 'SkillSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
+            const costReduction = sumPlayerNode(configs, profile, 'SkillSummonCost'); // unclamped: CanAffordSummon 0x7CF2028 rounds the summed stat
             // The two `ExtraSkillChance` / `ExtraSummonChance` node types do not appear in
             // TechTreeMapping for this config, so this term is 0 today — it is read anyway, because
             // the day it reappears every skill total should move without a code change.
@@ -898,7 +907,7 @@ export function computeWarPoints(
                 'This game data version does not say how many mounts one summon gives.');
         } else {
             const perSummon = unitsPerSummon(configs.mountSummonConfig);
-            const costReduction = sumPlayerNode(configs, profile, 'MountSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
+            const costReduction = sumPlayerNode(configs, profile, 'MountSummonCost'); // unclamped: CanAffordSummon 0x7CF2028 rounds the summed stat
             const extraChance = sumPlayerNode(configs, profile, 'ExtraMountChance');
             const costPerSummon = Math.max(1, summonCost(unitCost, perSummon, costReduction));
             const summons = Math.floor(winders / costPerSummon);
@@ -1003,17 +1012,17 @@ export function computeWarPoints(
             /** Eggs the eggshells convert into, per rarity — the feasibility note needs them too. */
             const shellEggs: Record<string, number> = {};
             const shellCost = singleSummonCost(configs.eggSummonConfig);
-            if (shells > 0 && shellCost > 0 && unitsPerSummon(configs.eggSummonConfig) > 0 && Array.isArray(configs.eggSummonConfig?.Levels)) {
+            if (shells > 0 && shellCost > 0 && unitsPerSummon(configs.eggSummonConfig) > 0 && summonLevelsByAscension(configs.eggSummonConfig).length > 0) {
                 // `EggsSummonCost` is absent from TechTreeMapping in this config version, so the
                 // reduction is 0 today; read anyway, for the same reason as the skill one.
-                const costReduction = sumPlayerNode(configs, profile, 'EggsSummonCost'); // unclamped: CanAffordSummon 0x7865EDC rounds the summed stat
+                const costReduction = sumPlayerNode(configs, profile, 'EggsSummonCost'); // unclamped: CanAffordSummon 0x7CF2028 rounds the summed stat
                 const extraChance = sumPlayerNode(configs, profile, 'ExtraEggChance');
                 const perSummon = unitsPerSummon(configs.eggSummonConfig);
                 const costPerSummon = Math.max(1, summonCost(shellCost, perSummon, costReduction));
                 shellSummons = Math.floor(shells / costPerSummon);
 
                 const pool = simulateSummonPool({
-                    levels: configs.eggSummonConfig.Levels,
+                    levelsByAscension: summonLevelsByAscension(configs.eggSummonConfig),
                     startLevel: Number(misc.eggSummonLevel) || 1,
                     startProgress: Number(misc.eggSummonProgress) || 0,
                     startAscension: Number(misc.petAscensionLevel) || 0,

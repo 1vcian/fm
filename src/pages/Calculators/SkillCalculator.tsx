@@ -8,6 +8,7 @@ import { Minus, Plus, RefreshCcw } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
+import { RARITY_TIERS } from '../../utils/gameTiers';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 
@@ -27,6 +28,7 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
         results,
         maxPossibleLevel,
         levels,
+        levelsByAscension,
         applyResultsToProfile,
         calculateNeededCurrency,
         maxAscension,
@@ -37,15 +39,8 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
     const skillWarBoost = warPointBonuses?.summon || 0;
 
 
-    // Correct Colors from Tailwind Config
-    const RARITY_COLORS: Record<string, string> = {
-        Common: '#F1F1F1',    // Age 1 / Common
-        Rare: '#5DD8FF',      // Age 2 / Rare
-        Epic: '#5CFE89',      // Age 3 / Epic
-        Legendary: '#FDFF5D', // Age 4 / Legendary
-        Ultimate: '#FF5D5D',  // Age 5 / Ultimate
-        Mythic: '#D55DFF',    // Age 6 / Interstellar / Mythic?? (Checking config: Interstellar is D55DFF, Mythic is D55DFF). OK.
-    };
+    // The colour the game draws each rarity with (GameTiers.json): no hardcoded rarity list.
+    const RARITY_COLORS: Record<string, string> = Object.fromEntries(RARITY_TIERS.map(t => [t.key, t.color]));
 
     // Costs, summon size and levels all come from SkillSummonConfig: nothing to show until it loads.
     if (!ready) {
@@ -94,7 +89,7 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
             <SummonGoalPlanner
                 title="Skill summon levels and ascensions"
                 type="Skills"
-                levels={levels}
+                levelsByAscension={levelsByAscension}
                 level={level}
                 progress={progress}
                 startAscension={sandbox.ascension.value}

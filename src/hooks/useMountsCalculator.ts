@@ -4,11 +4,12 @@ import { useProfile } from '../context/ProfileContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { useTreeLimits } from './useTreeLimits';
 import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
-import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, SUMMON_RARITIES } from '../utils/summonEngine';
+import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt, SUMMON_RARITIES } from '../utils/summonEngine';
 
 /** Mount summon simulation plus war points, shaped for the Summons calculator's Mounts tab. */
 export function buildMountSummonResults(p: {
-    levels: any[];
+    /** The level table of each ascension (`summonLevelsByAscension`). */
+    levelsByAscension: any[][];
     level: number;
     progress: number;
     currency: number;
@@ -37,7 +38,7 @@ export function buildMountSummonResults(p: {
 
     const totalSummons = affordableSummons(p.currency, p.costPerSummon);
     const sim = simulateSummons({
-        levels: p.levels,
+        levelsByAscension: p.levelsByAscension,
         startLevel: p.level,
         startProgress: p.progress,
         startAscension: p.startAscension,
@@ -70,7 +71,7 @@ export function buildMountSummonResults(p: {
     });
     const readyMergePoints = p.readyMerges * readyMergeFlat;
 
-    const endProbs = summonRowAt(p.levels, sim.endLevel);
+    const endProbs = summonRowAt(summonLevelsAt(p.levelsByAscension, sim.endAscension), sim.endLevel);
     return {
         simulateAscension: p.simulateAscension,
         totalPoints: totalSummonPoints + totalMergePoints + readyMergePoints,
@@ -103,7 +104,7 @@ export function buildMountSummonResults(p: {
 export function useMountsCalculator() {
     const { profile, updateProfile } = useProfile();
 
-    // 1. Data Loading — use unified MountSummonConfig.json (has Levels with SummonsRequired + probabilities)
+    // 1. Data Loading: MountSummonConfig.json (a level table per ascension, SummonsRequired + probabilities)
     const { data: mountSummonConfig } = useGameData<any>('MountSummonConfig.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const maxAscension = maxAscensionFrom(ascensionConfigs, 'Mounts');
@@ -170,13 +171,15 @@ export function useMountsCalculator() {
     // 4. Constants from config — read from unified Levels array
     // NaN until MountSummonConfig loads; `ready` stays false meanwhile and the page shows a loading state.
     const BASE_COST: number = mountSummonConfig?.SingleSummonCost?.Amount ?? NaN;
-    // SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0].
+    // SummonConfig.BaseSummonCount (RVA 0x7D034D4) = PossibleSummonCount[0].
     const BASE_MOUNTS_PER_SUMMON = baseSummonCount(mountSummonConfig);
     const MOUNTS_PER_SUMMON = BASE_MOUNTS_PER_SUMMON * (1 + extraChance);
-    // SummonConfig.CanAffordSummon (RVA 0x7865EDC): RoundToInt(CalculateValue(Cost, Amount * count)),
+    // SummonConfig.CanAffordSummon (RVA 0x7CF2028): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(BASE_COST, BASE_MOUNTS_PER_SUMMON, costReduction);
-    const levels: any[] = mountSummonConfig?.Levels || [];
+    // SummonConfig.GetLevels(ascension) (RVA 0x7D03870): the table of the ascension the summoner is at.
+    const levelsByAscension = useMemo(() => summonLevelsByAscension(mountSummonConfig), [mountSummonConfig]);
+    const levels: any[] = summonLevelsAt(levelsByAscension, startAscension);
     const maxPossibleLevel = levels.length;
     const currency: string = mountSummonConfig?.SingleSummonCost?.Currency ?? '';
     const ready = levels.length > 0 && Number.isFinite(BASE_COST) && Number.isFinite(BASE_MOUNTS_PER_SUMMON);
@@ -188,7 +191,7 @@ export function useMountsCalculator() {
         }
         return {
             ...buildMountSummonResults({
-                levels,
+                levelsByAscension,
                 level,
                 progress,
                 currency: windersCount,
@@ -207,7 +210,7 @@ export function useMountsCalculator() {
             baseCost: BASE_COST * BASE_MOUNTS_PER_SUMMON,
             costReduction: techBonuses.costReduction,
         };
-    }, [windersCount, level, progress, levels, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, BASE_MOUNTS_PER_SUMMON, MOUNTS_PER_SUMMON, mountSummonWarBonus, mountMergeWarBonus, dayBoost, readyMerges, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
+    }, [windersCount, level, progress, levelsByAscension, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, BASE_MOUNTS_PER_SUMMON, MOUNTS_PER_SUMMON, mountSummonWarBonus, mountMergeWarBonus, dayBoost, readyMerges, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Action to apply results to profile
     const applyResultsToProfile = () => {
@@ -218,7 +221,7 @@ export function useMountsCalculator() {
 
     // Target Calculation
     const calculateNeededCurrency = (targetLevel: number, targetAscension: number) => currencyToReach({
-        levels,
+        levelsByAscension,
         level,
         progress,
         ascension: startAscension,
@@ -239,6 +242,7 @@ export function useMountsCalculator() {
         results,
         maxPossibleLevel,
         levels,
+        levelsByAscension,
         applyResultsToProfile,
         calculateNeededCurrency,
         maxAscension,

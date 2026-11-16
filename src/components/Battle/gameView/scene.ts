@@ -12,8 +12,11 @@ import { HIT_VISIBLE_SECONDS } from '../../../engine/visualSnapshot';
 import type { UserProfile } from '../../../types/Profile';
 import { formatNumber } from '../../../utils/format';
 import type { BattleVisualData, ItemVisual, TextureCache, ParticleDef } from './visualData';
+import { forAscension } from './visualData';
 import { RigInstance, rigItems, sortItems, trs, mul, layerIndex, type DrawItem, type Mat, IDENTITY } from './rig';
 import { Emitter, tintTexture } from './particles';
+import { initClipView, stepClipView, initBarrage, stepBarrage, barrageSeconds, type ClipView, type Barrage, type GameViewport } from './animatorSkillViews';
+import { skillDamageCount } from '../../../engine/skills';
 
 export type SceneMode =
     | { kind: 'main'; ageIdx: number }
@@ -108,11 +111,13 @@ export function lookFromProfile(data: BattleVisualData, profile: UserProfile | n
         it.Weapon ? skinVisual(data, ITEM_TYPE.Weapon, shown(profile.misc?.useSkinWindup, it.Weapon.skin?.idx), !!opts?.weaponRanged) ?? look.weapon : null,
     ]);
     if (opts?.noCompanions) return look;
-    const asc = (n?: number) => Math.max(0, Math.min(3, n ?? 0));
+    // MountVisualConfig.Prefab (0x4185344) and PetVisualConfig.PetPrefab (0x4191410) go through
+    // AscensionExtensions.ForAscension (0x48088C4): units added later only fill their top ascension slot.
+    const asc = (n?: number) => Math.max(0, n ?? 0);
     const m = profile.mount?.active;
-    if (m) look.mount = data.mounts[m.rarity]?.[m.id]?.prefabs[asc(m.ascensionLevel ?? profile.misc?.mountAscensionLevel)] ?? null;
+    if (m) look.mount = forAscension(data.mounts[m.rarity]?.[m.id]?.prefabs, asc(m.ascensionLevel ?? profile.misc?.mountAscensionLevel));
     look.pets = (profile.pets?.active ?? [])
-        .map(p => data.pets[p.rarity]?.[p.id]?.prefabs[asc(p.ascensionLevel ?? profile.misc?.petAscensionLevel)])
+        .map(p => forAscension(data.pets[p.rarity]?.[p.id]?.prefabs, asc(p.ascensionLevel ?? profile.misc?.petAscensionLevel)))
         .filter((p): p is string => !!p);
     const fairy = profile.misc?.fairy?.name;
     if (fairy && data.prefabs[`${fairy}Fairy`]) look.fairy = `${fairy}Fairy`;
@@ -170,8 +175,12 @@ export interface UnitView {
 /** A buff skill's view on its owner: from `start`, until `end` plus the view's own tail. */
 interface BuffView { rig: RigInstance | null; skillId: string; ownerId: number; emitters: { em: Emitter; node: number }[]; start: number; end: number | null }
 
-/** Seconds a buff view outlives its buff: the closing tween or the wait before Destroy (see drawBuff). */
-const BUFF_TAIL: Record<string, number> = { Meat: 0.4, Morale: 0, Berserk: 1.2, Buff: 0.4, HigherMorale: 2.4 };
+/**
+ * Seconds a buff view outlives its buff: the closing tween or the wait before Destroy (see drawBuff).
+ * InfiniteRenewal: at the end of its duration (DelayedCall, <Setup>b__5_0 0x41D1CB8) the view plays
+ * "Outro", whose OnAnimationComplete event (2.4 s into the clip) destroys it (0x41D1C2C).
+ */
+const BUFF_TAIL: Record<string, number> = { Meat: 0.4, Morale: 0, Berserk: 1.2, Buff: 0.4, HigherMorale: 2.4, InfiniteRenewal: 2.4 };
 
 const outQuad = (t: number) => 1 - (1 - t) * (1 - t);
 
@@ -190,6 +199,10 @@ const inBack = (k: number) => 2.70158 * k * k * k - 1.70158 * k * k;
  * 0: the view goes with the area.
  */
 function areaViewSeconds(av: AreaView): number {
+    // The views of build 2026_11_16_09_55 run until their clip's OnAnimationComplete (or, for
+    // FiringSquad, their flight back) and destroy themselves (animatorSkillViews.ts).
+    if (av.cv) return av.cv.done ? 0 : av.cv.playAt - av.born + av.cv.completeAt;
+    if (av.barrage) return av.barrage.done ? 0 : av.barrage.born - av.born + barrageSeconds(av.barrage);
     if (av.skillId === 'Worm') return av.rig.nodes[0].mb?.WormSkillView?.DestroyTime ?? 4;
     if (av.skillId === 'Thorns') { const p = av.last.pulseDuration > 0 ? av.last.pulseDuration : 0.5; return 3.2 * p + 0.4 + 0.35; }
     if (av.skillId === 'StrafeRun') {
@@ -404,6 +417,10 @@ interface AreaView {
     last: VisualEffect;
     /** Battle time the engine's effect ended, while the view still plays. */
     goneAt: number | null;
+    /** A view driven by its Animator clip (build 2026_11_16_09_55). */
+    cv?: ClipView;
+    /** A FiringSquad weapon (WeaponBarrageView). */
+    barrage?: Barrage;
 }
 
 export class BattleSceneRenderer {
@@ -432,6 +449,10 @@ export class BattleSceneRenderer {
     /** Battle seconds rendered (interpolated between engine ticks). */
     private battleTime = 0;
     private wall = 0;
+    /** This frame's battle seconds, units and game viewport, for the views that tick on their own. */
+    private frameDt = 0;
+    private frameUnits: VisualUnit[] = [];
+    private gameVp: GameViewport = { cx: 0, cy: 0, w: 1, h: 1 };
 
     constructor(private readonly inp: SceneInputs) {
         const { data, mode } = inp;
@@ -495,9 +516,9 @@ export class BattleSceneRenderer {
         const { data } = this.inp;
         const id = data.skillIds[skillId];
         const list = id === undefined ? undefined : data.skills[String(id)]?.[kind];
-        if (!list || list.length === 0) return null;
         const asc = ally ? this.inp.skillAscension.ally : this.inp.skillAscension.enemy;
-        return list[Math.max(0, Math.min(list.length - 1, asc))] ?? list[0];
+        // SkillVisualDetails.SkillAnimation / ProjectilePrefab (0x41CC020 / 0x41CBFA0).
+        return forAscension(list, Math.max(0, asc));
     }
 
     private spawnEmitters(rig: RigInstance, filter: (path: string) => boolean, once: boolean): Emitter[] {
@@ -519,6 +540,8 @@ export class BattleSceneRenderer {
         const dtWall = this.wall ? Math.min(0.1, (nowMs - this.wall) / 1000) : 0;
         this.wall = nowMs;
         const dt = playing ? dtWall * speed : 0;
+        this.frameDt = dt;
+        this.frameUnits = v.units;
         if (v.tick !== this.lastTick) {
             // Seeking back: drones flying off belong to a moment that has not happened yet.
             if (v.tick < this.lastTick) this.leaving = [];
@@ -565,6 +588,8 @@ export class BattleSceneRenderer {
         // mid-canvas, as they sit mid-battlefield above the game's bottom panel.
         const camY = this.laneY;
         const viewH = h / S;
+        // The game camera's view for ViewportToWorldPoint (orthographic size, reference aspect).
+        this.gameVp = { cx: camX, cy: camY, w: viewW, h: 2 * C.cameraOrthoSize };
 
         // ---------- background
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -733,6 +758,7 @@ export class BattleSceneRenderer {
                 if (cur && cur.end === null) continue;
                 const prefab = this.skillPrefab('animations', b.skillId, side === 'ally');
                 const rig = prefab && data.prefabs[prefab] ? new RigInstance(data, prefab) : null;
+                if (rig && rig.nodes[0].scripts?.includes('InfiniteRenewalSkillView')) rig.setAnimRoot(0);
                 this.buffViews.set(key, { rig, skillId: b.skillId, ownerId: owner.id, emitters: [], start: this.battleTime, end: null });
             }
         }
@@ -759,10 +785,17 @@ export class BattleSceneRenderer {
                 av = { rig, skillId: e.skillId, born: this.battleTime, emitters: [], nodeOf: new Map(), exploded: false, lastPulse: null, clip: ownClip(data, rig), last: e, goneAt: null };
                 this.areas.set(e.id, av);
                 rig.update([e.isAllied ? 1 : -1, 0, 0, 1, e.x, e.y]);
-                // Every system but the impact (the Explosion and its sub-emitters) plays from the
-                // start: rings, rain, smoke, the strafe's impacts, the worm's rocks.
-                av.emitters = this.spawnEmitters(rig, p => !/(^|\/)Explosion(\/|$)/.test(p), false);
                 rig.nodes.forEach((nd, i) => { if (nd.ps) av!.nodeOf.set(nd.ps as ParticleDef, i); });
+                // The 2026_11 views: clip-driven ones play their systems on the clip's OnImpact,
+                // the FiringSquad weapon on its shot (animatorSkillViews.ts).
+                if (rig.nodes[0].scripts?.includes('WeaponBarrageView')) {
+                    av.barrage = initBarrage(data, rig, e, this.battleTime, skillDamageCount(e.skillId)) ?? undefined;
+                } else {
+                    av.cv = initClipView(data, rig, e, this.battleTime) ?? undefined;
+                    // Every system but the impact (the Explosion and its sub-emitters) plays from the
+                    // start: rings, rain, smoke, the strafe's impacts, the worm's rocks.
+                    if (!av.cv) av.emitters = this.spawnEmitters(rig, p => !/(^|\/)Explosion(\/|$)/.test(p), false);
+                }
             }
             av.last = e;
             this.drawArea(av, e, push, viewH, camY);
@@ -777,10 +810,12 @@ export class BattleSceneRenderer {
                 this.drawArea(av, { ...av.last, timer: av.last.timer + (this.battleTime - av.goneAt) }, push, viewH, camY);
                 continue;
             }
+            this.areas.delete(id);
+            // The 2026_11 views Destroy their GameObject: their particles go with it.
+            if (av.cv || av.barrage) continue;
             this.retire(av);
             for (const em of av.emitters) em.stopped = true;
             this.emitters.push(...av.emitters);
-            this.areas.delete(id);
         }
 
         this.afterglows = this.afterglows.filter(a => a.t < a.dur);
@@ -882,6 +917,28 @@ export class BattleSceneRenderer {
                 rig.addRotation(circle, 100 * (this.battleTime - bv.start));
                 rig.setLocalScale(circle, 3 * k, 3 * k);
             }
+        } else if (rig.nodes[0].scripts?.includes('InfiniteRenewalSkillView')) {
+            // InfiniteRenewalSkillView.Setup 0x41D19D8: the view sits on the unit root (SkillsBattle
+            // Manager.OnMessage 0x42B5954 instantiates it under the UnitEquipmentView) and keeps
+            // _head = CharacterRig.HpBarParent, where LateUpdate 0x41D1B74 moves HeadAnchor every
+            // frame. Its Animator plays "Intro", then "Loop" (the controller's Intro -> Loop
+            // transition, taken here at the end of Intro), Particles play; when the duration ends
+            // (<Setup>b__5_0 0x41D1CB8) Particles stop emitting and "Outro" plays.
+            at = urig.world[0];
+            const head = rig.nodes[0].mb?.InfiniteRenewalSkillView?.HeadAnchor?.node ?? rig.find('HeadAnchor');
+            const clips = controllerClips(data, rig.nodes[0].anim) ?? {};
+            const clip = (k: string) => (clips[k] ? data.clips[clips[k]] : undefined);
+            if (bv.end !== null) rig.applyClip(clip('Outro'), this.battleTime - bv.end, false, true);
+            else {
+                const intro = clip('Intro');
+                const t = this.battleTime - bv.start;
+                if (intro && t < intro.length) rig.applyClip(intro, t, false, true);
+                else rig.applyClip(clip('Loop'), t - (intro?.length ?? 0), true, true);
+            }
+            if (head >= 0 && hp >= 0 && at) {
+                const w = urig.world[hp];
+                rig.setLocalPosition(head, (w[4] - at[4]) / (at[0] || 1), (w[5] - at[5]) / (at[3] || 1));
+            }
         } else {
             at = ov.charRig >= 0 ? urig.world[ov.charRig] : urig.world[0];
         }
@@ -939,6 +996,8 @@ export class BattleSceneRenderer {
     private drawArea(av: AreaView, e: VisualEffect, push: (l: DrawItem[]) => void, viewH: number, camY: number) {
         const { data, tex } = this.inp;
         const rig = av.rig;
+        if (av.cv) { this.drawClipView(av, av.cv, e, push); return; }
+        if (av.barrage) { this.drawBarrage(av, av.barrage, e, push); return; }
         const sign = e.isAllied ? 1 : -1;
         rig.clearAnimation();
         const D = e.duration;
@@ -1039,6 +1098,61 @@ export class BattleSceneRenderer {
             }
         }
         push(rigItems(rig, tex));
+    }
+
+    /** A clip-driven view of build 2026_11_16_09_55 (animatorSkillViews.ts): its clip, events and systems. */
+    private drawClipView(av: AreaView, cv: ClipView, e: VisualEffect, push: (l: DrawItem[]) => void): void {
+        const { data, tex } = this.inp;
+        if (cv.done) return;
+        const rig = av.rig;
+        const { root, events } = stepClipView(rig, cv, e, this.battleTime, this.frameDt);
+        rig.update(root);
+        for (const fn of events) {
+            if (fn !== 'OnImpact') continue;
+            // OnImpact (DeathStarBeamView 0x41CE710, StompSkillView 0x41D410C, ...): every
+            // ImpactParticles system Play(true), so its child systems too.
+            for (const n of cv.impact) {
+                const path = rig.nodes[n]?.path;
+                if (path === undefined) continue;
+                av.emitters.push(...this.spawnEmitters(rig, p => p === path || p.startsWith(path + '/'), false));
+            }
+        }
+        if (cv.done) return;
+        for (const em of av.emitters) {
+            const i = av.nodeOf.get(em.def);
+            if (i !== undefined) em.origin = rig.world[i];
+        }
+        void data;
+        push(rigItems(rig, tex));
+    }
+
+    /** A FiringSquad weapon (WeaponBarrageView, animatorSkillViews.ts): flies in, shoots, flies off. */
+    private drawBarrage(av: AreaView, b: Barrage, e: VisualEffect, push: (l: DrawItem[]) => void): void {
+        const { data, tex } = this.inp;
+        if (b.done) return;
+        // Init(shot) 0x41CF4B0: the source is the caster's GameObject (here the player as drawn).
+        const source = this.playerAt[e.isAllied ? 'ally' : 'enemy'] ?? null;
+        const casterAlive = this.frameUnits.some(u => u.isPlayer && u.isAlly === e.isAllied && !u.killed);
+        const step = stepBarrage(data, b, e, this.battleTime, casterAlive ? source : null, this.frameUnits, this.gameVp, this.inp.seed + e.id);
+        if (step.weapon && b.weapon) {
+            b.weapon.clearAnimation();
+            b.weapon.update(step.weapon);
+            if (step.fire) {
+                // The shot: the weapon's FireParticles play (Init stopped every system of the weapon).
+                const ems = this.spawnEmitters(b.weapon, () => true, false);
+                b.weapon.nodes.forEach((nd, i) => { if (nd.ps) av.nodeOf.set(nd.ps as ParticleDef, i); });
+                av.emitters.push(...ems);
+            }
+            for (const em of av.emitters) {
+                const i = av.nodeOf.get(em.def);
+                if (i !== undefined && b.weapon.world[i]) em.origin = b.weapon.world[i];
+            }
+            push(rigItems(b.weapon, tex));
+        }
+        if (step.proj && b.proj) {
+            b.proj.update(step.proj);
+            push(rigItems(b.proj, tex));
+        }
     }
 
     /**

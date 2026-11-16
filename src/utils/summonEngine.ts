@@ -3,22 +3,38 @@ import { RARITIES } from './gameTiers';
  * The one summon simulation shared by the Summons calculator (eggs, mounts, skills) and the
  * war-points engine (`warPoints.ts`).
  *
- * Game facts, each read from the 2026_10_08_09_03 binary:
- *  - Levelling: SummonModel.IncrementSummonCount (RVA 0x78666A4) runs once per unit obtained. It
- *    adds 1 to Count and, while Level + 1 < Levels.Count, compares Count with
- *    Levels[Level + 1].SummonsRequired on its 0-based Level: on success it subtracts the
- *    requirement and moves up one level. In this 1-based code, leaving level L needs
- *    `levels[L].SummonsRequired` (the NEXT row), and the top level is `levels.length`.
- *  - Freebies (extra chance) count toward progress and never chain (RVA 0x7843A3C), so the
- *    expected units per paid summon are `PossibleSummonCount[0] * (1 + extraChance)`.
- *  - Units per paid summon: SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0].
- *  - Cost: SummonConfig.CanAffordSummon (RVA 0x7865EDC) is
+ * Game facts, read from the 2026_11_16_09_55 binary unless noted:
+ *  - Level table per ascension: since 2026_11_16 the config holds `Ascensions[]` (each
+ *    `{ Levels }`, entries may be null) instead of a top-level `Levels[]`. SummonConfig.PostLoad
+ *    (RVA 0x7D03528) walks Ascensions in order with ONE accumulator list: a non-null entry with a
+ *    non-empty Levels appends its rows to the accumulator, then (null or not) the accumulator's
+ *    current contents are stored as that ascension's table. So the table of ascension N is the
+ *    concatenation of every non-null Levels up to N, a null entry repeats the previous table, and
+ *    a later entry extends the earlier rows (it does not replace them).
+ *    SummonConfig.GetLevels(int) (RVA 0x7D03870) returns table[Min(ascension, tables - 1)];
+ *    GetLevels(PlayerModel) (RVA 0x7CF1B10) passes AscensionModel.CurrentLevel of the summon's
+ *    collection (SummonableId.GetAscensionModel, RVA 0x7D02FEC: Mounts, Pets for eggs, Skills).
+ *    MaxLevel (RVA 0x7D03918) is that table's Count - 1 (0-based). Configs before 2026_11_16 have
+ *    one `Levels[]` for every ascension.
+ *  - Draw: the Skill/Mount/Egg SummonFinalizedAction.Execute (RVA 0x7CF21EC / 0x7CDEDF8 /
+ *    0x7CE28B8) rolls each unit on GetLevels(player)[SummonModel.Level] (SummonLevelConfig.RollRarity).
+ *  - Levelling: SummonModel.IncrementSummonCount(config, ascensionLevel) (RVA 0x7CF2D4C) runs once
+ *    per unit obtained. It adds 1 to Count and, if Level + 1 < GetLevels(ascensionLevel).Count,
+ *    compares Count with that table's [Level + 1].SummonsRequired on its 0-based Level: on success
+ *    it subtracts the requirement and moves up one level. In this 1-based code, leaving level L
+ *    needs `levels[L].SummonsRequired` (the NEXT row), and the top level is `levels.length` of the
+ *    current ascension's table.
+ *  - Freebies (extra chance) count toward progress and never chain (2026_10_08 build, RVA
+ *    0x7843A3C), so the expected units per paid summon are `PossibleSummonCount[0] * (1 + extraChance)`.
+ *  - Units per paid summon: SummonConfig.BaseSummonCount (RVA 0x7D034D4) = PossibleSummonCount[0].
+ *  - Cost: SummonConfig.CanAffordSummon (RVA 0x7CF2028, unchanged from the previous build) is
  *    RoundToInt(Amount * count * (1 - reduction)) for the whole batch.
  *
- *  - Ascension: PlayerMountCollectionModel.Ascend (RVA 0x7844E78), PlayerPetCollectionModel.Ascend
- *    (RVA 0x784A1EC) and PlayerSkillCollectionModel.Ascend (RVA 0x785894C) each call
- *    SummonModel.Reset (RVA 0x786677C), a single 8-byte store of zero over Count (+0x10) and
- *    Level (+0x14). The summoner restarts at level 1 with no progress: leftover Count is lost.
+ *  - Ascension: PlayerMountCollectionModel.Ascend (RVA 0x7CE0340) and PlayerPetCollectionModel.Ascend
+ *    (RVA 0x7CE78D8) call SummonModel.Reset (RVA 0x7CF49C0), a single 8-byte store of zero over
+ *    Count (+0x10) and Level (+0x14); PlayerSkillCollectionModel.Ascend (RVA 0x7CF4954) inlines the
+ *    same store. The summoner restarts at level 1 with no progress (leftover Count is lost) and
+ *    from then on levels through the new ascension's table.
  *
  * The player is assumed to ascend as soon as the summoner reaches the top level (levels and
  * phases restart at level 1 of the next ascension, up to `maxAscension`).
@@ -29,6 +45,36 @@ import { RARITIES } from './gameTiers';
 
 /** Rarities in game order (GameTiers.json): the columns of a summon config's Levels rows. */
 export const SUMMON_RARITIES = RARITIES;
+
+/**
+ * The level table of every ascension, as SummonConfig.PostLoad (RVA 0x7D03528) builds
+ * `_levelsByAscension`: one accumulator walks `Ascensions` in order, a non-null entry with rows
+ * appends them, and every entry (null included) stores the accumulator as it stands. Configs
+ * before 2026_11_16 have a single top-level `Levels[]`, used for every ascension.
+ * Empty while the config is missing.
+ */
+export function summonLevelsByAscension(config: any): any[][] {
+    if (Array.isArray(config?.Ascensions)) {
+        const tables: any[][] = [];
+        let acc: any[] = [];
+        for (const asc of config.Ascensions) {
+            const rows = asc?.Levels;
+            if (Array.isArray(rows) && rows.length > 0) acc = acc.concat(rows);
+            tables.push(acc);
+        }
+        return tables;
+    }
+    return Array.isArray(config?.Levels) ? [config.Levels] : [];
+}
+
+/**
+ * The table a summoner at `ascension` levels through and draws on: SummonConfig.GetLevels(int)
+ * (RVA 0x7D03870) = tables[Min(ascension, tables.Count - 1)].
+ */
+export function summonLevelsAt(tables: any[][], ascension: number): any[] {
+    if (!tables.length) return [];
+    return tables[Math.max(0, Math.min(Math.floor(ascension) || 0, tables.length - 1))] || [];
+}
 
 /**
  * Ascensions a collection has: the length of AscensionConfigsLibrary[kind].AscensionConfigPerLevel
@@ -68,8 +114,8 @@ export interface SummonSimulation {
 }
 
 export interface SummonSimulationParams {
-    /** The config's `Levels` array (probabilities per rarity and SummonsRequired per row). */
-    levels: any[];
+    /** The level table of each ascension, from `summonLevelsByAscension`. */
+    levelsByAscension: any[][];
     /** 1-based summon level. */
     startLevel: number;
     startProgress: number;
@@ -101,15 +147,18 @@ interface SummonState {
 }
 
 /**
- * Applies one paid summon's units to `s` the way IncrementSummonCount (RVA 0x78666A4) does:
- * leaving 1-based level L needs `levels[L].SummonsRequired`, overflow inside the batch carries to
- * the next level. With `ascendAtTop` the summoner ascends the moment it reaches the top level and
- * `ascend` performs SummonModel.Reset, so the rest of that batch is lost.
+ * Applies one paid summon's units to `s` the way IncrementSummonCount (RVA 0x7CF2D4C) does:
+ * leaving 1-based level L needs `levels[L].SummonsRequired` of the current ascension's table,
+ * overflow inside the batch carries to the next level. With `ascendAtTop` the summoner ascends the
+ * moment it reaches the top level and `ascend` performs SummonModel.Reset, so the rest of that
+ * batch is lost.
  */
 function addSummonProgress(
-    levels: any[], maxLevel: number, s: SummonState, units: number,
+    tables: any[][], s: SummonState, units: number,
     ascendAtTop: boolean, ascend: () => void,
 ): void {
+    const levels = summonLevelsAt(tables, s.ascension);
+    const maxLevel = levels.length;
     s.progress += units;
     let threshold = levels[s.level]?.SummonsRequired;
     while (threshold && s.progress >= threshold) {
@@ -129,12 +178,13 @@ function addSummonProgress(
 
 export function simulateSummons(params: SummonSimulationParams): SummonSimulation {
     const {
-        levels, startProgress, startAscension, simulateAscension, summons,
+        levelsByAscension: tables, startProgress, startAscension, simulateAscension, summons,
         unitsPerSummon: perSummon,
     } = params;
     const maxAscension = params.maxAscension;
     const maxIterations = params.maxIterations ?? Infinity;
-    const maxLevel = levels.length; // SummonConfig.Levels: the top level is its length
+    // The top level is the length of the current ascension's table (GetLevels, RVA 0x7D03870).
+    const maxLevelAt = (asc: number) => summonLevelsAt(tables, asc).length;
 
     const s: SummonState = { level: params.startLevel, progress: startProgress, ascension: startAscension };
     let summonsToMax: number | null = null;
@@ -155,20 +205,20 @@ export function simulateSummons(params: SummonSimulationParams): SummonSimulatio
     /** Close the current phase at the top level and open the next ascension at level 1. */
     const ascend = () => {
         if (summonsToMax === null) summonsToMax = done;
-        phase.endLevel = maxLevel;
+        phase.endLevel = maxLevelAt(s.ascension);
         phase.endAscension = s.ascension;
         phases.push(phase);
-        // SummonModel.Reset (RVA 0x786677C): Count and Level both go back to 0.
+        // SummonModel.Reset (RVA 0x7CF49C0): Count and Level both go back to 0.
         s.level = 1;
         s.progress = 0;
         s.ascension += 1;
         phase = newPhase(s.level, s.ascension);
     };
 
-    /** Add `times` summons drawn on the probability row of 1-based level `lvl`. */
+    /** Add `times` summons drawn on the probability row of 1-based level `lvl` at the current ascension. */
     const addRow = (lvl: number, times: number) => {
-        const row = levels[Math.min(lvl - 1, levels.length - 1)];
-        if (!row || times <= 0) return;
+        const row = summonRowAt(summonLevelsAt(tables, s.ascension), lvl);
+        if (times <= 0) return;
         for (const rarity of SUMMON_RARITIES) {
             const chance = row[rarity] || 0;
             if (times === 1) {
@@ -181,6 +231,7 @@ export function simulateSummons(params: SummonSimulationParams): SummonSimulatio
 
     while (done < summons) {
         const canAscend = simulateAscension && s.ascension < maxAscension;
+        const maxLevel = maxLevelAt(s.ascension);
 
         // Frozen: no further level-up or ascension is possible, so every remaining summon draws
         // this exact row. Multiplying it out is exact and keeps huge banks synchronous.
@@ -206,7 +257,7 @@ export function simulateSummons(params: SummonSimulationParams): SummonSimulatio
 
         addRow(s.level, 1);
         done += 1;
-        addSummonProgress(levels, maxLevel, s, perSummon, canAscend, ascend);
+        addSummonProgress(tables, s, perSummon, canAscend, ascend);
     }
 
     phase.endLevel = s.level;
@@ -234,7 +285,7 @@ export function simulateSummons(params: SummonSimulationParams): SummonSimulatio
 }
 
 /**
- * Units one paid summon yields: PossibleSummonCount[0] (SummonConfig.BaseSummonCount, RVA 0x7865E88).
+ * Units one paid summon yields: PossibleSummonCount[0] (SummonConfig.BaseSummonCount, RVA 0x7D034D4).
  * NaN while the config is missing or has no such entry: callers show a loading / unavailable state
  * instead of a guessed count.
  */
@@ -245,7 +296,7 @@ export function baseSummonCount(config: any): number {
 
 /**
  * Currency for one paid summon: RoundToInt(Amount * count * (1 - reduction))
- * (SummonConfig.CanAffordSummon, RVA 0x7865EDC). The reduction applies to the whole batch and
+ * (SummonConfig.CanAffordSummon, RVA 0x7CF2028). The reduction applies to the whole batch and
  * rounds to nearest.
  */
 export function summonCost(amountPerUnit: number, unitsPerSummon: number, costReduction: number): number {
@@ -257,7 +308,7 @@ export function affordableSummons(currency: number, costPerSummon: number): numb
     return Math.floor(currency / Math.max(1, costPerSummon));
 }
 
-/** The probability row the summoner draws on at 1-based level `level`. */
+/** The probability row the summoner draws on at 1-based level `level` of one ascension's table. */
 export function summonRowAt(levels: any[], level: number): any {
     return levels[Math.min(level - 1, levels.length - 1)] || {};
 }
@@ -270,7 +321,7 @@ export function summonRowAt(levels: any[], level: number): any {
  * leftover progress. A target past the last ascension's top level costs what reaching it does.
  */
 export function currencyToReach(params: {
-    levels: any[];
+    levelsByAscension: any[][];
     level: number;
     progress: number;
     ascension: number;
@@ -280,10 +331,10 @@ export function currencyToReach(params: {
     costPerSummon: number;
     maxAscension: number;
 }): number {
-    const { levels, targetLevel, targetAscension, unitsPerSummon, costPerSummon } = params;
-    if (!levels.length || !(unitsPerSummon > 0)) return 0;
+    const { levelsByAscension: tables, targetLevel, targetAscension, unitsPerSummon, costPerSummon } = params;
+    if (!tables.length || !(unitsPerSummon > 0)) return 0;
     const maxAscension = params.maxAscension;
-    const maxLevel = levels.length;
+    const maxLevelAt = (asc: number) => summonLevelsAt(tables, asc).length;
 
     const s: SummonState = { level: params.level, progress: params.progress, ascension: params.ascension };
     const ascend = () => {
@@ -295,13 +346,14 @@ export function currencyToReach(params: {
         || (s.ascension === targetAscension && s.level >= targetLevel);
 
     // Already at the top with an ascension left: ascending costs no summon currency.
-    if (!reached() && s.level >= maxLevel && s.ascension < maxAscension) ascend();
+    if (!reached() && s.level >= maxLevelAt(s.ascension) && s.ascension < maxAscension) ascend();
 
     let summons = 0;
     while (!reached()) {
         const canAscend = s.ascension < maxAscension;
-        if (s.level >= maxLevel && !canAscend) break;
-        addSummonProgress(levels, maxLevel, s, unitsPerSummon, canAscend, ascend);
+        if (!(maxLevelAt(s.ascension) > 0)) break;
+        if (s.level >= maxLevelAt(s.ascension) && !canAscend) break;
+        addSummonProgress(tables, s, unitsPerSummon, canAscend, ascend);
         summons += 1;
     }
     return summons * costPerSummon;

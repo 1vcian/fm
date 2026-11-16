@@ -8,6 +8,7 @@ import { Minus, Plus, RefreshCcw } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
+import { RARITY_TIERS } from '../../utils/gameTiers';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
 
@@ -28,6 +29,7 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
         results,
         maxPossibleLevel,
         levels,
+        levelsByAscension,
         applyResultsToProfile,
         calculateNeededCurrency,
         maxAscension,
@@ -38,15 +40,8 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
     const mountWarBoost = Math.max(warPointBonuses?.summon || 0, warPointBonuses?.merge || 0);
 
 
-    // Colors helper (Consistent with Skill Calculator)
-    const RARITY_COLORS: Record<string, string> = {
-        Common: '#F1F1F1',
-        Rare: '#5DD8FF',
-        Epic: '#5CFE89',
-        Legendary: '#FDFF5D',
-        Ultimate: '#FF5D5D',
-        Mythic: '#D55DFF',
-    };
+    // The colour the game draws each rarity with (GameTiers.json): no hardcoded rarity list.
+    const RARITY_COLORS: Record<string, string> = Object.fromEntries(RARITY_TIERS.map(t => [t.key, t.color]));
 
     // Costs, summon size and levels all come from MountSummonConfig: nothing to show until it loads.
     if (!ready) {
@@ -92,7 +87,7 @@ export default function MountCalculator({ embedded = false }: { embedded?: boole
             <SummonGoalPlanner
                 title="Mount summon levels and ascensions"
                 type="Mounts"
-                levels={levels}
+                levelsByAscension={levelsByAscension}
                 level={currentLevel}
                 progress={currentProgress}
                 startAscension={sandbox.ascension.value}

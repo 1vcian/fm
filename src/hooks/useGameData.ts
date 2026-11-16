@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameDataContext } from '../context/GameDataContext';
-import { isVarintFixed, normalizeGuildUpgradeLibrary, parseValue, reconstructTechTreeLibrary, SPLIT_TECH_TREE_VERSION } from '../utils/gameDataTransforms';
+import { buildTechTreeMapping, isVarintFixed, migrateLegacyStatValues, normalizeGuildUpgradeLibrary, parseValue, reconstructTechTreeLibrary, SPLIT_TECH_TREE_VERSION } from '../utils/gameDataTransforms';
 
 // Cache to store loaded data and prevent redundant fetches
 const dataCache: Record<string, any> = {};
@@ -10,7 +10,6 @@ const promiseCache: Record<string, Promise<any> | undefined> = {};
 const GLOBAL_CONFIG_FILES = [
     'ManualSpriteMapping.json',
     'IconsMap.json',
-    'TechTreeMapping.json',
     'AutoItemMapping.json',
     'ClanTechTreeIconsMap.json',
     'Localization.json'
@@ -36,7 +35,7 @@ async function fetchJsonConfig(url: string, fileName: string): Promise<any> {
     if ((response.headers.get('content-type') || '').includes('html')) {
         throw new Error(`${fileName} is not part of this game version`);
     }
-    return response.json();
+    return migrateLegacyStatValues(await response.json());
 }
 
 async function fetchAndReconstruct(selectedVersion: string, fileName: string): Promise<any> {
@@ -130,6 +129,16 @@ export function useGameData<T>(fileName: string) {
 
             // Create the promise and store it in cache
             const fetchPromise = (async () => {
+                if (fileName === 'TechTreeMapping.json') {
+                    // Per version: the global file carries the icons, the version's position
+                    // library the node graph (see buildTechTreeMapping).
+                    const positionFile = selectedVersion >= SPLIT_TECH_TREE_VERSION ? 'PlayerTechTreePositionLibrary.json' : 'TechTreePositionLibrary.json';
+                    const [globalMapping, positionLibrary] = await Promise.all([
+                        fetchJsonConfig(`${import.meta.env.BASE_URL}parsed_configs/TechTreeMapping.json`, fileName),
+                        fetchJsonConfig(`${import.meta.env.BASE_URL}parsed_configs/${selectedVersion}/${positionFile}`, positionFile).catch(() => null),
+                    ]);
+                    return buildTechTreeMapping(globalMapping, positionLibrary);
+                }
                 if (!isGlobalFile && selectedVersion >= SPLIT_TECH_TREE_VERSION) {
                     if (fileName === 'TechTreeLibrary.json' || fileName === 'TechTreeUpgradeLibrary.json' || fileName === 'TechTreePositionLibrary.json') {
                         return fetchAndReconstruct(selectedVersion, fileName);

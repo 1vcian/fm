@@ -6,7 +6,8 @@ import { cn } from '../lib/utils';
 import { formatVersion } from '../lib/formatVersion';
 import { getStatName } from '../utils/statNames';
 import { useGameData } from '../hooks/useGameData';
-import { maxSubstatPieces } from '../utils/substatBodies';
+import { equipmentTypeCount, maxSubstatPieces } from '../utils/substatBodies';
+import { petSlotCount } from '../utils/constants';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
 
 interface SecondaryStat {
@@ -29,7 +30,10 @@ export default function SecondaryStatsWiki() {
     // newest config. Null until those configs load: no guessed fallback.
     const { data: itemBalancingLibrary } = useGameData<Record<string, unknown>>('ItemBalancingLibrary.json');
     const { data: petBaseConfig } = useGameData<{ PetSlotsCount?: number }>('PetBaseConfig.json');
-    const substatPieces = maxSubstatPieces(itemBalancingLibrary, petBaseConfig);
+    const { data: playerSegments } = useGameData<Record<string, unknown>>('PlayerSegments.json');
+    const substatPieces = maxSubstatPieces(itemBalancingLibrary, petBaseConfig, playerSegments);
+    const substatItemCount = equipmentTypeCount(itemBalancingLibrary);
+    const substatPetCount = petSlotCount(petBaseConfig, playerSegments);
 
     // Initial fetch of versions
     useEffect(() => {
@@ -161,8 +165,8 @@ export default function SecondaryStatsWiki() {
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Stat Name</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Lower Range (Min)</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Upper Range (Max)</th>
-                                {/* 8 = ItemType enum (Helmet..Belt), 3 = PetBaseConfig.PetSlotsCount, 1 mount; a piece keeps one value per stat type (SecondaryStats.AddOrReplaceStatContribution 0x785F368). */}
-                                <th title="8 equipment items, 3 pets and 1 mount, each rolling the stat at most once at its upper range" className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-accent-primary">Max Total (12 pieces)</th>
+                                {/* Equipment types (ItemBalancingLibrary) + pet slots (petSlotCount) + 1 mount; a piece keeps one value per stat type (SecondaryStats.AddOrReplaceStatContribution 0x785F368). */}
+                                <th title={substatPieces === null ? undefined : `${substatItemCount} equipment items, ${substatPetCount} pets and 1 mount, each rolling the stat at most once at its upper range`} className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-accent-primary">Max Total{substatPieces === null ? '' : ` (${substatPieces} pieces)`}</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted text-right">Status</th>
                             </tr>
                         </thead>

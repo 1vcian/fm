@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { useGameData } from './useGameData';
 import { useTreeModifiers } from './useCalculatedStats';
 import { timerSpeedDurationSeconds } from '../utils/techOptimizer';
+import { parseForgeUpgrades, forgeLevelDef } from '../utils/forgeConfig';
 
 /**
- * Coins for one forge tier, as ForgeExtensions.GetForgeTierUpgradeCost (RVA 0x77B2C74):
+ * Coins for one forge tier, as ForgeExtensions.GetForgeTierUpgradeCost (RVA 0x7C44E28):
  * RoundToInt(CalculateValue(Cost, Forge, Cost / Tiers)) with an integer division first. The
- * ForgeUpgradeCost node is a OneMinusMultiplier. The row is ForgeUpgradeLibrary[ForgeLevel + 1] on the
+ * ForgeUpgradeCost node is a OneMinusMultiplier. The row is ForgeUpgradesByLevel[ForgeLevel + 1] on the
  * game's 0-based ForgeLevel, which is the displayed level, so key N prices leaving level N.
  */
 export function forgeTierCost(def: { Cost?: number; Tiers?: number } | null | undefined, costReduction: number): number {
@@ -15,17 +16,17 @@ export function forgeTierCost(def: { Cost?: number; Tiers?: number } | null | un
     return Math.round(Math.floor(def.Cost / tiers) * (1 - costReduction));
 }
 
-/** Coins for a whole forge level: every tier is paid separately (ForgeTierUpgradeAction, RVA 0x783A080). */
+/** Coins for a whole forge level: every tier is paid separately (ForgeTierUpgradeAction, RVA 0x7CD4A48). */
 export function forgeLevelCost(def: { Cost?: number; Tiers?: number } | null | undefined, costReduction: number): number {
     return forgeTierCost(def, costReduction) * Math.max(1, def?.Tiers || 1);
 }
 
 /**
- * Seconds of the forge upgrade timer for one level. ForgeUpgradeStartAction.Execute (RVA 0x783A3C8)
- * runs once the level's tiers are all bought (ForgeTiersMaxed 0x783A2E4; ForgeTierUpgradeAction
- * 0x783A080 starts no timer), reads ForgeUpgradeLibrary[ForgeLevel + 1].Duration, passes it through
- * StatHelper.CalculateValue(TimerSpeed, StatTarget.Forge) (0x7860530) and hands the F64 result to
- * TimerModel..ctor (0x78692EC). ForgeTimerSpeed is a TimerSpeed Divisor node, so the duration is per
+ * Seconds of the forge upgrade timer for one level. ForgeUpgradeStartAction.Execute (RVA 0x7CD4DEC)
+ * runs once the level's tiers are all bought (ForgeTiersMaxed 0x7CD4CAC; ForgeTierUpgradeAction
+ * 0x7CD4A48 starts no timer), reads ForgeUpgradesByLevel[ForgeLevel + 1].Duration, passes it through
+ * StatHelper.CalculateValue(TimerSpeed, StatTarget.Forge) (0x7CFDB64) and hands the F64 result to
+ * TimerModel..ctor (0x7D06CEC). ForgeTimerSpeed is a TimerSpeed Divisor node, so the duration is per
  * LEVEL and equals Duration / (1 + ForgeTimerSpeed), floored to whole milliseconds.
  */
 export function forgeUpgradeDurationSeconds(def: { Duration?: number } | null | undefined, forgeTimerSpeed: number): number {
@@ -34,10 +35,10 @@ export function forgeUpgradeDurationSeconds(def: { Duration?: number } | null | 
 }
 
 /**
- * Gems to skip a forge timer with `remainingSeconds` left: TimerModel.CalculateGemSkipCost (RVA 0x7868754)
- * with GemSkipTarget.Forge, called by ForgeGemSkipAction (0x783ABA4). Remaining time is
- * FloorToInt(seconds) (GetRemainingSeconds 0x786A810), the rate is ForgeConfig.ForgeGemSkipCostPerSecond
- * (GetCostPerSecond 0x786AFC8), the product is an F64 (Q32.32) rounded half up (RoundToInt 0x718D3F8)
+ * Gems to skip a forge timer with `remainingSeconds` left: TimerModel.CalculateGemSkipCost (RVA 0x7D06154)
+ * with GemSkipTarget.Forge, called by ForgeGemSkipAction (0x7CD5624). Remaining time is
+ * FloorToInt(seconds) (GetRemainingSeconds 0x7D08210), the rate is ForgeConfig.ForgeGemSkipCostPerSecond
+ * (GetCostPerSecond 0x7D08CF0), the product is an F64 (Q32.32) rounded half up (RoundToInt 0x761C68C)
  * and the result is at least 1. Returns null while the rate is not loaded.
  */
 export function forgeGemSkipCost(remainingSeconds: number, costPerSecond: number | null | undefined): number | null {
@@ -57,11 +58,8 @@ export function useForgeUpgradeStats(level: number) {
     const forgeTimerSpeed = techModifiers['ForgeTimerSpeed'] || 0;
 
     return useMemo(() => {
-        if (!upgradeData) return null;
-
-        // Cost Calculation
-        // Use `level` directly as JSON Key N represents upgrade FROM N to N+1.
-        const nextLevelData = upgradeData[String(level)] || upgradeData[level];
+        // ForgeUpgradesByLevel key N is the upgrade FROM displayed level N to N+1 (utils/forgeConfig.ts).
+        const nextLevelData = forgeLevelDef(parseForgeUpgrades(upgradeData), level);
         if (!nextLevelData) return null;
 
         const baseCost = nextLevelData.Cost || 0;

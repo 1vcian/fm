@@ -39,10 +39,11 @@ export const BreakpointTables = memo(({
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
+    const { data: playerSegments } = useGameData<any>('PlayerSegments.json');
 
     // Gear cap: AttackSpeed UpperRange on every piece that can carry it (item types + pet slots +
     // the mount, see substatBodies.ts). Null until the configs are loaded: no guessed fallback.
-    const maxAttackSpeedTotal = maxSubstatTotal(secondaryStatLibrary?.AttackSpeed, itemBalancingLibrary, petBaseConfig);
+    const maxAttackSpeedTotal = maxSubstatTotal(secondaryStatLibrary?.AttackSpeed, itemBalancingLibrary, petBaseConfig, playerSegments);
     // The scan runs in 0.1% steps; +0.1 keeps the cap itself inside the float loop.
     const maxPossibleSpeedBonus = maxAttackSpeedTotal === null ? null : maxAttackSpeedTotal * 100 + 0.1;
     const currentBonus = (currentAttackSpeedMultiplier - 1) * 100;

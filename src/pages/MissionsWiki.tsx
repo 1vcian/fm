@@ -1,4 +1,4 @@
-import { calculateMissionPower, missionEnemyStats } from '../engine/enemies';
+import { calculateMissionPower, missionEnemyStats, resolveMissionLevelScaling, type MissionDifficultyRange } from '../engine/enemies';
 import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
@@ -73,7 +73,8 @@ interface MissionBaseConfig {
     RefreshGemCost: number;
     RefreshMissionCount: number;
     MissionBattleMatchTimerSeconds: number;
-    HealthAndDamageLevelMultiplier: number;
+    /** Gone in 2026_11_16 (MissionDifficultyMultiplier.json replaces it). */
+    HealthAndDamageLevelMultiplier?: number;
     MissionOwnerRewardsCount: number;
     DailyFreeRefreshCount?: number;
 }
@@ -165,6 +166,13 @@ export default function MissionsWiki() {
     const { data: rewardLibrary } = useGameData<Record<string, MissionReward>>('MissionRewardLibrary.json');
     const { data: allMemberRewardLibrary } = useGameData<Record<string, MissionAllMemberReward>>('MissionAllMemberRewardLibrary.json');
     const { data: baseConfig } = useGameData<MissionBaseConfig>('MissionBaseConfig.json');
+    // Mission level scaling: MissionDifficultyMultiplier.json from 2026_11_16 on, else the older
+    // MissionBaseConfig.HealthAndDamageLevelMultiplier (see resolveMissionLevelScaling).
+    const { data: difficultyMultiplierLib } = useGameData<Record<string, MissionDifficultyRange>>('MissionDifficultyMultiplier.json');
+    const levelScaling = useMemo(
+        () => resolveMissionLevelScaling(baseConfig, difficultyMultiplierLib),
+        [baseConfig, difficultyMultiplierLib]
+    );
     const { data: itemBalancingConfig } = useGameData<{ PlayerPowerDamageMultiplier: number }>('ItemBalancingConfig.json');
     const { data: rallyTimeLibrary } = useGameData<Record<string, MissionRallyTime>>('MissionRallyTimeLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
@@ -181,7 +189,7 @@ export default function MissionsWiki() {
         return rows.length ? Math.max(...rows.map((b) => b.MinHammerThiefLevel)) : 0;
     }, [levelLibrary]);
 
-    const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;
+    const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary || levelScaling === null;
 
     const hammerBand = useMemo(
         () => bandForHammerLevel(hammerLevel, levelLibrary),
@@ -231,10 +239,10 @@ export default function MissionsWiki() {
         return currentRewards.Rewards;
     }, [currentRewards]);
 
-    // MissionCombatScene.SetupEnemies (0x780E7D0): Convert.ToInt64(base x (float)multiplier ^ (level - 1)).
+    // MissionCombatScene.SetupEnemies: base scaled by the mission level multiplier (see missionEnemyStats).
     const getScaledValue = (base: number) => {
-        if (!baseConfig) return base;
-        return missionEnemyStats({ BaseDamage: base, BaseHealth: base }, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier).hp;
+        if (levelScaling === null) return base;
+        return missionEnemyStats({ BaseDamage: base, BaseHealth: base }, effectiveLevel, levelScaling).hp;
     };
 
     if (loading) {
@@ -451,9 +459,9 @@ export default function MissionsWiki() {
                         const scaledDmg = getScaledValue(battle.BaseDamage);
                         const scaledHp = getScaledValue(battle.BaseHealth);
                         
-                        // Suggested power: the game's CalculateMissionPower (0x780FEEC), see calculateMissionPower.
-                        const suggestedPower = baseConfig && itemBalancingConfig
-                            ? calculateMissionPower(battle, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier, itemBalancingConfig.PlayerPowerDamageMultiplier)
+                        // Suggested power: the game's CalculateMissionPower (0x7CA8270 in 2026_11_16_09_55), see calculateMissionPower.
+                        const suggestedPower = levelScaling !== null && itemBalancingConfig
+                            ? calculateMissionPower(battle, effectiveLevel, levelScaling, itemBalancingConfig.PlayerPowerDamageMultiplier)
                             : null;
 
                         return (

@@ -15,6 +15,8 @@
  * 0x78A9F90 -> ResetDeals, ResetsToday + 1). Each deal is bought once; its price is the size's
  * InAppProducts row DailyDeal<SizeId>, and its contents the DailyDealLibrary row (fixed, they do
  * not scale with progress: DailyDealModel.GetRewards 0x786A5A4).
+ * Re-checked on build 2026_11_16_09_55: same generator and PCG (GenerateDailyDeals 0x7CC8DCC,
+ * RandomPCG.CreateFromSeed 0x775AC5C, NextUInt 0x775ACDC), same DailyDealLibrary and InAppProducts.
  */
 
 /** DailyDealType enum values, in order (the generator lists them by value, not by config key). */

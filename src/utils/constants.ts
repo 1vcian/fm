@@ -4,9 +4,48 @@ export { AGES, RARITIES } from './gameTiers';
 /**
  * Active pet slots, still used only by the screenshot reader (src/utils/ocr/autoSync.ts and
  * AutoSyncModal), which does not receive the configs yet. Equals PetBaseConfig.PetSlotsCount in
- * 2026_10_08_09_03; everything else reads that config field.
+ * 2026_10_08_09_03 and the PetSlot<n> segment count in 2026_11_16_09_55; everything else reads
+ * petSlotCount below.
  */
 export const MAX_ACTIVE_PETS = 3;
+
+/**
+ * Pet / skill slot count of a fully progressed player, for the selected config.
+ *
+ * Up to 2026_10_27 the configs carry it: PetBaseConfig.PetSlotsCount and
+ * SkillBaseConfig.SkillSlotsCount. From 2026_11_16 both are gone (SkillBaseConfig.json is no
+ * longer exported). In the 2026_11_16_09_55 binary each slot is a player segment:
+ * Features..cctor (0x7C4BB24) builds Features.PetSlots = [PetSlot0, PetSlot1, PetSlot2] and
+ * Features.SkillSlots = [SkillSlot0, SkillSlot1, SkillSlot2], and
+ * SharedGameConfigExtensions.GetUnlockedPetSlotCount (0x7C3E344) / GetUnlockedSkillSlotCount
+ * (0x7C3DF04) count the slots whose segment (GameConfig.PlayerSegments.TryGetValue) matches the
+ * player; GetLockedPetSlotsCount (0x7C3E6A4) / GetLockedSkillSlotCount (0x7C3E264) are
+ * PetSlots.Count / SkillSlots.Count minus that. Every slot segment ("PetSlot<n>", "SkillSlot<n>")
+ * is defined in PlayerSegments.json, so a fully progressed player has one slot per such segment.
+ * Null while neither source is loaded.
+ */
+function slotSegmentCount(playerSegments: Record<string, unknown> | null | undefined, prefix: string): number | null {
+    if (!playerSegments) return null;
+    const re = new RegExp(`^${prefix}\\d+$`);
+    const n = Object.keys(playerSegments).filter((k) => re.test(k)).length;
+    return n > 0 ? n : null;
+}
+
+export function petSlotCount(
+    petBaseConfig: { PetSlotsCount?: number } | null | undefined,
+    playerSegments: Record<string, unknown> | null | undefined
+): number | null {
+    if (typeof petBaseConfig?.PetSlotsCount === 'number') return petBaseConfig.PetSlotsCount;
+    return slotSegmentCount(playerSegments, 'PetSlot');
+}
+
+export function skillSlotCount(
+    skillBaseConfig: { SkillSlotsCount?: number } | null | undefined,
+    playerSegments: Record<string, unknown> | null | undefined
+): number | null {
+    if (typeof skillBaseConfig?.SkillSlotsCount === 'number') return skillBaseConfig.SkillSlotsCount;
+    return slotSegmentCount(playerSegments, 'SkillSlot');
+}
 
 /**
  * Skill Mechanics Definitions
@@ -78,6 +117,18 @@ export const SKILL_MECHANICS: {
     // --- Summon Skills (Creates entity that attacks periodically) ---
     "17": { count: 10, isAOE: false, isSingleTarget: true, interval: 0.8, isDuration: true, damageIsPerHit: true, descriptionIsPerHit: true }, // Drone
     "Drone": { count: 10, isAOE: false, isSingleTarget: true, interval: 0.8, isDuration: true, damageIsPerHit: true, descriptionIsPerHit: true },
+
+    // --- Skills new in build 2026_11_16_09_55 (SkillBuilder, engine/skills.ts; count = the split
+    // of Damage: GetSkillDamageCount 0x7C8088C, or the builder's own divisor) ---
+    "InfiniteRenewal": { count: 0 }, // Damage + Healing Buff (SkillBuilder.IsBuff)
+    "DeathStar": { count: 8, isAOE: true }, // 8 column pulses of Damage / 8
+    "Stomp": { count: 1, isAOE: true }, // 4 hits: 40%, then 20% three times
+    "GhostRush": { count: 3, isAOE: true },
+    "RisingBlades": { count: 3, isAOE: true },
+    "GiantForge": { count: 1, isAOE: true },
+    "FiringSquad": { count: 12, isSingleTarget: true },
+    "BarrelRoll": { count: 3, isAOE: true },
+    "EternalLeaves": { count: 8, isAOE: true },
 };
 
 // === Attack timing (reverse-engineered from libil2cpp.so; RVAs for build 2026_10_08_09_03 in

@@ -12,6 +12,7 @@ import { useGameDataContext } from '../../context/GameDataContext';
 
 import { getNormalizedTarget } from '../../utils/ascensionUtils';
 import { getTechNodeName, getClanIconStyle } from '../../utils/techUtils';
+import { techNodeTierStats } from '../../utils/gameDataTransforms';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 
@@ -296,10 +297,12 @@ export function TechTreePanel() {
     }, [profile.techTree, treeEffects, treeMapping, selectedVersion, guildPositionLibrary, guildUpgradeLibrary]);
 
     // Helper function to format stat description with Global info
-    const formatStatDescription = (effect: any, currentLevel: number) => {
+    const formatStatDescription = (effect: any, currentLevel: number, tier?: number) => {
         if (!effect?.Stats || effect.Stats.length === 0) return '';
 
-        return effect.Stats.map((stat: any) => {
+        // A player node shows its own tier's values (Tier 5 egg timers differ from Tier 0).
+        const statsList = tier === undefined ? effect.Stats : techNodeTierStats(effect, tier);
+        return statsList.map((stat: any) => {
             const statType = stat.StatNode?.UniqueStat?.StatType || 'Unknown';
             const statNature = stat.StatNode?.UniqueStat?.StatNature || 'Multiplier';
             const baseValue = stat.Value || 0;
@@ -1004,7 +1007,7 @@ const maxLevel = upgradeDef?.MaxLevel ?? 0;
 
                                                 {unlocked && currentLevel > 0 && (
                                                     <div className="text-[10px] mt-1 text-accent-secondary whitespace-nowrap overflow-hidden text-clip animate-fade-in">
-                                                        {formatStatDescription(effect, currentLevel)}
+                                                        {formatStatDescription(effect, currentLevel, node.tier ?? 0)}
                                                     </div>
                                                 )}
                                             </div>

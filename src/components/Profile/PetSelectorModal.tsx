@@ -10,12 +10,12 @@ import { Button } from '../UI/Button';
 import { ModalLevelSelector } from '../UI/ModalLevelSelector';
 import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getRarityBgStyle } from '../../lib/utils';
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { RARITIES } from '../../utils/constants';
 import { getStatName } from '../../utils/statNames';
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { EggIcon } from '../UI/EggIcon';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 
@@ -375,15 +375,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
-                            <SpriteSheetIcon
-                                textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0, selectedVersion)}
-                                spriteWidth={256}
-                                spriteHeight={256}
-                                sheetWidth={1024}
-                                sheetHeight={1024}
-                                iconIndex={0}
-                                className="w-8 h-8"
-                            />
+                            <EggIcon rarity={RARITIES[0]} size={32} ascensionLevel={profile.misc.petAscensionLevel || 0} />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold">{currentPet ? 'Edit Pet' : 'Select Pet'}</h3>
@@ -506,15 +498,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                     )}
                                 >
                                     <div className="shrink-0 md:bg-black/20 md:p-1 md:rounded">
-                                        <SpriteSheetIcon
-                                            textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0, selectedVersion)}
-                                            spriteWidth={256}
-                                            spriteHeight={256}
-                                            sheetWidth={1024}
-                                            sheetHeight={1024}
-                                            iconIndex={RARITIES.indexOf(rarity)}
-                                            className="w-8 h-8 md:w-5 md:h-5"
-                                        />
+                                        <EggIcon rarity={rarity} size={24} ascensionLevel={profile.misc.petAscensionLevel || 0} />
                                     </div>
                                     <div className="flex-1 text-left">
                                         <span className="block">{rarity}</span>
@@ -569,13 +553,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
                                                 {petsConfig && (
-                                                    <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0, selectedVersion)}
-                                                        spriteWidth={petsConfig.sprite_size.width}
-                                                        spriteHeight={petsConfig.sprite_size.height}
-                                                        sheetWidth={petsConfig.texture_size.width}
-                                                        sheetHeight={petsConfig.texture_size.height}
-                                                        iconIndex={pet.spriteIndex}
+                                                    <UnitSpriteIcon
+                                                        section={petsConfig}
+                                                        unitKey={pet.spriteIndex}
+                                                        ascensionLevel={profile.misc.petAscensionLevel || 0}
+                                                        version={selectedVersion}
                                                         className="w-full h-full p-1"
                                                     />
                                                 )}
@@ -747,13 +729,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                         }
                                                     }}
                                                     renderIcon={() => (
-                                                        <SpriteSheetIcon
-                                                            textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0, selectedVersion)}
-                                                            spriteWidth={petsConfig!.sprite_size.width}
-                                                            spriteHeight={petsConfig!.sprite_size.height}
-                                                            sheetWidth={petsConfig!.texture_size.width}
-                                                            sheetHeight={petsConfig!.texture_size.height}
-                                                            iconIndex={spriteIndex}
+                                                        <UnitSpriteIcon
+                                                            section={petsConfig}
+                                                            unitKey={spriteIndex}
+                                                            ascensionLevel={profile.misc.petAscensionLevel || 0}
+                                                            version={selectedVersion}
                                                             className="w-10 h-10"
                                                         />
                                                     )}
@@ -811,13 +791,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                         style={{ ...getRarityBgStyle(selectedRarity), borderColor: `var(--rarity-${selectedRarity.toLowerCase()})` }}
                                     >
                                         {petsConfig && (
-                                            <SpriteSheetIcon
-                                                textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0, selectedVersion)}
-                                                spriteWidth={petsConfig.sprite_size.width}
-                                                spriteHeight={petsConfig.sprite_size.height}
-                                                sheetWidth={petsConfig.texture_size.width}
-                                                sheetHeight={petsConfig.texture_size.height}
-                                                iconIndex={Object.entries(petsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedPetId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(petsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedPetId && v.rarity === selectedRarity)![0]) : 0}
+                                            <UnitSpriteIcon
+                                                section={petsConfig}
+                                                unitKey={Object.entries(petsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedPetId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(petsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedPetId && v.rarity === selectedRarity)![0]) : 0}
+                                                ascensionLevel={profile.misc.petAscensionLevel || 0}
+                                                version={selectedVersion}
                                                 className="w-20 h-20"
                                             />
                                         )}

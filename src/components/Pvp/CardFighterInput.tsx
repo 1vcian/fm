@@ -12,10 +12,9 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { formatNumber } from '../../utils/format';
 import { parseCompactNumber } from '../../utils/ocr/parse';
 import { getItemImage } from '../../utils/itemAssets';
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { AGES } from '../../utils/constants';
 import { getRarityBgStyle } from '../../lib/utils';
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { ItemSelectorModal } from '../Profile/ItemSelectorModal';
 import { PetSelectorModal } from '../Profile/PetSelectorModal';
 import { MountSelectorModal } from '../Profile/MountSelectorModal';
@@ -436,11 +435,8 @@ function UnitSlotCard({ kind, label, unit, onPick, onChange }: {
             <Evidence cropUrl={unit.cropUrl} onPick={onPick} title={`Choose the ${kind}`}>
                 {entry ? (
                     <div className="w-full h-full" style={getRarityBgStyle(unit.rarity!)}>
-                        <SpriteSheetIcon
-                            textureSrc={getAscensionTexturePath(kind === 'pet' ? 'Pets' : 'MountIcons', unit.stars ?? 0, selectedVersion)}
-                            spriteWidth={sheet.sprite_size.width} spriteHeight={sheet.sprite_size.height}
-                            sheetWidth={sheet.texture_size.width} sheetHeight={sheet.texture_size.height}
-                            iconIndex={parseInt(entry[0])} className="w-full h-full" />
+                        <UnitSpriteIcon section={sheet} unitKey={entry[0]} ascensionLevel={unit.stars ?? 0}
+                            version={selectedVersion} className="w-full h-full" />
                     </div>
                 ) : <GameAssetIcon asset={{ sheet: 'Pets', index: 7 }} size={16} />}
             </Evidence>
@@ -472,11 +468,11 @@ function SkillSlotCard({ label, skill, onPick, onChange }: {
             <Evidence cropUrl={skill.cropUrl} onPick={onPick} title="Choose the skill">
                 {entry ? (
                     <div className="w-full h-full" style={rarity ? getRarityBgStyle(rarity) : undefined}>
-                        <SpriteSheetIcon
-                            textureSrc={getAscensionTexturePath('SkillIcons', skill.stars ?? 0, selectedVersion)}
-                            spriteWidth={sheet.sprite_size.width} spriteHeight={sheet.sprite_size.height}
-                            sheetWidth={sheet.texture_size.width} sheetHeight={sheet.texture_size.height}
-                            iconIndex={parseInt(entry[0])} className="w-full h-full" />
+                        <UnitSpriteIcon
+                            section={sheet}
+                            unitKey={parseInt(entry[0])}
+                            ascensionLevel={skill.stars ?? 0}
+                            version={selectedVersion} className="w-full h-full" />
                     </div>
                 ) : <Plus className="w-4 h-4 text-text-muted" />}
             </Evidence>

@@ -16,7 +16,6 @@ import { InputModal } from '../UI/InputModal';
 import { SectionSyncButton } from './SectionSyncButton';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { cn, getInventoryIconStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
@@ -24,7 +23,7 @@ import { AGES } from '../../utils/constants';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { personalTechShare } from '../../utils/clanTechStacking';
 
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 
 import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 import { FitBuildPortrait, fullMaxedSet } from '../Presets/BuildPortrait';
@@ -705,13 +704,11 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
                         hideAgeStyles={true}
                         rarity={mount.rarity}
                         renderIcon={() => spriteInfo && (
-                                <SpriteSheetIcon
-                                    textureSrc={getAscensionTexturePath('MountIcons', currentAscension, selectedVersion)}
-                                    spriteWidth={spriteInfo.config.sprite_size.width}
-                                    spriteHeight={spriteInfo.config.sprite_size.height}
-                                    sheetWidth={spriteInfo.config.texture_size.width}
-                                    sheetHeight={spriteInfo.config.texture_size.height}
-                                    iconIndex={spriteInfo.spriteIndex}
+                                <UnitSpriteIcon
+                                    section={spriteInfo.config}
+                                    unitKey={spriteInfo.spriteIndex}
+                                    ascensionLevel={currentAscension}
+                                    version={selectedVersion}
                                     className={CARD_ART_CLASS}
                                     smooth
                                 />

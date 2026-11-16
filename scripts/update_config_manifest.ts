@@ -68,6 +68,9 @@ function deepDiff(a: unknown, b: unknown, at = '', depth = 0, out: string[] = []
     const ao = a as Record<string, unknown>;
     const bo = b as Record<string, unknown>;
     for (const key of new Set([...Object.keys(ao), ...Object.keys(bo)])) {
+        // Serializer bookkeeping, not game data (StatContribution._legacyValue, 0 unless the game
+        // migrates an old F64 value into Value on load).
+        if (key === '_legacyValue') continue;
         const path_ = at ? `${at}.${key}` : key;
         if (!(key in ao)) out.push(`${path_}: added`);
         else if (!(key in bo)) out.push(`${path_}: removed`);

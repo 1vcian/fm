@@ -3,11 +3,10 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { cn } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 import { getItemImage } from '../../utils/itemAssets';
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { useGameData } from '../../hooks/useGameData';
 import { usePetNames } from '../../hooks/usePetNames';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -131,13 +130,11 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                     spriteMapping={spriteMapping}
                     customStats={contribution}
                     renderIcon={() => spriteInfo ? (
-                        <SpriteSheetIcon
-                            textureSrc={getAscensionTexturePath('Pets', pet.ascensionLevel || 0, selectedVersion)}
-                            spriteWidth={spriteInfo.config.sprite_size.width}
-                            spriteHeight={spriteInfo.config.sprite_size.height}
-                            sheetWidth={spriteInfo.config.texture_size.width}
-                            sheetHeight={spriteInfo.config.texture_size.height}
-                            iconIndex={spriteInfo.spriteIndex}
+                        <UnitSpriteIcon
+                            section={spriteInfo.config}
+                            unitKey={spriteInfo.spriteIndex}
+                            ascensionLevel={pet.ascensionLevel || 0}
+                            version={selectedVersion}
                             className="w-10 h-10"
                         />
                     ) : (
@@ -169,13 +166,11 @@ const ModalContent = memo(({ statKey, label, totalDisplay, stats, formatValue, m
                 spriteMapping={spriteMapping}
                 customStats={contribution}
                 renderIcon={() => mountSpriteIndex !== null && mountsConfig ? (
-                    <SpriteSheetIcon
-                        textureSrc={getAscensionTexturePath('MountIcons', (mount as any).ascensionLevel || 0, selectedVersion)}
-                        spriteWidth={mountsConfig.sprite_size.width}
-                        spriteHeight={mountsConfig.sprite_size.height}
-                        sheetWidth={mountsConfig.texture_size.width}
-                        sheetHeight={mountsConfig.texture_size.height}
-                        iconIndex={mountSpriteIndex}
+                    <UnitSpriteIcon
+                        section={mountsConfig}
+                        unitKey={mountSpriteIndex}
+                        ascensionLevel={(mount as any).ascensionLevel || 0}
+                        version={selectedVersion}
                         className="w-10 h-10"
                     />
                 ) : (

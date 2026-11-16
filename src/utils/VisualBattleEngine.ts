@@ -48,6 +48,7 @@ export interface VisualProjectile {
     isPlayerSource: boolean;
 }
 import {
+    BUFF_SKILL_TYPES,
     BattleContext,
     CombatScene,
     MISSION_ENEMY_BASE_X,
@@ -257,7 +258,7 @@ export class VisualBattleEngine {
             weaponSpriteKey: u.weaponSpriteKey,
             shield: 0,
         });
-        const buffIds = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+        const buffIds = BUFF_SKILL_TYPES;
         return {
             time: this.scene.tickCount / 10,
             player: unitView(this.player),

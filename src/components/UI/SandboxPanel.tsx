@@ -55,6 +55,23 @@ export function SandboxPanel({ fields, onReset, children, isModified }: { fields
                 )}
             </div>
             {shown.length > 0 && (
+                // Every slider at once: no node researched, or every node at its MaxLevel.
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => shown.forEach(f => f.onChange(f.min))}
+                        className="px-3 py-1 rounded-lg border border-purple-500/30 bg-bg-input text-[11px] font-bold text-text-secondary hover:text-white hover:border-purple-400"
+                    >
+                        Empty tree
+                    </button>
+                    <button
+                        onClick={() => shown.forEach(f => f.onChange(f.max))}
+                        className="px-3 py-1 rounded-lg border border-purple-500/30 bg-bg-input text-[11px] font-bold text-text-secondary hover:text-white hover:border-purple-400"
+                    >
+                        Max tree
+                    </button>
+                </div>
+            )}
+            {shown.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                     {shown.map(f => {
                         const value = clamp(f, f.value);

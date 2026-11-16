@@ -24,6 +24,7 @@ import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculate
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
+import { ageChancesAtForgeLevel } from '../../utils/forgeConfig';
 
 interface ItemSelectorModalProps {
     isOpen: boolean;
@@ -185,16 +186,12 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         if (!ageDropChances) return AGES.map((_, i) => i);
         const forgeLevel = Math.max(1, profile.misc.forgeLevel || 1);
         // JSON uses 0-based index where Key "0" = Level 1 stats
-        const dropData = ageDropChances[String(forgeLevel - 1)];
-        if (!dropData) return [0];
+        // Every age of the ItemAgeDropChancesLibrary row (the config's own age count, either format).
+        const dropData = ageChancesAtForgeLevel(ageDropChances, forgeLevel - 1);
+        if (!dropData.length) return [0];
 
         const unlocked: number[] = [];
-        // Every AgeN column of the ItemAgeDropChancesLibrary row (the config's own age count).
-        for (const [k, v] of Object.entries<any>(dropData)) {
-            const m = /^Age(\d+)$/.exec(k);
-            if (m && (Number(v) || 0) > 0) unlocked.push(Number(m[1]));
-        }
-        unlocked.sort((x, y) => x - y);
+        dropData.forEach((v, i) => { if (v > 0) unlocked.push(i); });
         return unlocked.length > 0 ? unlocked : [0];
     }, [ageDropChances, profile.misc.forgeLevel, unlockAll]);
 
@@ -326,8 +323,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         if (!ageDropChances) return 0;
         const forgeLevel = Math.max(1, profile.misc.forgeLevel || 1);
         // JSON uses 0-based index where Key "0" = Level 1 stats
-        const dropData = ageDropChances[String(forgeLevel - 1)];
-        return dropData?.[`Age${ageIndex}`] || 0;
+        return ageChancesAtForgeLevel(ageDropChances, forgeLevel - 1)[ageIndex] || 0;
     };
 
     const availableItems = useMemo(() => {

@@ -45,7 +45,7 @@ export default function EggSummonCalculator() {
             <SummonGoalPlanner
                 title="Egg summon levels and ascensions"
                 type="Pets"
-                levels={eggSummon.levels}
+                levelsByAscension={eggSummon.levelsByAscension}
                 level={eggSummon.level}
                 progress={eggSummon.progress}
                 startAscension={eggSummon.sandbox.ascension.value}

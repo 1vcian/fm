@@ -32,6 +32,24 @@ export const AGES: string[] = [];
 /** Rarity names by Rarity enum value ("Common" .. "Mythic" in 2026_10). */
 export const RARITIES: string[] = [];
 
+/**
+ * Every skill in the order the game's Skills screen lays them out: rarity rank, then CombatSkill
+ * enum value (SkillLibrary.json Rarity, ManualSpriteMapping.json skills enum_value). The screenshot
+ * reader maps grid cells onto it by position. Filled by `loadGameTiers` with the same version.
+ */
+export const SKILLS_ORDER: string[] = [];
+
+/** Fill SKILLS_ORDER from a SkillLibrary and the skills section of ManualSpriteMapping. */
+export function setSkillsOrder(skillLibrary: Record<string, { Rarity?: string }>, spriteMapping: any) {
+    const enumOf: Record<string, number> = {};
+    for (const v of Object.values<any>(spriteMapping?.skills?.mapping ?? {})) {
+        if (v && typeof v.name === 'string' && typeof v.enum_value === 'number') enumOf[v.name] = v.enum_value;
+    }
+    const ids = Object.keys(skillLibrary).filter(id => id in enumOf);
+    ids.sort((a, b) => rarityIndexOf(skillLibrary[a].Rarity) - rarityIndexOf(skillLibrary[b].Rarity) || enumOf[a] - enumOf[b]);
+    SKILLS_ORDER.splice(0, SKILLS_ORDER.length, ...ids);
+}
+
 /** [r, g, b] per age and per rarity, same order (the screenshot reader matches tile colours). */
 export const AGE_RGB: [number, number, number][] = [];
 export const RARITY_RGB: [number, number, number][] = [];
@@ -150,6 +168,11 @@ export async function loadGameTiers(baseUrl: string): Promise<string> {
         const r = await fetch(`${baseUrl}parsed_configs/${v}/GameTiers.json`);
         if (!r.ok || (r.headers.get('content-type') || '').includes('html')) continue;
         apply(await r.json());
+        const [lib, map] = await Promise.all([
+            fetch(`${baseUrl}parsed_configs/${v}/SkillLibrary.json`).then(x => x.json()),
+            fetch(`${baseUrl}parsed_configs/ManualSpriteMapping.json`).then(x => x.json()),
+        ]);
+        setSkillsOrder(lib, map);
         return v;
     }
     throw new Error('No config version has a GameTiers.json');

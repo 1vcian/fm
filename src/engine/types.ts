@@ -213,6 +213,33 @@ export interface AreaProjectile {
     /** Display only: the skill that spawned it, and the tick of its last damage pulse. */
     skillId?: string;
     lastPulseTick?: number;
+    /** Display only: the scene's tickCount when it was created (the views start their clocks there). */
+    spawnTick?: number;
+    /*
+     * AreaProjectile fields new in build 2026_11_16_09_55 (dump.cs AreaProjectile, 0x248..0x280),
+     * read by AttacksSystem.HandleAreaProjectiles (0x7C88C3C). Absent = the field's default
+     * (false / 0), which is the pre-2026_11 behaviour.
+     */
+    /** FollowSource (0x248): every tick the area takes the owner unit's Position and Velocity. */
+    followSource?: boolean;
+    /** PulsesRemaining (0x24C): >= 1 switches the pulse to the counted mode (>=, subtract, decrement). */
+    pulsesRemaining?: number;
+    /** RetargetOnImpact (0x250): the final hit is RetargetedSkillDamage (one target, WeaponBarrage.FindTarget). */
+    retargetOnImpact?: boolean;
+    /** ShotIndex (0x254): display only. */
+    shotIndex?: number;
+    /** TargetId (0x258, -1 by default): the unit RetargetedSkillDamage picked. Display only. */
+    targetId?: number;
+    /** TrackSpeed (0x260): > 0 steers Velocity.X toward the nearest enemy (TrackingVelocity 0x7C8ADAC). */
+    trackSpeed?: number;
+    /** HitOnPass (0x268): PassDamage (0x7C8B3E0) hits each unit once as the area sweeps over it. */
+    hitOnPass?: boolean;
+    /** HitUnitIds (0x270): the units PassDamage already hit. */
+    hitUnitIds?: Set<number>;
+    /** ColumnHit (0x278): pulses use ColumnDamage (0x7C8BC24): |dx| < Radius + unit Radius, any y. */
+    columnHit?: boolean;
+    /** TrackRange (0x280): > 0 limits tracking to enemies within this |dx| of the owner unit. */
+    trackRange?: number;
 }
 
 /** One CombatDmg event, same flags as the game's struct. Heal events reuse dmg as amount. */

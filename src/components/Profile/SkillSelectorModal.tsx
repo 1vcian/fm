@@ -11,6 +11,7 @@ import { Input } from '../UI/Input';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
@@ -272,13 +273,11 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                         >
                                             {spriteMapping?.skills && (
                                                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={getRarityBgStyle(selectedRarity)}>
-                                                    <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
-                                                        spriteWidth={spriteMapping.skills.sprite_size.width}
-                                                        spriteHeight={spriteMapping.skills.sprite_size.height}
-                                                        sheetWidth={spriteMapping.skills.texture_size.width}
-                                                        sheetHeight={spriteMapping.skills.texture_size.height}
-                                                        iconIndex={skill.spriteIndex}
+                                                    <UnitSpriteIcon
+                                                        section={spriteMapping.skills}
+                                                        unitKey={skill.spriteIndex}
+                                                        ascensionLevel={ascensionLevel}
+                                                        version={selectedVersion}
                                                         className="w-10 h-10"
                                                     />
                                                 </div>
@@ -301,13 +300,11 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                     <div className="text-center pb-4 border-b border-border">
                                         <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-3" style={getRarityBgStyle(selectedRarity)}>
                                             {spriteMapping?.skills && (
-                                                <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
-                                                    spriteWidth={spriteMapping.skills.sprite_size.width}
-                                                    spriteHeight={spriteMapping.skills.sprite_size.height}
-                                                    sheetWidth={spriteMapping.skills.texture_size.width}
-                                                    sheetHeight={spriteMapping.skills.texture_size.height}
-                                                    iconIndex={filteredSkills.find((s: any) => s.id === selectedSkillId)?.spriteIndex || 0}
+                                                <UnitSpriteIcon
+                                                    section={spriteMapping.skills}
+                                                    unitKey={filteredSkills.find((s: any) => s.id === selectedSkillId)?.spriteIndex || 0}
+                                                    ascensionLevel={ascensionLevel}
+                                                    version={selectedVersion}
                                                     className="w-16 h-16"
                                                 />
                                             )}
@@ -447,13 +444,11 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                 className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
-                                                <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
-                                                    spriteWidth={spriteMapping.skills.sprite_size.width}
-                                                    spriteHeight={spriteMapping.skills.sprite_size.height}
-                                                    sheetWidth={spriteMapping.skills.texture_size.width}
-                                                    sheetHeight={spriteMapping.skills.texture_size.height}
-                                                    iconIndex={skill.spriteIndex}
+                                                <UnitSpriteIcon
+                                                    section={spriteMapping.skills}
+                                                    unitKey={skill.spriteIndex}
+                                                    ascensionLevel={ascensionLevel}
+                                                    version={selectedVersion}
                                                     className="w-12 h-12"
                                                 />
                                             </div>
@@ -482,13 +477,11 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             const displaySkill = filteredSkills.find((s: any) => s.id === selectedSkillId);
                                             if (displaySkill && spriteMapping?.skills) {
                                                 return (
-                                                    <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
-                                                        spriteWidth={spriteMapping.skills.sprite_size.width}
-                                                        spriteHeight={spriteMapping.skills.sprite_size.height}
-                                                        sheetWidth={spriteMapping.skills.texture_size.width}
-                                                        sheetHeight={spriteMapping.skills.texture_size.height}
-                                                        iconIndex={displaySkill.spriteIndex}
+                                                    <UnitSpriteIcon
+                                                        section={spriteMapping.skills}
+                                                        unitKey={displaySkill.spriteIndex}
+                                                        ascensionLevel={ascensionLevel}
+                                                        version={selectedVersion}
                                                         className="w-20 h-20"
                                                     />
                                                 );

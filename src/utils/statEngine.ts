@@ -406,10 +406,12 @@ export interface LibraryData {
     /** SkinUpgradeLibrary.json (skin level stat increase, level experience). */
     skinUpgradeLibrary?: any;
     ascensionConfigsLibrary?: any;
-    /** PetBaseConfig.json (PetSlotsCount: active pet slots). */
+    /** PetBaseConfig.json (PetSlotsCount: active pet slots, up to 2026_10_27; see petSlotCount). */
     petBaseConfig?: any;
-    /** SkillBaseConfig.json (SkillSlotsCount: equipped skill slots). */
+    /** SkillBaseConfig.json (SkillSlotsCount: equipped skill slots, up to 2026_10_27; see skillSlotCount). */
     skillBaseConfig?: any;
+    /** PlayerSegments.json: from 2026_11_16 the PetSlot<n> / SkillSlot<n> segments give the slot counts. */
+    playerSegments?: any;
     /** BaseConfig.json (NthAttackInterval). */
     baseConfig?: any;
     // Missing fields from BattleHelper
@@ -1954,7 +1956,8 @@ export class StatEngine {
 
         // Calculate Buff Power Sum
         let totalBuffPower = 0;
-        const BUFF_SKILLS = ["Meat", "Morale", "Berserk", "Buff", "HigherMorale"];
+        // SkillBuilder.IsBuff (engine/skills.ts BUFF_SKILL_TYPES).
+        const BUFF_SKILLS = [...BUFF_SKILL_TYPES];
         const equipped = this.profile.skills.equipped || [];
         const skillFactor = this.stats.skillDamageMultiplier || 1;
         // Skill values: base x (1 + DamageMulti substat) x skill multiplier (binary, CalculateValueFromStats).

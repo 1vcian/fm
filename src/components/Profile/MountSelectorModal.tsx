@@ -11,6 +11,7 @@ import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { RARITIES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { getStatName } from '../../utils/statNames';
 import { useProfile } from '../../context/ProfileContext';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
@@ -515,13 +516,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                 className="w-full aspect-square rounded-lg flex items-center justify-center pointer-events-none"
                                                 style={{ ...getRarityBgStyle(selectedRarity) }}
                                             >
-                                                <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
-                                                    spriteWidth={mountsConfig!.sprite_size.width}
-                                                    spriteHeight={mountsConfig!.sprite_size.height}
-                                                    sheetWidth={mountsConfig!.texture_size.width}
-                                                    sheetHeight={mountsConfig!.texture_size.height}
-                                                    iconIndex={mount.spriteIndex}
+                                                <UnitSpriteIcon
+                                                    section={mountsConfig}
+                                                    unitKey={mount.spriteIndex}
+                                                    ascensionLevel={profile.misc.mountAscensionLevel || 0}
+                                                    version={selectedVersion}
                                                     className="w-16 h-16 drop-shadow-lg"
                                                 />
                                             </div>
@@ -677,13 +676,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                             }
                                                         }}
                                                         renderIcon={() => (
-                                                            <SpriteSheetIcon
-                                                                textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
-                                                                spriteWidth={mountsConfig!.sprite_size.width}
-                                                                spriteHeight={mountsConfig!.sprite_size.height}
-                                                                sheetWidth={mountsConfig!.texture_size.width}
-                                                                sheetHeight={mountsConfig!.texture_size.height}
-                                                                iconIndex={spriteInfo ? parseInt(spriteInfo[0]) : 0}
+                                                            <UnitSpriteIcon
+                                                                section={mountsConfig}
+                                                                unitKey={spriteInfo ? parseInt(spriteInfo[0]) : 0}
+                                                                ascensionLevel={profile.misc.mountAscensionLevel || 0}
+                                                                version={selectedVersion}
                                                                 className="w-12 h-12"
                                                             />
                                                         )}
@@ -723,13 +720,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                 style={{ ...getRarityBgStyle(selectedRarity), borderColor: `var(--rarity-${selectedRarity.toLowerCase()})` }}
                                             >
                                                 {mountsConfig && (
-                                                    <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
-                                                        spriteWidth={mountsConfig.sprite_size.width}
-                                                        spriteHeight={mountsConfig.sprite_size.height}
-                                                        sheetWidth={mountsConfig.texture_size.width}
-                                                        sheetHeight={mountsConfig.texture_size.height}
-                                                        iconIndex={Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)![0]) : 0}
+                                                    <UnitSpriteIcon
+                                                        section={mountsConfig}
+                                                        unitKey={Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)![0]) : 0}
+                                                        ascensionLevel={profile.misc.mountAscensionLevel || 0}
+                                                        version={selectedVersion}
                                                         className="w-20 h-20"
                                                     />
                                                 )}

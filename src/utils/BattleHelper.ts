@@ -123,6 +123,8 @@ export interface LibraryData {
     mainBattleLookup?: Record<string, BattleConfig>;
     missionBaseConfig?: any;
     missionBattleLibrary?: Record<string, any>;
+    /** MissionDifficultyMultiplier.json (2026_11_16 on): mission level ranges, see resolveMissionLevelScaling. */
+    missionDifficultyMultiplier?: Record<string, { MaxLevel: number; Multiplier: number }> | null;
     /** MountLibrary: the equipped mount sets the player's collider (UpdateMount, 0x77E96EC). */
     mountLibrary?: Record<string, any>;
 }

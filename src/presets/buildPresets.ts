@@ -9,7 +9,7 @@
  *             only the weapon's index changes the attack (WeaponLibrary windup, range, IsRanged).
  *   trees     every Forge/Power/SkillsPetTech/Clan node at MaxLevel (applyTreeMode 'max'). The
  *             clan nodes that level past MaxLevel (WarPoints, race score) touch no combat stat.
- *   pets      PetSlotsCount pets of the top rarity at its highest level. PetEquipAction (0x7883078)
+ *   pets      petSlotCount pets of the top rarity at its highest level. PetEquipAction (0x7883078)
  *             only checks the pet instance (Guid) and the unlocked slot count, never the PetId, so
  *             one pet type can fill every slot.
  *   mount     the top rarity at its highest level (MountUpgradeLibrary: stats by rarity only).
@@ -44,7 +44,7 @@ import { INITIAL_PROFILE } from '../types/Profile';
 import { calculateStats, type LibraryData } from '../utils/statEngine';
 import { applyTreeMode } from '../utils/treeMode';
 import { buildGameLimits } from '../utils/ocr/gameLimits';
-import { RARITIES, attackTimingTicks, fd6MicroFromF64 } from '../utils/constants';
+import { RARITIES, attackTimingTicks, fd6MicroFromF64, petSlotCount, skillSlotCount } from '../utils/constants';
 import { FAIRIES, type FairyName } from '../utils/fairies';
 import { STAT_NAMES } from '../utils/statNames';
 import { labNames } from './filterAnimations';
@@ -353,7 +353,12 @@ function readSpace(libs: LibraryData, cfg: ConfigFiles, perfection = 100): Space
         .map(id => ({ id, upper: secondary[id].UpperRange }));
     const itemSlots = Math.max(...Object.values<any>(unlock).map(r => r.NumberOfSecondStats));
     const petSlotsPerBody = Math.max(...Object.values<any>(cfg.SecondaryStatPetUnlockLibrary).map(r => r.NumberOfSecondStats));
-    const petSlots = (libs.petBaseConfig as any).PetSlotsCount as number;
+    // Slots of a fully progressed player: PetBaseConfig.PetSlotsCount / SkillBaseConfig.SkillSlotsCount
+    // up to 2026_10_27; from 2026_11_16 one slot per PetSlot<n> / SkillSlot<n> player segment
+    // (Features.PetSlots / SkillSlots, Features..cctor 0x7C4BB24; see petSlotCount in utils/constants).
+    const petSlots = petSlotCount(libs.petBaseConfig, libs.playerSegments);
+    const skillSlots = skillSlotCount(libs.skillBaseConfig, libs.playerSegments);
+    if (petSlots === null || skillSlots === null) throw new Error('No pet / skill slot count in this config (PetBaseConfig, SkillBaseConfig or PlayerSegments)');
     const bodies: SubstatBody[] = [
         ...ITEM_SLOTS.map(s => ({ key: `item:${s}`, label: s, slots: itemSlots })),
         ...Array.from({ length: petSlots }, (_, i) => ({ key: `pet:${i}`, label: `Pet ${i + 1}`, slots: petSlotsPerBody })),
@@ -364,7 +369,7 @@ function readSpace(libs: LibraryData, cfg: ConfigFiles, perfection = 100): Space
         perfection,
         maxAge, topRarity, weaponIdxs, rangedIdxs, sets, skinStatTypes, petIds,
         skillIds: Object.keys(skillLib),
-        skillSlots: (libs.skillBaseConfig as any).SkillSlotsCount,
+        skillSlots,
         // The season's fairies are free bonuses: for the same substats a build with one is never
         // weaker than without, so every preset build carries one and the search turns around them.
         fairies: FAIRIES.map(f => f.name),

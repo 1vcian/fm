@@ -25,6 +25,7 @@
 import { runSeed } from '../engine/rng';
 import type { EquippedSkin, MountSlot, PetSlot, SkillSlot, UserProfile } from '../types/Profile';
 import { calculateStats, type LibraryData } from '../utils/statEngine';
+import { petSlotCount, skillSlotCount } from '../utils/constants';
 import { playerUnitSpec, skillSpecs, testedRun, type PvpHpConfig } from '../engine';
 import { fighterFromProfile, type PvpFighter } from '../pvp/fighter';
 import { PvpBattle } from '../pvp/simulate';
@@ -57,7 +58,7 @@ function subsets<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Every pets + mount combination over the saved builds: up to `petSlots` (PetBaseConfig.PetSlotsCount)
+ * Every pets + mount combination over the saved builds: up to `petSlots` (petSlotCount)
  * of the saved pets (the active pets when none are saved) times the active + saved mounts, deduplicated.
  */
 export function enumerateLoadouts(p: UserProfile, petSlots: number, search: { pets: boolean; mount: boolean } = { pets: true, mount: true }): LoadoutCombo[] {
@@ -359,11 +360,12 @@ export function runOptimizer(input: OptimizerInput, onProgress: OptimizerProgres
     // Linked skins as the archive has them now, so current and archive choices compare equal.
     const base = withArchivedSkins(input.base);
     const t0 = now();
-    // Slot counts from the config (PetBaseConfig.PetSlotsCount, SkillBaseConfig.SkillSlotsCount).
-    const petSlots = libs.petBaseConfig?.PetSlotsCount;
-    const skillSlots = libs.skillBaseConfig?.SkillSlotsCount;
-    if (typeof petSlots !== 'number' || typeof skillSlots !== 'number') {
-        throw new Error('PetBaseConfig.json / SkillBaseConfig.json are not loaded');
+    // Slot counts from the config (PetBaseConfig.PetSlotsCount / SkillBaseConfig.SkillSlotsCount, or
+    // the PetSlot<n> / SkillSlot<n> player segments from 2026_11_16: see petSlotCount / skillSlotCount).
+    const petSlots = petSlotCount(libs.petBaseConfig, libs.playerSegments);
+    const skillSlots = skillSlotCount(libs.skillBaseConfig, libs.playerSegments);
+    if (petSlots === null || skillSlots === null) {
+        throw new Error('The pet / skill slot configs (PetBaseConfig, SkillBaseConfig or PlayerSegments) are not loaded');
     }
 
     const withBuild = (skills: SkillSlot[], c: LoadoutCombo, fairy?: FairyChoice, skins?: SkinChoice): UserProfile => ({

@@ -27,6 +27,7 @@ import {
     WaveResult,
 } from './BattleHelper';
 import {
+    BUFF_SKILL_TYPES,
     CombatScene,
     SkillManager,
     WaveEnemySpec,
@@ -38,6 +39,7 @@ import {
     timerFrames,
     mainBattleWaveSpecs,
     missionWaveSpecs,
+    resolveMissionLevelScaling,
     playerUnitSpec,
     skillSpecs,
 } from '../engine';
@@ -47,7 +49,7 @@ import type { BattleContext } from '../engine';
 export * from './BattleHelper';
 
 /** Kept for import compatibility; the engine derives buffs from its own skill table. */
-export const BUFF_SKILLS = ['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale'];
+export const BUFF_SKILLS: readonly string[] = [...BUFF_SKILL_TYPES];
 
 // ---------------------------------------------------------------------------------------------
 // Scene construction
@@ -431,10 +433,11 @@ export function simulateMissionBattleMulti(
     runs: number = 100,
     debugConfig?: DebugConfig
 ): BattleResult | null {
-    // MissionBaseConfig drives the level multiplier and the timer: no result until it loads.
-    const levelMulti = libs.missionBaseConfig?.HealthAndDamageLevelMultiplier;
+    // The level scaling (MissionDifficultyMultiplier.json, or MissionBaseConfig.HealthAndDamageLevelMultiplier
+    // on older configs) and MissionBaseConfig's timer: no result until they load.
+    const levelScaling = resolveMissionLevelScaling(libs.missionBaseConfig, libs.missionDifficultyMultiplier);
     const timerSeconds = libs.missionBaseConfig?.MissionBattleMatchTimerSeconds;
-    if (!mission || typeof levelMulti !== 'number' || typeof timerSeconds !== 'number') return null;
+    if (!mission || levelScaling === null || typeof timerSeconds !== 'number') return null;
     // MissionCombatScene.BattleTimer = MissionBattleMatchTimerSeconds, minus dt before each frame;
     // at <= 0 the mission is LOST (Update 0x780DE54): 180 s in 2026_10_08_09_03 -> 1800 frames.
     const maxTicks = timerFrames(timerSeconds);
@@ -450,7 +453,7 @@ export function simulateMissionBattleMulti(
         // Enemy items come from their own RandomPCG built from the battle seed, like the game's
         // RandomPCG.CreateFromSeed in SetupEnemies; the combat RNG is untouched by them.
         const { scene, player, mgr } = buildScene(playerStats, profile, libs, runSeed(seed), debugConfig, 'mission', 'mission');
-        const wave = missionWaveSpecs(mission as never, level, levelMulti, enemyLibs, runSeed(seed));
+        const wave = missionWaveSpecs(mission as never, level, levelScaling, enemyLibs, runSeed(seed));
         const runner = new WaveRunner(
             scene,
             player,

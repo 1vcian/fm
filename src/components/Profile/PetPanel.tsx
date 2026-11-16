@@ -11,15 +11,16 @@ import { cn } from '../../lib/utils';
 const SLOT_ART = 'w-12 h-12 sm:w-20 sm:h-20 xl:w-24 xl:h-24';
 import { PetSelectorModal } from './PetSelectorModal';
 import { useGameData } from '../../hooks/useGameData';
+import { petSlotCount } from '../../utils/constants';
 import { usePetNames } from '../../hooks/usePetNames';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { personalTechShare } from '../../utils/clanTechStacking';
 
 import { InputModal } from '../UI/InputModal';
 import { SectionSyncButton } from './SectionSyncButton';
 import { AscensionStars } from '../UI/AscensionStars';
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 
@@ -64,9 +65,11 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     const [petToSave, setPetToSave] = useState<PetSlot | null>(null);
 
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
-    // Active pet slots, PetBaseConfig.PetSlotsCount (no slots drawn until it loads).
+    // Active pet slots: PetBaseConfig.PetSlotsCount, or the PetSlot<n> player segments from
+    // 2026_11_16 (petSlotCount). No slots drawn until it loads.
     const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
-    const petSlots: number | null = typeof petBaseConfig?.PetSlotsCount === 'number' ? petBaseConfig.PetSlotsCount : null;
+    const { data: playerSegments } = useGameData<any>('PlayerSegments.json');
+    const petSlots: number | null = petSlotCount(petBaseConfig, playerSegments);
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
     const { data: petUpgradeLib } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
@@ -440,13 +443,11 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             spriteMapping={spriteMapping}
                             renderIcon={() => (
                                 spriteInfo ? (
-                                    <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('Pets', petAscensionLevel, selectedVersion)}
-                                        spriteWidth={spriteInfo.config.sprite_size.width}
-                                        spriteHeight={spriteInfo.config.sprite_size.height}
-                                        sheetWidth={spriteInfo.config.texture_size.width}
-                                        sheetHeight={spriteInfo.config.texture_size.height}
-                                        iconIndex={spriteInfo.spriteIndex}
+                                    <UnitSpriteIcon
+                                        section={spriteInfo.config}
+                                        unitKey={spriteInfo.spriteIndex}
+                                        ascensionLevel={petAscensionLevel}
+                                        version={selectedVersion}
                                         className={CARD_ART_CLASS}
                                         smooth
                                     />

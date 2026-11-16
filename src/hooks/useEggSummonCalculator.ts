@@ -3,11 +3,12 @@ import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { useTreeLimits } from './useTreeLimits';
-import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount } from '../utils/summonEngine';
+import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt } from '../utils/summonEngine';
 
 /** Egg summon simulation for a currency pile, shaped for the Summons calculator's Eggs tab. */
 export function buildEggSummonResults(p: {
-    levels: any[];
+    /** The level table of each ascension (`summonLevelsByAscension`). */
+    levelsByAscension: any[][];
     level: number;
     progress: number;
     currency: number;
@@ -19,7 +20,7 @@ export function buildEggSummonResults(p: {
 }) {
     const totalSummons = affordableSummons(p.currency, p.costPerSummon);
     const sim = simulateSummons({
-        levels: p.levels,
+        levelsByAscension: p.levelsByAscension,
         startLevel: p.level,
         startProgress: p.progress,
         startAscension: p.startAscension,
@@ -28,7 +29,7 @@ export function buildEggSummonResults(p: {
         summons: totalSummons,
         unitsPerSummon: p.unitsPerSummon,
     });
-    const endProbs = summonRowAt(p.levels, sim.endLevel);
+    const endProbs = summonRowAt(summonLevelsAt(p.levelsByAscension, sim.endAscension), sim.endLevel);
     return {
         totalSummons,
         endLevel: sim.endLevel,
@@ -102,15 +103,17 @@ export function useEggSummonCalculator() {
     // Constants from config
     // NaN until EggSummonConfig loads; `ready` stays false meanwhile and the page shows a loading state.
     const BASE_COST: number = eggSummonConfig?.SingleSummonCost?.Amount ?? NaN;
-    // SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0].
+    // SummonConfig.BaseSummonCount (RVA 0x7D034D4) = PossibleSummonCount[0].
     const BASE_EGGS_PER_SUMMON = baseSummonCount(eggSummonConfig);
     const EGGS_PER_SUMMON = BASE_EGGS_PER_SUMMON * (1 + extraChance);
-    // SummonConfig.CanAffordSummon (RVA 0x7865EDC): RoundToInt(CalculateValue(Cost, Amount * count)),
+    // SummonConfig.CanAffordSummon (RVA 0x7CF2028): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(BASE_COST, BASE_EGGS_PER_SUMMON, techBonuses.costReduction);
 
-    // Levels data
-    const levels = eggSummonConfig?.Levels || [];
+    // Levels data. SummonConfig.GetLevels(ascension) (RVA 0x7D03870): the table of the ascension
+    // the summoner is at; eggs follow the Pets ascension (SummonableId.GetAscensionModel, RVA 0x7D02FEC).
+    const levelsByAscension = useMemo(() => summonLevelsByAscension(eggSummonConfig), [eggSummonConfig]);
+    const levels: any[] = summonLevelsAt(levelsByAscension, startAscension);
     const maxPossibleLevel = levels.length;
     const ready = levels.length > 0 && Number.isFinite(BASE_COST) && Number.isFinite(BASE_EGGS_PER_SUMMON);
 
@@ -121,7 +124,7 @@ export function useEggSummonCalculator() {
         }
         return {
             ...buildEggSummonResults({
-                levels,
+                levelsByAscension,
                 level,
                 progress,
                 currency: eggshellCount,
@@ -135,7 +138,7 @@ export function useEggSummonCalculator() {
             baseCost: BASE_COST * BASE_EGGS_PER_SUMMON,
             costReduction: techBonuses.costReduction
         };
-    }, [eggshellCount, level, progress, eggSummonConfig, levels, techBonuses, finalCostPerSummon, BASE_COST, BASE_EGGS_PER_SUMMON, EGGS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
+    }, [eggshellCount, level, progress, eggSummonConfig, levelsByAscension, levels, techBonuses, finalCostPerSummon, BASE_COST, BASE_EGGS_PER_SUMMON, EGGS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Apply results to profile
     const applyResultsToProfile = () => {
@@ -146,7 +149,7 @@ export function useEggSummonCalculator() {
 
     // Target Calculation
     const calculateNeededCurrency = (targetLevel: number, targetAscension: number) => currencyToReach({
-        levels,
+        levelsByAscension,
         level,
         progress,
         ascension: startAscension,
@@ -168,6 +171,7 @@ export function useEggSummonCalculator() {
         results,
         maxPossibleLevel,
         levels,
+        levelsByAscension,
         applyResultsToProfile,
         calculateNeededCurrency,
         maxAscension,

@@ -18,6 +18,7 @@ import { EggIcon } from '../components/UI/EggIcon';
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { unitIcon, unitIconStyle } from '../utils/unitIcons';
 
 export default function Pets() {
     const { profile } = useProfile();
@@ -109,41 +110,9 @@ export default function Pets() {
             });
     }, [petLibrary, spriteLookup, searchTerm, filterRarity]);
 
-    // Calculate sprite position
-    const getSpriteStyle = (spriteIndex: number) => {
-        if (!petsConfig || spriteIndex < 0) return null;
-        const cols = petsConfig.grid?.columns || 8;
-        const spriteW = petsConfig.sprite_size?.width || 256;
-        const spriteH = petsConfig.sprite_size?.height || 256;
-        const sheetW = petsConfig.texture_size?.width || 2048;
-        const sheetH = petsConfig.texture_size?.height || 2048;
-
-        const col = spriteIndex % cols;
-        const row = Math.floor(spriteIndex / cols);
-        const x = col * spriteW;
-        const y = row * spriteH;
-
-        const scale = 64 / spriteW;
-
-        return {
-            backgroundImage: `url(${getAscSpriteUrl()})`,
-            backgroundPosition: `-${x * scale}px -${y * scale}px`,
-            backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
-            width: '64px',
-            height: '64px',
-        };
-    };
-
-    const getAscSpriteUrl = () => {
-        const baseUrl = import.meta.env.BASE_URL;
-        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
-        const textureBase = `${baseUrl}Texture2D/${versionPath}`;
-
-        if (ascensionLevel === 1) return `${textureBase}MegaPets.png`;
-        if (ascensionLevel === 2) return `${textureBase}UltraPets.png`;
-        if (ascensionLevel === 3) return `${textureBase}ApexPets.png`;
-        return `${textureBase}Pets.png`;
-    };
+    // Sprite of the unit in the mapping cell `spriteIndex`, as the game draws it at this ascension
+    const getSpriteStyle = (spriteIndex: number) =>
+        spriteIndex < 0 ? null : unitIconStyle(unitIcon(petsConfig, spriteIndex, ascensionLevel, selectedVersion), 64);
 
     // Calculate cumulative experience per rarity
     const rarityCumulativeExp = useMemo(() => {

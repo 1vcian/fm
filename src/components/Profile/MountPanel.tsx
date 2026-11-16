@@ -6,11 +6,10 @@ import { MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSelectorModal } from './MountSelectorModal';
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { personalTechShare } from '../../utils/clanTechStacking';
 import { InputModal } from '../UI/InputModal';
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
 import { getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 
@@ -233,13 +232,11 @@ export function MountPanel() {
                         onLevelChange={(delta, e) => { e.stopPropagation(); handleLevelChange(delta); }}
                         onAscensionChange={(val) => updateNestedProfile('misc', { mountAscensionLevel: val })}
                         renderIcon={() => activeSprite ? (
-                            <SpriteSheetIcon
-                                textureSrc={getAscensionTexturePath('MountIcons', mountAscensionLevel, selectedVersion)}
-                                spriteWidth={activeSprite.config.sprite_size.width}
-                                spriteHeight={activeSprite.config.sprite_size.height}
-                                sheetWidth={activeSprite.config.texture_size.width}
-                                sheetHeight={activeSprite.config.texture_size.height}
-                                iconIndex={activeSprite.spriteIndex}
+                            <UnitSpriteIcon
+                                section={activeSprite.config}
+                                unitKey={activeSprite.spriteIndex}
+                                ascensionLevel={mountAscensionLevel}
+                                version={selectedVersion}
                                 className={CARD_ART_CLASS}
                                 smooth
                             />

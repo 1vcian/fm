@@ -1,7 +1,7 @@
 // Skills-grid reader — DERIVED grid geometry (was: calibrated frame fractions).
 //
 // The skills screen shows the OWNED skills as a 5-column grid of round icons ("Skills 15/18" =>
-// 15 cells = 3 full rows; "18/18" => 5+5+5+3), in the fixed SKILLS_ORDER with the not-yet-owned
+// 15 cells = 3 full rows; "18/18" => 5+5+5+3), in SKILLS_ORDER (built from the configs) with the not-yet-owned
 // skills omitted from the end. Per cell:
 //   LEVEL    -> "Lv.NNN" text on the lower third of the round icon. digit_proto's white-core
 //               mask fails here (light icon art bleeds into the glyphs), so we isolate PURE
@@ -40,7 +40,9 @@ import { SKILLS_ORDER, LEVEL_MAX } from './templateParams';
 import { countStars } from './starCounter';
 import type { DetectedSkill } from './readerTypes';
 
-const N_CELLS = SKILLS_ORDER.length; // 18 = the full roster; a grid shows only the OWNED ones
+// SKILLS_ORDER.length is the full roster; a grid shows only the OWNED ones. Read at call time:
+// the order is filled from the configs after this module loads.
+const nCells = () => SKILLS_ORDER.length;
 const N_COLS = 5;
 
 // ---- fallback frame fractions (only used when cell detection finds no grid at all): the old
@@ -351,7 +353,7 @@ function fallbackGrid(canvas: HTMLCanvasElement): SkillsGrid {
     const W = canvas.width, H = canvas.height;
     const cw = FALLBACK_CW * W;
     const cells: GridCell[] = [];
-    for (let idx = 0; idx < N_CELLS; idx++) {
+    for (let idx = 0; idx < nCells(); idx++) {
         const row = Math.floor(idx / N_COLS), col = idx % N_COLS;
         cells.push({ cx: XC[col] * W, ty: YC[row] * H - FALLBACK_TY * cw, w: cw, row, col });
     }
@@ -649,7 +651,7 @@ export async function readSkillsGrid(canvas: HTMLCanvasElement): Promise<{ cells
         // equipped flag — ten skills mis-attributed in one apply, which corrupts the profile far
         // worse than a single unreadable level. An off-lattice cell is dropped instead.
         const idx = cell.row * N_COLS + cell.col;
-        if (idx < 0 || idx >= N_CELLS) continue;
+        if (idx < 0 || idx >= nCells()) continue;
         const skillId = SKILLS_ORDER[idx];
         let level: number | null = null;
         try {

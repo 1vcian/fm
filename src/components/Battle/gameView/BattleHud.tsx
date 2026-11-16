@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { SkillIcon, type SkillIconSource } from '../SkillLayer';
-import { BATTLE_VISUALS_VERSION, loadBattleVisuals, type BattleVisualData } from './visualData';
+import { BATTLE_VISUALS_VERSION, forAscension, loadBattleVisuals, type BattleVisualData } from './visualData';
 
 interface HudSkill { id: string; state: 'ready' | 'active' | 'cooldown'; secondsLeft: number; phaseSeconds: number }
 
@@ -34,7 +34,8 @@ const REF_W = 1080, PAD_RIGHT = 60, SPACING = 20;
 export function GameSkillIcon({ data, id, ascension = 0, fallback }: { data: BattleVisualData | null; id: string; ascension?: number; fallback: React.ReactNode }) {
     const sid = data?.skillIds[id];
     const icons = sid !== undefined ? data?.skills[String(sid)]?.icons : undefined;
-    const key = icons?.[Math.max(0, Math.min(icons.length - 1, ascension))] ?? icons?.[0];
+    // SkillVisualDetails.Icon (0x41CBF20): AscensionExtensions.ForAscension.
+    const key = forAscension(icons, Math.max(0, ascension));
     const def = key ? data?.sprites[key] : undefined;
     const tex = def ? data?.textures[def.tex] : undefined;
     if (!def || !tex) return <>{fallback}</>;

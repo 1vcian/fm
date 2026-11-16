@@ -4,6 +4,7 @@ import { useProfile } from '../context/ProfileContext';
 import { useTreeMode } from '../context/TreeModeContext';
 import { useComparison } from '../context/ComparisonContext';
 import { StatEngine, LibraryData, AggregatedStats, calculateStats } from '../utils/statEngine';
+import { petSlotCount } from '../utils/constants';
 import { PetSlot, MountSlot, UserProfile } from '../types/Profile';
 import { enumerateLoadouts, type LoadoutCombo } from '../optimizer/buildOptimizer';
 
@@ -66,8 +67,8 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
 
     const profileRef = useRef(profile);
     profileRef.current = profile;
-    const { petLibrary, mountUpgradeLibrary, itemBalancingConfig, itemBalancingLibrary, petBaseConfig } = libs;
-    const petSlots: number | undefined = petBaseConfig?.PetSlotsCount;
+    const { petLibrary, mountUpgradeLibrary, itemBalancingConfig, itemBalancingLibrary, petBaseConfig, playerSegments } = libs;
+    const petSlots: number | null = petSlotCount(petBaseConfig, playerSegments);
 
     const isReady = !!petLibrary && !!mountUpgradeLibrary && !!itemBalancingConfig && !!itemBalancingLibrary && typeof petSlots === 'number';
 
@@ -82,7 +83,7 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
     }, [profile.pets.savedBuilds, profile.pets.active, profile.mount.active, profile.mount.savedBuilds]);
 
     const combos = useMemo((): LoadoutCombo[] => {
-        // Every combination of up to PetBaseConfig.PetSlotsCount saved pets times the active + saved
+        // Every combination of up to petSlotCount saved pets times the active + saved
         // mounts (no saved pets: the active pets), shared with the build optimizer.
         if (typeof petSlots !== 'number') return [];
         return enumerateLoadouts(profileRef.current, petSlots);

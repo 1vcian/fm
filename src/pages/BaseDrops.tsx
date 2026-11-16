@@ -8,6 +8,8 @@ import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { Button } from '../components/UI/Button';
 import { AGES, RARITIES } from '../utils/constants';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { summonLevelsByAscension, summonLevelsAt } from '../utils/summonEngine';
+import { ageChances, parseForgeUpgrades, ascensionForDisplayedLevel } from '../utils/forgeConfig';
 
 type TabType = 'forge' | 'eggs' | 'mounts' | 'skills';
 const TABS: TabType[] = ['forge', 'eggs', 'mounts', 'skills'];
@@ -24,6 +26,8 @@ export default function BaseDrops() {
     const activeTab: TabType = tabParam && TABS.includes(tabParam) ? tabParam : 'forge';
     const setActiveTab = (tab: TabType) => setSearchParams({ tab }, { replace: true });
     const [isCompareMode, setIsCompareMode] = useState(false);
+    // Summon tabs: the ascension whose level table is shown (SummonConfig.GetLevels, RVA 0x7D03870).
+    const [summonAscension, setSummonAscension] = useState(0);
     const [baseVersion, setBaseVersion] = useState('');
     const [targetVersion, setTargetVersion] = useState(''); // always versions[0]
     const [versions, setVersions] = useState<string[]>([]);
@@ -34,6 +38,8 @@ export default function BaseDrops() {
 
     const RELEVANT_FILES: Record<string, string> = {
         forge: 'ItemAgeDropChancesLibrary.json',
+        // Forge tab: the forge ascension a level needs (utils/forgeConfig.ts), not a tab of its own.
+        forgeUpgrades: 'ForgeUpgradeLibrary.json',
         eggs: 'EggSummonConfig.json',
         mounts: 'MountSummonConfig.json',
         skills: 'SkillSummonConfig.json'
@@ -141,6 +147,7 @@ export default function BaseDrops() {
 
         if (activeTab === 'forge') {
             const levels = Object.keys(targetData || {}).sort((a, b) => Number(a) - Number(b));
+            const targetUpgrades = parseForgeUpgrades(dataCache[targetVersion]?.[RELEVANT_FILES.forgeUpgrades]);
             return (
                 <div className="overflow-auto custom-scrollbar max-h-[70vh] bg-bg-primary">
                     <table className="w-full text-sm text-left border-collapse table-fixed">
@@ -171,11 +178,17 @@ export default function BaseDrops() {
                                     <tr key={lvl} className="border-b border-border/10 hover:bg-white/5 transition-colors group">
                                         <td className="p-4 font-mono font-bold sticky left-0 bg-bg-primary shadow-r border-r border-border/50 text-center text-accent-primary z-10">
                                             {Number(lvl) + 1}
+                                            {(() => {
+                                                // Row key = 0-based ForgeLevel (ForgeAction.RollAge, RVA 0x7CD3328); displayed level = key + 1.
+                                                const asc = targetUpgrades ? ascensionForDisplayedLevel(targetUpgrades, Number(lvl) + 1) : null;
+                                                return asc ? <span className="block text-[9px] font-normal text-amber-400">Ascension {asc}</span> : null;
+                                            })()}
                                         </td>
                                         {AGES.map((_, idx) => {
                                             const key = `Age${idx}`;
-                                            const tVal = targetRow?.[key] ?? 0;
-                                            const bVal = isCompareMode ? (baseRow?.[key] ?? 0) : tVal;
+                                            // Either config format: Age<n> columns or the Ages list.
+                                            const tVal = ageChances(targetRow)[idx] ?? 0;
+                                            const bVal = isCompareMode ? (ageChances(baseRow)[idx] ?? 0) : tVal;
 
                                             return (
                                                 <td key={key} className={cn("p-2 sm:p-4 text-right font-mono text-xs sm:text-sm", (tVal > 0 || bVal > 0) ? "text-text-primary" : "text-text-muted opacity-10")}>
@@ -197,10 +210,19 @@ export default function BaseDrops() {
             const summonConfigTarget = targetData;
             const summonConfigBase = isCompareMode ? baseData : null;
 
+            // One level table per ascension (`Ascensions[]` since 2026_11_16, a single `Levels[]`
+            // before): SummonConfig.PostLoad (RVA 0x7D03528) makes each ascension's table the rows of
+            // every earlier non-null entry plus its own, and GetLevels (RVA 0x7D03870) clamps the
+            // ascension to the last table.
+            const targetTables = summonLevelsByAscension(summonConfigTarget);
+            const baseTables = summonLevelsByAscension(summonConfigBase);
+            const shownAscension = Math.min(summonAscension, Math.max(0, targetTables.length - 1));
+            const targetLevels: any[] | null = targetTables.length ? summonLevelsAt(targetTables, shownAscension) : null;
+            const baseLevels: any[] | null = baseTables.length ? summonLevelsAt(baseTables, shownAscension) : null;
+
             let levels: any[] = [];
-            if (summonConfigTarget?.Levels) {
-                // Config levels (usually 100) are standard format
-                levels = summonConfigTarget.Levels.map((l: any, idx: number) => ({ ...l, key: String(idx) }));
+            if (targetLevels) {
+                levels = targetLevels.map((l: any, idx: number) => ({ ...l, key: String(idx) }));
             } else {
                 // Fallback for extremely old legacy versions
                 levels = Object.keys(targetData || {}).sort((a, b) => Number(a) - Number(b)).map(k => ({ ...targetData[k], key: k }));
@@ -208,7 +230,7 @@ export default function BaseDrops() {
 
         // Compute cumulative sums
             // Levels[i].SummonsRequired is what it takes to REACH 1-based level i + 1
-            // (SummonModel.IncrementSummonCount 0x78666A4: while Level + 1 < Levels.Count and
+            // (SummonModel.IncrementSummonCount 0x7CF2D4C: while Level + 1 < Levels.Count and
             // Count >= Levels[Level + 1].SummonsRequired, Count -= it and Level++; Level is 0-based),
             // so row 0 (level 1, the starting level) costs nothing and is left out of the totals.
             let tCumulative = 0;
@@ -218,14 +240,46 @@ export default function BaseDrops() {
             });
 
             let bCumulative = 0;
-            const baseLevels = summonConfigBase?.Levels;
             const baseCumSums = levels.map((l: any, idx: number) => {
                 const bLvlRow = baseLevels ? baseLevels[idx] : baseData?.[l.key];
                 if (idx > 0) bCumulative += (bLvlRow?.SummonsRequired ?? l.SummonsRequired ?? 0);
                 return bCumulative;
             });
 
+            // Ascension picker, only when the config has more than one table. An entry the config
+            // leaves null keeps the previous ascension's levels; one with rows adds levels after them.
+            const ascensionTabs = targetTables.length > 1 ? targetTables.map((table, asc) => {
+                const prev = asc > 0 ? targetTables[asc - 1].length : 0;
+                return {
+                    asc,
+                    label: asc === 0 ? 'Normal' : `Ascension ${asc}`,
+                    note: asc === 0 ? `Levels 1 to ${table.length}`
+                        : table.length > prev ? `Adds levels ${prev + 1} to ${table.length}` : 'Same levels as before',
+                };
+            }) : [];
+
             return (
+                <>
+                {ascensionTabs.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border/40 bg-bg-secondary/40">
+                        <span className="text-[10px] uppercase font-bold text-text-muted tracking-widest mr-1">Summon table at</span>
+                        {ascensionTabs.map(t => (
+                            <button
+                                key={t.asc}
+                                onClick={() => setSummonAscension(t.asc)}
+                                title={t.note}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-1.5",
+                                    shownAscension === t.asc ? "bg-accent-primary text-black" : "bg-white/5 text-text-muted hover:text-text-primary"
+                                )}
+                            >
+                                {t.asc > 0 && <GameAssetIcon asset={{ icon: 'AscensionStar' }} size={12} />}
+                                {t.label}
+                                <span className="font-medium normal-case opacity-70">({t.note})</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
                 <div className="overflow-auto custom-scrollbar max-h-[70vh] bg-bg-primary">
                     <table className="w-full text-sm text-left border-collapse table-fixed">
                         <thead>
@@ -264,15 +318,15 @@ export default function BaseDrops() {
                             {levels.map((targetRow, i) => {
                                 const lvlIdx = Number(targetRow.key);
                                 const baseRow = isCompareMode ? (
-                                    summonConfigBase?.Levels ? summonConfigBase.Levels[lvlIdx] : baseData?.[targetRow.key]
+                                    baseLevels ? baseLevels[lvlIdx] : baseData?.[targetRow.key]
                                 ) : null;
 
                                 // Get summons required for next level
                                 let tSummons = 0;
                                 let bSummons = 0;
-                                if (lvlIdx > 0 && summonConfigTarget?.Levels?.[lvlIdx]) {
-                                    tSummons = summonConfigTarget.Levels[lvlIdx].SummonsRequired;
-                                    bSummons = isCompareMode ? (summonConfigBase?.Levels?.[lvlIdx]?.SummonsRequired ?? tSummons) : tSummons;
+                                if (lvlIdx > 0 && targetLevels?.[lvlIdx]) {
+                                    tSummons = targetLevels[lvlIdx].SummonsRequired;
+                                    bSummons = isCompareMode ? (baseLevels?.[lvlIdx]?.SummonsRequired ?? tSummons) : tSummons;
                                 }
 
                                 const tCumSum = targetCumSums[lvlIdx];
@@ -338,6 +392,7 @@ export default function BaseDrops() {
                         </tbody>
                     </table>
                 </div>
+                </>
             );
         }
 

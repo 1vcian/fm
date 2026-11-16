@@ -34,6 +34,7 @@
  */
 
 import { computeWarDaysMap, getWarDayIndex } from './guildWarUtils';
+import { techNodeTierStats } from './gameDataTransforms';
 
 /**
  * How many day boundaries the war-day aligner will step over looking for a scoring completion.
@@ -148,10 +149,31 @@ export interface TechOptimizerResult {
 }
 
 /**
+ * Tier of a `Finish<Roman>TechTreeUpgrade` war task, null for any other task.
+ *
+ * WarTask (dump.cs) numbers them in tier order: FinishITechTreeUpgrade = 7000 ...
+ * FinishVTechTreeUpgrade = 7004, and build 2026_11_16_09_55 added FinishVITechTreeUpgrade = 7005
+ * with the sixth tier. The numeral is the 1-based tier, so a later tier needs no code change.
+ */
+export function techUpgradeTaskTier(task: unknown): number | null {
+    const m = typeof task === 'string' ? /^Finish([IVX]+)TechTreeUpgrade$/.exec(task) : null;
+    if (!m) return null;
+    const value: Record<string, number> = { I: 1, V: 5, X: 10 };
+    let n = 0;
+    for (let i = 0; i < m[1].length; i++) {
+        const cur = value[m[1][i]];
+        const next = value[m[1][i + 1]] || 0;
+        n += cur < next ? -cur : cur;
+    }
+    return n > 0 ? n - 1 : null;
+}
+
+/**
  * Tier → war-point value, read from the config and then boosted.
  *
  * The literal fallbacks are the pre-config values and are kept only so a missing/renamed task never
- * silently zeroes a tier; every shipped config since has overwritten all five.
+ * silently zeroes one of the first five tiers; every shipped config since has overwritten them, and
+ * a later tier (FinishVITechTreeUpgrade from 2026_11_16_09_55) only ever comes from the config.
  */
 export function tierPointsFrom(dayConfig: any, warBonus: number, dayBoost: number): Record<number, number> {
     const tierPoints: Record<number, number> = {
@@ -163,18 +185,10 @@ export function tierPointsFrom(dayConfig: any, warBonus: number, dayBoost: numbe
     };
 
     if (dayConfig) {
-        const taskToTier: Record<string, number> = {
-            FinishITechTreeUpgrade: 0,
-            FinishIITechTreeUpgrade: 1,
-            FinishIIITechTreeUpgrade: 2,
-            FinishIVTechTreeUpgrade: 3,
-            FinishVTechTreeUpgrade: 4,
-        };
-
         Object.values(dayConfig).forEach((dayData: any) => {
             dayData.Tasks?.forEach((task: any) => {
-                const tier = taskToTier[task.Task];
-                if (tier !== undefined) {
+                const tier = techUpgradeTaskTier(task.Task);
+                if (tier !== null) {
                     const amount = task.Rewards?.find((r: any) => r.$type === 'WarPointsReward')?.Amount;
                     if (amount) tierPoints[tier] = amount;
                 }
@@ -219,8 +233,8 @@ export function calculateTechBonuses(
             if (!nodeConfig) return;
 
             const nodeLevel = treeNodes[node.id] || 0;
-            if (nodeLevel > 0 && nodeConfig.Stats?.[0]) {
-                const stat = nodeConfig.Stats[0];
+            const stat = techNodeTierStats(nodeConfig, node.tier)[0];
+            if (nodeLevel > 0 && stat) {
                 const val = stat.Value + ((nodeLevel - 1) * stat.ValueIncrease);
                 if (nodeType === 'TechNodeUpgradeCost') {
                     costReduction += val;
@@ -282,7 +296,7 @@ export function techLevelCostAndDuration(
  * contributions, LayerBucket.Add 0x7860320) in FD6 (division 0x71977A8 truncates), FD6.get_F64
  * (0x71964F8) truncates to Q32.32, and TimerModel..ctor(PlayerModel, F64) (0x78692EC) floors to whole
  * milliseconds via MetaDuration.FromSeconds(F64, RoundingMode.Floor) (0x72B4690).
- * Shared by tech research and forge upgrades (ForgeUpgradeStartAction 0x783A3C8).
+ * Shared by tech research and forge upgrades (ForgeUpgradeStartAction 0x783A3C8; 0x7CD4DEC in 2026_11_16_09_55).
  */
 export function timerSpeedDurationSeconds(durationSeconds: number, speedBonus: number): number {
     const durationRaw = BigInt(Math.round(durationSeconds * 1_000_000));

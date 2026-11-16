@@ -49,8 +49,11 @@ export function useBattleSimulation() {
     const { data: missionBaseConfig, loading: loading15 } = useGameData<any>('MissionBaseConfig.json');
     const { data: missionBattleLibrary, loading: loading16 } = useGameData<any>('MissionBattleLibrary.json');
     const { data: mountLibrary, loading: loading17 } = useGameData<any>('MountLibrary.json');
+    // MissionDifficultyMultiplier.json (2026_11_16 on) replaces MissionBaseConfig.HealthAndDamageLevelMultiplier;
+    // older versions do not have it (the hook then ends with data null).
+    const { data: missionDifficultyMultiplier, loading: loading18 } = useGameData<any>('MissionDifficultyMultiplier.json');
 
-    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14 || loading15 || loading16 || loading17;
+    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14 || loading15 || loading16 || loading17 || loading18;
 
     // Derived Constants
     // DungeonBaseConfig.MaxDungeonLevel; null until it loads (pages show their loading state).
@@ -86,6 +89,7 @@ export function useBattleSimulation() {
         dungeonBaseConfig,
         missionBaseConfig,
         missionBattleLibrary,
+        missionDifficultyMultiplier,
         mountLibrary,
         // Build generic lookup map
         mainBattleLookup: (() => {
@@ -119,6 +123,7 @@ export function useBattleSimulation() {
         dungeonBaseConfig,
         missionBaseConfig,
         missionBattleLibrary,
+        missionDifficultyMultiplier,
         mountLibrary
     ]);
 

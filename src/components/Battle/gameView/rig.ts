@@ -32,6 +32,38 @@ interface Trs { x: number; y: number; rot: number; sx: number; sy: number }
 /** A float curve on SpriteRenderer m_Color.a (class 212, attribute hash 304273561): the sprite's alpha. */
 const SPRITE_ALPHA = 'float:212:304273561';
 
+/*
+ * Float curves a full clip (applyClip with full = true) also honours, keyed by class id and the
+ * CRC32 of the property path, as the extractor writes them ("float:<class>:<crc>:<custom type>"):
+ * SpriteRenderer (212) m_Color.r/g/b/a, m_Enabled, m_SortingOrder, m_FlipX, m_FlipY, m_Size.x/y,
+ * and GameObject (1) m_IsActive. The skill views of build 2026_11_16_09_55 animate these.
+ */
+const FULL_FLOATS: Record<string, keyof Animated> = {
+    'float:212:2526845255': 'cr',
+    'float:212:4215373228': 'cg',
+    'float:212:2334886179': 'cb',
+    'float:212:304273561': 'ca',
+    'float:212:3305885265': 'en',
+    'float:212:3762991556': 'ord',
+    'float:212:555744692': 'fx',
+    'float:212:1444465954': 'fy',
+    'float:212:4197328169': 'w',
+    'float:212:2368279999': 'h',
+    'float:1:2086281974': 'act',
+};
+
+/** What a frame's animation drives on a node: transform parts, and with a full clip the renderer and active state. */
+interface Animated extends Partial<Trs> {
+    a?: number;
+    /** Local rotation as a quaternion (a full clip's m_LocalRotation curves). */
+    qx?: number; qy?: number; qz?: number; qw?: number;
+    cr?: number; cg?: number; cb?: number; ca?: number;
+    en?: number; ord?: number; fx?: number; fy?: number; w?: number; h?: number; act?: number;
+}
+
+/** A node's renderer and active state as animated this frame (absent fields keep the prefab's). */
+export interface LiveState { c?: number[]; srOff?: boolean; o?: number; fx?: boolean; fy?: boolean; size?: [number, number]; active?: boolean }
+
 function decompose(m: number[]): Trs {
     const sx = Math.hypot(m[0], m[1]);
     const rot = (Math.atan2(m[1], m[0]) * 180) / Math.PI;
@@ -45,6 +77,8 @@ export interface RigNode extends PrefabNode {
     hidden?: boolean;
     /** Extra tint multiplied on top of the renderer colour (sprite highlight / fades). */
     alpha?: number;
+    /** Set by update() from a full clip: renderer colour, enabled, order, flip, size and active state. */
+    live?: LiveState;
 }
 
 /** Layer index of a sorting layer id (TagManager order: Background, Default, Overlay, DmgNumbers). */
@@ -57,7 +91,12 @@ export class RigInstance {
     nodes: RigNode[] = [];
     world: Mat[] = [];
     /** Local overrides from animation, keyed by node index. */
-    private animated = new Map<number, Partial<Trs> & { a?: number }>();
+    private animated = new Map<number, Animated>();
+    /**
+     * Draw renderers with a draw mode (sliced / tiled) at their size (SpriteRenderer.size), the
+     * sprite stretched to it: the skill views of build 2026_11_16_09_55 size their beams this way.
+     */
+    sized = false;
     private animRoot = 0;
     private pathIndex = new Map<string, number>();
 
@@ -109,7 +148,7 @@ export class RigInstance {
     }
 
     /** Sample `clip` at `time` seconds (clamped or wrapped) onto the rig. */
-    applyClip(clip: Clip | undefined, time: number, loop: boolean): void {
+    applyClip(clip: Clip | undefined, time: number, loop: boolean, full = false): void {
         if (!clip) return;
         const len = clip.length;
         let t = time;
@@ -128,6 +167,14 @@ export class RigInstance {
                 val = v[i0] + (v[i1] - v[i0]) * a;
             }
             const o = this.animated.get(idx) ?? {};
+            if (full) {
+                const key = cv.prop === 'rot' ? (`q${cv.c}` as keyof Animated) : FULL_FLOATS[cv.prop.split(':').slice(0, 3).join(':')];
+                if (key) {
+                    (o as Record<string, number>)[key] = val;
+                    this.animated.set(idx, o);
+                    continue;
+                }
+            }
             if (cv.prop === 'pos') {
                 if (cv.c === 'x') o.x = val;
                 else if (cv.c === 'y') o.y = val;
@@ -160,6 +207,14 @@ export class RigInstance {
         this.animated.set(node, o);
     }
 
+    /** GameObject.SetActive on top of the prefab (and of any clip this frame). */
+    setActive(node: number, on: boolean): void {
+        if (node < 0) return;
+        const o = this.animated.get(node) ?? {};
+        o.act = on ? 1 : 0;
+        this.animated.set(node, o);
+    }
+
     setLocalPosition(node: number, x: number, y: number): void {
         if (node < 0) return;
         const o = this.animated.get(node) ?? {};
@@ -176,12 +231,21 @@ export class RigInstance {
             const nd = this.nodes[i];
             const a = this.animated.get(i);
             const b = nd.base;
-            const local = a
-                ? trs(a.x ?? b.x, a.y ?? b.y, a.rot ?? b.rot, a.sx ?? b.sx, a.sy ?? b.sy)
-                : (nd.m as Mat);
+            let local: Mat;
+            if (a && a.qw !== undefined) {
+                // Quaternion curves: the 2D part of the rotation matrix, times the local scale.
+                const qx = a.qx ?? 0, qy = a.qy ?? 0, qz = a.qz ?? 0, qw = a.qw;
+                const sx = a.sx ?? b.sx, sy = a.sy ?? b.sy;
+                local = [
+                    (1 - 2 * (qy * qy + qz * qz)) * sx, 2 * (qx * qy + qz * qw) * sx,
+                    2 * (qx * qy - qz * qw) * sy, (1 - 2 * (qx * qx + qz * qz)) * sy,
+                    a.x ?? b.x, a.y ?? b.y,
+                ];
+            } else local = a ? trs(a.x ?? b.x, a.y ?? b.y, a.rot ?? b.rot, a.sx ?? b.sx, a.sy ?? b.sy) : (nd.m as Mat);
             const parent = nd.p >= 0 ? this.world[nd.p] : rootWorld;
             this.world[i] = mul(parent ?? rootWorld, local);
             if (a?.a !== undefined) nd.alpha = a.a;
+            nd.live = a ? liveOf(nd, a) : undefined;
         }
     }
 
@@ -189,11 +253,33 @@ export class RigInstance {
         let k = i;
         while (k >= 0) {
             const nd = this.nodes[k];
-            if (nd.off || nd.hidden) return false;
+            const inactive = nd.live?.active !== undefined ? !nd.live.active : !!nd.off;
+            if (inactive || nd.hidden) return false;
             k = nd.p;
         }
         return true;
     }
+}
+
+/** The renderer and active state a full clip (or setActive) drives this frame, or undefined. */
+function liveOf(nd: PrefabNode, a: Animated): LiveState | undefined {
+    if (a.cr === undefined && a.cg === undefined && a.cb === undefined && a.ca === undefined && a.en === undefined && a.ord === undefined
+        && a.fx === undefined && a.fy === undefined && a.w === undefined && a.h === undefined && a.act === undefined) return undefined;
+    const live: LiveState = {};
+    if (a.cr !== undefined || a.cg !== undefined || a.cb !== undefined || a.ca !== undefined) {
+        const c = nd.c ?? [1, 1, 1, 1];
+        live.c = [a.cr ?? c[0], a.cg ?? c[1], a.cb ?? c[2], a.ca ?? c[3]];
+    }
+    if (a.en !== undefined) live.srOff = a.en < 0.5;
+    if (a.ord !== undefined) live.o = Math.round(a.ord);
+    if (a.fx !== undefined) live.fx = a.fx >= 0.5;
+    if (a.fy !== undefined) live.fy = a.fy >= 0.5;
+    if (a.w !== undefined || a.h !== undefined) {
+        const d = (nd as PrefabNode & { draw?: { w: number; h: number } }).draw;
+        live.size = [a.w ?? d?.w ?? 1, a.h ?? d?.h ?? 1];
+    }
+    if (a.act !== undefined) live.active = a.act >= 0.5;
+    return live;
 }
 
 // ---------------------------------------------------------------- drawing
@@ -230,7 +316,7 @@ const isWhite = (c: number[]) => c[0] > 0.995 && c[1] > 0.995 && c[2] > 0.995;
  */
 export function drawSprite(
     ctx: CanvasRenderingContext2D, data: BattleVisualData, tex: TextureCache, key: string, m: Mat,
-    color: number[] = [1, 1, 1, 1], flipX = false, flipY = false,
+    color: number[] = [1, 1, 1, 1], flipX = false, flipY = false, size?: [number, number],
 ): boolean {
     const def = data.sprites[key];
     if (!def) return false;
@@ -240,6 +326,9 @@ export function drawSprite(
     if (a <= 0.003) return true;
     ctx.save();
     ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+    // A sliced / tiled renderer at its size: the full sprite rect stretched to it (the slicing
+    // borders are not exported, so the 9-slice is drawn as a plain stretch).
+    if (size) ctx.scale(size[0] / (def.ow / def.ppu || 1), size[1] / (def.oh / def.ppu || 1));
     const inv = 1 / def.ppu;
     ctx.scale(flipX ? -inv : inv, flipY ? inv : -inv);
     // Sprite rect in pixels, origin at the pivot, y down after the flip above.
@@ -316,7 +405,7 @@ export function rigItems(
     for (let i = 0; i < nodes.length; i++) {
         if (skip?.(i)) continue;
         const nd = nodes[i];
-        const renders = (nd.s && !nd.srOff) || customDraw?.has(i);
+        const renders = (nd.s && !(nd.live?.srOff ?? nd.srOff)) || customDraw?.has(i);
         // A group node's own sprite sorts inside its own group.
         if (isGroup(i)) {
             const parentGroup = groupOf[i];
@@ -347,20 +436,23 @@ export function rigItems(
         const cd = customDraw?.get(i);
         if (cd) { cd(ctx, world[i]); return; }
         if (nd.s) {
-            let c = tint(nd.c);
-            if (nd.alpha !== undefined) c = [c[0], c[1], c[2], c[3] * nd.alpha];
+            let c = tint(nd.live?.c ?? nd.c);
+            if (nd.alpha !== undefined && !nd.live?.c) c = [c[0], c[1], c[2], c[3] * nd.alpha];
+            const fx = nd.live?.fx ?? !!nd.fx, fy = nd.live?.fy ?? !!nd.fy;
+            const dm = (nd as PrefabNode & { draw?: { w: number; h: number } }).draw;
+            const size = rig.sized && dm ? nd.live?.size ?? [dm.w, dm.h] as [number, number] : undefined;
             const live = nd.mask ? masks.filter(m => rig.isVisible(m)) : [];
             if (nd.mask === 1 || nd.mask === 2) {
-                drawMasked(ctx, nd.mask === 1, g => drawSprite(g, data, tex, nd.s!, world[i], c, !!nd.fx, !!nd.fy),
+                drawMasked(ctx, nd.mask === 1, g => drawSprite(g, data, tex, nd.s!, world[i], c, fx, fy, size),
                     g => { for (const m of live) drawSprite(g, data, tex, nodes[m].maskSprite!, world[m]); });
-            } else drawSprite(ctx, data, tex, nd.s, world[i], c, !!nd.fx, !!nd.fy);
+            } else drawSprite(ctx, data, tex, nd.s, world[i], c, fx, fy, size);
         }
     };
     const keyOf = (entry: number) => {
         const i = entry < 0 ? -entry - 1 : entry;
         const nd = nodes[i];
         if (entry < 0) return { layer: layerIndex(data, nd.sg![0]), order: nd.sg![1], i };
-        return { layer: layerIndex(data, nd.l), order: nd.o ?? 0, i };
+        return { layer: layerIndex(data, nd.l), order: nd.live?.o ?? nd.o ?? 0, i };
     };
     // Another sortable parented inside this instance (a rider under its mount's UnitAnchor): it
     // sorts in the group holding `parent`, after the instance's own nodes on a tie (hierarchy order).

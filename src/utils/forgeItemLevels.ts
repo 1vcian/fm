@@ -8,7 +8,8 @@
  *   A success either refunds the hammer (SpendContext.Free, when the whole batch was affordable)
  *   or extends the batch by one forge: every forge consumes a hammer with probability 1 - p, so
  *   H hammers give H paid forges plus the free ones rolled before the H-th paid forge.
- * - RollAge (0x7838958): cumulative pick over ItemAgeDropChancesLibrary[ForgeLevel].
+ * - RollAge (0x7838958; 0x7CD3328 in 2026_11_16): cumulative pick over ItemAgeDropChancesLibrary[ForgeLevel]
+ *   (the row's Age<n> columns, or its Ages list from 2026_11; utils/forgeConfig.ts reads both).
  * - CreateRandomItem (0x78390BC): the item type is RandomPCG.Choice (NextInt(count)) over the keys
  *   of GetPossibleItems(age) (0x7838B00), i.e. uniform over the item types the Items library has
  *   for that age.

@@ -37,12 +37,14 @@
  *
  * WHAT `clan_share` DOES NOT CARRY, measured against the sixteen `misc.*` keys the engine reads
  * ---------------------------------------------------------------------------------------------
- * `ClanContext.readResources()` publishes eleven of them. These five are absent, and each one is
+ * `ClanContext.readResources()` publishes eleven of them. These are absent, and each one is
  * named in `SHARE_INPUT_GAPS` together with the categories it silences:
  *
  *     forgeLevel                        forge (no age drop table ⇒ unavailable), forgeSpend (the
  *                                       coin sink is "every upgrade above level N", and N defaults
  *                                       to 1, i.e. the whole ladder)
+ *     forgeAscensionLevel               forgeSpend (the coin sink stops at the top level of that
+ *                                       forge ascension when the config lists levels per ascension)
  *     useGemsInCalculators              forgeSpend (the gem half; the flag defaults to off, so a
  *                                       reader counts no gems for a member who opted in)
  *     eggSummonLevel, eggSummonProgress eggs (the eggshell rarity mix; a Mythic hatch pays 64x a
@@ -97,6 +99,8 @@ export interface ShareInputGap {
  */
 export const SHARE_INPUT_GAPS: ShareInputGap[] = [
     { label: 'forge level', affects: ['forge', 'forgeSpend'] },
+    // The coin sink stops at the top level of the forge ascension (MaxForgeLevel, utils/forgeConfig.ts).
+    { label: 'forge ascension', affects: ['forgeSpend'] },
     { label: 'whether they let calculators spend their gems', affects: ['forgeSpend'] },
     { label: 'egg summoner level and ascension', affects: ['eggs', 'pets'] },
 ];
@@ -131,7 +135,7 @@ function treeLevels(raw: unknown): Record<number, number> {
 /**
  * The `WarPointsProfile` a published share describes.
  *
- * DELIBERATELY INCOMPLETE. The five keys in `SHARE_INPUT_GAPS` are left ABSENT rather than
+ * DELIBERATELY INCOMPLETE. The keys in `SHARE_INPUT_GAPS` are left ABSENT rather than
  * defaulted, because the engine tells "never entered" from "zero" (`recorded()`) and a fabricated
  * `forgeLevel: 1` would make `forge` publish a confident wrong number instead of refusing. Absent
  * is the truth, and the reconciliation check downstream turns it into a withheld row.

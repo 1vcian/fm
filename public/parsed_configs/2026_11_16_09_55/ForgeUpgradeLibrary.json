@@ -1,0 +1,257 @@
+{
+  "0": {
+    "AscensionLevel": 0,
+    "ForgeLevelConfigs": [
+      {
+        "Duration": 300,
+        "Tiers": 1,
+        "Cost": 400
+      },
+      {
+        "Duration": 900,
+        "Tiers": 1,
+        "Cost": 700
+      },
+      {
+        "Duration": 1800,
+        "Tiers": 1,
+        "Cost": 1500
+      },
+      {
+        "Duration": 3600,
+        "Tiers": 1,
+        "Cost": 3500
+      },
+      {
+        "Duration": 7200,
+        "Tiers": 1,
+        "Cost": 10000
+      },
+      {
+        "Duration": 27200,
+        "Tiers": 1,
+        "Cost": 25000
+      },
+      {
+        "Duration": 47200,
+        "Tiers": 1,
+        "Cost": 50000
+      },
+      {
+        "Duration": 67200,
+        "Tiers": 3,
+        "Cost": 100000
+      },
+      {
+        "Duration": 87200,
+        "Tiers": 3,
+        "Cost": 150000
+      },
+      {
+        "Duration": 107200,
+        "Tiers": 3,
+        "Cost": 250000
+      },
+      {
+        "Duration": 127200,
+        "Tiers": 3,
+        "Cost": 350000
+      },
+      {
+        "Duration": 147200,
+        "Tiers": 4,
+        "Cost": 450000
+      },
+      {
+        "Duration": 167200,
+        "Tiers": 4,
+        "Cost": 600000
+      },
+      {
+        "Duration": 187200,
+        "Tiers": 5,
+        "Cost": 800000
+      },
+      {
+        "Duration": 207200,
+        "Tiers": 5,
+        "Cost": 910000
+      },
+      {
+        "Duration": 227200,
+        "Tiers": 6,
+        "Cost": 1020000
+      },
+      {
+        "Duration": 247200,
+        "Tiers": 7,
+        "Cost": 1130000
+      },
+      {
+        "Duration": 277200,
+        "Tiers": 8,
+        "Cost": 1240000
+      },
+      {
+        "Duration": 307200,
+        "Tiers": 9,
+        "Cost": 1350000
+      },
+      {
+        "Duration": 337200,
+        "Tiers": 10,
+        "Cost": 1460000
+      },
+      {
+        "Duration": 367200,
+        "Tiers": 10,
+        "Cost": 1570000
+      },
+      {
+        "Duration": 397200,
+        "Tiers": 10,
+        "Cost": 1680000
+      },
+      {
+        "Duration": 427200,
+        "Tiers": 10,
+        "Cost": 1790000
+      },
+      {
+        "Duration": 457200,
+        "Tiers": 10,
+        "Cost": 1900000
+      },
+      {
+        "Duration": 487200,
+        "Tiers": 10,
+        "Cost": 2010000
+      },
+      {
+        "Duration": 517200,
+        "Tiers": 10,
+        "Cost": 2120000
+      },
+      {
+        "Duration": 547200,
+        "Tiers": 10,
+        "Cost": 2230000
+      },
+      {
+        "Duration": 577200,
+        "Tiers": 10,
+        "Cost": 2340000
+      },
+      {
+        "Duration": 607200,
+        "Tiers": 10,
+        "Cost": 2450000
+      },
+      {
+        "Duration": 637200,
+        "Tiers": 10,
+        "Cost": 2560000
+      },
+      {
+        "Duration": 667200,
+        "Tiers": 10,
+        "Cost": 2670000
+      },
+      {
+        "Duration": 697200,
+        "Tiers": 10,
+        "Cost": 2780000
+      },
+      {
+        "Duration": 727200,
+        "Tiers": 10,
+        "Cost": 2890000
+      },
+      {
+        "Duration": 757200,
+        "Tiers": 10,
+        "Cost": 3000000
+      }
+    ]
+  },
+  "3": {
+    "AscensionLevel": 3,
+    "ForgeLevelConfigs": [
+      {
+        "Duration": 1757200,
+        "Tiers": 10,
+        "Cost": 5500000
+      },
+      {
+        "Duration": 1817200,
+        "Tiers": 10,
+        "Cost": 8000000
+      },
+      {
+        "Duration": 1877200,
+        "Tiers": 10,
+        "Cost": 10500000
+      },
+      {
+        "Duration": 1937200,
+        "Tiers": 10,
+        "Cost": 13000000
+      },
+      {
+        "Duration": 1997200,
+        "Tiers": 10,
+        "Cost": 15500000
+      },
+      {
+        "Duration": 2057200,
+        "Tiers": 10,
+        "Cost": 18000000
+      },
+      {
+        "Duration": 2117200,
+        "Tiers": 10,
+        "Cost": 20500000
+      },
+      {
+        "Duration": 2177200,
+        "Tiers": 10,
+        "Cost": 23000000
+      },
+      {
+        "Duration": 2237200,
+        "Tiers": 10,
+        "Cost": 25500000
+      },
+      {
+        "Duration": 2297200,
+        "Tiers": 10,
+        "Cost": 28000000
+      },
+      {
+        "Duration": 2357200,
+        "Tiers": 10,
+        "Cost": 30500000
+      },
+      {
+        "Duration": 2417200,
+        "Tiers": 10,
+        "Cost": 33000000
+      },
+      {
+        "Duration": 2477200,
+        "Tiers": 10,
+        "Cost": 35500000
+      },
+      {
+        "Duration": 2537200,
+        "Tiers": 10,
+        "Cost": 38000000
+      },
+      {
+        "Duration": 2597200,
+        "Tiers": 10,
+        "Cost": 40500000
+      }
+    ]
+  }
+}

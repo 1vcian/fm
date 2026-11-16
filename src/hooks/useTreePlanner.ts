@@ -5,7 +5,8 @@ import { useTreeMode } from '../context/TreeModeContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { getWarDayIndex } from '../utils/guildWarUtils';
 import { calculateStats, LibraryData } from '../utils/statEngine';
-import { tierPointsFrom, calculateTechBonuses as calculateTreeTechBonuses, techUpgradeCostAndDuration } from '../utils/techOptimizer';
+import { techNodeTierStats } from '../utils/gameDataTransforms';
+import { tierPointsFrom, techUpgradeTaskTier, calculateTechBonuses as calculateTreeTechBonuses, techUpgradeCostAndDuration } from '../utils/techOptimizer';
 import { UserProfile } from '../types/Profile';
 
 export interface PlanStep {
@@ -156,13 +157,8 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
     const warPointDays = useMemo((): number[] => {
         if (!dayConfig) return [0, 3]; // defaults
         const days: number[] = [];
-        const taskToTier: Record<string, number> = {
-            'FinishITechTreeUpgrade': 0, 'FinishIITechTreeUpgrade': 1,
-            'FinishIIITechTreeUpgrade': 2, 'FinishIVTechTreeUpgrade': 3,
-            'FinishVTechTreeUpgrade': 4
-        };
         Object.entries(dayConfig).forEach(([dayKey, dayData]: [string, any]) => {
-            const hasTechTask = dayData.Tasks?.some((task: any) => taskToTier[task.Task] !== undefined);
+            const hasTechTask = dayData.Tasks?.some((task: any) => techUpgradeTaskTier(task.Task) !== null);
             if (hasTechTask) days.push(Number(dayKey));
         });
         return days;
@@ -680,7 +676,7 @@ export function useTreePlanner(warBonusOverride?: number, dayBoostOverride?: num
                     if (priorities.has('dps')) {
                         if (DPS_NODE_TYPES.has(nodeType)) {
                             score += 2000;
-                            const statWeight = (nodeConfig.Stats?.[0]?.Value || 0.01) * 1000;
+                            const statWeight = (techNodeTierStats(nodeConfig, tier)[0]?.Value || 0.01) * 1000;
                             score += statWeight / (durationMins / 60);
                         }
                     }

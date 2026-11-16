@@ -15,7 +15,7 @@ import { formatNumber } from '../utils/format';
 import { useBattleSimulation } from '../hooks/useBattleSimulation';
 import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
 import { BattleResult } from '../utils/BattleSimulator';
-import { calculateMissionPower, missionEnemyStats } from '../engine/enemies';
+import { calculateMissionPower, missionEnemyStats, resolveMissionLevelScaling, type MissionDifficultyRange } from '../engine/enemies';
 import { GameAssetIcon, gameIcon } from '../components/UI/GameAssetIcon';
 
 /** Game art for the mission config stats. */
@@ -86,7 +86,8 @@ interface MissionBaseConfig {
     RefreshGemCost: number;
     RefreshMissionCount: number;
     MissionBattleMatchTimerSeconds: number;
-    HealthAndDamageLevelMultiplier: number;
+    /** Gone in 2026_11_16 (MissionDifficultyMultiplier.json replaces it). */
+    HealthAndDamageLevelMultiplier?: number;
     MissionOwnerRewardsCount: number;
 }
 
@@ -184,12 +185,19 @@ export default function MissionSolo() {
     const { data: rewardLibrary } = useGameData<Record<string, MissionReward>>('MissionRewardLibrary.json');
     const { data: allMemberRewardLibrary } = useGameData<Record<string, MissionAllMemberReward>>('MissionAllMemberRewardLibrary.json');
     const { data: baseConfig } = useGameData<MissionBaseConfig>('MissionBaseConfig.json');
+    // Mission level scaling: MissionDifficultyMultiplier.json from 2026_11_16 on, else the older
+    // MissionBaseConfig.HealthAndDamageLevelMultiplier (see resolveMissionLevelScaling).
+    const { data: difficultyMultiplierLib } = useGameData<Record<string, MissionDifficultyRange>>('MissionDifficultyMultiplier.json');
+    const levelScaling = useMemo(
+        () => resolveMissionLevelScaling(baseConfig, difficultyMultiplierLib),
+        [baseConfig, difficultyMultiplierLib]
+    );
     const { data: itemBalancingConfig } = useGameData<{ PlayerPowerDamageMultiplier: number }>('ItemBalancingConfig.json');
     const { data: rallyTimeLibrary } = useGameData<Record<string, MissionRallyTime>>('MissionRallyTimeLibrary.json');
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: ascensionStarsBonusLibrary } = useGameData<Record<string, AscensionStarsBonusRow>>('AscensionStarsBonusLibrary.json');
 
-    const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;
+    const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary || levelScaling === null;
 
     // Both slider ceilings come from MissionLevelLibrary (same as MissionsWiki): the highest
     // MaxLevel and the highest MinHammerThiefLevel. The page waits for it (see `loading`).
@@ -706,12 +714,12 @@ export default function MissionSolo() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredMissions.map((battle) => {
-                        const scaledStats = missionEnemyStats(battle, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier);
+                        const scaledStats = missionEnemyStats(battle, effectiveLevel, levelScaling!);
                         const scaledDmg = scaledStats.dmg;
                         const scaledHp = scaledStats.hp;
-                        // Suggested power: the game's CalculateMissionPower (0x780FEEC), see calculateMissionPower.
-                        const suggestedPower = baseConfig && itemBalancingConfig
-                            ? calculateMissionPower(battle, effectiveLevel, baseConfig.HealthAndDamageLevelMultiplier, itemBalancingConfig.PlayerPowerDamageMultiplier)
+                        // Suggested power: the game's CalculateMissionPower (0x7CA8270 in 2026_11_16_09_55), see calculateMissionPower.
+                        const suggestedPower = levelScaling !== null && itemBalancingConfig
+                            ? calculateMissionPower(battle, effectiveLevel, levelScaling, itemBalancingConfig.PlayerPowerDamageMultiplier)
                             : null;
 
                         const result = missionResults[battle.MissionId];

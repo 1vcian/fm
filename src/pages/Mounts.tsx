@@ -13,6 +13,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { unitIcon, unitIconStyle } from '../utils/unitIcons';
 
 export default function Mounts() {
     const { profile } = useProfile();
@@ -21,6 +22,7 @@ export default function Mounts() {
     const { data: mountUpgrades, loading: l1b } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: petUnlockLib, loading: l1c } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: spriteMapping, loading: l2 } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: localization } = useGameData<any>('Localization.json');
     const { data: ascensionConfigs, loading: l3 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -79,7 +81,7 @@ export default function Mounts() {
                     id,
                     rarity,
                     key,
-                    name: spriteInfo?.name || `Mount #${id}`,
+                    name: localization?.mounts?.[key]?.en || spriteInfo?.name || `Mount #${id}`,
                     spriteIndex: spriteInfo?.spriteIndex ?? -1,
                     colliderRadius: mount?.ColliderRadius || 0,
                     unitOffset: mount?.UnitOffset || { X: 0, Y: 0 },
@@ -96,43 +98,11 @@ export default function Mounts() {
                 const rDiff = rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
                 return rDiff !== 0 ? rDiff : a.id - b.id;
             });
-    }, [mountLibrary, spriteLookup, searchTerm, filterRarity]);
+    }, [mountLibrary, spriteLookup, localization, searchTerm, filterRarity]);
 
-    // Calculate sprite position
-    const getSpriteStyle = (spriteIndex: number) => {
-        if (!mountsConfig || spriteIndex < 0) return null;
-        const cols = mountsConfig.grid?.columns || 4;
-        const spriteW = mountsConfig.sprite_size?.width || 256;
-        const spriteH = mountsConfig.sprite_size?.height || 256;
-        const sheetW = mountsConfig.texture_size?.width || 1024;
-        const sheetH = mountsConfig.texture_size?.height || 1024;
-
-        const col = spriteIndex % cols;
-        const row = Math.floor(spriteIndex / cols);
-        const x = col * spriteW;
-        const y = row * spriteH;
-
-        const scale = 80 / spriteW;
-
-        return {
-            backgroundImage: `url(${getAscMountSpriteUrl()})`,
-            backgroundPosition: `-${x * scale}px -${y * scale}px`,
-            backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
-            width: '80px',
-            height: '80px',
-        };
-    };
-
-    const getAscMountSpriteUrl = () => {
-        const baseUrl = import.meta.env.BASE_URL;
-        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
-        const textureBase = `${baseUrl}Texture2D/${versionPath}`;
-
-        if (ascensionLevel === 1) return `${textureBase}MegaMountIcons.png`;
-        if (ascensionLevel === 2) return `${textureBase}UltraMountIcons.png`;
-        if (ascensionLevel === 3) return `${textureBase}ApexMountIcons.png`;
-        return `${textureBase}MountIcons.png`;
-    };
+    // Sprite of the unit in the mapping cell `spriteIndex`, as the game draws it at this ascension
+    const getSpriteStyle = (spriteIndex: number) =>
+        spriteIndex < 0 ? null : unitIconStyle(unitIcon(mountsConfig, spriteIndex, ascensionLevel, selectedVersion), 80);
 
     // Calculate cumulative experience per rarity
     const rarityCumulativeExp = useMemo(() => {

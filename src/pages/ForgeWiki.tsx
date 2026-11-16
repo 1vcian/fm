@@ -6,6 +6,7 @@ import { forgeTierCost, forgeUpgradeDurationSeconds } from '../hooks/useForgeCal
 import { Card, CardHeader, CardTitle } from '../components/UI/Card';
 import { ArrowRight } from 'lucide-react';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { parseForgeUpgrades, topDisplayedForgeLevel, maxDisplayedForgeLevel, ascensionForDisplayedLevel, forgeLevelDef } from '../utils/forgeConfig';
 
 export default function ForgeWiki() {
     const { data: upgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
@@ -15,58 +16,39 @@ export default function ForgeWiki() {
     const forgeCostReduction = techModifiers['ForgeUpgradeCost'] || 0;
     const forgeTimerSpeed = techModifiers['ForgeTimerSpeed'] || 0;
 
+    // Rows by displayed level, either ForgeUpgradeLibrary format (utils/forgeConfig.ts): key N is the
+    // upgrade that leaves level N. In configs listing the levels per forge ascension, the top level
+    // depends on the ascension (MaxForgeLevel(config, ascension)) and PlayerForgeModel.Ascend
+    // (RVA 0x7CD7570) takes the forge back to level 1.
     const data = useMemo(() => {
-        if (!upgradeData || !dropData) return [];
-
-        // Build levels list from dropData (0..34 -> Level 1..35)
-        const sortedKeys = Object.keys(dropData).map(Number).sort((a, b) => a - b);
-        
-        return sortedKeys.map(id => {
-            const level = id + 1;
-
-            // Upgrade Data for THIS level (Upgrade FROM level -> level+1)
-            const nextLevelData = upgradeData[String(level)];
-
-            if (!nextLevelData) {
-                // Represents max level (or missing data).
-                return {
-                    level,
-                    tiers: 0,
-                    baseCost: 0,
-                    cost: 0,
-                    costPerTier: 0,
-                    totalTimeSeconds: 0,
-                    isMax: true,
-                    ascensionCost: ascensionConfigs?.Forge?.AscensionConfigPerLevel?.[0]?.Cost?.Amount || 0
-                };
+        const fu = parseForgeUpgrades(upgradeData);
+        if (!fu || !dropData) return [];
+        const ascRows: any[] = ascensionConfigs?.Forge?.AscensionConfigPerLevel ?? [];
+        const top = topDisplayedForgeLevel(fu);
+        const rows = [];
+        for (let level = 1; level <= top; level++) {
+            // Ascensions whose top level is this one, with the price of the next ascension.
+            const ascends = ascRows
+                .map((r, a) => ({ to: a + 1, cost: r?.Cost?.Amount ?? 0, top: maxDisplayedForgeLevel(fu, a) }))
+                .filter(x => x.top === level && x.cost > 0)
+                .map(({ to, cost }) => ({ to, cost }));
+            const def = forgeLevelDef(fu, level);
+            if (!def) {
+                rows.push({ level, tiers: 0, baseCost: 0, cost: 0, costPerTier: 0, totalTimeSeconds: 0, isMax: true, ascends, needsAscension: 0 });
+                continue;
             }
-
-            // Normal calculation for upgrade TO nextLevel
-            const baseCost = nextLevelData.Cost || 0;
-            const tiers = nextLevelData.Tiers || 1;
-
-            // Each tier is priced and paid on its own (ForgeExtensions.GetForgeTierUpgradeCost 0x77B2C74).
-            const costPerTier = forgeTierCost(nextLevelData, forgeCostReduction);
+            const baseCost = def.Cost || 0;
+            const tiers = def.Tiers || 1;
+            // Each tier is priced and paid on its own (ForgeExtensions.GetForgeTierUpgradeCost 0x7C44E28).
+            const costPerTier = forgeTierCost(def, forgeCostReduction);
             const cost = costPerTier * tiers;
-
-            // One timer per level, started after the last tier (ForgeUpgradeStartAction 0x783A3C8).
-            const totalTimeSeconds = forgeUpgradeDurationSeconds(nextLevelData, forgeTimerSpeed);
-
-            // Ascension cost if max level
-            const ascensionCost = ascensionConfigs?.Forge?.AscensionConfigPerLevel?.[0]?.Cost?.Amount || 0;
-
-            return {
-                level,
-                tiers,
-                baseCost,
-                cost,
-                costPerTier,
-                totalTimeSeconds,
-                isMax: false,
-                ascensionCost: level === sortedKeys.length ? ascensionCost : 0
-            };
-        });
-
+            // One timer per level, started after the last tier (ForgeUpgradeStartAction 0x7CD4DEC).
+            const totalTimeSeconds = forgeUpgradeDurationSeconds(def, forgeTimerSpeed);
+            // The forge ascension that allows the next level.
+            const needsAscension = ascensionForDisplayedLevel(fu, level + 1) ?? 0;
+            rows.push({ level, tiers, baseCost, cost, costPerTier, totalTimeSeconds, isMax: false, ascends, needsAscension });
+        }
+        return rows;
     }, [upgradeData, dropData, ascensionConfigs, forgeCostReduction, forgeTimerSpeed]);
 
     const formatTime = (seconds: number) => {
@@ -136,18 +118,17 @@ export default function ForgeWiki() {
                                         {row.level}
                                         <span className="text-xs text-text-muted font-normal block">
                                             {row.isMax ? " (Max)" : `→ ${row.level + 1}`}
+                                            {!row.isMax && row.needsAscension > 0 && ` (ascension ${row.needsAscension})`}
                                         </span>
+                                        {row.ascends.map(x => (
+                                            <span key={x.to} className="text-[10px] text-amber-400 font-normal block">
+                                                Ascend to {x.to}: {new Intl.NumberFormat('en-US').format(x.cost)} Coins
+                                            </span>
+                                        ))}
                                     </td>
                                     <td className="px-4 py-3 text-right text-yellow-500 font-mono">
                                         {row.isMax ? (
-                                            row.ascensionCost > 0 ? (
-                                                <div className="flex flex-col items-end">
-                                                    <span className="text-amber-400 font-black">ASCEND</span>
-                                                    <span className="text-[10px] text-yellow-500/80">
-                                                        {new Intl.NumberFormat('en-US').format(row.ascensionCost)} Coins
-                                                    </span>
-                                                </div>
-                                            ) : '-'
+                                            row.ascends.length > 0 ? <span className="text-amber-400 font-black">ASCEND</span> : '-'
                                         ) : (
                                             <>
                                                 {new Intl.NumberFormat('en-US', {
@@ -187,7 +168,7 @@ export default function ForgeWiki() {
                             <div className="flex justify-between items-center">
                                 <div className="font-black text-xl text-accent-primary">
                                     Lvl {row.level}
-                                    {!row.isMax && <span className="text-text-muted text-xs font-normal ml-2">→ {row.level + 1}</span>}
+                                    {!row.isMax && <span className="text-text-muted text-xs font-normal ml-2">→ {row.level + 1}{row.needsAscension > 0 && ` (ascension ${row.needsAscension})`}</span>}
                                     {row.isMax && <span className="text-text-muted text-xs font-normal ml-2">(Max)</span>}
                                 </div>
                                 <div className="text-text-secondary font-bold text-sm">
@@ -212,14 +193,14 @@ export default function ForgeWiki() {
                                 </div>
                             )}
 
-                            {row.isMax && row.ascensionCost > 0 && (
-                                <div className="bg-amber-400/10 p-3 rounded-xl border border-amber-400/30 flex items-center justify-between">
-                                    <div className="text-xs font-black text-amber-400 uppercase tracking-wider">Ascension Price</div>
+                            {row.ascends.map(x => (
+                                <div key={x.to} className="bg-amber-400/10 p-3 rounded-xl border border-amber-400/30 flex items-center justify-between">
+                                    <div className="text-xs font-black text-amber-400 uppercase tracking-wider">Ascend to {x.to}</div>
                                     <div className="text-yellow-500 font-mono font-bold">
-                                        {new Intl.NumberFormat('en-US').format(row.ascensionCost)} Coins
+                                        {new Intl.NumberFormat('en-US').format(x.cost)} Coins
                                     </div>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     ))}
                 </div>

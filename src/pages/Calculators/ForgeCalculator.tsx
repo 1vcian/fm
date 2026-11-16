@@ -15,16 +15,11 @@ import { cn, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 import { ageIndexOf } from '../../utils/gameTiers';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { parseForgeUpgrades, maxDisplayedForgeLevel, topDisplayedForgeLevel, ascensionForDisplayedLevel, forgeLevelDef, ageChancesAtForgeLevel } from '../../utils/forgeConfig';
 import { ITEM_TYPE_NAMES, computeForgeModel, hammersForCoins, sortBrackets, type ForgeModelInput, type ForgeSlot } from '../../utils/forgeItemLevels';
+import { techNodeTierStats } from '../../utils/gameDataTransforms';
 
 // Helper types matching JSON structure
-interface ItemAgeDropChances {
-    [level: string]: {
-        Level: number;
-        [age: string]: number; // Age0, Age1, etc.
-    };
-}
-
 interface ItemLevelBrackets {
     [id: string]: {
         Level: number;
@@ -201,7 +196,7 @@ export default function ForgeCalculator() {
     }, [hammersInput, goldInput, mode, usePlayerItems, autoForgeSummons, autoForgeInterval, updateNestedProfile]);
 
     // Load Configs
-    const { data: dropChances } = useGameData<ItemAgeDropChances>('ItemAgeDropChancesLibrary.json');
+    const { data: dropChances } = useGameData<any>('ItemAgeDropChancesLibrary.json');
     const { data: brackets } = useGameData<ItemLevelBrackets>('ItemLevelBracketsLibrary.json');
     const { data: balancingConfig } = useGameData<ItemBalancingConfig>('ItemBalancingConfig.json');
     const { data: techTreeLib } = useGameData<TechTreeLibrary>('TechTreeLibrary.json');
@@ -211,11 +206,12 @@ export default function ForgeCalculator() {
     const { data: forgeUpgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
     const { data: itemsLibrary } = useGameData<Record<string, ItemBalancingEntry>>('ItemBalancingLibrary.json');
 
-    const maxForgeLevel = useMemo(() => {
-        if (!forgeUpgradeData) return 100;
-        const levels = Object.keys(forgeUpgradeData).map(Number);
-        return Math.max(...levels, 1) + 1;
-    }, [forgeUpgradeData]);
+    // Either ForgeUpgradeLibrary format (utils/forgeConfig.ts). The slider reaches the top level of the
+    // highest forge ascension; levels past the profile's ascension cap are flagged under it.
+    const forgeUpgrades = useMemo(() => parseForgeUpgrades(forgeUpgradeData), [forgeUpgradeData]);
+    const maxForgeLevel = forgeUpgrades ? topDisplayedForgeLevel(forgeUpgrades) : 100;
+    const profileForgeAscension = profile.misc.forgeAscensionLevel ?? 0;
+    const simulatedLevelAscension = forgeUpgrades ? ascensionForDisplayedLevel(forgeUpgrades, simulatedForgeLevel) : null;
 
     // Clan tech tree boost to war points earned from forging (effective value, see useGameData).
     const treeModifiers = useTreeModifiers();
@@ -270,9 +266,9 @@ export default function ForgeCalculator() {
         const gemReward = getWarPointsForTask(guildWarConfig, 'SpendGemOnForge');
         // Sum real upgrade coin cost across the steps (simulated level → +steps), node-reduced.
         let coins = 0;
-        if (forgeUpgradeData) {
+        if (forgeUpgrades) {
             for (let i = 0; i < effectiveForgeSteps; i++) {
-                const def = forgeUpgradeData[String(simulatedForgeLevel + i)];
+                const def = forgeLevelDef(forgeUpgrades, simulatedForgeLevel + i);
                 coins += forgeLevelCost(def, forgeUpgradeCostReduction);
             }
         }
@@ -280,7 +276,7 @@ export default function ForgeCalculator() {
         const coinPts = Math.floor(coins / coinsPerReward) * coinReward * mult;
         const gemPts = (gemsSpent || 0) * gemReward * mult;
         return { coinsPerReward, coinReward, gemReward, coins, coinPts, gemPts, total: coinPts + gemPts };
-    }, [guildWarConfig, guildWarBaseConfig, forgeUpgradeData, simulatedForgeLevel, effectiveForgeSteps, forgeUpgradeCostReduction, gemsSpent, forgeSpendBonus, spendDayBoost]);
+    }, [guildWarConfig, guildWarBaseConfig, forgeUpgrades, simulatedForgeLevel, effectiveForgeSteps, forgeUpgradeCostReduction, gemsSpent, forgeSpendBonus, spendDayBoost]);
 
     // Parse War Points from Config
     const warPointsPerAge = useMemo(() => {
@@ -325,8 +321,9 @@ export default function ForgeCalculator() {
                 const nodeDef = techTreeLib[nodeMap.type];
                 if (!nodeDef) return;
 
-                if (!nodeDef.Stats || !nodeDef.Stats[0] || typeof nodeDef.MaxLevel !== 'number') return;
-                const stat = nodeDef.Stats[0];
+                // The node's own tier (StatsByTier), the values the game reads for that node.
+                const stat = techNodeTierStats(nodeDef, nodeMap.tier)[0];
+                if (!stat || typeof nodeDef.MaxLevel !== 'number') return;
 
                 // Max possible value for this node instance
                 const maxVal = stat.Value + (nodeDef.MaxLevel - 1) * stat.ValueIncrease;
@@ -429,12 +426,11 @@ export default function ForgeCalculator() {
     // 2. Model input: everything the game reads when it forges (see utils/forgeItemLevels.ts).
     const modelInput = useMemo((): ForgeModelInput | null => {
         if (!brackets || !dropChances || !balancingConfig || !itemsLibrary) return null;
-        const row = dropChances[(simulatedForgeLevel - 1).toString()];
-        if (!row) return null;
+        // ForgeAction.RollAge (RVA 0x7CD3328): the row of the 0-based ForgeLevel, either config format.
+        const row = ageChancesAtForgeLevel(dropChances, simulatedForgeLevel - 1);
+        if (!row.length) return null;
         const ageChances: Record<number, number> = {};
-        Object.entries(row).forEach(([k, v]) => {
-            if (k.startsWith('Age') && typeof v === 'number') ageChances[parseInt(k.slice(3))] = v;
-        });
+        row.forEach((v, i) => { ageChances[i] = v; });
         const typesByAge: Record<number, number[]> = {};
         Object.values(itemsLibrary).forEach(it => {
             const t = (ITEM_TYPE_NAMES as readonly string[]).indexOf(it?.ItemId?.Type);
@@ -798,6 +794,11 @@ export default function ForgeCalculator() {
                         <span>{Math.floor(maxForgeLevel * 0.75)}</span>
                         <span>{maxForgeLevel}</span>
                     </div>
+                    {simulatedLevelAscension !== null && simulatedLevelAscension > profileForgeAscension && (
+                        <div className="text-[11px] text-amber-300 mt-1">
+                            Level {simulatedForgeLevel} needs forge ascension {simulatedLevelAscension} (your profile: {profileForgeAscension}).
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -1211,20 +1212,23 @@ export default function ForgeCalculator() {
  * ascension count and a final forge level.
  * - An ascension needs the forge at its top level: PlayerSegments "ForgeAscension" ("Determines if
  *   the player can ascend his forge") requires PlayerPropertyIdForgeLevelMaxed = true, and
- *   AscendAction (RVA 0x7820368) checks the conditions, AscensionsMaxed and the price.
- * - PlayerForgeModel.Ascend (RVA 0x7878004) sets ForgeLevel (+0x20) to 0, clears the upgrade timer
+ *   AscendAction (RVA 0x7C78E48) checks the conditions, AscensionsMaxed and the price.
+ * - PlayerForgeModel.Ascend (RVA 0x7CD7570) sets ForgeLevel (+0x20) to 0, clears the upgrade timer
  *   (+0x28) and zeroes ForgeCount and the current tier (+0x38..+0x44): back to displayed level 1.
- * - Leaving displayed level N buys every tier of ForgeUpgradeLibrary[N] (forgeLevelCost, the
+ * - The top level depends on the forge ascension in configs that list ForgeUpgradeLibrary per ascension
+ *   (MaxForgeLevel(config, ascension), utils/forgeConfig.ts); older configs have one top level.
+ * - Leaving displayed level N buys every tier of ForgeUpgradesByLevel[N] (forgeLevelCost, the
  *   ForgeUpgradeCost node a OneMinusMultiplier) and runs its timer (forgeUpgradeDurationSeconds,
  *   ForgeTimerSpeed a Divisor); skipping it at once costs forgeGemSkipCost of its whole duration.
  * - Ascension k costs AscensionConfigsLibrary.Forge.AscensionConfigPerLevel[k].Cost.
  */
 function AfterAscensionPlanner({ costReduction, timerSpeed, fromLevel }: { costReduction: number; timerSpeed: number; fromLevel: number }) {
     const { profile } = useProfile();
-    const { data: upgrades } = useGameData<Record<string, { Level: number; Duration: number; Tiers: number; Cost: number }>>('ForgeUpgradeLibrary.json');
+    const { data: upgradesData } = useGameData<any>('ForgeUpgradeLibrary.json');
     const { data: ascensions } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
-    const maxLevel = upgrades ? Math.max(...Object.keys(upgrades).map(Number)) + 1 : 1;
+    const upgrades = useMemo(() => parseForgeUpgrades(upgradesData), [upgradesData]);
+    const topLevelAt = (asc: number) => (upgrades ? maxDisplayedForgeLevel(upgrades, asc) : 1);
     const ascensionRows: { Cost: { Amount: number; Currency: string } }[] = ascensions?.Forge?.AscensionConfigPerLevel ?? [];
     const maxAscensions = ascensionRows.length;
     const profileAscensions = profile.misc.forgeAscensionLevel ?? 0;
@@ -1233,14 +1237,15 @@ function AfterAscensionPlanner({ costReduction, timerSpeed, fromLevel }: { costR
     const [finalAscInput, setFinalAsc] = useState<number | null>(null);
     const finalAsc = Math.min(maxAscensions, Math.max(ascended, finalAscInput ?? ascended));
     const [finalLevelInput, setFinalLevel] = useState<number | null>(null);
-    const from = Math.min(maxLevel, Math.max(1, fromLevel));
+    const maxLevel = topLevelAt(finalAsc);
+    const from = Math.min(topLevelAt(ascended), Math.max(1, fromLevel));
     const minFinal = finalAsc === ascended ? from : 1;
     const finalLevel = Math.min(maxLevel, Math.max(minFinal, finalLevelInput ?? maxLevel));
     const rate = forgeConfig?.ForgeGemSkipCostPerSecond;
     const levelsBetween = (a: number, b: number) => {
         const out: { level: number; coins: number; seconds: number; gems: number | null }[] = [];
         for (let n = a; n < b && upgrades; n++) {
-            const row = upgrades[String(n)];
+            const row = forgeLevelDef(upgrades, n);
             if (!row) break;
             const seconds = forgeUpgradeDurationSeconds(row, timerSpeed);
             out.push({ level: n, coins: forgeLevelCost(row, costReduction), seconds, gems: seconds > 0 ? forgeGemSkipCost(seconds, rate) : 0 });
@@ -1256,7 +1261,8 @@ function AfterAscensionPlanner({ costReduction, timerSpeed, fromLevel }: { costR
         }
         for (let k = ascended; k < finalAsc; k++) {
             const start = k === ascended ? from : 1;
-            out.push({ label: `Level ${start} to ${maxLevel}, then ascension ${k + 1}`, steps: levelsBetween(start, maxLevel), ascension: ascensionRows[k]?.Cost });
+            const top = topLevelAt(k);
+            out.push({ label: `Level ${start} to ${top}, then ascension ${k + 1}`, steps: levelsBetween(start, top), ascension: ascensionRows[k]?.Cost });
         }
         out.push({ label: `After ascension ${finalAsc}: level 1 to ${finalLevel}`, steps: levelsBetween(1, finalLevel) });
         return out;

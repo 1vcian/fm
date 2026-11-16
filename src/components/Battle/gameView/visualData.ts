@@ -121,7 +121,8 @@ export interface BattleVisualData {
      * set complete with every piece at max level, `death` where it dies (UnitSetEffectsView).
      */
     setEffects?: Record<string, { idle: string | null; death: string | null }>;
-    skills: Record<string, { showDuration: boolean; icons: string[]; projectiles: string[]; animations: string[] }>;
+    /** SkillVisualConfig per CombatSkill value, one entry per ascension level (null where the config leaves it empty). */
+    skills: Record<string, { showDuration: boolean; icons: (string | null)[]; projectiles: (string | null)[]; animations: (string | null)[] }>;
     skillIds: Record<string, number>;
     pets: Record<string, { name: string; prefabs: string[] }[]>;
     mounts: Record<string, { name: string; prefabs: string[] }[]>;
@@ -148,6 +149,20 @@ export interface BattleVisualData {
             scaleStart: number; scalePerT: number; rotationDegPerT: number; staticArc: number; staticOffsetY: number;
         };
     };
+}
+
+/**
+ * AscensionExtensions.ForAscension<T> (0x48088C4), what SkillVisualDetails.Icon / ProjectilePrefab /
+ * SkillAnimation (0x41CBF20 / 0x41CBFA0 / 0x41CC020) return: the entry at Min(level, Count - 1),
+ * else the nearest non-null one below it, else the first non-null one above the level. The skills
+ * of build 2026_11_16_09_55 only fill their last level.
+ */
+export function forAscension<T>(list: readonly (T | null | undefined)[] | undefined, level: number): T | null {
+    if (!list || list.length === 0) return null;
+    const top = Math.min(level, list.length - 1);
+    for (let i = top; i >= 0; i--) if (list[i] != null) return list[i] as T;
+    for (let i = level + 1; i < list.length; i++) if (list[i] != null) return list[i] as T;
+    return null;
 }
 
 const base = () => `${import.meta.env.BASE_URL}Texture2D/${BATTLE_VISUALS_VERSION}/`;

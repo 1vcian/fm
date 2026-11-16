@@ -54,7 +54,7 @@ export interface DetectedUnit {
 }
 
 export interface DetectedSkill {
-    idx: number;             // 0..17 grid position -> skillId via SKILLS_ORDER
+    idx: number;             // grid position -> skillId via SKILLS_ORDER
     skillId: string;
     level: number | null;
     ascension?: number;      // 0..3 gold stars under the cell's "Lv." text (countStars topology)

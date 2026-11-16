@@ -1,117 +1,708 @@
 {
-  "version": "2026_10_27_09_45",
-  "previous": "2026_10_08_09_03",
+  "version": "2026_11_16_09_55",
+  "previous": "2026_10_27_09_45",
   "changes": [
     {
       "file": "AchievementLibrary",
       "kind": "changed",
       "lines": [
-        "account_linked_01.Category: added",
-        "login_streak_01.Category: added",
-        "avatar_changes_01.Category: added",
-        "offline_rewards_maxed_01.Category: added",
-        "chat_inactivity_01.Category: added",
-        "open_clan_tiers_panel_01.Category: added",
-        "open_space_helmet_drop_chance_01.Category: added",
-        "main_battle_reached_01.Category: added",
-        "main_battle_reached_02.Category: added",
-        "main_battle_reached_03.Category: added",
-        "main_battle_reached_04.Category: added",
-        "enemy_defeats_01.Category: added",
-        "enemy_defeats_02.Category: added",
-        "enemy_defeats_03.Category: added",
-        "enemy_defeats_04.Category: added",
-        "forge_upgrades_01.Category: added",
-        "forge_upgrades_02.Category: added",
-        "forge_upgrades_03.Category: added",
-        "forge_upgrades_04.Category: added",
-        "ascensions_01.Category: added",
-        "ascensions_02.Category: added",
-        "ascensions_03.Category: added",
-        "hammers_spent_01.Category: added",
-        "hammers_spent_02.Category: added",
-        "and 73 more changes in this file"
+        "skills_at_level_100_01.Target: 18 -> 27",
+        "forge_upgrades_05: added",
+        "heroic_skill_level_01: added",
+        "infinite_skill_level_01: added",
+        "eternal_skill_level_01: added",
+        "heroic_pet_level_01: added",
+        "infinite_pet_level_01: added",
+        "eternal_pet_level_01: added",
+        "heroic_mount_level_01: added",
+        "infinite_mount_level_01: added",
+        "eternal_mount_level_01: added"
+      ]
+    },
+    {
+      "file": "AscensionConfigsLibrary",
+      "kind": "changed",
+      "lines": []
+    },
+    {
+      "file": "AscensionStarsBonusLibrary",
+      "kind": "changed",
+      "lines": [
+        "1.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "2.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "3.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "4.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "5.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "6.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "7.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "8.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "9.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "10.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "11.BonusStats.Stats[0].Value: 0.05 -> 0.05",
+        "12.BonusStats.Stats[0].Value: 0.05 -> 0.05"
       ]
     },
     {
       "file": "BaseConfig",
       "kind": "changed",
       "lines": [
-        "NthAttackInterval: added"
+        "MaxAge: removed"
       ]
     },
     {
-      "file": "MainBattleConfig",
+      "file": "DungeonBaseConfig",
       "kind": "changed",
       "lines": [
-        "DifficultyScaling: removed"
+        "MaxDungeonLevel: 399 -> 499"
       ]
     },
     {
-      "file": "SecondaryStatLibrary",
+      "file": "EggDungeonBattleLibrary",
       "kind": "changed",
       "lines": [
-        "CriticalDamageReduction: added",
-        "NthAttackDamageMulti: added"
+        "400: added",
+        "401: added",
+        "402: added",
+        "403: added",
+        "404: added",
+        "405: added",
+        "406: added",
+        "407: added",
+        "408: added",
+        "409: added",
+        "410: added",
+        "411: added",
+        "412: added",
+        "413: added",
+        "414: added",
+        "415: added",
+        "416: added",
+        "417: added",
+        "418: added",
+        "419: added",
+        "420: added",
+        "421: added",
+        "422: added",
+        "423: added",
+        "and 76 more changes in this file"
+      ]
+    },
+    {
+      "file": "EggLibrary",
+      "kind": "changed",
+      "lines": [
+        "Heroic: added",
+        "Infinite: added",
+        "Eternal: added"
+      ]
+    },
+    {
+      "file": "EggSummonConfig",
+      "kind": "changed",
+      "lines": [
+        "Levels: removed",
+        "Ascensions: added"
+      ]
+    },
+    {
+      "file": "ForgeUpgradeLibrary",
+      "kind": "changed",
+      "lines": [
+        "1: removed",
+        "2: removed",
+        "3.Level: removed",
+        "3.Duration: removed",
+        "3.Tiers: removed",
+        "3.Cost: removed",
+        "3.AscensionLevel: added",
+        "3.ForgeLevelConfigs: added",
+        "4: removed",
+        "5: removed",
+        "6: removed",
+        "7: removed",
+        "8: removed",
+        "9: removed",
+        "10: removed",
+        "11: removed",
+        "12: removed",
+        "13: removed",
+        "14: removed",
+        "15: removed",
+        "16: removed",
+        "17: removed",
+        "18: removed",
+        "19: removed",
+        "and 16 more changes in this file"
+      ]
+    },
+    {
+      "file": "GuildWarDayConfigLibrary",
+      "kind": "changed",
+      "lines": [
+        "0.Tasks: 26 -> 19 entries",
+        "0.Tasks[10].Task: UseHammerThiefDungeonKey -> ForgeHeroicEquipment",
+        "0.Tasks[10].Rewards[0].Amount: 3000 -> 3",
+        "0.Tasks[11].Task: UseGhostTownDungeonKey -> ForgeInfiniteEquipment",
+        "0.Tasks[11].Rewards[0].Amount: 3000 -> 3",
+        "0.Tasks[12].Task: UseInvasionDungeonKey -> ForgeEternalEquipment",
+        "0.Tasks[12].Rewards[0].Amount: 3000 -> 3",
+        "0.Tasks[13].Task: UseZombieInvasionDungeonKey -> UseHammerThiefDungeonKey",
+        "0.Tasks[14].Task: SummonCommonSkill -> UseGhostTownDungeonKey",
+        "0.Tasks[14].Rewards[0].Amount: 125 -> 3000",
+        "0.Tasks[15].Task: SummonRareSkill -> UseInvasionDungeonKey",
+        "0.Tasks[15].Rewards[0].Amount: 125 -> 3000",
+        "0.Tasks[16].Task: SummonEpicSkill -> UseZombieInvasionDungeonKey",
+        "0.Tasks[16].Rewards[0].Amount: 125 -> 3000",
+        "0.Tasks[17].Task: SummonLegendarySkill -> SummonSkill",
+        "0.Tasks[18].Task: SummonUltimateSkill -> UpgradeSkill",
+        "1.Tasks: 19 -> 10 entries",
+        "1.Tasks[7].Task: SummonCommonMount -> FinishVITechTreeUpgrade",
+        "1.Tasks[7].Rewards[0].Amount: 600 -> 181000",
+        "1.Tasks[8].Task: SummonRareMount -> SummonMount",
+        "1.Tasks[9].Task: SummonEpicMount -> MergeMount",
+        "2.Tasks: 34 -> 25 entries",
+        "2.Tasks[10].Task: SummonCommonSkill -> ForgeHeroicEquipment",
+        "2.Tasks[10].Rewards[0].Amount: 125 -> 3",
+        "and 64 more changes in this file"
+      ]
+    },
+    {
+      "file": "HammerThiefDungeonBattleLibrary",
+      "kind": "changed",
+      "lines": [
+        "400: added",
+        "401: added",
+        "402: added",
+        "403: added",
+        "404: added",
+        "405: added",
+        "406: added",
+        "407: added",
+        "408: added",
+        "409: added",
+        "410: added",
+        "411: added",
+        "412: added",
+        "413: added",
+        "414: added",
+        "415: added",
+        "416: added",
+        "417: added",
+        "418: added",
+        "419: added",
+        "420: added",
+        "421: added",
+        "422: added",
+        "423: added",
+        "and 76 more changes in this file"
+      ]
+    },
+    {
+      "file": "ItemAgeDropChancesLibrary",
+      "kind": "changed",
+      "lines": [
+        "0.Age0: removed",
+        "0.Age1: removed",
+        "0.Age2: removed",
+        "0.Age3: removed",
+        "0.Age4: removed",
+        "0.Age5: removed",
+        "0.Age6: removed",
+        "0.Age7: removed",
+        "0.Age8: removed",
+        "0.Age9: removed",
+        "0.Ages: added",
+        "1.Age0: removed",
+        "1.Age1: removed",
+        "1.Age2: removed",
+        "1.Age3: removed",
+        "1.Age4: removed",
+        "1.Age5: removed",
+        "1.Age6: removed",
+        "1.Age7: removed",
+        "1.Age8: removed",
+        "1.Age9: removed",
+        "1.Ages: added",
+        "2.Age0: removed",
+        "2.Age1: removed",
+        "and 90 more changes in this file"
+      ]
+    },
+    {
+      "file": "ItemBalancingLibrary",
+      "kind": "changed",
+      "lines": [
+        "{'Age': 10, 'Type': 'Helmet', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Helmet', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Helmet', 'Idx': 2}: added",
+        "{'Age': 10, 'Type': 'Helmet', 'Idx': 3}: added",
+        "{'Age': 10, 'Type': 'Armour', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Armour', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Gloves', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Gloves', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Necklace', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Necklace', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Ring', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Ring', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 2}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 3}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 4}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 5}: added",
+        "{'Age': 10, 'Type': 'Shoes', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Shoes', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Belt', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Belt', 'Idx': 1}: added",
+        "{'Age': 11, 'Type': 'Helmet', 'Idx': 0}: added",
+        "{'Age': 11, 'Type': 'Helmet', 'Idx': 1}: added",
+        "and 40 more changes in this file"
+      ]
+    },
+    {
+      "file": "MissionAllMemberRewardLibrary",
+      "kind": "changed",
+      "lines": [
+        "61: added",
+        "62: added",
+        "63: added",
+        "64: added",
+        "65: added",
+        "66: added",
+        "67: added",
+        "68: added",
+        "69: added",
+        "70: added",
+        "71: added",
+        "72: added",
+        "73: added",
+        "74: added",
+        "75: added",
+        "76: added",
+        "77: added",
+        "78: added",
+        "79: added",
+        "80: added",
+        "81: added",
+        "82: added",
+        "83: added",
+        "84: added",
+        "and 6 more changes in this file"
+      ]
+    },
+    {
+      "file": "MissionBaseConfig",
+      "kind": "changed",
+      "lines": [
+        "HealthAndDamageLevelMultiplier: removed"
+      ]
+    },
+    {
+      "file": "MissionBattleLibrary",
+      "kind": "changed",
+      "lines": [
+        "0.BaseDamage: 1000 -> 650",
+        "0.BaseHealth: 8000 -> 5200",
+        "1.BaseDamage: 900 -> 585",
+        "1.BaseHealth: 7200 -> 4680",
+        "2.BaseDamage: 3300 -> 2145",
+        "2.BaseHealth: 26400 -> 17160",
+        "3.BaseDamage: 1500 -> 975",
+        "3.BaseHealth: 12000 -> 7800",
+        "4.BaseDamage: 800 -> 520",
+        "4.BaseHealth: 6400 -> 4160",
+        "5.BaseDamage: 3000 -> 1950",
+        "5.BaseHealth: 24000 -> 15600",
+        "6.BaseDamage: 1000 -> 650",
+        "6.BaseHealth: 8000 -> 5200",
+        "7.BaseDamage: 1500 -> 975",
+        "7.BaseHealth: 12000 -> 7800",
+        "8.BaseDamage: 1000 -> 650",
+        "8.BaseHealth: 8000 -> 5200",
+        "9.BaseDamage: 1000 -> 650",
+        "9.BaseHealth: 8000 -> 5200",
+        "10.BaseDamage: 900 -> 585",
+        "10.BaseHealth: 7200 -> 4680",
+        "11.BaseDamage: 6000 -> 3900",
+        "11.BaseHealth: 48000 -> 31200",
+        "and 16 more changes in this file"
+      ]
+    },
+    {
+      "file": "MissionDifficultyMultiplier",
+      "kind": "added",
+      "lines": []
+    },
+    {
+      "file": "MissionLevelLibrary",
+      "kind": "changed",
+      "lines": [
+        "57.MaxLevel: 60 -> 61",
+        "58.MaxLevel: 60 -> 62",
+        "59.MaxLevel: 60 -> 63",
+        "60.MaxLevel: 60 -> 64",
+        "61: added",
+        "62: added",
+        "63: added",
+        "64: added",
+        "65: added",
+        "66: added",
+        "67: added",
+        "68: added",
+        "69: added",
+        "70: added",
+        "71: added",
+        "72: added",
+        "73: added",
+        "74: added",
+        "75: added",
+        "76: added",
+        "77: added",
+        "78: added",
+        "79: added",
+        "80: added",
+        "and 10 more changes in this file"
+      ]
+    },
+    {
+      "file": "MissionRewardLibrary",
+      "kind": "changed",
+      "lines": [
+        "61: added",
+        "62: added",
+        "63: added",
+        "64: added",
+        "65: added",
+        "66: added",
+        "67: added",
+        "68: added",
+        "69: added",
+        "70: added",
+        "71: added",
+        "72: added",
+        "73: added",
+        "74: added",
+        "75: added",
+        "76: added",
+        "77: added",
+        "78: added",
+        "79: added",
+        "80: added",
+        "81: added",
+        "82: added",
+        "83: added",
+        "84: added",
+        "and 6 more changes in this file"
+      ]
+    },
+    {
+      "file": "MountLibrary",
+      "kind": "changed",
+      "lines": [
+        "{'Rarity': 'Rare', 'Id': 0}.UnitOffset.Y: 0.489 -> 0.4",
+        "{'Rarity': 'Rare', 'Id': 1}.UnitOffset.Y: 0.533 -> 0.35",
+        "{'Rarity': 'Heroic', 'Id': 0}: added",
+        "{'Rarity': 'Heroic', 'Id': 1}: added",
+        "{'Rarity': 'Infinite', 'Id': 0}: added",
+        "{'Rarity': 'Infinite', 'Id': 1}: added",
+        "{'Rarity': 'Eternal', 'Id': 0}: added",
+        "{'Rarity': 'Eternal', 'Id': 1}: added"
+      ]
+    },
+    {
+      "file": "MountSummonConfig",
+      "kind": "changed",
+      "lines": [
+        "Levels: removed",
+        "Ascensions: added"
+      ]
+    },
+    {
+      "file": "MountUpgradeLibrary",
+      "kind": "changed",
+      "lines": [
+        "Heroic: added",
+        "Infinite: added",
+        "Eternal: added"
+      ]
+    },
+    {
+      "file": "PetBaseConfig",
+      "kind": "changed",
+      "lines": [
+        "PetSlotsCount: removed"
+      ]
+    },
+    {
+      "file": "PetLibrary",
+      "kind": "changed",
+      "lines": [
+        "{'Rarity': 'Heroic', 'Id': 0}: added",
+        "{'Rarity': 'Heroic', 'Id': 1}: added",
+        "{'Rarity': 'Heroic', 'Id': 2}: added",
+        "{'Rarity': 'Infinite', 'Id': 0}: added",
+        "{'Rarity': 'Infinite', 'Id': 1}: added",
+        "{'Rarity': 'Infinite', 'Id': 2}: added",
+        "{'Rarity': 'Eternal', 'Id': 0}: added",
+        "{'Rarity': 'Eternal', 'Id': 1}: added",
+        "{'Rarity': 'Eternal', 'Id': 2}: added"
+      ]
+    },
+    {
+      "file": "PetUpgradeLibrary",
+      "kind": "changed",
+      "lines": [
+        "Heroic: added",
+        "Infinite: added",
+        "Eternal: added"
+      ]
+    },
+    {
+      "file": "PlayerTechTreeNodeValuesLibrary",
+      "kind": "changed",
+      "lines": [
+        "ForgeTimerSpeed.Tiers: 5 -> 6 entries",
+        "ForgeUpgradeCost.Tiers: 5 -> 6 entries",
+        "EquipmentSellPrice.Tiers: 5 -> 6 entries",
+        "HammerThiefHammerReward.Tiers: 5 -> 6 entries",
+        "HammerThiefCoinReward.Tiers: 5 -> 6 entries",
+        "AutoForge.Tiers: 5 -> 6 entries",
+        "FreeForgeChance.Tiers: 5 -> 6 entries",
+        "MaxOfflineReward.Tiers: 5 -> 6 entries",
+        "CoinOfflineReward.Tiers: 5 -> 6 entries",
+        "HammerOfflineReward.Tiers: 5 -> 6 entries",
+        "WeaponBonus.Tiers: 5 -> 6 entries",
+        "HelmetBonus.Tiers: 5 -> 6 entries",
+        "GloveBonus.Tiers: 5 -> 6 entries",
+        "BodyBonus.Tiers: 5 -> 6 entries",
+        "NecklaceBonus.Tiers: 5 -> 6 entries",
+        "ShoeBonus.Tiers: 5 -> 6 entries",
+        "RingBonus.Tiers: 5 -> 6 entries",
+        "BeltBonus.Tiers: 5 -> 6 entries",
+        "MountDamage.Tiers: 5 -> 6 entries",
+        "MountHealth.Tiers: 5 -> 6 entries",
+        "WeaponLevelUp.Tiers: 5 -> 6 entries",
+        "HelmetLevelUp.Tiers: 5 -> 6 entries",
+        "GloveLevelUp.Tiers: 5 -> 6 entries",
+        "BodyLevelUp.Tiers: 5 -> 6 entries",
+        "and 26 more changes in this file"
+      ]
+    },
+    {
+      "file": "PlayerTechTreePositionLibrary",
+      "kind": "changed",
+      "lines": [
+        "Forge.Nodes: 50 -> 57 entries",
+        "Power.Nodes: 100 -> 111 entries",
+        "SkillsPetTech.Nodes: 85 -> 103 entries"
+      ]
+    },
+    {
+      "file": "PlayerTechTreeTierLibrary",
+      "kind": "changed",
+      "lines": [
+        "5: added"
+      ]
+    },
+    {
+      "file": "PotionDungeonBattleLibrary",
+      "kind": "changed",
+      "lines": [
+        "400: added",
+        "401: added",
+        "402: added",
+        "403: added",
+        "404: added",
+        "405: added",
+        "406: added",
+        "407: added",
+        "408: added",
+        "409: added",
+        "410: added",
+        "411: added",
+        "412: added",
+        "413: added",
+        "414: added",
+        "415: added",
+        "416: added",
+        "417: added",
+        "418: added",
+        "419: added",
+        "420: added",
+        "421: added",
+        "422: added",
+        "423: added",
+        "and 76 more changes in this file"
+      ]
+    },
+    {
+      "file": "ProjectilesLibrary",
+      "kind": "changed",
+      "lines": [
+        "16: added",
+        "17: added",
+        "18: added",
+        "19: added",
+        "20: added",
+        "21: added"
+      ]
+    },
+    {
+      "file": "SecondaryStatItemUnlockLibrary",
+      "kind": "changed",
+      "lines": [
+        "10: added",
+        "11: added",
+        "12: added"
+      ]
+    },
+    {
+      "file": "SecondaryStatPetUnlockLibrary",
+      "kind": "changed",
+      "lines": [
+        "Heroic: added",
+        "Infinite: added",
+        "Eternal: added"
       ]
     },
     {
       "file": "SetsLibrary",
       "kind": "changed",
       "lines": [
-        "SantaSet.BonusTiers[0].RequiredPieces: 2 -> 3",
-        "SkiSet.BonusTiers[0].RequiredPieces: 2 -> 3",
-        "SnowmanSet.BonusTiers[0].RequiredPieces: 2 -> 3",
-        "MothSet: added",
-        "ShadowSet: added",
-        "GuardianSet: added"
+        "SantaSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "SantaSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "SkiSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "SkiSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "SnowmanSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "SnowmanSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "FlowerSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "FlowerSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "DruidSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "DruidSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "LeprechaunSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "LeprechaunSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "BunnySet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "BunnySet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "ClownSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "ClownSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "MillionaireSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "MillionaireSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "FishbowlSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "FishbowlSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "EagleSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "EagleSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "SkaterSet.BonusTiers[0].BonusStats.Stats[0].Value: 0.1 -> 0.1",
+        "SkaterSet.BonusTiers[0].BonusStats.Stats[1].Value: 0.1 -> 0.1",
+        "and 36 more changes in this file"
       ]
     },
     {
-      "file": "SkinsLibrary",
+      "file": "SkillDungeonBattleLibrary",
       "kind": "changed",
       "lines": [
-        "{'Type': 'Weapon', 'Idx': 0}: added",
-        "{'Type': 'Weapon', 'Idx': 1}: added",
-        "{'Type': 'Weapon', 'Idx': 2}: added",
-        "{'Type': 'Weapon', 'Idx': 27}: added",
-        "{'Type': 'Helmet', 'Idx': 27}: added",
-        "{'Type': 'Armour', 'Idx': 27}: added",
-        "{'Type': 'Weapon', 'Idx': 28}: added",
-        "{'Type': 'Helmet', 'Idx': 28}: added",
-        "{'Type': 'Armour', 'Idx': 28}: added",
-        "{'Type': 'Weapon', 'Idx': 29}: added",
-        "{'Type': 'Helmet', 'Idx': 29}: added",
-        "{'Type': 'Armour', 'Idx': 29}: added",
-        "{'Type': 'Helmet', 'Idx': 122}: added",
-        "{'Type': 'Helmet', 'Idx': 123}: added"
+        "400: added",
+        "401: added",
+        "402: added",
+        "403: added",
+        "404: added",
+        "405: added",
+        "406: added",
+        "407: added",
+        "408: added",
+        "409: added",
+        "410: added",
+        "411: added",
+        "412: added",
+        "413: added",
+        "414: added",
+        "415: added",
+        "416: added",
+        "417: added",
+        "418: added",
+        "419: added",
+        "420: added",
+        "421: added",
+        "422: added",
+        "423: added",
+        "and 76 more changes in this file"
       ]
     },
     {
-      "file": "StatConfigLibrary",
+      "file": "SkillLibrary",
       "kind": "changed",
       "lines": [
-        "{'StatType': 'CriticalDamageReduction', 'StatNature': 'Multiplier'}: added",
-        "{'StatType': 'NthAttackDamage', 'StatNature': 'Multiplier'}: added"
+        "RisingBlades: added",
+        "BarrelRoll: added",
+        "GhostRush: added",
+        "Stomp: added",
+        "FiringSquad: added",
+        "InfiniteRenewal: added",
+        "DeathStar: added",
+        "GiantForge: added",
+        "EternalLeaves: added"
+      ]
+    },
+    {
+      "file": "SkillPassiveLibrary",
+      "kind": "changed",
+      "lines": [
+        "Heroic: added",
+        "Infinite: added",
+        "Eternal: added"
+      ]
+    },
+    {
+      "file": "SkillSummonConfig",
+      "kind": "changed",
+      "lines": [
+        "Levels: removed",
+        "Ascensions: added"
+      ]
+    },
+    {
+      "file": "TechNodesLibrary",
+      "kind": "changed",
+      "lines": [
+        "HeroicEggTimer: added",
+        "InfiniteEggTimer: added",
+        "EternalEggTimer: added"
       ]
     },
     {
       "file": "WeaponLibrary",
       "kind": "changed",
       "lines": [
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 0}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 0}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 1}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 1}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 2}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 2}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 27}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 27}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 28}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 28}: added",
-        "{'Age': -1000, 'Type': 'Weapon', 'Idx': 29}: added",
-        "{'Age': -1001, 'Type': 'Weapon', 'Idx': 29}: added"
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 0}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 1}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 2}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 3}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 4}: added",
+        "{'Age': 10, 'Type': 'Weapon', 'Idx': 5}: added",
+        "{'Age': 11, 'Type': 'Weapon', 'Idx': 0}: added",
+        "{'Age': 11, 'Type': 'Weapon', 'Idx': 1}: added",
+        "{'Age': 11, 'Type': 'Weapon', 'Idx': 2}: added",
+        "{'Age': 11, 'Type': 'Weapon', 'Idx': 3}: added",
+        "{'Age': 11, 'Type': 'Weapon', 'Idx': 4}: added",
+        "{'Age': 12, 'Type': 'Weapon', 'Idx': 0}: added",
+        "{'Age': 12, 'Type': 'Weapon', 'Idx': 1}: added",
+        "{'Age': 12, 'Type': 'Weapon', 'Idx': 2}: added",
+        "{'Age': 12, 'Type': 'Weapon', 'Idx': 3}: added",
+        "{'Age': 12, 'Type': 'Weapon', 'Idx': 4}: added"
       ]
+    },
+    {
+      "file": "WorldIndexConfigLibrary",
+      "kind": "changed",
+      "lines": [
+        "0.WorldIndex: 61 -> 64",
+        "1.WorldIndex: 62 -> 65",
+        "2.WorldIndex: 63 -> 66"
+      ]
+    },
+    {
+      "file": "SkillBaseConfig",
+      "kind": "removed",
+      "lines": []
     }
   ]
 }

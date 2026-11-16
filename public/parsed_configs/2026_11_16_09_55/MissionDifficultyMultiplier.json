@@ -1,0 +1,10 @@
+{
+  "60": {
+    "MaxLevel": 60,
+    "Multiplier": 1.524
+  },
+  "90": {
+    "MaxLevel": 90,
+    "Multiplier": 1.15
+  }
+}

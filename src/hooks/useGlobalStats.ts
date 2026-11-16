@@ -38,7 +38,10 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
     const { data: skinUpgradeLibrary } = useGameData<any>('SkinUpgradeLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
+    // SkillBaseConfig.json is gone from 2026_11_16 (data stays null); the slot counts then come
+    // from PlayerSegments.json (petSlotCount / skillSlotCount in utils/constants).
     const { data: skillBaseConfig } = useGameData<any>('SkillBaseConfig.json');
+    const { data: playerSegments } = useGameData<any>('PlayerSegments.json');
     const { data: baseConfig } = useGameData<any>('BaseConfig.json');
 
     // Combine into LibraryData object
@@ -64,6 +67,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         ascensionConfigsLibrary,
         petBaseConfig,
         skillBaseConfig,
+        playerSegments,
         baseConfig,
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary,
@@ -73,7 +77,7 @@ export function useStatLibraries(): { libs: LibraryData; ready: boolean } {
         itemBalancingLibrary, itemBalancingConfig,
         weaponLibrary, projectilesLibrary, secondaryStatLibrary,
         skinsLibrary, setsLibrary, skinUpgradeLibrary, ascensionConfigsLibrary,
-        petBaseConfig, skillBaseConfig, baseConfig,
+        petBaseConfig, skillBaseConfig, playerSegments, baseConfig,
     ]);
 
     const ready = !!(itemBalancingConfig && itemBalancingLibrary && techTreeLibrary && techTreePositionLibrary);

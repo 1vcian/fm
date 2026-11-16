@@ -3,13 +3,14 @@ import { ownedSkillLevels } from '../optimizer/buildOptimizer';
 import { useTreeModeProfile } from './useGlobalStats';
 import { StatEngine } from '../utils/statEngine';
 import { SkillSlot, UserProfile } from '../types/Profile';
+import { skillSlotCount } from '../utils/constants';
 
 export function useProfileOptimizer() {
     // Same libraries and header tree mode as the profile stats (useGlobalStats).
     const { profile, libs } = useTreeModeProfile();
-    const { petLibrary, skillLibrary, mountUpgradeLibrary, itemBalancingConfig, skillBaseConfig } = libs as any;
-    // Equipped skill slots, SkillBaseConfig.SkillSlotsCount.
-    const skillSlots: number | undefined = skillBaseConfig?.SkillSlotsCount;
+    const { petLibrary, skillLibrary, mountUpgradeLibrary, itemBalancingConfig, skillBaseConfig, playerSegments } = libs as any;
+    // Equipped skill slots (SkillBaseConfig.SkillSlotsCount or the SkillSlot<n> segments, see skillSlotCount).
+    const skillSlots: number | null = skillSlotCount(skillBaseConfig, playerSegments);
 
     // Pets + mount search lives in useLoadoutSweep (time-sliced, tree-mode aware), shown by
     // LoadoutSweepPopover from the AUTO buttons.

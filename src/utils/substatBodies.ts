@@ -12,8 +12,11 @@
  *
  * So the most lines of one stat = item types + pet slots + one mount, and the largest total of a
  * stat is UpperRange times that. Item types are the distinct `Type` of ItemBalancingLibrary, pet
- * slots are PetBaseConfig.PetSlotsCount.
+ * slots are petSlotCount (PetBaseConfig.PetSlotsCount up to 2026_10_27, the PetSlot<n> player
+ * segments from 2026_11_16, see utils/constants).
  */
+import { petSlotCount } from './constants';
+
 
 /** Distinct equipment types in ItemBalancingLibrary (keys look like "{'Age': 0, 'Type': 'Helmet', 'Idx': 0}"). */
 export function equipmentTypeCount(itemBalancingLibrary: Record<string, unknown> | null | undefined): number {
@@ -36,10 +39,11 @@ const EQUIPPED_MOUNTS = 1;
 export function maxSubstatPieces(
     itemBalancingLibrary: Record<string, unknown> | null | undefined,
     petBaseConfig: { PetSlotsCount?: number } | null | undefined,
+    playerSegments: Record<string, unknown> | null | undefined,
 ): number | null {
     const items = equipmentTypeCount(itemBalancingLibrary);
-    const pets = petBaseConfig?.PetSlotsCount;
-    if (!items || typeof pets !== 'number') return null;
+    const pets = petSlotCount(petBaseConfig, playerSegments);
+    if (!items || pets === null) return null;
     return items + pets + EQUIPPED_MOUNTS;
 }
 
@@ -51,8 +55,9 @@ export function maxSubstatTotal(
     secondaryStatRow: { UpperRange?: number } | null | undefined,
     itemBalancingLibrary: Record<string, unknown> | null | undefined,
     petBaseConfig: { PetSlotsCount?: number } | null | undefined,
+    playerSegments: Record<string, unknown> | null | undefined,
 ): number | null {
-    const pieces = maxSubstatPieces(itemBalancingLibrary, petBaseConfig);
+    const pieces = maxSubstatPieces(itemBalancingLibrary, petBaseConfig, playerSegments);
     const upper = secondaryStatRow?.UpperRange;
     if (pieces === null || typeof upper !== 'number') return null;
     return upper * pieces;

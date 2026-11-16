@@ -9,14 +9,10 @@ export type RGB = [number, number, number];
 // DefaultColors via RarityExtensions.GetColor); the rarity palette equals the first ages' colours.
 export { AGE_RGB as AGE_COLORS, RARITY_RGB as RARITY_COLORS, RARITIES as RARITY_NAMES } from '../gameTiers';
 
-// ---- Skills grid: FIXED cell order (rarity-rank then CombatSkill enumId, 3 per rarity). Cell index
-// -> skillId, so the grid is read by position; only per-cell level + which 3 are dimmed(equipped).
-export const SKILLS_ORDER = [
-    'Meat', 'Arrows', 'Shout', 'Shuriken', 'Berserk',
-    'CannonBarrage', 'Thorns', 'Buff', 'RainOfArrows', 'Morale',
-    'Meteorite', 'Bomb', 'Stampede', 'Worm', 'Lightning',
-    'HigherMorale', 'StrafeRun', 'Drone',
-] as const;
+// ---- Skills grid: cell order (rarity rank then CombatSkill enumId). Cell index -> skillId, so the
+// grid is read by position; only per-cell level + which 3 are dimmed(equipped). Built from the
+// configs by gameTiers.loadGameTiers.
+export { SKILLS_ORDER } from '../gameTiers';
 
 // ---- Header currency icon x-bands (fraction of width) for classification + value reading.
 export const CURRENCY_XBAND: Record<string, [number, number]> = {

@@ -125,7 +125,7 @@ export class CombatScene {
         a: Omit<AreaProjectile, 'id' | 'destroyed' | 'timer' | 'pulseTimer'> &
             Partial<Pick<AreaProjectile, 'timer' | 'pulseTimer'>>
     ): AreaProjectile {
-        const area: AreaProjectile = { timer: 0, pulseTimer: 0, ...a, id: this.nextId++, destroyed: false };
+        const area: AreaProjectile = { timer: 0, pulseTimer: 0, ...a, id: this.nextId++, destroyed: false, spawnTick: this.tickCount };
         this.areaProjectiles.push(area);
         return area;
     }
@@ -266,35 +266,166 @@ export class CombatScene {
         }
     }
 
+    /**
+     * HandleAreaProjectiles (0x7C88C3C, build 2026_11_16_09_55). Areas without the 2026_11 fields
+     * take exactly the old path (move by Velocity * dt, Timer += dt, the `>` pulse that resets to 0,
+     * the final pulse on Timer > Duration). Per area, in table order:
+     *   FollowSource: owner gone (or, with RetargetOnImpact, killed / Hp <= 0) destroys the area with
+     *     no hit; else Position and Velocity are copied from the owner and the move is skipped.
+     *   else: TrackSpeed > 0 rewrites Velocity (TrackingVelocity); the step is dt, or with HitOnPass
+     *     Clamp(Timer + dt, 0, dt) so a delayed sweep starts moving only once its Timer crosses 0.
+     *   Timer += dt; HitOnPass and Timer > 0: PassDamage.
+     *   HasPulse: PulseTimer += dt; PulsesRemaining >= 1: while PulseTimer >= PulseDuration subtract
+     *     it, PulsesRemaining -= 1 and pulse, then HasPulse = PulsesRemaining > 0; otherwise the old
+     *     PulseTimer > PulseDuration: PulseTimer = 0 and pulse.
+     *   Timer > Duration: HasFinalPulse hits (RetargetedSkillDamage with RetargetOnImpact, else the
+     *     area hit), then the area is destroyed.
+     */
     private handleAreaProjectiles(): void {
         for (const a of this.areaProjectiles) {
             if (a.destroyed) continue;
-            a.pos.x += a.vel.x * DT;
-            a.pos.y += a.vel.y * DT;
+            if (a.followSource) {
+                const src = this.getUnit(a.ownerId);
+                if (!src || (a.retargetOnImpact && (src.killed || src.hp <= 0))) {
+                    a.destroyed = true;
+                    continue;
+                }
+                a.pos = { x: src.pos.x, y: src.pos.y };
+                a.vel = { x: src.vel.x, y: src.vel.y };
+            } else {
+                if ((a.trackSpeed ?? 0) > 0) a.vel = this.trackingVelocity(a);
+                const step = a.hitOnPass ? Math.min(Math.max(a.timer + DT, 0), DT) : DT;
+                a.pos.x += a.vel.x * step;
+                a.pos.y += a.vel.y * step;
+            }
             a.timer += DT;
+            if (a.hitOnPass && a.timer > 0) this.passDamage(a);
             if (a.hasPulse) {
                 a.pulseTimer += DT;
-                if (a.pulseTimer > a.pulseDuration) {
+                if ((a.pulsesRemaining ?? 0) >= 1) {
+                    while ((a.pulsesRemaining ?? 0) >= 1 && a.pulseTimer >= a.pulseDuration) {
+                        a.pulseTimer -= a.pulseDuration;
+                        a.pulsesRemaining = (a.pulsesRemaining ?? 0) - 1;
+                        this.aoeDamage(a);
+                    }
+                    a.hasPulse = (a.pulsesRemaining ?? 0) > 0;
+                } else if (a.pulseTimer > a.pulseDuration) {
                     a.pulseTimer = 0;
                     this.aoeDamage(a);
                 }
             }
             if (a.timer > a.duration) {
-                if (a.hasFinalPulse) this.aoeDamage(a);
+                if (a.hasFinalPulse) {
+                    if (a.retargetOnImpact) this.retargetedSkillDamage(a);
+                    else this.aoeDamage(a);
+                }
                 a.destroyed = true;
             }
         }
     }
 
+    /**
+     * AoeDamage(area, radius) (0x7C8BA34): the attacker is the owner unit if still in the table;
+     * ColumnHit areas go to ColumnDamage, the rest to the circular AoeDamage (0x7C8C000).
+     */
     private aoeDamage(a: AreaProjectile): void {
         const owner = this.getUnit(a.ownerId) ?? null;
         a.lastPulseTick = this.tickCount;
-        // Unit CENTER inside the radius; the unit's own radius is NOT added (0x77410DC).
+        const origin: HitOrigin = { source: 'skill', skillId: a.skillId };
+        if (a.columnHit) {
+            // ColumnDamage (0x7C8BC24): |unit Position.x - area Position.x| < Radius + unit Radius,
+            // Position only (no CenterOfMass), any height. Targetable, not Destroyed, other side.
+            for (const u of [...this.units]) {
+                if (u.destroyed || !u.targetable || u.isAlly === a.isAllied) continue;
+                if (Math.abs(u.pos.x - a.pos.x) < a.radius + u.radius) this.applyDmg(u, owner, a.srcStats, origin);
+            }
+            return;
+        }
+        // Unit CENTER inside the radius; the unit's own radius is NOT added (0x7C8C000).
         for (const u of [...this.units]) {
             if (u.destroyed || !u.targetable || u.isAlly === a.isAllied) continue;
             const d = len(u.pos.x + u.com.x - a.pos.x, u.pos.y + u.com.y - a.pos.y);
-            if (d < a.radius) this.applyDmg(u, owner, a.srcStats, { source: 'skill', skillId: a.skillId });
+            if (d < a.radius) this.applyDmg(u, owner, a.srcStats, origin);
         }
+    }
+
+    /** WeaponBarrage IsAliveEnemy (0x7C88184): other side, targetable, not destroyed, not killed, Hp > 0. */
+    private isAliveEnemy(u: Unit, isAlly: boolean): boolean {
+        return u.isAlly !== isAlly && u.targetable && !u.destroyed && !u.killed && u.hp > 0;
+    }
+
+    /**
+     * TrackingVelocity (0x7C8ADAC): among alive enemies (and, when TrackRange > 0 and the owner is
+     * found, only those with |x - owner.x| <= TrackRange), the one with the smallest |x - area.x|
+     * (first wins a tie); Velocity = (Clamp(dx * 4, -TrackSpeed, TrackSpeed), 0). None: (0, 0).
+     */
+    private trackingVelocity(a: AreaProjectile): Vec2 {
+        const range = a.trackRange ?? 0;
+        const src = range > 0 ? this.getUnit(a.ownerId) : undefined;
+        let bestDx = 0;
+        let bestAbs = Infinity;
+        for (const u of this.units) {
+            if (!this.isAliveEnemy(u, a.isAllied)) continue;
+            if (src && Math.abs(u.pos.x - src.pos.x) > range) continue;
+            const dx = u.pos.x - a.pos.x;
+            if (Math.abs(dx) < bestAbs) {
+                bestAbs = Math.abs(dx);
+                bestDx = dx;
+            }
+        }
+        const speed = a.trackSpeed ?? 0;
+        return { x: Math.min(Math.max(bestDx * 4, -speed), speed), y: 0 };
+    }
+
+    /**
+     * PassDamage (0x7C8B3E0): dir = Velocity.X < 0 ? -1 : 1; every alive-looking enemy (targetable,
+     * not destroyed, not killed; Hp is not checked) with rel = (x - area.x) * dir inside
+     * [-(Radius + |Velocity.X| * dt), Radius] and not yet in HitUnitIds is added to it and hit.
+     */
+    private passDamage(a: AreaProjectile): void {
+        const owner = this.getUnit(a.ownerId) ?? null;
+        if (!a.hitUnitIds) a.hitUnitIds = new Set();
+        const dir = a.vel.x < 0 ? -1 : 1;
+        const back = -(a.radius + Math.abs(a.vel.x) * DT);
+        for (const u of [...this.units]) {
+            if (!u.targetable || u.destroyed || u.killed || u.isAlly === a.isAllied) continue;
+            const rel = (u.pos.x - a.pos.x) * dir;
+            if (rel > a.radius || rel < back || a.hitUnitIds.has(u.id)) continue;
+            a.hitUnitIds.add(u.id);
+            a.lastPulseTick = this.tickCount;
+            this.applyDmg(u, owner, a.srcStats, { source: 'skill', skillId: a.skillId });
+        }
+    }
+
+    /**
+     * RetargetedSkillDamage (0x7C8BB1C): only while the owner unit is in the table; the target is
+     * WeaponBarrage.FindTarget (0x7C87D7C): the owner's current target if it is an alive enemy,
+     * else the alive enemy with the smallest |Position - owner.Position| (first wins a tie). The
+     * area jumps to the target's Position + CenterOfMass and the one target takes the hit.
+     */
+    private retargetedSkillDamage(a: AreaProjectile): void {
+        const src = this.getUnit(a.ownerId);
+        if (!src) return;
+        let target: Unit | undefined;
+        const current = src.targetId >= 0 ? this.getUnit(src.targetId) : undefined;
+        if (current && this.isAliveEnemy(current, src.isAlly)) {
+            target = current;
+        } else {
+            let best = Infinity;
+            for (const u of this.units) {
+                if (!this.isAliveEnemy(u, src.isAlly)) continue;
+                const d = len(u.pos.x - src.pos.x, u.pos.y - src.pos.y);
+                if (d < best) {
+                    best = d;
+                    target = u;
+                }
+            }
+        }
+        if (!target) return;
+        a.targetId = target.id;
+        a.pos = { x: target.pos.x + target.com.x, y: target.pos.y + target.com.y };
+        a.lastPulseTick = this.tickCount;
+        this.applyDmg(target, src, a.srcStats, { source: 'skill', skillId: a.skillId });
     }
 
     private handleUnits(): void {

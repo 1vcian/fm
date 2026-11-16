@@ -14,6 +14,7 @@ import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
 import { formatCompactNumber } from '../utils/statsCalculator';
 import { GameAssetIcon } from '../components/UI/GameAssetIcon';
+import { unitIcon, unitIconStyle } from '../utils/unitIcons';
 
 export default function Skills() {
     const { profile } = useProfile();
@@ -22,6 +23,7 @@ export default function Skills() {
     const { data: skillUpgrades, loading: l1b } = useGameData<any>('SkillUpgradeLibrary.json');
     const { data: passiveLibrary, loading: l1c } = useGameData<any>('SkillPassiveLibrary.json');
     const { data: spriteMapping, loading: l2 } = useGameData<any>('ManualSpriteMapping.json');
+    const { data: localization } = useGameData<any>('Localization.json');
     const { data: ascensionConfigs, loading: l3 } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -101,6 +103,8 @@ export default function Skills() {
 
                 return {
                     type,
+                    // The game's English name (Localization.json), else the skill id.
+                    name: (localization?.skills?.[type]?.en as string | undefined) || type,
                     rarity,
                     spriteIndex,
                     activeDuration: skill?.ActiveDuration || 0,
@@ -110,7 +114,7 @@ export default function Skills() {
                 };
             })
             .filter((skill) => {
-                const matchSearch = skill.type.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchSearch = skill.name.toLowerCase().includes(searchTerm.toLowerCase()) || skill.type.toLowerCase().includes(searchTerm.toLowerCase());
                 const matchRarity = !filterRarity || skill.rarity === filterRarity;
                 return matchSearch && matchRarity;
             })
@@ -119,43 +123,11 @@ export default function Skills() {
                 const rDiff = rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
                 return rDiff !== 0 ? rDiff : a.type.localeCompare(b.type);
             });
-    }, [skillLibrary, spriteLookup, searchTerm, filterRarity]);
+    }, [skillLibrary, spriteLookup, localization, searchTerm, filterRarity]);
 
-    // Calculate sprite position
-    const getSpriteStyle = (spriteIndex: number) => {
-        if (!skillsConfig || spriteIndex < 0) return null;
-        const cols = skillsConfig.grid?.columns || 8;
-        const spriteW = skillsConfig.sprite_size?.width || 256;
-        const spriteH = skillsConfig.sprite_size?.height || 256;
-        const sheetW = skillsConfig.texture_size?.width || 2048;
-        const sheetH = skillsConfig.texture_size?.height || 2048;
-
-        const col = spriteIndex % cols;
-        const row = Math.floor(spriteIndex / cols);
-        const x = col * spriteW;
-        const y = row * spriteH;
-
-        const scale = 64 / spriteW;
-
-        return {
-            backgroundImage: `url(${getAscSkillSpriteUrl()})`,
-            backgroundPosition: `-${x * scale}px -${y * scale}px`,
-            backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
-            width: '64px',
-            height: '64px',
-        };
-    };
-
-    const getAscSkillSpriteUrl = () => {
-        const baseUrl = import.meta.env.BASE_URL;
-        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
-        const textureBase = `${baseUrl}Texture2D/${versionPath}`;
-
-        if (ascensionLevel === 1) return `${textureBase}MegaSkillIcons.png`;
-        if (ascensionLevel === 2) return `${textureBase}UltraSkillIcons.png`;
-        if (ascensionLevel === 3) return `${textureBase}ApexSkillIcons.png`;
-        return `${textureBase}SkillIcons.png`;
-    };
+    // Sprite of the unit in the mapping cell `spriteIndex`, as the game draws it at this ascension
+    const getSpriteStyle = (spriteIndex: number) =>
+        spriteIndex < 0 ? null : unitIconStyle(unitIcon(skillsConfig, spriteIndex, ascensionLevel, selectedVersion), 64);
 
     const rarities = RARITIES;
 
@@ -276,7 +248,7 @@ export default function Skills() {
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-text-primary text-lg leading-tight whitespace-nowrap overflow-hidden text-clip">{skill.type}</h3>
+                                        <h3 className="font-bold text-text-primary text-lg leading-tight whitespace-nowrap overflow-hidden text-clip">{skill.name}</h3>
                                         <span className={cn(
                                             "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-white/5 mt-1 inline-block",
                                             `text-rarity-${skill.rarity.toLowerCase()}`

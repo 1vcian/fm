@@ -28,7 +28,9 @@ self.onmessage = async (e: MessageEvent<ChallengeRequest>) => {
         const cfg: ConfigFiles = {};
         await Promise.all(PRESET_CONFIG_FILES.map(async f => {
             const r = await fetch(`${base}${f}.json`);
-            if (r.ok) cfg[f] = await r.json();
+            // A file this version lacks (e.g. SkillBaseConfig from 2026_11_16) may come back as the
+            // index.html fallback with a 200: skip it.
+            if (r.ok && !(r.headers.get('content-type') || '').includes('html')) cfg[f] = await r.json();
         }));
         const site = await fetch(`${base}${presetsFileName(version, perfection)}`).then(r => {
             if (!r.ok) throw new Error('no preset builds for this game version');

@@ -12,6 +12,7 @@ import { useGameDataContext } from '../context/GameDataContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { GameAssetIcon, type GameAsset } from '../components/UI/GameAssetIcon';
 import { techLevelCostAndDuration } from '../utils/techOptimizer';
+import { techNodeTierStats } from '../utils/gameDataTransforms';
 
 const ICON_SIZE = 48;
 const NODE_HEIGHT = 140;
@@ -691,7 +692,9 @@ export default function TechTree() {
                 }))
             };
         }
-        return selectedNode ? treeEffects?.[selectedNode.type] : null;
+        const effect = selectedNode ? treeEffects?.[selectedNode.type] : null;
+        // The node's own tier: a type can be worth more in a later tier (Tier 5 egg timers).
+        return effect ? { ...effect, Stats: techNodeTierStats(effect, selectedNode.tier) } : null;
     }, [selectedNode, activeTab, treeEffects, guildUpgradeLibrary]);
 
     return (

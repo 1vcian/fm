@@ -10,11 +10,11 @@ import { calculateStats, type AggregatedStats } from '../utils/statEngine';
 import { formatCompactNumber } from '../utils/statsCalculator';
 import { getStatName } from '../utils/statNames';
 import { resolvedSkinStats, setDisplayName, skinRow } from '../utils/skinArchive';
-import { getAscensionTexturePath, resolveTextureVersion } from '../utils/ascensionUtils';
+import { resolveTextureVersion } from '../utils/ascensionUtils';
 import { FAIRIES, presetPerfections, presetsFileName } from '../utils/fairies';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { currentAlloc } from '../optimizer/substatOptimizer';
-import { SpriteSheetIcon } from '../components/UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../components/UI/UnitSpriteIcon';
 import { BuildPortrait } from '../components/Presets/BuildPortrait';
 import { applyAnimation, type AnimationSwap } from '../presets/equivalents';
 import { runFightAgainst, runMyVariants } from '../presets/myVariants';
@@ -218,26 +218,25 @@ function Icons({ preset, sprites, version }: { preset: ProfilePreset; sprites: a
     const textureBase = `${import.meta.env.BASE_URL}Texture2D/${resolveTextureVersion(version ?? undefined) ?? version ?? ''}/`;
     const skillSprite = (id: string) => {
         const e = sprites?.skills?.mapping ? Object.entries<any>(sprites.skills.mapping).find(([, v]) => v.name === id) : null;
-        return e ? { index: parseInt(e[0]), cfg: sprites.skills } : null;
+        return e ? { index: e[0], cfg: sprites.skills } : null;
     };
     const petSprite = (rarity: string, id: number) => {
         const e = sprites?.pets?.mapping ? Object.entries<any>(sprites.pets.mapping).find(([, v]) => v.id === id && v.rarity === rarity) : null;
-        return e ? { index: parseInt(e[0]), cfg: sprites.pets } : null;
+        return e ? { index: e[0], cfg: sprites.pets } : null;
     };
     const fairy = FAIRIES.find(f => f.name === p.misc.fairy?.name);
-    const icon = (key: string, s: { index: number; cfg: any } | null, sheet: string, title: string) => (
+    const icon = (key: string, s: { index: string; cfg: any } | null, ascension: number, title: string) => (
         <div key={key} title={title} className="w-8 h-8 rounded-lg bg-bg-input/70 border border-border/60 flex items-center justify-center overflow-hidden">
             {s ? (
-                <SpriteSheetIcon textureSrc={sheet} spriteWidth={s.cfg.sprite_size.width} spriteHeight={s.cfg.sprite_size.height}
-                    sheetWidth={s.cfg.texture_size.width} sheetHeight={s.cfg.texture_size.height} iconIndex={s.index} className="w-7 h-7" smooth />
+                <UnitSpriteIcon section={s.cfg} unitKey={s.index} ascensionLevel={ascension} version={version} className="w-7 h-7" smooth />
             ) : <span className="text-[9px] text-text-muted text-center leading-tight px-0.5">{title}</span>}
         </div>
     );
     return (
         <div className="flex flex-wrap items-center gap-1">
-            {p.skills.equipped.map(s => icon(`s-${s.id}`, skillSprite(s.id), getAscensionTexturePath('SkillIcons', p.misc.skillAscensionLevel ?? 0, version ?? undefined), camel(s.id)))}
+            {p.skills.equipped.map(s => icon(`s-${s.id}`, skillSprite(s.id), p.misc.skillAscensionLevel ?? 0, camel(s.id)))}
             <span className="w-px h-5 bg-border mx-0.5" />
-            {p.pets.active.map((pt, i) => icon(`p-${i}`, petSprite(pt.rarity, pt.id), getAscensionTexturePath('Pets', p.misc.petAscensionLevel ?? 0, version ?? undefined), `${pt.rarity} pet`))}
+            {p.pets.active.map((pt, i) => icon(`p-${i}`, petSprite(pt.rarity, pt.id), p.misc.petAscensionLevel ?? 0, `${pt.rarity} pet`))}
             {fairy && (
                 <>
                     <span className="w-px h-5 bg-border mx-0.5" />
@@ -408,9 +407,7 @@ function CompanionThumb({ kind, rarity, id, sprites, version, ascension, title }
     return (
         <div title={title} className="w-9 h-9 shrink-0 rounded-lg bg-bg-input/70 border border-border/60 flex items-center justify-center overflow-hidden">
             {e ? (
-                <SpriteSheetIcon textureSrc={getAscensionTexturePath(kind === 'pet' ? 'Pets' : 'MountIcons', ascension, version ?? undefined)}
-                    spriteWidth={sheet.sprite_size.width} spriteHeight={sheet.sprite_size.height} sheetWidth={sheet.texture_size.width} sheetHeight={sheet.texture_size.height}
-                    iconIndex={parseInt(e[0])} className="w-8 h-8" smooth />
+                <UnitSpriteIcon section={sheet} unitKey={e[0]} ascensionLevel={ascension} version={version} className="w-8 h-8" smooth />
             ) : <span className="text-[8px] text-text-muted">{title}</span>}
         </div>
     );
@@ -1440,7 +1437,7 @@ function saveMine(version: string, m: MineSaved) {
 }
 
 export default function PresetBuilds() {
-    const { selectedVersion: version } = useGameDataContext();
+    const { selectedVersion: version, versions } = useGameDataContext();
     // Substat perfection the builds were searched at: one published file per level (PRESET_PERFECTIONS).
     const perfections = presetPerfections(version);
     const [perfectionWanted, setPerfection] = usePersistentState<number>('presets_perfection', 100);
@@ -1664,7 +1661,10 @@ export default function PresetBuilds() {
                 </div>
             )}
 
-            {!mySkins && !valid && (error || file) && <div className="text-sm text-text-muted">No preset builds for this game version yet.</div>}
+            {/* The newest version's builds are published some time after its configs: they take hours to search. */}
+            {!mySkins && !valid && (error || file) && <div className="text-sm text-text-muted">{version && version === versions[0]
+                ? 'Still calculating the preset builds for this game version. They will show up here soon.'
+                : 'No preset builds for this game version yet.'}</div>}
 
             {valid && ready && tournament && tournament.standings.length >= 3 && (
                 <Podium standings={tournament.standings} byKey={byKey} battlesPerSide={tournament.battlesPerSide} others={otherRows} owned={ownedWeaponSets}

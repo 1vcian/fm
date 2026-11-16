@@ -6,7 +6,7 @@ import { VisualBattleEngine } from '../../utils/VisualBattleEngine';
 import { PvpVisualEngine } from '../../pvp/simulate';
 import type { PvpFighter } from '../../pvp/fighter';
 import type { PvpHpConfig } from '../../engine';
-import { dungeonWaveSpecs, mainBattleWaveSpecs, missionWaveSpecs, skillSpecs, skillDamageCount, testDummySpec, TEST_DUMMY_FLOOR_FRACTION } from '../../engine';
+import { BUFF_SKILL_TYPES, dungeonWaveSpecs, mainBattleWaveSpecs, missionWaveSpecs, resolveMissionLevelScaling, skillSpecs, skillDamageCount, testDummySpec, TEST_DUMMY_FLOOR_FRACTION } from '../../engine';
 import type { AggregatedStats } from '../../utils/statEngine';
 import type { LibraryData } from '../../utils/BattleHelper';
 import { stageLabel } from '../../utils/difficulty';
@@ -151,7 +151,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             setIsPlaying(autoPlayRef.current);
             autoPlayRef.current = false;
             setWaveIndex(0);
-            const BUFFS = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+            const BUFFS = BUFF_SKILL_TYPES;
             let bDmg = 0, bHp = 0;
             for (const sk of pvp.p1.skills) if (BUFFS.has(sk.id)) { bDmg += sk.damage; bHp += sk.health; }
             const total = ((playerStats as any).skillDamageMultiplier || 1) - 1;
@@ -220,10 +220,11 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             if (row) wavesList = dungeonWaveSpecs(row, enemyLibs);
         } else if (ageIdx === -2) {
             const mission = (libs as any).missionBattleLibrary?.[String(battleIdx)];
-            // MissionBaseConfig.HealthAndDamageLevelMultiplier: no waves until it loads.
-            const levelMulti = (libs as any).missionBaseConfig?.HealthAndDamageLevelMultiplier;
-            if (mission && typeof levelMulti === 'number') {
-                wavesList = [missionWaveSpecs(mission, difficultyMode, levelMulti, enemyLibs, newEngine.rng)];
+            // Level scaling (MissionDifficultyMultiplier.json, or MissionBaseConfig.HealthAndDamageLevelMultiplier
+            // on older configs): no waves until it loads.
+            const levelScaling = resolveMissionLevelScaling((libs as any).missionBaseConfig, libs.missionDifficultyMultiplier);
+            if (mission && levelScaling !== null) {
+                wavesList = [missionWaveSpecs(mission, difficultyMode, levelScaling, enemyLibs, newEngine.rng)];
                 // MissionBattleMatchTimerSeconds: lost when it runs out, as in simulateMissionBattleMulti.
                 const timer = (libs as any).missionBaseConfig?.MissionBattleMatchTimerSeconds;
                 if (typeof timer === 'number') newEngine.setTimeLimit(timer);
@@ -266,7 +267,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
         const firstWaveEnemies = wavesList[0] || [];
         const first = firstWaveEnemies[0] as any;
         const enemyDmg = first?.stats?.dmg ?? first?.dmg ?? 0;
-        const BUFF_IDS = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+        const BUFF_IDS = BUFF_SKILL_TYPES;
         const skillDamages = specs
             .filter((sk) => sk.damage > 0 && !BUFF_IDS.has(sk.id))
             .map((sk) => ({ id: sk.id, damage: sk.damage, hits: skillDamageCount(sk.id), damageIsPerHit: false }));

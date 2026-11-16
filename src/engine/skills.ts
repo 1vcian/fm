@@ -11,7 +11,7 @@
  *    CDR stat scales. ActiveDuration is used raw.
  *  - Optimal play = the game's own auto mode = PvP's TryActivateSkills: after the scene
  *    ticks, activate every ready skill in slot order, ally side first.
- *  - Buff skills (Meat, Morale, Berserk, Buff, HigherMorale) spawn nothing: every tick the
+ *  - Buff skills (BUFF_SKILL_TYPES: SkillBuilder.IsBuff) spawn nothing: every tick the
  *    ACTIVE buffs' Damage/Health totals are ADDED to each non-summon unit's base dmg/hpMax/
  *    hpMaxNoMulti (Value = Base + total, recomputed from base, so expiry leaves no residue
  *    and Hp clamps down). On ACTIVATION, health-carrying buffs also grant current Hp
@@ -24,7 +24,7 @@
  *    Reproduced verbatim, with the two constant pairs at the exact call sites.
  */
 import { CombatScene, DT } from './scene';
-import { Unit, Vec2, defaultStats } from './types';
+import { AreaProjectile, Unit, Vec2, defaultStats } from './types';
 
 /** FD6(dt): the truncated per-tick decrement of every skill timer (micro-units). */
 const FD6_DT_MICRO = 99999;
@@ -115,8 +115,13 @@ export function skillCastTimes(battleSeconds: number, cooldownSeconds: number, a
     return out;
 }
 
-/** Skill types that spawn nothing and buff the caster's side instead (SkillBuilder has no builder). */
-export const BUFF_SKILL_TYPES: ReadonlySet<string> = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+/**
+ * Skill types that spawn nothing and buff the caster's side instead (SkillBuilder has no builder).
+ * SkillBuilder.IsBuff (0x7C807FC, build 2026_11_16_09_55) is the CombatSkill bit mask 0x803043:
+ * enum values 0, 1, 6, 12, 13 and 23 (InfiniteRenewal, new in that build); GetSkillStatBuffs
+ * (0x7C87190) returns Damage and Health for exactly the same set.
+ */
+export const BUFF_SKILL_TYPES: ReadonlySet<string> = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale', 'InfiniteRenewal']);
 const BUFF_SKILLS = BUFF_SKILL_TYPES;
 
 /**
@@ -140,9 +145,20 @@ export const SKILL_EPICENTER: Readonly<Record<string, string>> = {
     StrafeRun: 'area r3 on the enemies, a pulse every 0.25 s for 1 s',
     CannonBarrage: '3 areas r6 around the enemies, each lands after 1 s + a random 0 to 0.5 s',
     Drone: 'a drone from 10 behind you that flies in and shoots for its duration',
+    DeathStar: 'a beam on the enemies that tracks them, 8 column hits (width 1.6 each side) every 0.3 s after 0.8 s',
+    Stomp: 'area r6 on the enemies, 4 hits at 0.8, 1.2, 1.5 and 1.8 s (40%, then 20% each)',
+    GhostRush: '3 areas r6 on the enemies, each lands 1 s after a 0, 0.2 or 0.4 s delay',
+    RisingBlades: '3 areas r4 on the enemies (0.5 apart), each lands 0.5 s after a 0, 0.2 or 0.4 s delay',
+    GiantForge: 'area r50 on the enemies, lands after 0.75 s',
+    FiringSquad: '12 shots that follow you and each hit your target (else the nearest enemy), from 0.9 s, 0.12 s apart',
+    BarrelRoll: '3 barrels rolling at 12.5/s from 15 behind the enemies, each hits every enemy it passes once',
+    EternalLeaves: '8 areas r50 on the enemies, landing from 1.1 s, 0.47 s apart',
 };
 
-/** GetSkillDamageCount (0x77EDA78): how many pieces the skill's damage is split into. */
+/**
+ * GetSkillDamageCount (0x7C8088C, build 2026_11_16_09_55: a table for enum values 2..26, else 1):
+ * how many pieces the skill's damage is split into. Types missing here are 1.
+ */
 const DAMAGE_COUNT: Record<string, number> = {
     Arrows: 3,
     Shuriken: 5,
@@ -150,7 +166,13 @@ const DAMAGE_COUNT: Record<string, number> = {
     Meteorite: 5,
     Lightning: 5,
     CannonBarrage: 3,
+    GhostRush: 3,
+    RisingBlades: 3,
+    FiringSquad: 12,
+    BarrelRoll: 3,
+    EternalLeaves: 8,
     RainOfArrows: 15, // divided locally in the builder, not via GetSkillDamageCount
+    DeathStar: 8, // divided locally in the builder (Damage / DeathStarPulses), the table says 1
 };
 
 export function skillDamageCount(id: string): number {
@@ -357,9 +379,17 @@ export class SkillManager {
             pos: Vec2,
             radius: number,
             dmg: number,
-            opts: Partial<{ vel: Vec2; duration: number; pulse: number; pulseTimer: number; timer: number; finalPulse: boolean; hasPulse: boolean; ownerId: number }>
+            opts: Partial<{ vel: Vec2; duration: number; pulse: number; pulseTimer: number; timer: number; finalPulse: boolean; hasPulse: boolean; ownerId: number }> &
+                Partial<Pick<AreaProjectile, 'followSource' | 'pulsesRemaining' | 'retargetOnImpact' | 'shotIndex' | 'trackSpeed' | 'hitOnPass' | 'columnHit'>>
         ) =>
             scene.addAreaProjectile({
+                followSource: opts.followSource,
+                pulsesRemaining: opts.pulsesRemaining,
+                retargetOnImpact: opts.retargetOnImpact,
+                shotIndex: opts.shotIndex,
+                trackSpeed: opts.trackSpeed,
+                hitOnPass: opts.hitOnPass,
+                columnHit: opts.columnHit,
                 pos: { ...pos },
                 vel: opts.vel ?? { x: 0, y: 0 },
                 radius,
@@ -500,6 +530,97 @@ export class SkillManager {
                     skillId: 'Drone',
                 });
                 drone.lookDir = { x: 0, y: 0 };
+                return;
+            }
+            // ---- Builders new in build 2026_11_16_09_55 (SkillBuilder statics from .cctor 0x7C8586C,
+            // all F64.Ratio, so truncated Q32.32). Every one is centered on the enemy center.
+            case 'DeathStar': {
+                // 0x7C8144C: one area at the center, Radius DeathStarBeamHalfWidth = Ratio(8,5),
+                // ColumnHit, HasPulse, PulsesRemaining DeathStarPulses = 8, PulseDuration =
+                // DeathStarBeamTime / 8 with BeamTime Ratio(12,5), PulseTimer = PulseDuration -
+                // DeathStarLanding (Ratio(4,5)), Duration = Landing + BeamTime, TrackSpeed 8,
+                // damage Damage / 8 per pulse (FD6 division), no final pulse.
+                const landing = q32(0.8);
+                const beam = q32(2.4);
+                const pulse = q32(beam / 8);
+                aoe(center, q32(1.6), sk.damage / 8, {
+                    hasPulse: true, pulse, pulseTimer: pulse - landing, duration: landing + beam,
+                    pulsesRemaining: 8, columnHit: true, trackSpeed: 8,
+                });
+                return;
+            }
+            case 'Stomp': {
+                // 0x7C816D4: one CreateDelayedAreaHit per StompLandings entry (Ratio 4/5, 6/5, 3/2,
+                // 9/5): center, radius 6, Duration = that landing, no delay, ShotIndex i. The first
+                // carries Damage x FD6.Ratio(2,5), each other (Damage - first) / (count - 1).
+                const landings = [q32(0.8), q32(1.2), q32(1.5), q32(1.8)];
+                const first = sk.damage * 0.4;
+                const rest = (sk.damage - first) / (landings.length - 1);
+                landings.forEach((d, i) => aoe(center, 6, i === 0 ? first : rest, { finalPulse: true, duration: d, shotIndex: i }));
+                return;
+            }
+            case 'GhostRush':
+                // 0x7C81B20: GetSkillDamageCount hits of Damage / count, each CreateDelayedAreaHit at
+                // the center, radius 6, Duration 1, delay Ratio(1,5) x i (Timer starts at -delay).
+                for (let i = 0; i < skillDamageCount(sk.id); i++) {
+                    aoe(center, 6, perHit, { finalPulse: true, duration: 1.0, timer: -q32(0.2) * i });
+                }
+                return;
+            case 'RisingBlades': {
+                // 0x7C81D7C: count hits of Damage / count at center + ((i - count/2) x 0.5, 0), radius
+                // 4, Duration 0.5, delay Ratio(1,5) x i.
+                const n = skillDamageCount(sk.id);
+                for (let i = 0; i < n; i++) {
+                    const pos = { x: center.x + (i - (n >> 1)) * 0.5, y: center.y };
+                    aoe(pos, 4, perHit, { finalPulse: true, duration: 0.5, timer: -q32(0.2) * i });
+                }
+                return;
+            }
+            case 'GiantForge':
+                // 0x7C82064: one CreateDelayedAreaHit, center, radius 50, Duration Ratio(3,4), full Damage.
+                aoe(center, 50, sk.damage, { finalPulse: true, duration: q32(0.75) });
+                return;
+            case 'EternalLeaves': {
+                // 0x7C8258C: count hits of Damage / count, radius 50 at the center, Duration =
+                // FirstLeafArrival (Ratio(11,10)) + i x (LastLeafArrival (Ratio(159,100)) - First) /
+                // Max(1, count - 1), delay EternalLeavesWaveInterval (Ratio(2,5)) x i.
+                const n = skillDamageCount(sk.id);
+                const firstLeaf = q32(1.1);
+                const spacing = q32((q32(1.59) - firstLeaf) / Math.max(1, n - 1));
+                for (let i = 0; i < n; i++) {
+                    aoe(center, 50, perHit, { finalPulse: true, duration: firstLeaf + spacing * i, timer: -q32(0.4) * i });
+                }
+                return;
+            }
+            case 'FiringSquad': {
+                // 0x7C821F4: count shots of Damage / count, each an area at the player's Position with
+                // FollowSource, RetargetOnImpact, HasFinalPulse, radius 0 and Duration =
+                // WeaponBarrage.GetShotTime(count, i) (0x7C8244C): ArrivalInterval Ratio(1,20) x
+                // (Max(1, count) - 1) + FlightDuration Ratio(1,4) + Ratio(1,10) + ShotInterval
+                // Ratio(3,25) x i. The hit itself is RetargetedSkillDamage (scene.ts).
+                const n = skillDamageCount(sk.id);
+                const base = q32(0.05) * (Math.max(1, n) - 1) + q32(0.25) + q32(0.1);
+                for (let i = 0; i < n; i++) {
+                    aoe({ x: px, y: py }, 0, perHit, {
+                        finalPulse: true, duration: base + q32(0.12) * i,
+                        followSource: true, retargetOnImpact: true, shotIndex: i,
+                    });
+                }
+                return;
+            }
+            case 'BarrelRoll': {
+                // 0x7C82834: BarrelRollBarrels = 3 barrels of Damage / 3, each at center -
+                // ((BarrelRollSpeed x BarrelRollArrival + BarrelRollSpacing x i) x fwd, 0) with Velocity
+                // (Speed x fwd, 0), Speed Ratio(25,2), Arrival Ratio(6,5), Spacing Ratio(13,5),
+                // Duration BarrelRollDuration Ratio(13,5), Timer 0, radius 1, HitOnPass, no pulse.
+                const speed = q32(12.5);
+                const lead = q32(speed * q32(1.2));
+                for (let i = 0; i < 3; i++) {
+                    const back = lead + q32(2.6) * i;
+                    aoe({ x: center.x - back * fwd, y: center.y }, 1, sk.damage / 3, {
+                        vel: { x: speed * fwd, y: 0 }, duration: q32(2.6), hitOnPass: true, shotIndex: i,
+                    });
+                }
                 return;
             }
             default:

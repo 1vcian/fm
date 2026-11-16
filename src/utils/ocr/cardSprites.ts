@@ -10,7 +10,7 @@
 // The sheet prefix follows the unit's ascension stars (0 none, 1 Mega, 2 Ultra, 3 Apex: the same
 // rule as getAscensionTexturePath), because the art changes with ascension (Ultra pets all wear a
 // knight helmet, Ultra Worm is a white spiked ring). Cell index -> identity comes from
-// ManualSpriteMapping.json.
+// ManualSpriteMapping.json; a unit with its own `icons` list uses the sheet and cell listed there.
 //
 // Matching is normalised cross-correlation over the RGB channels inside a mask that avoids the
 // "Lv. N" text and the star row, searched over a small set of sizes and offsets around the
@@ -19,6 +19,7 @@
 
 import { loadImage, type Rect } from './imagePrep';
 import type { RGB } from './templateParams';
+import { forAscension } from '../unitIcons';
 
 export type UnitSheet = 'pets' | 'mounts' | 'skills';
 
@@ -75,10 +76,22 @@ export function unitTemplates(assets: CardAssets, kind: UnitSheet, asc: number):
     const cols = m.grid?.columns ?? 8;
     const cw = m.sprite_size?.width ?? 256, ch = m.sprite_size?.height ?? 256;
     const file = sheetFile(kind, asc);
-    return Object.entries<any>(m.mapping).map(([idx, v]) => {
+    const out: Template<any>[] = [];
+    for (const [idx, v] of Object.entries<any>(m.mapping)) {
+        // A unit with its own per-ascension icons (see src/utils/unitIcons.ts): the slot the game picks.
+        if (v.icons) {
+            const ref = forAscension<{ texture: string; cell: number }>(v.icons, asc);
+            const sheet = ref && (m.sheets?.[ref.texture] ?? (ref.texture === m.texture ? m : null));
+            if (!ref || !sheet) continue;
+            const sw = sheet.sprite_size.width, sh = sheet.sprite_size.height;
+            const c = Math.max(1, Math.floor(sheet.texture_size.width / sw));
+            out.push({ file: ref.texture, sx: (ref.cell % c) * sw, sy: Math.floor(ref.cell / c) * sh, sw, sh, value: v, key: `${kind}:${v.name}` });
+            continue;
+        }
         const i = Number(idx);
-        return { file, sx: (i % cols) * cw, sy: Math.floor(i / cols) * ch, sw: cw, sh: ch, value: v, key: `${kind}:${v.name}` };
-    });
+        out.push({ file, sx: (i % cols) * cw, sy: Math.floor(i / cols) * ch, sw: cw, sh: ch, value: v, key: `${kind}:${v.name}` });
+    }
+    return out;
 }
 
 // ---------------------------------------------------------------- pixel helpers

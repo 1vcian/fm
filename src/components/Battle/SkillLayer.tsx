@@ -31,12 +31,25 @@ export const SKILL_COLORS: Record<string, string> = {
     Berserk: '#f43f5e',
     Buff: '#60a5fa',
     HigherMorale: '#fb923c',
+    DeathStar: '#a855f7',
+    Stomp: '#a16207',
+    GhostRush: '#a5f3fc',
+    RisingBlades: '#e2e8f0',
+    GiantForge: '#dc2626',
+    InfiniteRenewal: '#5eead4',
+    FiringSquad: '#f59e0b',
+    BarrelRoll: '#92400e',
+    EternalLeaves: '#84cc16',
 };
 const colorOf = (id?: string) => (id && SKILL_COLORS[id]) || '#e5e7eb';
 const SIDE = { ally: '#3b82f6', enemy: '#ef4444' };
 
-/** Skills whose damage lands once, at the end (a falling or delayed strike). */
-const DELAYED = new Set(['Meteorite', 'CannonBarrage', 'Lightning', 'Bomb', 'Worm']);
+/**
+ * Skills whose damage lands once, at the end (a falling or delayed strike). The 2026_11 builders
+ * (engine/skills.ts) give Stomp, GhostRush, RisingBlades, GiantForge, EternalLeaves and FiringSquad
+ * one final pulse per area after its Duration; DeathStar pulses and BarrelRoll hits on the pass.
+ */
+const DELAYED = new Set(['Meteorite', 'CannonBarrage', 'Lightning', 'Bomb', 'Worm', 'Stomp', 'GhostRush', 'RisingBlades', 'GiantForge', 'EternalLeaves', 'FiringSquad']);
 const FALLING = new Set(['Meteorite', 'CannonBarrage']);
 
 export interface SkillIconSource {
@@ -91,7 +104,8 @@ function Area({ e, props }: { e: VisualEffect; props: LayerProps }) {
     const color = colorOf(e.skillId);
     const side = e.isAllied ? SIDE.ally : SIDE.enemy;
     const w = unitsToPct(e.radius * 2);
-    const h = Math.abs(yPx(e.radius * 2));
+    // A ColumnHit area (DeathStar) hits |dx| < Radius + unit radius at any height: a column.
+    const h = e.columnHit ? 360 : Math.abs(yPx(e.radius * 2));
     const progress = e.duration > 0 ? Math.max(0, Math.min(1, e.timer / e.duration)) : 1;
     const flashing = e.sincePulse != null && e.sincePulse < 0.2;
     const waiting = e.timer < 0;
@@ -99,7 +113,7 @@ function Area({ e, props }: { e: VisualEffect; props: LayerProps }) {
     return (
         <div className="absolute pointer-events-none" style={{ ...at(worldToScreen(e.x), yPx(e.y)), width: `${w}%`, height: h, zIndex: 15 }}>
             {/* hit region */}
-            <div className="absolute inset-0 rounded-[50%] transition-[background-color] duration-100"
+            <div className={`absolute inset-0 ${e.columnHit ? 'rounded-md' : 'rounded-[50%]'} transition-[background-color] duration-100`}
                 style={{
                     border: `2px ${delayed || waiting ? 'dashed' : 'solid'} ${color}`,
                     boxShadow: `0 0 0 1px ${side}55 inset`,

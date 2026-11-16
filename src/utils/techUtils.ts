@@ -1,4 +1,5 @@
 import { getNormalizedTarget } from './ascensionUtils';
+import { RARITY_TIERS } from './gameTiers';
 
 /**
  * Maps technical tech node types to human-readable names
@@ -28,12 +29,6 @@ export function getTechNodeDescription(nodeType: string, effect: any): string {
         "PetBonusHealth": "Increases Pet health stats.",
         "MountDamage": "Increases Mount damage stats.",
         "MountHealth": "Increases Mount health stats.",
-        "CommonEggTimer": "Reduces hatching time for Common eggs.",
-        "RareEggTimer": "Reduces hatching time for Rare eggs.",
-        "EpicEggTimer": "Reduces hatching time for Epic eggs.",
-        "LegendaryEggTimer": "Reduces hatching time for Legendary eggs.",
-        "UltimateEggTimer": "Reduces hatching time for Ultimate eggs.",
-        "MythicEggTimer": "Reduces hatching time for Mythic eggs.",
         "AutoForge": "Unlocks automatic forging option.",
         "ForgeAnimationSpeed": "Increases animation speed of forging.",
         "PlayerMoveSpeed": "Increases player movement speed.",
@@ -81,6 +76,11 @@ export function getTechNodeDescription(nodeType: string, effect: any): string {
     if (clanDescriptions[nodeType]) {
         return clanDescriptions[nodeType];
     }
+
+    // <Rarity>EggTimer: one node per rarity of the build (TechNodesLibrary, Target Egg + Rarity).
+    const eggRarity = /^(\w+)EggTimer$/.exec(nodeType)?.[1];
+    const eggTier = eggRarity ? RARITY_TIERS.find(t => t.key === eggRarity) : undefined;
+    if (eggTier) return `Reduces hatching time for ${eggTier.label} eggs.`;
 
     if (!effect?.Stats || effect.Stats.length === 0) {
         // Fallback for nodes without structured stats
@@ -181,6 +181,9 @@ export function getClanIconIndex(clanIconsMap: any, nodeType: string): { key: st
 
 /** Look up a player-tree sprite (texture + rect) by node type from TechTreeMapping.json. */
 function getPlayerSpriteByType(playerMapping: any, nodeType: string): { texture: string; rect: any; textureSize: any } | null {
+    // node_sprites: TechTreeVisualConfig.Nodes, every player node type (see buildTechTreeMapping).
+    const byType = playerMapping?.node_sprites?.[nodeType];
+    if (byType?.sprite_rect) return { texture: playerMapping.texture || 'TechTreeIcons.png', rect: byType.sprite_rect, textureSize: playerMapping.texture_size };
     if (!playerMapping?.trees) return null;
     for (const tree of Object.values(playerMapping.trees) as any[]) {
         const node = (tree.nodes || []).find((n: any) => n.type === nodeType && n.sprite_rect);

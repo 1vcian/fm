@@ -10,10 +10,10 @@ import { Trash2, RotateCcw } from 'lucide-react';
 import { Input } from '../UI/Input';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { useState, useMemo } from 'react';
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
 
-import { getAscensionTexturePath, getNormalizedTarget } from '../../utils/ascensionUtils';
+import { getNormalizedTarget } from '../../utils/ascensionUtils';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 // The game's own cell order for the skills grid. It lives with the screenshot readers because
@@ -70,7 +70,7 @@ export function SkillsPassivesPanel() {
     }, [profile.misc.skillAscensionLevel, ascensionConfigsLibrary]);
 
     /**
-     * The 18 skills in the order the game's own Skills screen lays them out.
+     * Every skill in the order the game's own Skills screen lays them out.
      *
      * SKILLS_ORDER is the reader's cell map: the grid is read by position, so that array IS the
      * game's order (rarity rank, then CombatSkill enumId, three per rarity). The key order of
@@ -83,7 +83,7 @@ export function SkillsPassivesPanel() {
         const rarityOf = (id: string) => (skillLibrary[id]?.Rarity as string) || 'Common';
         const known = SKILLS_ORDER.filter(id => skillLibrary[id]).map(id => ({ id, rarity: rarityOf(id) }));
         const extra = Object.keys(skillLibrary)
-            .filter(id => !(SKILLS_ORDER as readonly string[]).includes(id))
+            .filter(id => !SKILLS_ORDER.includes(id))
             .map(id => ({ id, rarity: rarityOf(id) }));
         return [...known, ...extra];
     }, [skillLibrary]);
@@ -297,17 +297,14 @@ export function SkillsPassivesPanel() {
                 </div>
             </div>
 
-            {/* All 18 at once, in the game's own order, in rounded icons like the Skills screen.
+            {/* Every skill at once, in the game's own order, in rounded icons like the Skills screen.
                 The order is SKILLS_ORDER, not the key order of SkillLibrary.json, which differs
                 (Shuriken/Berserk and Bomb/Meteorite are both swapped there).
 
-                Every column count here divides 18 exactly (3, 6, 9), so the last row is always as
-                full as the first and nothing is left hanging at the left edge. The tracks are 1fr,
-                so the tiles share the whole width instead of leaving a gap on the right.
-
-                Capped at 9 on purpose: 18 across would put every passive on a single row, which
-                on a wide screen reads as a strip of tiny icons rather than a grid. Nine is the
-                largest divisor of 18 that still guarantees two rows. */}
+                Three skills per rarity, so the column counts are multiples of 3 (3, 6, 9). The
+                tracks are 1fr, so the tiles share the whole width instead of leaving a gap on the
+                right. Capped at 9 on purpose: more across reads as a strip of tiny icons rather
+                than a grid. */}
             <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-1.5">
                 {orderedSkills.map(({ id, rarity }) => {
                     const level = passives[id] || 0;
@@ -339,13 +336,11 @@ export function SkillsPassivesPanel() {
                                 style={getRarityBgStyle(rarity)}
                             >
                                 {spriteInfo ? (
-                                    <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('SkillIcons', profile.misc.skillAscensionLevel || 0, selectedVersion)}
-                                        spriteWidth={spriteInfo.config.sprite_size.width}
-                                        spriteHeight={spriteInfo.config.sprite_size.height}
-                                        sheetWidth={spriteInfo.config.texture_size.width}
-                                        sheetHeight={spriteInfo.config.texture_size.height}
-                                        iconIndex={spriteInfo.spriteIndex}
+                                    <UnitSpriteIcon
+                                        section={spriteInfo.config}
+                                        unitKey={spriteInfo.spriteIndex}
+                                        ascensionLevel={profile.misc.skillAscensionLevel || 0}
+                                        version={selectedVersion}
                                         className="w-full h-full"
                                     />
                                 ) : (

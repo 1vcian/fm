@@ -28,6 +28,19 @@ export interface VisualEffect {
     pulseDuration: number;
     /** Battle seconds since the last damage pulse; null before the first. */
     sincePulse: number | null;
+    /*
+     * Display only, AreaProjectile fields of build 2026_11_16_09_55 the skill views read (absent on
+     * older areas): ShotIndex (Stomp follow-up, barrel lane, FiringSquad slot), ColumnHit (DeathStar
+     * beam), TargetId (the unit a FiringSquad shot hit), FollowSource and HitOnPass.
+     */
+    shotIndex?: number;
+    /** Display only: battle seconds when the area was created, and its Timer then (a start delay is negative). */
+    spawnTime?: number;
+    timer0?: number;
+    columnHit?: boolean;
+    targetId?: number;
+    followSource?: boolean;
+    hitOnPass?: boolean;
 }
 
 export interface VisualShot {
@@ -136,6 +149,13 @@ export function sceneVisuals(scene: CombatScene, skills: SkillManager): SceneVis
             hasFinalPulse: a.hasFinalPulse,
             pulseDuration: a.pulseDuration,
             sincePulse: a.lastPulseTick != null ? (now - a.lastPulseTick) / 10 : null,
+            shotIndex: a.shotIndex,
+            spawnTime: a.spawnTick != null ? a.spawnTick / 10 : undefined,
+            timer0: a.spawnTick != null ? a.timer - (now - a.spawnTick) / 10 : undefined,
+            columnHit: a.columnHit,
+            targetId: a.targetId,
+            followSource: a.followSource,
+            hitOnPass: a.hitOnPass,
         }));
     const shots: VisualShot[] = scene.projectiles
         .filter(p => !p.destroyed)

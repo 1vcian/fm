@@ -303,36 +303,134 @@ function toInt64(x: number): number {
     return f % 2 === 0 ? f : f + 1;
 }
 
-/**
- * GetMissionLevelMultiplier (0x785E6DC): Math.Pow((double)(float)HealthAndDamageLevelMultiplier,
- * level - 1). The F64 config value goes through a FLOAT first, so 1.524 becomes 1.52400005...
- */
-export function missionLevelMultiplier(levelMultiplier: number, level: number): number {
-    return Math.pow(Math.fround(levelMultiplier), level - 1);
+/** One MissionDifficultyMultiplier.json row: levels up to MaxLevel scale by Multiplier (FD6). */
+export interface MissionDifficultyRange {
+    MaxLevel: number;
+    Multiplier: number;
 }
 
-/** Mission enemy Hp / Dmg: Convert.ToInt64(multiplier * Base) (MissionCombatScene.SetupEnemies). */
-export function missionEnemyStats(mission: Pick<MissionConfigRow, 'BaseDamage' | 'BaseHealth'>, level: number, levelMultiplier: number) {
-    const m = missionLevelMultiplier(levelMultiplier, level);
+/**
+ * How mission enemies scale with the mission level, as the selected config describes it:
+ *  - a number: MissionBaseConfig.HealthAndDamageLevelMultiplier (configs up to 2026_10_27);
+ *  - a list of ranges: MissionDifficultyMultiplier.json (2026_11_16 on, the MissionBaseConfig
+ *    field is gone).
+ */
+export type MissionLevelScaling = number | MissionDifficultyRange[];
+
+/**
+ * Picks the scaling source from the loaded configs: MissionDifficultyMultiplier.json when the
+ * version has it, else MissionBaseConfig.HealthAndDamageLevelMultiplier. Null while neither is
+ * available (still loading), so callers wait instead of guessing.
+ */
+export function resolveMissionLevelScaling(
+    missionBaseConfig: { HealthAndDamageLevelMultiplier?: number } | null | undefined,
+    difficultyMultiplierLib: Record<string, MissionDifficultyRange> | null | undefined
+): MissionLevelScaling | null {
+    const rows = difficultyMultiplierLib ? Object.values(difficultyMultiplierLib) : [];
+    if (rows.length > 0) return rows;
+    const legacy = missionBaseConfig?.HealthAndDamageLevelMultiplier;
+    return typeof legacy === 'number' ? legacy : null;
+}
+
+/** FD6 helpers (Metaplay.Core.Math.FD6: Int128 raw, Precision 1e6). */
+const FD6_ONE = 1000000n;
+/** Config FD6 values are decimal literals, so rounding to the millionth recovers the raw value. */
+const fd6FromConfig = (x: number): bigint => BigInt(Math.round(x * 1e6));
+/** FD6.op_Multiply(FD6, FD6) (0x76266FC): Int128 a.Raw * b.Raw / 1e6 (division truncates). */
+const fd6Mul = (a: bigint, b: bigint): bigint => (a * b) / FD6_ONE;
+/** FD6.op_Multiply(FD6, F64) (0x76269D0 -> FD6.Mul 0x7626848): (fd6.Raw * f64.Raw) >> 32, a floor. */
+const fd6MulF64 = (a: bigint, f64: number): bigint => (a * BigInt(Math.round(f64 * 4294967296))) >> 32n;
+/** FD6.Round (0x7627D70): q = Raw / 1e6, +1 when 2 * (Raw % 1e6) >= 1e6; returned as an integer FD6. */
+const fd6RoundToInt = (raw: bigint): bigint => {
+    const q = raw / FD6_ONE;
+    return 2n * (raw % FD6_ONE) >= FD6_ONE ? q + 1n : q;
+};
+
+/**
+ * PlayerPowerExtensions.GetMissionLevelMultiplier (0x7CFB608, 2026_11_16_09_55 binary), FD6 raw:
+ * level < 0 throws; result = FD6.One; level 0 returns One. The MissionDifficultyMultiplier rows
+ * are ordered by MaxLevel (lambda 0x7CFBEA8), then for each row
+ *   n = Math.Min(level, row.MaxLevel) - previousMaxLevel; n times: result = result * row.Multiplier
+ * (FD6.op_Multiply, truncating each step), previousMaxLevel = row.MaxLevel, stop once
+ * previousMaxLevel >= level. A level past the last MaxLevel throws ArgumentOutOfRangeException.
+ * So level L multiplies once per level 1..L, each level by the multiplier of its range (no
+ * "level - 1" any more).
+ */
+function missionLevelMultiplierFd6(ranges: MissionDifficultyRange[], level: number): bigint {
+    if (level < 0) throw new Error(`Mission level ${level} out of range`);
+    let result = FD6_ONE;
+    if (level === 0) return result;
+    const sorted = [...ranges].sort((a, b) => a.MaxLevel - b.MaxLevel);
+    let prev = 0;
+    for (const row of sorted) {
+        const m = fd6FromConfig(row.Multiplier);
+        for (let n = Math.min(level, row.MaxLevel) - prev; n >= 1; n--) result = fd6Mul(result, m);
+        prev = row.MaxLevel;
+        if (prev >= level) return result;
+    }
+    throw new Error(`Mission level ${level} is past MissionDifficultyMultiplier's last MaxLevel ${prev}`);
+}
+
+/**
+ * The mission level multiplier as a plain number (display only).
+ *  - ranges (2026_11_16 on): GetMissionLevelMultiplier 0x7CFB608, exact FD6, see above.
+ *  - number (configs up to 2026_10_27): GetMissionLevelMultiplier 0x785E6DC,
+ *    Math.Pow((double)(float)HealthAndDamageLevelMultiplier, level - 1). The F64 config value goes
+ *    through a FLOAT first, so 1.524 becomes 1.52400005...
+ */
+export function missionLevelMultiplier(scaling: MissionLevelScaling, level: number): number {
+    if (typeof scaling === 'number') return Math.pow(Math.fround(scaling), level - 1);
+    return Number(missionLevelMultiplierFd6(scaling, level)) / 1e6;
+}
+
+/**
+ * Mission enemy Hp / Dmg (MissionCombatScene.SetupEnemies).
+ *  - ranges: PlayerPowerExtensions.GetMissionEnemyStat (0x7CFBB80) =
+ *    FD6.Round(FD6.FromLong(base) * GetMissionLevelMultiplier(level)), called with BaseDamage and
+ *    BaseHealth and the mission level as is (SetupEnemies 0x7CA6BA8).
+ *  - number (older configs): Convert.ToInt64(multiplier * Base).
+ */
+export function missionEnemyStats(mission: Pick<MissionConfigRow, 'BaseDamage' | 'BaseHealth'>, level: number, scaling: MissionLevelScaling) {
+    if (typeof scaling !== 'number') {
+        const m = missionLevelMultiplierFd6(scaling, level);
+        const stat = (base: number) => Number(fd6RoundToInt(fd6Mul(BigInt(base) * FD6_ONE, m)));
+        return { hp: stat(mission.BaseHealth), dmg: stat(mission.BaseDamage) };
+    }
+    const m = missionLevelMultiplier(scaling, level);
     return { hp: toInt64(m * mission.BaseHealth), dmg: toInt64(m * mission.BaseDamage) };
 }
 
 /**
- * Suggested mission power, MissionExtensions.CalculateMissionPower (0x780FEEC) ->
- * PlayerPowerExtensions.CalculateMissionPower (0x785E79C), 2026_10_08_09_03 binary:
- *   m      = GetMissionLevelMultiplier(level)                       (0x785E6DC, see above)
- *   dmg    = Convert.ToInt64(m * BaseDamage * (double)(float)ItemBalancingConfig.PlayerPowerDamageMultiplier)
+ * Suggested mission power, MissionExtensions.CalculateMissionPower.
+ *
+ * Ranges (2026_11_16_09_55 binary: 0x7CA8270 -> PlayerPowerExtensions.CalculateMissionPower
+ * 0x7CFBC40), all FD6:
+ *   m      = GetMissionLevelMultiplier(level)                                   (0x7CFB608)
+ *   dmg    = FD6.Round(FD6(BaseDamage) * m * ItemBalancingConfig.PlayerPowerDamageMultiplier (F64))
+ *   hp     = FD6.Round(FD6(BaseHealth) * m)
+ *   power  = ((dmg + hp) * MissionPowerMultiplier * FD6(UnitCount)).UInt128      (Raw / 1e6)
+ * MissionPowerMultiplier = FD6.Ratio(4, 5) = 0.8 (static ctor 0x7CFBDC8).
+ *
+ * Number (older configs, 2026_10_08_09_03 binary 0x780FEEC -> 0x785E79C):
+ *   dmg    = Convert.ToInt64(m * BaseDamage * (double)(float)PlayerPowerDamageMultiplier)
  *   hp     = Convert.ToInt64(m * BaseHealth)
  *   power  = (long)((float)(dmg + hp) * 0.8f * (float)UnitCount)   (float32 math, truncation)
- * The 0.8f is PlayerPowerExtensions.MissionPowerMultiplier (constant at 0x19B43B8).
  */
 export function calculateMissionPower(
     mission: Pick<MissionConfigRow, 'BaseDamage' | 'BaseHealth' | 'UnitCount'>,
     level: number,
-    levelMultiplier: number,
+    scaling: MissionLevelScaling,
     playerPowerDamageMultiplier: number
 ): number {
-    const m = missionLevelMultiplier(levelMultiplier, level);
+    if (typeof scaling !== 'number') {
+        const m = missionLevelMultiplierFd6(scaling, level);
+        const dmg = fd6RoundToInt(fd6MulF64(fd6Mul(BigInt(mission.BaseDamage) * FD6_ONE, m), playerPowerDamageMultiplier));
+        const hp = fd6RoundToInt(fd6Mul(BigInt(mission.BaseHealth) * FD6_ONE, m));
+        const sum = (dmg + hp) * FD6_ONE;
+        const power = fd6Mul(fd6Mul(sum, (4n * FD6_ONE) / 5n), BigInt(mission.UnitCount ?? 0) * FD6_ONE);
+        return Number(power / FD6_ONE);
+    }
+    const m = missionLevelMultiplier(scaling, level);
     const dmg = toInt64(m * mission.BaseDamage * Math.fround(playerPowerDamageMultiplier));
     const hp = toInt64(m * mission.BaseHealth);
     const f = Math.fround(Math.fround(Math.fround(dmg + hp) * Math.fround(0.8)) * Math.fround(mission.UnitCount ?? 0));
@@ -356,7 +454,7 @@ function randomItem(
 }
 
 /**
- * Mission wave (MissionCombatScene.SetupEnemies, 0x780E7D0): UnitCount clones at
+ * Mission wave (MissionCombatScene.SetupEnemies, 0x7CA6BA8 in 2026_11_16_09_55): UnitCount clones at
  * (15, 0) + MissionFormationBuilder.GetPositions(count), Hp/Dmg from missionEnemyStats. The items
  * come from their OWN RandomPCG created from the battle seed (RandomPCG.CreateFromSeed), not from
  * the combat RNG: per unit GetRandomItems rolls weapon, helmet, armour in that order (helmets and
@@ -367,14 +465,14 @@ function randomItem(
 export function missionWaveSpecs(
     mission: MissionConfigRow,
     level: number,
-    levelMultiplier: number,
+    scaling: MissionLevelScaling,
     libs: EnemyConfigLibs,
     rng: RandomPCG | number | bigint
 ): WaveEnemySpec[] {
     const itemRng = rng instanceof RandomPCG ? rng : new RandomPCG(rng);
     const count = mission.UnitCount;
     if (typeof count !== 'number') throw new Error('MissionBattleLibrary row has no UnitCount');
-    const { hp, dmg } = missionEnemyStats(mission, level, levelMultiplier);
+    const { hp, dmg } = missionEnemyStats(mission, level, scaling);
     const offsets = missionFormation(count);
 
     const out: WaveEnemySpec[] = [];

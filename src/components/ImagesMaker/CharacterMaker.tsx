@@ -9,14 +9,14 @@ import { portraitBackgrounds, isRangedWeapon, type PortraitBackground, type Time
 import { portraitGif } from '../Presets/portraitGif';
 import { loadBattleVisuals, type BattleVisualData } from '../Battle/gameView/visualData';
 import { lookFromProfile } from '../Battle/gameView/scene';
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { INITIAL_PROFILE, type ItemSlot, type UserProfile } from '../../types/Profile';
 import { AGES, RARITIES } from '../../utils/constants';
 import { getItemImage, getItemName } from '../../utils/itemAssets';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
 import { useSkinIcons } from '../../utils/skinIcons';
 import { skinDisplayName, skinMaxLevel } from '../../utils/skinArchive';
-import { getAscensionTexturePath, resolveTextureVersion } from '../../utils/ascensionUtils';
+import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { FAIRIES, type FairyName } from '../../utils/fairies';
 import { cn } from '../../lib/utils';
 
@@ -157,9 +157,8 @@ export function CharacterMaker() {
     const sheetIcon = (group: 'mounts' | 'pets', index: number) => {
         const cfg = sprites?.[group];
         if (!cfg) return null;
-        const sheet = getAscensionTexturePath(group === 'mounts' ? 'MountIcons' : 'Pets', group === 'mounts' ? mountAscension : petAscension, version);
-        return <SpriteSheetIcon textureSrc={sheet} spriteWidth={cfg.sprite_size.width} spriteHeight={cfg.sprite_size.height}
-            sheetWidth={cfg.texture_size.width} sheetHeight={cfg.texture_size.height} iconIndex={index} className="w-12 h-12" smooth />;
+        return <UnitSpriteIcon section={cfg} unitKey={index} ascensionLevel={group === 'mounts' ? mountAscension : petAscension}
+            version={version} className="w-12 h-12" smooth />;
     };
     const itemIcon = (slot: GearSlot, age: number, idx: number) => {
         const src = getItemImage(AGES[age], slot, idx, autoMapping, version);

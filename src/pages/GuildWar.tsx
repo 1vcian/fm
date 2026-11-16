@@ -8,6 +8,8 @@ import { ChevronRight } from 'lucide-react';
 import { EggIcon } from '../components/UI/EggIcon';
 import { cn } from '../lib/utils';
 import { GameAssetIcon, type GameAsset } from '../components/UI/GameAssetIcon';
+import { UnitSpriteIcon } from '../components/UI/UnitSpriteIcon';
+import { useGameDataContext } from '../context/GameDataContext';
 
 const DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -376,6 +378,16 @@ function rarityIndex(sheet: any, rarity: string): number | null {
     return rows.length ? Number(rows[0][0]) : null;
 }
 
+/** A pet, mount or skill icon (base ascension art) in a `size` px box. */
+function UnitAssetIcon({ section, unitKey, size }: { section: any; unitKey: string | number; size: number }) {
+    const { selectedVersion, versions } = useGameDataContext();
+    return (
+        <span className="inline-block shrink-0" style={{ width: size, height: size }}>
+            <UnitSpriteIcon section={section} unitKey={unitKey} ascensionLevel={0} version={selectedVersion || versions[0]} className="w-full h-full" smooth />
+        </span>
+    );
+}
+
 /** A war task's icon, from the game's own assets: what the task makes the player spend or get. */
 function TaskIcon({ task, size, sprites, skillLibrary }: { task: string; size: number; sprites: any; skillLibrary: any }) {
     const hatch = task.match(/^Hatch(\w+)Egg$/);
@@ -387,12 +399,12 @@ function TaskIcon({ task, size, sprites, skillLibrary }: { task: string; size: n
     const pet = task.match(/^Merge(\w+)Pet$/);
     if (pet) {
         const i = rarityIndex(sprites?.pets, pet[1]);
-        if (i !== null) return <GameAssetIcon asset={{ sheet: 'Pets', index: i }} size={size} />;
+        if (i !== null) return <UnitAssetIcon section={sprites?.pets} unitKey={i} size={size} />;
     }
     const mount = task.match(/^(?:Merge|Summon)(\w+)Mount$/);
     if (mount) {
         const i = rarityIndex(sprites?.mounts, mount[1]);
-        if (i !== null) return <GameAssetIcon asset={{ sheet: 'MountIcons', index: i }} size={size} />;
+        if (i !== null) return <UnitAssetIcon section={sprites?.mounts} unitKey={i} size={size} />;
         return <GameIcon name="MountKey" size={size} />;
     }
     // A skill of the task's rarity (SkillLibrary order), drawn from the skill icon sheet.
@@ -400,7 +412,7 @@ function TaskIcon({ task, size, sprites, skillLibrary }: { task: string; size: n
     if (skill) {
         const row = Object.values<any>(skillLibrary ?? {}).find(r => r.Rarity === skill[1]);
         const e = row ? Object.entries<any>(sprites?.skills?.mapping ?? {}).find(([, v]) => v.name === row.Type) : null;
-        if (e) return <GameAssetIcon asset={{ sheet: 'SkillIcons', index: Number(e[0]) }} size={size} />;
+        if (e) return <UnitAssetIcon section={sprites?.skills} unitKey={e[0]} size={size} />;
         return <GameIcon name="SkillTicket" size={size} />;
     }
     if (/TechTreeUpgrade$/.test(task)) return <GameIcon name="Potion" size={size} />;

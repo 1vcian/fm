@@ -3,6 +3,7 @@ import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useForgeUpgradeStats, forgeGemSkipCost } from '../../hooks/useForgeCalculator';
+import { parseForgeUpgrades, maxDisplayedForgeLevel } from '../../utils/forgeConfig';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { SpriteIcon } from '../UI/SpriteIcon';
@@ -36,9 +37,10 @@ export function MiscPanel() {
         [...Object.values(profile.items), ...profile.pets.active, profile.mount.active],
         secondaryStatLibrary
     ), [profile.items, profile.pets.active, profile.mount.active, secondaryStatLibrary]);
-    // Determine max forge level from config
-    // N upgrade entries (ForgeUpgradeLibrary) reach level N + 1 (34 entries, level 35, in 2026_10).
-    const maxForgeLevel = forgeData ? Math.max(...Object.keys(forgeData).map(Number)) + 1 : 99;
+    // Top displayed forge level at the profile's forge ascension: MaxForgeLevel + 1, either
+    // ForgeUpgradeLibrary format (utils/forgeConfig.ts).
+    const forgeUpgrades = useMemo(() => parseForgeUpgrades(forgeData), [forgeData]);
+    const maxForgeLevel = forgeUpgrades ? maxDisplayedForgeLevel(forgeUpgrades, profile.misc.forgeAscensionLevel || 0) : 99;
 
     // Fix for "off by one" error reported by user.
     // Updated usage: Hook now expects the Level Key directly.
@@ -176,7 +178,7 @@ export function MiscPanel() {
                     </div>
 
                     {/* Upgrade Cost / Ascension Display */}
-                    {upgradeStats ? (
+                    {upgradeStats && profile.misc.forgeLevel + (isNextLevelStarted ? 1 : 0) < maxForgeLevel ? (
                         <div className="mt-3 space-y-2 text-[10px] font-mono">
                             {/* Costs */}
                             <div className="grid grid-cols-2 gap-2">

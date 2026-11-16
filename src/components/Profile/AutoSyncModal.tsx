@@ -26,6 +26,7 @@ import { getStatName } from '../../utils/statNames';
 import { SpriteIcon } from '../UI/SpriteIcon';
 import { cn } from '../../lib/utils';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
+import { unitIcon, unitIconStyle } from '../../utils/unitIcons';
 
 // upload -> review (confirm the detected template per screenshot) -> processing -> diff -> done
 type Stage = 'upload' | 'review' | 'processing' | 'diff' | 'done';
@@ -484,19 +485,8 @@ export function AutoSyncModal({ onClose, preset, incoming }: { onClose: () => vo
             const ident = kind === 'pet' ? row.patch.pet : row.patch.mount;
             const idx = unitIndex[kind][`${ident.rarity}_${ident.id}`];
             const cfg = kind === 'pet' ? unitIndex.petCfg : unitIndex.mountCfg;
-            if (idx != null && cfg && selectedVersion) {
-                const sw = cfg.sprite_size?.width || 256, sh = cfg.sprite_size?.height || 256;
-                const tw = cfg.texture_size?.width || 2048, th = cfg.texture_size?.height || 2048;
-                const cols = Math.floor(tw / sw), rowsN = Math.floor(th / sh);
-                const col = idx % cols, r = Math.floor(idx / cols);
-                const tex = `${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/${cfg.texture}`;
-                return <div style={{
-                    width: size, height: size, backgroundImage: `url(${tex})`,
-                    backgroundSize: `${cols * 100}% ${rowsN * 100}%`,
-                    backgroundPosition: `${cols > 1 ? (col / (cols - 1)) * 100 : 0}% ${rowsN > 1 ? (r / (rowsN - 1)) * 100 : 0}%`,
-                    imageRendering: 'pixelated',
-                }} />;
-            }
+            const style = idx != null && cfg && selectedVersion ? unitIconStyle(unitIcon(cfg, idx, 0, selectedVersion), size) : null;
+            if (style) return <div style={{ ...style, imageRendering: 'pixelated' }} />;
         }
         if (row.patch.t === 'skinEquip') {
             const sk = row.patch.skin;

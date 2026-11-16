@@ -9,7 +9,7 @@
  *   pet / mount level   PetUpgradeLibrary / MountUpgradeLibrary[rarity].LevelInfo.length
  *   skill level         highest key of SkillUpgradeLibrary + 1 (keyed by the level an upgrade starts from)
  *   ascension stars     AscensionConfigsLibrary[Forge|Pets|Mounts|Skills].AscensionConfigPerLevel.length
- *   forge level         highest Level of ForgeUpgradeLibrary
+ *   forge level         top displayed forge level over every forge ascension (utils/forgeConfig.ts)
  *   substat %           SecondaryStatLibrary.UpperRange * 100 (one roll)
  *   clan node level     MaxLevel, past it only for an infinite node of a fully maxed tree
  *                       (GuildTechHelpers.IsInfinite, see clanTechStacking.ts)
@@ -20,6 +20,7 @@
 import type { ChangeRow, Patch } from './autoSync';
 import type { UserProfile } from '../../types/Profile';
 import { clanNodeCaps } from '../clanTechStacking';
+import { parseForgeUpgrades, topDisplayedForgeLevel } from '../forgeConfig';
 
 export interface GameLimits {
     itemLevel(slot: string): number;
@@ -101,7 +102,9 @@ export function buildGameLimits(cfg: GameLimitConfigs): GameLimits {
     // Lv.1 to Lv.2), so its last key (99) leaves one level above it: the top is 100, the length of
     // SkillLibrary's DamagePerLevel / HealthPerLevel tables.
     const skillLevel = Math.max(0, ...keys(cfg.skillUpgradeLibrary)) + 1;
-    const forgeLevel = Math.max(0, ...Object.values<any>(cfg.forgeUpgradeLibrary || {}).map(v => Number(v?.Level) || 0));
+    // Displayed level = ForgeLevel + 1, capped by MaxForgeLevel at the highest forge ascension (either config format).
+    const forgeUpgrades = parseForgeUpgrades(cfg.forgeUpgradeLibrary);
+    const forgeLevel = forgeUpgrades ? topDisplayedForgeLevel(forgeUpgrades) : 0;
     const asc = (k: string) => cfg.ascensionConfigsLibrary?.[k]?.AscensionConfigPerLevel?.length ?? 0;
     const statMax = new Map<string, number>();
     for (const [statId, def] of Object.entries<any>(cfg.secondaryStatLibrary || {})) {

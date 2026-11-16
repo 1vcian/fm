@@ -1,0 +1,38 @@
+{
+  "Common": {
+    "Rarity": "Common",
+    "HatchTime": 1800
+  },
+  "Rare": {
+    "Rarity": "Rare",
+    "HatchTime": 7200
+  },
+  "Epic": {
+    "Rarity": "Epic",
+    "HatchTime": 14400
+  },
+  "Legendary": {
+    "Rarity": "Legendary",
+    "HatchTime": 28800
+  },
+  "Ultimate": {
+    "Rarity": "Ultimate",
+    "HatchTime": 57600
+  },
+  "Mythic": {
+    "Rarity": "Mythic",
+    "HatchTime": 115200
+  },
+  "Heroic": {
+    "Rarity": "Heroic",
+    "HatchTime": 150000
+  },
+  "Infinite": {
+    "Rarity": "Infinite",
+    "HatchTime": 200000
+  },
+  "Eternal": {
+    "Rarity": "Eternal",
+    "HatchTime": 300000
+  }
+}

@@ -161,10 +161,11 @@ export const SEASON_STATS: Record<FairyName, SeasonFairyStat> = new Proxy({} as 
  * (scripts/build_presets.ts run with those fairies), at each substat perfection of
  * PRESET_PERFECTIONS; ProfilePresets.json (100% only) otherwise.
  */
-const NEW_SEASON_PRESETS = new Set(['2026_10_27_09_45']);
+/** The first version whose builds were searched with the 2026_11 season; later versions are built the same way. */
+const FIRST_NEW_SEASON_PRESETS = '2026_10_27_09_45';
 /** Substat perfections (% of the top roll) the preset builds are searched at, for a season with them. */
 export const PRESET_PERFECTIONS = [80, 85, 90, 95, 100];
-const newSeasonPresets = (version: string | null | undefined, now: number) => !!version && isNewSeason(now) && NEW_SEASON_PRESETS.has(version);
+const newSeasonPresets = (version: string | null | undefined, now: number) => !!version && isNewSeason(now) && version >= FIRST_NEW_SEASON_PRESETS;
 
 /** The perfections a version's preset builds come in. */
 export const presetPerfections = (version: string | null | undefined, now = Date.now()) =>

@@ -31,7 +31,7 @@
  * Update 601: frames 1..600 run, Update 601 decides.
  */
 import { runSeed } from '../engine/rng';
-import { CombatScene, SkillManager, describeEvent, sceneVisuals, setupPvp, type PvpHpConfig, type PvpSetup, type Unit } from '../engine';
+import { BUFF_SKILL_TYPES, CombatScene, SkillManager, describeEvent, sceneVisuals, setupPvp, type PvpHpConfig, type PvpSetup, type Unit } from '../engine';
 import type { PvpFighter } from './fighter';
 
 /**
@@ -230,7 +230,7 @@ export class PvpVisualEngine {
             isSummon: u.isSummon,
             shield: 0,
         });
-        const buffIds = new Set(['Meat', 'Morale', 'Berserk', 'Buff', 'HigherMorale']);
+        const buffIds = BUFF_SKILL_TYPES;
         const skillView = (isAlly: boolean) => this.battle.skills.snapshot().filter(sk => sk.isAlly === isAlly).map(sk => ({
             id: sk.id,
             state: sk.state === 'ready' ? 'Ready' : sk.state === 'active' ? 'Active' : 'Cooldown',

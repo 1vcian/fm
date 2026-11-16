@@ -1,0 +1,526 @@
+{
+ "version": "2026_11_16_09_55",
+ "ages": [
+  {
+   "index": 0,
+   "key": "Primitive",
+   "label": "Primitive",
+   "color": "#F1F1F1",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 0.0,
+    "y": 0.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 1,
+   "key": "Medieval",
+   "label": "Medieval",
+   "color": "#5DD8FF",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 256.0,
+    "y": 0.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 2,
+   "key": "EarlyModern",
+   "label": "Early-Modern",
+   "color": "#5DFF8A",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 512.0,
+    "y": 0.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 3,
+   "key": "Modern",
+   "label": "Modern",
+   "color": "#FCFF5D",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 768.0,
+    "y": 0.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 4,
+   "key": "Space",
+   "label": "Space",
+   "color": "#FF5D5D",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 0.0,
+    "y": 256.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 5,
+   "key": "Interstellar",
+   "label": "Interstellar",
+   "color": "#D55DFF",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 256.0,
+    "y": 256.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 6,
+   "key": "Multiverse",
+   "label": "Multiverse",
+   "color": "#74FFEE",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 768.0,
+    "y": 256.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 7,
+   "key": "Quantum",
+   "label": "Quantum",
+   "color": "#7D5DFF",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 512.0,
+    "y": 256.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 8,
+   "key": "Underworld",
+   "label": "Underworld",
+   "color": "#B07879",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 256.0,
+    "y": 512.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 9,
+   "key": "Divine",
+   "label": "Divine",
+   "color": "#FF9E0D",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 0.0,
+    "y": 512.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 10,
+   "key": "Heroic",
+   "label": "Heroic",
+   "color": "#E74431",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 512.0,
+    "y": 512.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 11,
+   "key": "Infinite",
+   "label": "Infinite",
+   "color": "#208CFF",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 768.0,
+    "y": 512.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  },
+  {
+   "index": 12,
+   "key": "Eternal",
+   "label": "Eternal",
+   "color": "#A4D700",
+   "icon": {
+    "tex": "AgeIcons",
+    "x": 0.0,
+    "y": 768.0,
+    "w": 256.0,
+    "h": 256.0,
+    "texW": 1024,
+    "texH": 1024
+   }
+  }
+ ],
+ "rarities": [
+  {
+   "index": 0,
+   "key": "Common",
+   "label": "Common",
+   "color": "#F1F1F1",
+   "eggIcons": [
+    {
+     "tex": "Eggs",
+     "x": 0.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "MegaEggs",
+     "x": 0.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "UltraEggs",
+     "x": 0.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "ApexEggs",
+     "x": 0.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 1,
+   "key": "Rare",
+   "label": "Rare",
+   "color": "#5DD8FF",
+   "eggIcons": [
+    {
+     "tex": "Eggs",
+     "x": 256.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "MegaEggs",
+     "x": 256.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "UltraEggs",
+     "x": 256.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "ApexEggs",
+     "x": 256.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 2,
+   "key": "Epic",
+   "label": "Epic",
+   "color": "#5DFF8A",
+   "eggIcons": [
+    {
+     "tex": "Eggs",
+     "x": 512.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "MegaEggs",
+     "x": 512.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "UltraEggs",
+     "x": 512.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "ApexEggs",
+     "x": 512.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 3,
+   "key": "Legendary",
+   "label": "Legendary",
+   "color": "#FCFF5D",
+   "eggIcons": [
+    {
+     "tex": "Eggs",
+     "x": 768.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "MegaEggs",
+     "x": 768.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "UltraEggs",
+     "x": 768.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "ApexEggs",
+     "x": 768.0,
+     "y": 0.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 4,
+   "key": "Ultimate",
+   "label": "Ultimate",
+   "color": "#FF5D5D",
+   "eggIcons": [
+    {
+     "tex": "Eggs",
+     "x": 0.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "MegaEggs",
+     "x": 0.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "UltraEggs",
+     "x": 0.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "ApexEggs",
+     "x": 0.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 5,
+   "key": "Mythic",
+   "label": "Mythic",
+   "color": "#D55DFF",
+   "eggIcons": [
+    {
+     "tex": "Eggs",
+     "x": 256.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "MegaEggs",
+     "x": 256.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "UltraEggs",
+     "x": 256.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    },
+    {
+     "tex": "ApexEggs",
+     "x": 256.0,
+     "y": 256.0,
+     "w": 256.0,
+     "h": 256.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 6,
+   "key": "Heroic",
+   "label": "Heroic",
+   "color": "#E74431",
+   "eggIcons": [
+    null,
+    null,
+    null,
+    {
+     "tex": "ApexEggs",
+     "x": 0.0,
+     "y": 704.0,
+     "w": 320.0,
+     "h": 320.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 7,
+   "key": "Infinite",
+   "label": "Infinite",
+   "color": "#208CFF",
+   "eggIcons": [
+    null,
+    null,
+    null,
+    {
+     "tex": "ApexEggs",
+     "x": 320.0,
+     "y": 704.0,
+     "w": 320.0,
+     "h": 320.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  },
+  {
+   "index": 8,
+   "key": "Eternal",
+   "label": "Eternal",
+   "color": "#A4D700",
+   "eggIcons": [
+    null,
+    null,
+    null,
+    {
+     "tex": "ApexEggs",
+     "x": 640.0,
+     "y": 704.0,
+     "w": 320.0,
+     "h": 320.0,
+     "texW": 1024,
+     "texH": 1024
+    }
+   ]
+  }
+ ]
+}

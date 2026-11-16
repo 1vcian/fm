@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { AscensionStars, type AscensionType } from '../UI/AscensionStars';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { RARITIES } from '../../utils/constants';
+import { summonLevelsAt } from '../../utils/summonEngine';
 
 
 /** The best rarity a summon level can drop and its chance, from the summon config's Levels row. */
@@ -19,13 +20,13 @@ function topRarity(row: any): string {
  * ascension and the level above) to an end ascension and level, with the currency it takes.
  */
 export function SummonGoalPlanner({
-    title, type, levels, level, progress, startAscension, profileAscension, onStartAscension, maxAscension,
+    title, type, levelsByAscension, level, progress, startAscension, profileAscension, onStartAscension, maxAscension,
     needed, costPerSummon, currencyIcon, currencyLabel, available, onSetAvailable,
 }: {
     title: string;
     type: AscensionType;
-    /** The summon config's Levels rows (row n - 1 is level n). */
-    levels: any[];
+    /** The level table of each ascension (`summonLevelsByAscension`; row n - 1 is level n). */
+    levelsByAscension: any[][];
     level: number;
     progress: number;
     startAscension: number;
@@ -40,9 +41,11 @@ export function SummonGoalPlanner({
     available: number;
     onSetAvailable: (v: number) => void;
 }) {
-    const maxLevel = levels.length;
     const [endAscInput, setEndAsc] = useState<number | null>(null);
     const endAsc = Math.min(maxAscension, Math.max(startAscension, endAscInput ?? maxAscension));
+    // Each ascension levels through its own table (SummonConfig.GetLevels, RVA 0x7D03870).
+    const levels = summonLevelsAt(levelsByAscension, endAsc);
+    const maxLevel = levels.length;
     const [endLevelInput, setEndLevel] = useState<number | null>(null);
     const minEnd = endAsc === startAscension ? Math.min(maxLevel, Math.max(1, level)) : 1;
     const endLevel = Math.min(maxLevel, Math.max(minEnd, endLevelInput ?? maxLevel));

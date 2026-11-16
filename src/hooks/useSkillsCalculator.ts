@@ -5,11 +5,12 @@ import { useProfile } from '../context/ProfileContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { useTreeLimits } from './useTreeLimits';
 import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
-import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, SUMMON_RARITIES } from '../utils/summonEngine';
+import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt, SUMMON_RARITIES } from '../utils/summonEngine';
 
 /** Skill summon simulation plus war points, shaped for the Summons calculator's Skills tab. */
 export function buildSkillSummonResults(p: {
-    levels: any[];
+    /** The level table of each ascension (`summonLevelsByAscension`). */
+    levelsByAscension: any[][];
     level: number;
     progress: number;
     currency: number;
@@ -22,7 +23,7 @@ export function buildSkillSummonResults(p: {
 }) {
     const numSummons = affordableSummons(p.currency, p.costPerSummon);
     const sim = simulateSummons({
-        levels: p.levels,
+        levelsByAscension: p.levelsByAscension,
         startLevel: p.level,
         startProgress: p.progress,
         startAscension: p.startAscension,
@@ -38,7 +39,7 @@ export function buildSkillSummonResults(p: {
         return points;
     };
     const phases = sim.phases.map(ph => ({ ...ph, points: pointsOf(ph.counts) }));
-    const endProbs = summonRowAt(p.levels, sim.endLevel);
+    const endProbs = summonRowAt(summonLevelsAt(p.levelsByAscension, sim.endAscension), sim.endLevel);
 
     // No summon made: no rows, as before (the rarity rows only list what the pile produced).
     const breakdown = numSummons <= 0 ? [] : Object.entries(sim.byRarity).map(([rarity, count]) => {
@@ -78,7 +79,7 @@ export function useSkillsCalculator() {
     // 1. Contexts
     const { profile, updateNestedProfile } = useProfile();
 
-    // 2. Game Data — use unified SkillSummonConfig.json (has Levels with SummonsRequired + probabilities)
+    // 2. Game Data: SkillSummonConfig.json (a level table per ascension, SummonsRequired + probabilities)
     const { data: skillSummonConfig } = useGameData<any>('SkillSummonConfig.json');
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const maxAscension = maxAscensionFrom(ascensionConfigs, 'Skills');
@@ -154,12 +155,14 @@ export function useSkillsCalculator() {
     // 7. Constants from unified config
     // NaN until SkillSummonConfig loads; `ready` stays false meanwhile and the page shows a loading state.
     const unitCost: number = skillSummonConfig?.SingleSummonCost?.Amount ?? NaN;
-    // SummonConfig.BaseSummonCount (RVA 0x7865E88) = PossibleSummonCount[0]; SkillBaseConfig has no SummonCount.
+    // SummonConfig.BaseSummonCount (RVA 0x7D034D4) = PossibleSummonCount[0]; SkillBaseConfig has no SummonCount.
     const SKILLS_PER_SUMMON = baseSummonCount(skillSummonConfig);
     const BASE_SUMMON_COST = unitCost * SKILLS_PER_SUMMON;
-    const levels: any[] = skillSummonConfig?.Levels || [];
+    // SummonConfig.GetLevels(ascension) (RVA 0x7D03870): the table of the ascension the summoner is at.
+    const levelsByAscension = useMemo(() => summonLevelsByAscension(skillSummonConfig), [skillSummonConfig]);
+    const levels: any[] = summonLevelsAt(levelsByAscension, startAscension);
     const currency: string = skillSummonConfig?.SingleSummonCost?.Currency ?? '';
-    // SummonConfig.CanAffordSummon (RVA 0x7865EDC): RoundToInt(CalculateValue(Cost, Amount * count)),
+    // SummonConfig.CanAffordSummon (RVA 0x7CF2028): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(unitCost, SKILLS_PER_SUMMON, costReduction);
     const maxPossibleLevel = levels.length;
@@ -186,7 +189,7 @@ export function useSkillsCalculator() {
         if (!levels.length || !warPointsPerSummonSkill) return null;
         return {
             ...buildSkillSummonResults({
-                levels,
+                levelsByAscension,
                 level,
                 progress,
                 currency: ticketCount,
@@ -201,7 +204,7 @@ export function useSkillsCalculator() {
             baseCost: BASE_SUMMON_COST,
             costReduction: techBonuses.costReduction,
         };
-    }, [ticketCount, level, progress, levels, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, extraChance, costReduction, finalCostPerSummon, BASE_SUMMON_COST, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
+    }, [ticketCount, level, progress, levelsByAscension, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, extraChance, costReduction, finalCostPerSummon, BASE_SUMMON_COST, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Apply results
     const applyResultsToProfile = () => {
@@ -212,7 +215,7 @@ export function useSkillsCalculator() {
 
     // Target Calculation
     const calculateNeededCurrency = (targetLevel: number, targetAscension: number) => currencyToReach({
-        levels,
+        levelsByAscension,
         level,
         progress,
         ascension: startAscension,
@@ -232,6 +235,7 @@ export function useSkillsCalculator() {
         techBonuses,
         maxPossibleLevel,
         levels,
+        levelsByAscension,
         applyResultsToProfile,
         calculateNeededCurrency,
         maxAscension,

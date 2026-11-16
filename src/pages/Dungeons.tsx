@@ -41,6 +41,7 @@ const DUNGEON_TABS: TabConfig[] = [
 
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { techNodeTierStats } from '../utils/gameDataTransforms';
 
 export default function Dungeons() {
     const [selectedTab, setSelectedTab] = usePersistentState<DungeonType>('dungeon_selected_tab', 'Hammer');
@@ -256,7 +257,7 @@ export default function Dungeons() {
                 else if (nodeType.includes('PotionReward')) target = 'Potion'; // Fallback
 
                 if (target) {
-                    const stat = nodeDef.Stats[0];
+                    const stat = techNodeTierStats(nodeDef, nodeMap.tier)[0];
                     if (stat) {
                         const bonus = (stat.Value || 0) + ((level - 1) * (stat.ValueIncrease || 0));
                         multipliers[target] += bonus;

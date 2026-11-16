@@ -4,7 +4,7 @@
  * scripts/build_presets.ts (files read from disk) and the "my best variants" worker (fetched).
  */
 import type { LibraryData } from '../utils/statEngine';
-import { isVarintFixed, normalizeGuildUpgradeLibrary, reconstructTechTreeLibrary } from '../utils/gameDataTransforms';
+import { isVarintFixed, migrateLegacyStatValues, normalizeGuildUpgradeLibrary, reconstructTechTreeLibrary } from '../utils/gameDataTransforms';
 import type { ConfigFiles } from './buildPresets';
 
 /** Every parsed config file the preset search reads, by name without ".json". */
@@ -16,9 +16,14 @@ export const PRESET_CONFIG_FILES = [
     'SkillBaseConfig', 'BaseConfig', 'EnemyAgeScalingLibrary', 'EnemyLibrary', 'FairyUpgradesLibrary', 'ForgeUpgradeLibrary',
     'MainBattleConfig', 'MainBattleLibrary', 'MountLibrary', 'PvpBaseConfig', 'SecondaryStatItemUnlockLibrary',
     'SecondaryStatPetUnlockLibrary', 'SkillUpgradeLibrary',
+    // Pet / skill slot counts from 2026_11_16, when PetBaseConfig.PetSlotsCount and SkillBaseConfig.json
+    // are gone (petSlotCount / skillSlotCount in utils/constants).
+    'PlayerSegments',
 ];
 
 export function presetLibsFrom(version: string, cfg: ConfigFiles): LibraryData {
+    // StatContribution._legacyValue -> Value, as useGameData does on every fetched file.
+    for (const name of Object.keys(cfg)) migrateLegacyStatValues((cfg as Record<string, unknown>)[name]);
     return {
         petUpgradeLibrary: cfg.PetUpgradeLibrary,
         petBalancingLibrary: cfg.PetBalancingLibrary,
@@ -41,6 +46,7 @@ export function presetLibsFrom(version: string, cfg: ConfigFiles): LibraryData {
         ascensionConfigsLibrary: cfg.AscensionConfigsLibrary,
         petBaseConfig: cfg.PetBaseConfig,
         skillBaseConfig: cfg.SkillBaseConfig,
+        playerSegments: cfg.PlayerSegments,
         baseConfig: cfg.BaseConfig,
     } as unknown as LibraryData;
 }

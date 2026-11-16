@@ -10,7 +10,7 @@ import { Input } from '../UI/Input';
 import { SkillSlot } from '../../types/Profile';
 import { cn } from '../../lib/utils';
 import { useState, useMemo } from 'react';
-import { SKILL_MECHANICS } from '../../utils/constants';
+import { SKILL_MECHANICS, skillSlotCount } from '../../utils/constants';
 
 /** Artwork well for one of the three slot cards: three across on a phone leaves about 110px each. */
 const SLOT_ART = 'w-12 h-12 sm:w-20 sm:h-20 xl:w-24 xl:h-24';
@@ -19,9 +19,9 @@ import { SkillsCycle } from './SkillsCycle';
 import { BUFF_SKILL_TYPES, cooldownReductionForTicks, skillCastTimes, skillFirstCastTick, skillPhaseTicks } from '../../engine/skills';
 import { skillYieldPerCast } from '../../engine/skillYield';
 import { SectionSyncButton } from './SectionSyncButton';
-import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
+import { UnitSpriteIcon } from '../UI/UnitSpriteIcon';
 import { AscensionStars } from '../UI/AscensionStars';
-import { getAscensionTexturePath, getNormalizedTarget } from '../../utils/ascensionUtils';
+import { getNormalizedTarget } from '../../utils/ascensionUtils';
 import { ItemSelectionCard, EmptyRowCard, CARD_ART_CLASS } from '../UI/ItemSelectionCard';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
 import { formatNumber } from '../../utils/format';
@@ -94,9 +94,12 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
     }, [skillAscensionLevel, ascensionConfigsLibrary]);
 
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
-    // Equipped skill slots, SkillBaseConfig.SkillSlotsCount (no empty slot offered until it loads).
+    // Equipped skill slots: SkillBaseConfig.SkillSlotsCount, or the SkillSlot<n> player segments
+    // from 2026_11_16 when SkillBaseConfig.json is gone (skillSlotCount). No empty slot offered
+    // until it loads.
     const { data: skillBaseConfig } = useGameData<any>('SkillBaseConfig.json');
-    const skillSlots: number | null = typeof skillBaseConfig?.SkillSlotsCount === 'number' ? skillBaseConfig.SkillSlotsCount : null;
+    const { data: playerSegments } = useGameData<any>('PlayerSegments.json');
+    const skillSlots: number | null = skillSlotCount(skillBaseConfig, playerSegments);
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
     const globalStats = useGlobalStats();
@@ -402,13 +405,11 @@ export function SkillPanel({ variant = 'default', title, compareSkills }: SkillP
                             onClick={() => setEditingIdx(idx)}
                             renderIcon={() => (
                                 spriteInfo ? (
-                                    <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('SkillIcons', skillAscensionLevel, selectedVersion)}
-                                        spriteWidth={spriteInfo.config.sprite_size.width}
-                                        spriteHeight={spriteInfo.config.sprite_size.height}
-                                        sheetWidth={spriteInfo.config.texture_size.width}
-                                        sheetHeight={spriteInfo.config.texture_size.height}
-                                        iconIndex={spriteInfo.spriteIndex}
+                                    <UnitSpriteIcon
+                                        section={spriteInfo.config}
+                                        unitKey={spriteInfo.spriteIndex}
+                                        ascensionLevel={skillAscensionLevel}
+                                        version={selectedVersion}
                                         className={CARD_ART_CLASS}
                                         smooth
                                     />

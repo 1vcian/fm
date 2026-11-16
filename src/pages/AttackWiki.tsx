@@ -164,6 +164,7 @@ export default function AttackWiki() {
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: petBaseConfig } = useGameData<any>('PetBaseConfig.json');
+    const { data: playerSegments } = useGameData<any>('PlayerSegments.json');
     const { data: sprites } = useGameData<any>('ManualSpriteMapping.json');
     const { selectedVersion: version } = useGameDataContext();
     const [bonus, setBonus] = usePersistentState<number>('wiki_attack_speed_bonus', 100);
@@ -181,8 +182,8 @@ export default function AttackWiki() {
     const [shownBest, setShownBest] = useState<Entry | null>(null);
     const mult = 1 + bonus / 100;
 
-    const speedCap = maxSubstatTotal(secondaryStatLibrary?.AttackSpeed, itemBalancingLibrary, petBaseConfig);
-    const doubleCap = maxSubstatTotal(secondaryStatLibrary?.DoubleDamageChance, itemBalancingLibrary, petBaseConfig);
+    const speedCap = maxSubstatTotal(secondaryStatLibrary?.AttackSpeed, itemBalancingLibrary, petBaseConfig, playerSegments);
+    const doubleCap = maxSubstatTotal(secondaryStatLibrary?.DoubleDamageChance, itemBalancingLibrary, petBaseConfig, playerSegments);
 
     const entries = useMemo<Entry[]>(() => {
         if (!weaponLibrary) return [];
