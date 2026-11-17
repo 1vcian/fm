@@ -88,7 +88,11 @@ export interface ExchangeV1 {
      * category shows the same stars.
      */
     ascension?: { forge?: number; pets?: number; mounts?: number; skills?: number };
-    currencies?: { coins?: number; gems?: number; eggshells?: number; skillTickets?: number; clockWinders?: number; guildPotions?: number };
+    /** petMerges / mountMerges: merges the player can still do with the pets / mounts they have (not a currency, kept here). */
+    currencies?: {
+        coins?: number; gems?: number; eggshells?: number; skillTickets?: number; clockWinders?: number; guildPotions?: number;
+        techPotions?: number; petMerges?: number; mountMerges?: number;
+    };
     /**
      * Node levels by tree. Forge, Power and SkillsPetTech: keyed by the node's `Id` in
      * PlayerTechTreePositionLibrary[tree].Nodes. Clan: keyed by the node's position when the
@@ -119,9 +123,11 @@ const TREE_LABEL: Record<ExchangeTree, string> = { Forge: 'Forge tree', Power: '
 const CURRENCY_MISC: Record<string, string> = {
     coins: 'coins', gems: 'gemCount', eggshells: 'eggshellCount',
     skillTickets: 'skillCalculatorTickets', clockWinders: 'mountCalculatorWinders', guildPotions: 'guildPotions',
+    techPotions: 'techPotions', petMerges: 'petMergesReady', mountMerges: 'mountMergesReady',
 };
 const CURRENCY_LABEL: Record<string, string> = {
     coins: 'Coins', gems: 'Gems', eggshells: 'Eggshells', skillTickets: 'Skill Tickets', clockWinders: 'Clock Winders', guildPotions: 'Guild Potions',
+    techPotions: 'Tech Potions', petMerges: 'Pet Merges Ready', mountMerges: 'Mount Merges Ready',
 };
 
 const isObj = (x: unknown): x is Record<string, any> => !!x && typeof x === 'object' && !Array.isArray(x);
