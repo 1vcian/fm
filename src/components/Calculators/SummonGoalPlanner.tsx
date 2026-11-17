@@ -3,16 +3,39 @@ import { ArrowRight } from 'lucide-react';
 import { AscensionStars, type AscensionType } from '../UI/AscensionStars';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { RARITIES } from '../../utils/constants';
+import { RARITY_TIERS, rarityIndexOf } from '../../utils/gameTiers';
 import { summonLevelsAt } from '../../utils/summonEngine';
 
 
 /** The best rarity a summon level can drop and its chance, from the summon config's Levels row. */
-function topRarity(row: any): string {
-    if (!row) return '';
+function topRarity(row: any): { name: string; color: string; pct: string } | null {
+    if (!row) return null;
     const r = [...RARITIES].reverse().find(x => row[x] > 0);
-    if (!r) return '';
+    if (!r) return null;
+    const tier = RARITY_TIERS[rarityIndexOf(r)];
     const pct = row[r] * 100;
-    return `${r} ${pct < 0.1 ? pct.toFixed(2) : pct.toFixed(1)}%`;
+    return { name: tier?.label ?? r, color: tier?.color ?? '#ffffff', pct: `${pct < 0.1 ? pct.toFixed(2) : pct.toFixed(1)}%` };
+}
+
+/** The best rarity of the end level, as a card in that rarity's colour. */
+function TopRarityCard({ row, level }: { row: any; level: number }) {
+    const top = topRarity(row);
+    if (!top) return null;
+    return (
+        <div
+            // As the game draws a rarity tile: solid colour with a lighter top, a dark outline and
+            // white outlined text.
+            className="rounded-lg border-2 border-black/80 px-3 py-1.5 text-right shrink-0 text-white text-stroke-sm"
+            style={{
+                background: `linear-gradient(to bottom, color-mix(in srgb, ${top.color} 70%, white) 0%, ${top.color} 45%, color-mix(in srgb, ${top.color} 80%, black) 100%)`,
+                boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -3px 0 rgba(0,0,0,0.25), 0 3px 0 rgba(0,0,0,0.6)',
+            }}
+        >
+            <div className="text-[9px] uppercase font-black whitespace-nowrap">Best drop at Lv.{level}</div>
+            <div className="font-black text-base uppercase tracking-wide leading-tight">{top.name}</div>
+            <div className="font-black text-xl leading-tight">{top.pct}</div>
+        </div>
+    );
 }
 
 /**
@@ -86,15 +109,19 @@ export function SummonGoalPlanner({
                     <ArrowRight className="w-5 h-5 rotate-90 sm:rotate-0" />
                 </div>
                 <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 space-y-3 min-w-0">
-                    <div className="text-[10px] text-amber-300 uppercase font-black tracking-wider">End</div>
-                    <AscensionStars value={endAsc} onChange={v => setEndAsc(Math.max(startAscension, v))} type={type} max={maxAscension} size="sm" className="items-start" />
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-3 min-w-0">
+                            <div className="text-[10px] text-amber-300 uppercase font-black tracking-wider">End</div>
+                            <AscensionStars value={endAsc} onChange={v => setEndAsc(Math.max(startAscension, v))} type={type} max={maxAscension} size="sm" className="items-start" />
+                        </div>
+                        <TopRarityCard row={levels[endLevel - 1]} level={endLevel} />
+                    </div>
                     <div className="space-y-1">
                         <div className="text-[10px] text-text-muted uppercase font-bold">Summon level</div>
                         <div className="flex items-center gap-2">
                             <input type="range" min={minEnd} max={maxLevel} value={endLevel} onChange={e => setEndLevel(Number(e.target.value))} className="flex-1 min-w-0 accent-amber-400" />
                             <span className="font-mono font-black text-base w-8 text-right">{endLevel}</span>
                         </div>
-                        <div className="text-[10px] text-text-muted text-right">{topRarity(levels[endLevel - 1])}</div>
                     </div>
                 </div>
             </div>
