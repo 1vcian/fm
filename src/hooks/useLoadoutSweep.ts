@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { applyTreeMode, useStatLibraries } from './useGlobalStats';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeMode } from '../context/TreeModeContext';
-import { useComparison } from '../context/ComparisonContext';
 import { StatEngine, LibraryData, AggregatedStats, calculateStats } from '../utils/statEngine';
 import { petSlotCount } from '../utils/constants';
 import { PetSlot, MountSlot, UserProfile } from '../types/Profile';
@@ -55,9 +54,6 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
     const { base, respectSavedLevels = true } = options;
     const { profile: activeProfile } = useProfile();
     const { treeMode } = useTreeMode();
-    // Power follows the In-game/Substats toggle like the profile card; it is the only output
-    // the flag changes, so DPS/HPS/lifesteal are identical either way.
-    const { excludeSubstats } = useComparison();
     const { libs } = useStatLibraries();
     const enabled = base !== null;
     const source = base ?? activeProfile;
@@ -142,7 +138,7 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
             const end = Math.min(i + BATCH_SIZE, combos.length);
             for (; i < end; i++) {
                 const combo = combos[i];
-                const stats = new StatEngine(buildTempProfile(combo), libs, excludeSubstats).calculate();
+                const stats = new StatEngine(buildTempProfile(combo), libs).calculate();
                 acc.push({
                     ...combo,
                     // Real-time throughout: the stepped breakpoint model, matching
@@ -171,7 +167,7 @@ export function useLoadoutSweep(options: SweepOptions = {}) {
             cancelled = true;
             cancelAnimationFrame(frame);
         };
-    }, [combos, libs, isReady, engineKey, buildTempProfile, enabled, excludeSubstats]);
+    }, [combos, libs, isReady, engineKey, buildTempProfile, enabled]);
 
     // --- Scoring ------------------------------------------------------------
     // Each metric is normalised by its own max across the sweep, for the "% of best" column.

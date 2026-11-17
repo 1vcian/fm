@@ -94,7 +94,7 @@ export function FairyCard({ variant }: { variant?: 'original' | 'test' }) {
     const { libs, ready } = useStatLibraries();
     const { selectedVersion } = useGameDataContext();
     const { data: fairyUpgrades } = useGameData<Record<string, { Level: number }>>('FairyUpgradesLibrary.json');
-    const stats = useGlobalStats(false);
+    const stats = useGlobalStats();
 
     const stored: FairySelection = profile.misc.fairy ?? { name: null, level: 1 };
     const value: FairySelection =

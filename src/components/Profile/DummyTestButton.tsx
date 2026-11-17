@@ -54,7 +54,7 @@ export function DummyTestButton({ variant = 'default' }: { variant?: 'default' |
     const side = useMemo(() => {
         if (!open || variant === 'default' || !cmp.isComparing) return null;
         const sideProfile = comparisonSideProfile(profile, cmp, variant, applyTreeMode(profile, treeMode, statLibs).techTree);
-        return { profile: sideProfile, stats: calculateStats(sideProfile, statLibs, false) };
+        return { profile: sideProfile, stats: calculateStats(sideProfile, statLibs) };
     }, [open, variant, cmp, profile, treeMode, statLibs]);
 
     const stats = variant === 'default' ? playerStats : side?.stats;

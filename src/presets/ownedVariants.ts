@@ -50,7 +50,7 @@ export function buildOwnedPresets(site: ProfilePresetsFile, saved: SavedSkin[], 
     const note = opts.skinsNote ?? 'With your own skins only.';
     const ownedWeaponSets = new Set(pieces.filter(p => p.type === 'Weapon').map(p => p.setId));
     const formula = (metric: 'dps' | 'hps' | 'power') => (p: UserProfile) => {
-        const s = calculateStats(p, libs, metric === 'power');
+        const s = calculateStats(p, libs);
         return (metric === 'dps' ? s.realTotalDps : metric === 'hps' ? s.realTotalHps : s.power) || 0;
     };
     /** The attack a variant can keep with the player's skins: its own, or one with the very same row. */

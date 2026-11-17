@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Copy, Check, Share2, Save, ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { Menu, Copy, Check, Share2, Save, ChevronDown } from 'lucide-react';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { Button } from '../UI/Button';
 import { buildShareUrl } from '../../utils/shareCodec';
@@ -12,7 +12,6 @@ import { cn } from '../../lib/utils';
 import { AnimatedClock } from '../UI/AnimatedClock';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { formatCompactNumber } from '../../utils/statsCalculator';
-import { useComparison } from '../../context/ComparisonContext';
 
 interface HeaderProps {
     onMenuToggle: () => void;
@@ -26,8 +25,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
     // backend in this build, signed out, a shared profile on screen, still loading) — the header
     // then renders exactly what it always did, with no extra element and no layout shift.
     const clanChip = useClanHeaderChip();
-    const { excludeSubstats, setExcludeSubstats } = useComparison();
-    const stats = useGlobalStats(excludeSubstats);
+    const stats = useGlobalStats();
     const [justCopied, setJustCopied] = useState(false);
     const [sharing, setSharing] = useState(false);
 
@@ -140,20 +138,6 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
             {/* Global Stats - Visible on all screens, adjusting size/layout */}
             <div className="flex-1 px-1 sm:px-4 flex justify-center items-center min-w-0">
                 <div className="relative" ref={statsRef}>
-                    {/* Clickable Mode Indicator Tag - Overlay floating button */}
-                    <button
-                        onClick={() => setExcludeSubstats(!excludeSubstats)}
-                        className={cn(
-                            "absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border flex items-center justify-center shadow-lg active:scale-95 transition-all z-20 hover:scale-110",
-                            excludeSubstats
-                                ? "bg-purple-600 text-white border-purple-400 hover:bg-purple-500 shadow-purple-500/20"
-                                : "bg-orange-600 text-white border-orange-400 hover:bg-orange-500 shadow-orange-500/20"
-                        )}
-                        title={excludeSubstats ? "In-game Power (substats excluded, as the game computes it). Click to include substats." : "Power with substats included: NOT the in-game number. Click to return to the in-game Power."}
-                    >
-                        <ArrowLeftRight className="w-3 h-3" />
-                    </button>
-
                     {/* MOBILE (< sm): Power only. The whole pill is the button that reveals the rest. */}
                     <button
                         type="button"
@@ -162,16 +146,14 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                         aria-haspopup="dialog"
                         aria-label="Show damage and health"
                         className={cn(
-                            "sm:hidden flex items-center gap-1.5 pl-5 pr-2 py-1 rounded-lg border backdrop-blur-sm max-w-full active:scale-[0.98] transition-all duration-300",
-                            excludeSubstats
-                                ? "bg-purple-950/20 border-purple-500/30 shadow-[0_0_15px_rgba(147,51,234,0.05)]"
-                                : "bg-orange-950/20 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.05)]"
+                            "sm:hidden flex items-center gap-1.5 pl-2 pr-2 py-1 rounded-lg border backdrop-blur-sm max-w-full active:scale-[0.98] transition-all duration-300",
+                            "bg-purple-950/20 border-purple-500/30 shadow-[0_0_15px_rgba(147,51,234,0.05)]"
                         )}
                     >
                         <div className="flex flex-col items-center shrink-0">
                             <span className={cn(
                                 "text-[9px] font-bold uppercase tracking-wider transition-colors",
-                                excludeSubstats ? "text-purple-400" : "text-orange-400"
+                                "text-purple-400"
                             )}>Pwr</span>
                             <span className="text-xs font-bold text-text-primary leading-none">
                                 {stats ? formatCompactNumber(stats.power) : '-'}
@@ -179,7 +161,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                         </div>
                         <ChevronDown className={cn(
                             "w-3 h-3 shrink-0 transition-transform",
-                            excludeSubstats ? "text-purple-400" : "text-orange-400",
+                            "text-purple-400",
                             statsOpen && "rotate-180"
                         )} />
                     </button>
@@ -196,12 +178,12 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                                 // right of it. w-56 under a centred pill still clears both screen
                                 // edges at 360px.
                                 "sm:hidden absolute left-1/2 -translate-x-1/2 top-full mt-2 z-30 w-56 rounded-xl border bg-bg-primary p-3 shadow-2xl",
-                                excludeSubstats ? "border-purple-500/40" : "border-orange-500/40"
+                                "border-purple-500/40"
                             )}
                         >
                             <dl className="space-y-2">
                                 {([
-                                    ['Pwr', stats?.power, excludeSubstats ? 'text-purple-400' : 'text-orange-400'],
+                                    ['Pwr', stats?.power, 'text-purple-400'],
                                     ['Dmg', stats?.totalDamage, 'text-red-400'],
                                     ['HP', stats?.totalHealth, 'text-green-400'],
                                 ] as const).map(([label, value, tone]) => (
@@ -224,27 +206,19 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                                     </div>
                                 ))}
                             </dl>
-                            {/* Which reading these numbers are, because the toggle changes what they mean. */}
-                            <p className="mt-2.5 pt-2.5 border-t border-border text-[10px] text-text-secondary leading-snug">
-                                {excludeSubstats
-                                    ? 'In-game Power. Item substats excluded, as the game computes it.'
-                                    : 'Substats included in Power. This is not the number the game shows.'}
-                            </p>
                         </div>
                     )}
 
                     {/* sm and up: unchanged. All three fit, so nothing is hidden behind a tap. */}
                     <div className={cn(
-                        "hidden sm:flex items-center gap-1.5 sm:gap-6 pl-5 pr-1.5 sm:pr-3 py-1 sm:py-1.5 rounded-lg border backdrop-blur-sm overflow-x-auto no-scrollbar max-w-full transition-all duration-300",
-                        excludeSubstats
-                            ? "bg-purple-950/20 border-purple-500/30 text-purple-200 shadow-[0_0_15px_rgba(147,51,234,0.05)]"
-                            : "bg-orange-950/20 border-orange-500/30 text-orange-200 shadow-[0_0_15px_rgba(249,115,22,0.05)]"
+                        "hidden sm:flex items-center gap-1.5 sm:gap-6 pl-1.5 sm:pl-3 pr-1.5 sm:pr-3 py-1 sm:py-1.5 rounded-lg border backdrop-blur-sm overflow-x-auto no-scrollbar max-w-full transition-all duration-300",
+                        "bg-purple-950/20 border-purple-500/30 text-purple-200 shadow-[0_0_15px_rgba(147,51,234,0.05)]"
                     )}>
                         {/* Power */}
                         <div className="flex flex-col items-center shrink-0">
                             <span className={cn(
                                 "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors",
-                                excludeSubstats ? "text-purple-400" : "text-orange-400"
+                                "text-purple-400"
                             )}>Pwr</span>
                             <span className="text-xs sm:text-sm font-bold text-text-primary leading-none">
                                 {stats ? formatCompactNumber(stats.power) : '-'}

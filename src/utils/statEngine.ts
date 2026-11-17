@@ -528,17 +528,14 @@ export class StatEngine {
         'Shoe': 0
     };
 
-    private excludeSubstats: boolean;
-
     // Attribution tracking (opt-in: off in the optimizer/sweep hot paths)
     private trackAttribution: boolean;
     private attribution: StatAttribution = { byStat: {}, formula: {} };
 
-    constructor(profile: UserProfile, libs: LibraryData, excludeSubstats = false, trackAttribution = false) {
+    constructor(profile: UserProfile, libs: LibraryData, trackAttribution = false) {
         // Skins equipped from the archive are worn as the archive has them now (stats, level).
         this.profile = withArchivedSkins(profile);
         this.libs = libs;
-        this.excludeSubstats = excludeSubstats;
         this.trackAttribution = trackAttribution;
         this.stats = { ...DEFAULT_STATS };
     }
@@ -1740,16 +1737,16 @@ export class StatEngine {
 
         // 4. Multiplier Layers
         // - Global/Common Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
-        // NEW-STATS TOGGLE (excludeSubstats): the item DMG%/HP% (and Melee/Ranged) substats are
-        // excluded from POWER ONLY. The Damage/Health readouts ALWAYS include them, so flipping
-        // the toggle changes Power alone and never the displayed damage/health.
+        // The game computes Power on substat-free totals (PlayerPowerExtensions.CalculatePower
+        // 0x785E258 calls Stats.WithoutSecondaryStats 0x785E500), so the item DMG%/HP% (and
+        // Melee/Ranged) substats are left out of POWER ONLY. Damage/Health always include them.
         const itemDmgMulti = this.secondaryStats.damageMulti;
         const itemHpMulti = this.secondaryStats.healthMulti;
         const commonDamageMulti = this.stats.damageMultiplier + itemDmgMulti;
         const commonHealthMulti = this.stats.healthMultiplier + itemHpMulti;
         // Power-only variant of the same layer
-        const commonDamageMultiPow = this.stats.damageMultiplier + (this.excludeSubstats ? 0 : itemDmgMulti);
-        const commonHealthMultiPow = this.stats.healthMultiplier + (this.excludeSubstats ? 0 : itemHpMulti);
+        const commonDamageMultiPow = this.stats.damageMultiplier;
+        const commonHealthMultiPow = this.stats.healthMultiplier;
 
         // Merge other secondary stats into final results (summing Tech Tree + Items/Pets)
         this.stats.criticalChance = this.combine(this.stats.criticalChance, this.secondaryStats.criticalChance, 'Additive');
@@ -1845,15 +1842,10 @@ export class StatEngine {
         const specificDamageMulti = isWeaponMelee
             ? (1 + itemMeleeDmgMulti)
             : (1 + itemRangedDmgMulti);
-        // Power-only variant (Melee/Ranged substats dropped when the New-Stats toggle is on)
-        const specificDamageMultiPow = isWeaponMelee
-            ? (1 + (this.excludeSubstats ? 0 : itemMeleeDmgMulti))
-            : (1 + (this.excludeSubstats ? 0 : itemRangedDmgMulti));
-
         const finalDamage = damageAfterGlobalMultis * specificDamageMulti;
 
-        // Parallel POWER chain: identical arithmetic with the power-only multiplier variants, so
-        // Power reflects the New/Old toggle while Damage/Health stay invariant.
+        // Parallel POWER chain: the same arithmetic without the item substats (the Melee/Ranged
+        // ones included), as the game's Power.
         const equipDamageMultiPow = commonDamageMultiPow * (this.forgeAscensionDamageMulti || 1);
         const equipHealthMultiPow = commonHealthMultiPow * (this.forgeAscensionHealthMulti || 1);
         const powDmgBeforeGlobal =
@@ -1862,7 +1854,7 @@ export class StatEngine {
         const powHpBeforeGlobal =
             this.stats.itemHealth * equipHealthMultiPow
             + (this.stats.basePlayerHealth + this.stats.petHealth + this.stats.skillPassiveHealth + this.mountHealth) * commonHealthMultiPow;
-        const powerDamageTotal = powDmgBeforeGlobal * globalFactorDmg * specificDamageMultiPow;
+        const powerDamageTotal = powDmgBeforeGlobal * globalFactorDmg;
         const powerHealthTotal = powHpBeforeGlobal * globalFactorHp;
 
         this.debugLogs.push(`After SpecificMulti (×${specificDamageMulti.toFixed(3)}): Damage=${finalDamage.toFixed(0)}`);
@@ -2052,9 +2044,8 @@ export class StatEngine {
         const baseDmg = this.stats.basePlayerDamage; // 10.0
         const baseHp = this.stats.basePlayerHealth;  // 80.0
 
-        // Power tracks the New/Old toggle ALONE: it is computed from the parallel power chain
-        // (item DMG%/HP% + Melee/Ranged substats dropped in New mode), while the displayed
-        // damage/health always include those substats and therefore never move with the toggle.
+        // Power comes from the parallel power chain (item DMG%/HP% and Melee/Ranged substats left
+        // out), while the displayed damage/health always include those substats.
         const basePower = ((powerDamageTotal - baseDmg) * powerDmgMulti + (powerHealthTotal - baseHp)) * 3;
         this.stats.power = Math.round(basePower);
 
@@ -2256,9 +2247,8 @@ export class StatEngine {
     private publishAttribution() {
         if (!this.trackAttribution) return;
 
-        // NOTE: excludeSubstats now affects POWER ONLY — the Damage/Health totals always include
-        // the item DMG%/HP%/Melee/Ranged substats, so their attribution entries must stay listed
-        // (they really do contribute to the displayed damage/health in both modes).
+        // The Damage/Health totals always include the item DMG%/HP%/Melee/Ranged substats, so
+        // their attribution entries stay listed (only Power leaves them out).
         this.stats.attribution = this.attribution;
     }
 } // end class
@@ -2266,10 +2256,9 @@ export class StatEngine {
 export function calculateStats(
     profile: UserProfile,
     libs: LibraryData,
-    excludeSubstats = false,
     opts?: { attribution?: boolean }
 ): any {
-    const engine = new StatEngine(profile, libs, excludeSubstats, opts?.attribution === true);
+    const engine = new StatEngine(profile, libs, opts?.attribution === true);
     if (typeof window !== 'undefined') {
         (window as any).debugCalculator = engine;
     }

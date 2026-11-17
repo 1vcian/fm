@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Shield, TrendingUp, Sparkles, X, Check, ArrowRight, Hash, Minimize2, Layout, Download, ArrowLeftRight } from 'lucide-react';
+import { Shield, TrendingUp, Sparkles, X, Check, ArrowRight, Hash, Minimize2, Layout, Download } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
 import { Card } from '../UI/Card';
@@ -212,8 +212,8 @@ export function ComparisonStatRow({
     if (!Number.isFinite(originalValue) || !Number.isFinite(testValue)) {
         return (
             <div className={cn("flex items-center gap-3 rounded-lg border border-border/20 bg-bg-input/20", isMinimal ? "p-1.5 px-2" : "p-2.5")}>
-                <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-bg-secondary shrink-0", color)}>
-                    {React.cloneElement(icon as React.ReactElement<{ className?: string; size?: number }>, { className: 'w-3 h-3', size: 12 })}
+                <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center bg-bg-secondary shrink-0", color)}>
+                    {React.cloneElement(icon as React.ReactElement<{ className?: string; size?: number }>, { className: 'w-4 h-4', size: 16 })}
                 </div>
                 <div className="flex flex-col min-w-0">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted leading-tight">{label}</span>
@@ -250,8 +250,8 @@ export function ComparisonStatRow({
     if (isMinimal) {
         return (
             <div className="flex items-center gap-3 p-1.5 px-2 bg-bg-input/20 rounded-lg border border-border/20 hover:bg-bg-input/40 transition-colors">
-                <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-bg-secondary shrink-0", color)}>
-                    {React.cloneElement(icon as React.ReactElement<{ className?: string; size?: number }>, { className: 'w-3 h-3', size: 12 })}
+                <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center bg-bg-secondary shrink-0", color)}>
+                    {React.cloneElement(icon as React.ReactElement<{ className?: string; size?: number }>, { className: 'w-4 h-4', size: 16 })}
                 </div>
                 <div className="flex flex-col min-w-0">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted leading-tight">{label}</span>
@@ -458,11 +458,9 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         loadProfileIntoTest,
         isCompactStats,
         setIsCompactStats,
-        excludeSubstats,
-        setExcludeSubstats
     } = comparison;
-    const stats = useGlobalStats(excludeSubstats);
-    const fullStats = useGlobalStats(false);
+    const stats = useGlobalStats();
+    const fullStats = stats;
     const techModifiers = useTreeModifiers() as Record<string, number>;
     const { profile, profiles, activeProfileId } = useProfile();
 
@@ -500,10 +498,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         const originalProfile = comparisonSideProfile(profile, comparison, 'original', effectiveTechTree);
         const testProfile = comparisonSideProfile(profile, comparison, 'test', effectiveTechTree);
 
-        const origStats = calculateStats(originalProfile, libs, excludeSubstats);
-        const testStats = calculateStats(testProfile, libs, excludeSubstats);
-        const origFullStats = calculateStats(originalProfile, libs, false);
-        const testFullStats = calculateStats(testProfile, libs, false);
+        const origStats = calculateStats(originalProfile, libs);
+        const testStats = calculateStats(testProfile, libs);
+        const origFullStats = origStats;
+        const testFullStats = testStats;
 
         return { 
             originalStats: origStats, 
@@ -520,7 +518,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         originalPets, testPets, originalSkills, testSkills,
         originalPetAscension, testPetAscension, originalSkillAscension, testSkillAscension,
         originalUseSkinWindup, testUseSkinWindup, originalFairy, testFairy,
-        treeMode, libs, excludeSubstats, comparison
+        treeMode, libs, comparison
     ]);
 
     const activePerfectionDetails = useMemo(() => {
@@ -966,7 +964,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             )}
                             title="General Stats"
                         >
-                            <Layout className="w-3 h-3" />
+                            <Layout className="w-3.5 h-3.5" />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">General</span>
                         </button>
                         <button
@@ -977,7 +975,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             )}
                             title="DPS & HPS Metrics"
                         >
-                            <GameAssetIcon asset={{ icon: 'Lightning' }} size={12} />
+                            <GameAssetIcon asset={{ icon: 'Lightning' }} size={14} />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Metrics</span>
                         </button>
                         <button
@@ -988,7 +986,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             )}
                             title="Hit Damage"
                         >
-                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={12} />
+                            <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={18} className="-m-0.5" />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Hits</span>
                         </button>
                         <button
@@ -999,7 +997,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             )}
                             title="Secondary Stats"
                         >
-                            <GameAssetIcon asset={{ icon: 'Sparkle' }} size={12} />
+                            <GameAssetIcon asset={{ icon: 'Sparkle' }} size={14} />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Stats</span>
                         </button>
                     </div>
@@ -1222,54 +1220,23 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     return (
         <Card className={cn(
             "h-full flex flex-col overflow-hidden shadow-2xl transition-all duration-300",
-            excludeSubstats
-                ? "border-purple-500/20 bg-gradient-to-b from-purple-950/5 to-bg-primary"
-                : "border-orange-500/20 bg-gradient-to-b from-orange-950/5 to-bg-primary"
+            "border-purple-500/20 bg-gradient-to-b from-purple-950/5 to-bg-primary"
         )}>
             {/* Unified Header */}
             <div className={cn(
                 "p-5 border-b transition-all duration-300",
-                excludeSubstats
-                    ? "border-purple-500/20 bg-purple-950/10"
-                    : "border-orange-500/20 bg-orange-950/10"
+                "border-purple-500/20 bg-purple-950/10"
             )}>
-                <div 
-                    onClick={() => setExcludeSubstats(!excludeSubstats)}
-                    className="flex items-center justify-between mb-4 cursor-pointer select-none hover:opacity-90 transition-opacity"
-                    title="Click to toggle between Sheet Stats (excludes substats) and Combat Stats (includes substats)"
-                >
+                <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-black uppercase tracking-wider flex items-center gap-3">
                         <AnimatedClock className="w-8 h-8 text-accent-primary animate-pulse" />
                         <div className="flex flex-col">
                             <span className="bg-gradient-to-r from-white to-text-muted bg-clip-text text-transparent leading-none">
                                 Character Stats
                             </span>
-                            <span className={cn(
-                                "text-[9px] font-bold tracking-wider mt-1 uppercase",
-                                excludeSubstats ? "text-purple-400" : "text-orange-400"
-                            )}>
-                                {excludeSubstats ? "In-game Power (Substats Off)" : "Substats On (Not In-game)"}
-                            </span>
                         </div>
                     </h3>
                     <div className="flex items-center gap-2">
-                        {/* Substats Exclusion Toggle */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setExcludeSubstats(!excludeSubstats);
-                            }}
-                            className={cn(
-                                "p-2 rounded-lg border transition-all shadow-md active:scale-95",
-                                excludeSubstats
-                                    ? "bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20"
-                                    : "bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20"
-                            )}
-                            title={excludeSubstats ? "Current: in-game Power, substats excluded (click to include substats)" : "Current: substats included, not the in-game number (click to return to in-game Power)"}
-                        >
-                            <ArrowLeftRight className="w-4 h-4" />
-                        </button>
-
                         {onClose && (
                             <button
                                 onClick={(e) => {
@@ -1405,19 +1372,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
                 {(isComparing && originalStats && testStats) ? (
                     <div className="space-y-6">
-                        {/* Substats Toggle Mode Warning/Notice */}
-                        <div className={cn(
-                            "p-2.5 rounded-xl border text-xs text-center flex items-center justify-center gap-2 shadow-sm font-semibold select-none cursor-pointer active:scale-98 transition-transform",
-                            excludeSubstats
-                                ? "bg-purple-500/5 text-purple-400 border-purple-500/20"
-                                : "bg-orange-500/5 text-orange-400 border-orange-500/20"
-                        )}
-                        onClick={() => setExcludeSubstats(!excludeSubstats)}
-                        title="Click to toggle between the in-game Power (substats excluded) and Power with substats included"
-                        >
-                            <ArrowLeftRight className="w-4 h-4 shrink-0" />
-                            <span>Comparing: {excludeSubstats ? 'In-game Power (Substats Excluded)' : 'Substats Included (Not In-game)'}</span>
-                        </div>
                         <div className="flex bg-bg-secondary border border-border/50 rounded-xl p-1 shadow-lg flex-wrap gap-1">
                             <button
                                 onClick={() => setViewTab('general')}
@@ -1446,7 +1400,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     viewTab === 'hits' ? "bg-red-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
                                 )}
                             >
-                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={14} />
+                                <GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={18} className="-m-0.5" />
                                 <span>Hits</span>
                             </button>
                             <button
@@ -1599,17 +1553,30 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     icon={<GameAssetIcon asset={{ sheet: 'TechTreeIcons', index: 0 }} size={16} />}
                                     label="Base Hit"
                                     value={formatValue(fullStats.hitDamage)}
-                                    subValue={`Crit: ${formatValue(fullStats.hitDamageCrit)}`}
                                     color="text-red-400"
                                 />
+                                <StatRow
+                                    icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
+                                    label="Critical Hit"
+                                    value={formatValue(fullStats.hitDamageCrit)}
+                                    subValue={`Base Hit x ${fullStats.criticalDamage.toFixed(2)} (crit damage)`}
+                                    color="text-yellow-400"
+                                />
                                 {fullStats.hitDamageBuffed !== fullStats.hitDamage && (
-                                    <StatRow
-                                        icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
-                                        label="All Buffs Active"
-                                        value={formatValue(fullStats.hitDamageBuffed)}
-                                        subValue={`Crit: ${formatValue(fullStats.hitDamageBuffedCrit)}`}
-                                        color="text-orange-500"
-                                    />
+                                    <>
+                                        <StatRow
+                                            icon={<GameAssetIcon asset={{ icon: 'Lightning' }} size={16} />}
+                                            label="All Buffs Active"
+                                            value={formatValue(fullStats.hitDamageBuffed)}
+                                            color="text-orange-400"
+                                        />
+                                        <StatRow
+                                            icon={<GameAssetIcon asset={{ icon: 'Sparkle' }} size={16} />}
+                                            label="All Buffs Active, Critical"
+                                            value={formatValue(fullStats.hitDamageBuffedCrit)}
+                                            color="text-orange-500"
+                                        />
+                                    </>
                                 )}
 
                                 {/* Grouped Buff Scenarios Card */}

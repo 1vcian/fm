@@ -6,7 +6,6 @@ import { applyTreeMode, useStatLibraries } from '../../hooks/useGlobalStats';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { useTreeMode } from '../../context/TreeModeContext';
-import { useComparison } from '../../context/ComparisonContext';
 import { usePetNames } from '../../hooks/usePetNames';
 import { useMountName } from './LoadoutSweepPopover';
 import { pvpConfigFromJson } from '../../pvp/simulate';
@@ -54,7 +53,6 @@ const buildKey = (c: Pick<Candidate, 'skills' | 'petSet' | 'mount' | 'fairy' | '
 export function BuildOptimizerModal({ base, onLoad, onClose, targetLabel }: BuildOptimizerModalProps) {
     const { libs, ready } = useStatLibraries();
     const { treeMode } = useTreeMode();
-    const { excludeSubstats } = useComparison();
     const { profiles, activeProfileId } = useProfile();
     const { data: pvpBaseConfig } = useGameData<any>('PvpBaseConfig.json');
     const pvpConfig = useMemo(() => pvpConfigFromJson(pvpBaseConfig), [pvpBaseConfig]);
@@ -100,7 +98,6 @@ export function BuildOptimizerModal({ base, onLoad, onClose, targetLabel }: Buil
                 search,
                 // Only the skills the player has unlocked, each at its own level.
                 ownedSkillsOnly: true,
-                excludeSubstats,
             },
         }, libs);
         setLoadedKey(null);

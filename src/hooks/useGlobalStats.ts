@@ -98,7 +98,7 @@ export function useTreeModeProfile(): { profile: UserProfile; libs: LibraryData;
     return { profile: effectiveProfile, libs, ready };
 }
 
-export function useGlobalStats(excludeSubstats = false): AggregatedStats | null {
+export function useGlobalStats(): AggregatedStats | null {
     const { profile: effectiveProfile, libs } = useTreeModeProfile();
     const { itemBalancingConfig, itemBalancingLibrary } = libs as any;
 
@@ -111,8 +111,8 @@ export function useGlobalStats(excludeSubstats = false): AggregatedStats | null 
         }
         // Attribution is enabled here only: this hook runs per render, not in a loop.
         // The optimizer/sweep hot paths deliberately leave it off.
-        return calculateStats(effectiveProfile, libs, excludeSubstats, { attribution: true });
-    }, [effectiveProfile, libs, itemBalancingConfig, itemBalancingLibrary, excludeSubstats]);
+        return calculateStats(effectiveProfile, libs, { attribution: true });
+    }, [effectiveProfile, libs, itemBalancingConfig, itemBalancingLibrary]);
 
     return stats;
 }

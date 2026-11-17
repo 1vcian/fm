@@ -722,7 +722,7 @@ function metricsMaker(libs: LibraryData, cfg: ConfigFiles, o: Required<PresetOpt
     const questFinal = new QuestMeter(battleLibsOf(libs, cfg), o.questFinalRuns, o.pool);
     return (p: UserProfile): PresetMetrics => {
         const s = calculateStats(p, libs);
-        const inGame = calculateStats(p, libs, true);
+        const inGame = calculateStats(p, libs);
         const tested = testedOf(p, libs);
         const q = questFinal.measure(p);
         return {
@@ -904,7 +904,7 @@ export function finishPresets(ctx: PresetContext, melee: KindPresets, ranged: Ki
     // ---------------------------------------------------------------- Most Power
     // Power reads no secondary stat and no fairy (PlayerPowerExtensions.CalculatePower), so the
     // substats, skills, animation and fairy stay those of the best DPS build of the same kind.
-    const powerOf: Score = p => calculateStats(p, libs, true).power || 0;
+    const powerOf: Score = p => calculateStats(p, libs).power || 0;
     const powerFrom = (from: UserProfile) => {
         const r = search('power', choiceOf(from, space), from, powerOf, 'dps', libs, space, petLevel, o, { animations: [], skills: false, substats: false });
         return { ...r.best, misc: { ...r.best.misc, fairy: clone(from.misc.fairy), useSkinWindup: from.misc.useSkinWindup } };

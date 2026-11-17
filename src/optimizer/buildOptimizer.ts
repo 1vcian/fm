@@ -118,8 +118,6 @@ export interface OptimizerOptions {
     dummySeconds: number;
     /** Candidates that go to stage 2 (the current build is always added). */
     shortlist: number;
-    /** Power only: the In-game/Substats toggle of the profile card. */
-    excludeSubstats: boolean;
 }
 
 export const DEFAULT_OPTIMIZER_OPTIONS: OptimizerOptions = {
@@ -129,7 +127,6 @@ export const DEFAULT_OPTIMIZER_OPTIONS: OptimizerOptions = {
     battlesPerSide: 100,
     dummySeconds: 600,
     shortlist: 30,
-    excludeSubstats: false,
 };
 
 export interface OptimizerInput {
@@ -379,7 +376,7 @@ export function runOptimizer(input: OptimizerInput, onProgress: OptimizerProgres
     let scored = 0;
     const score = (skills: SkillSlot[], c: LoadoutCombo, fairy: FairyChoice | undefined = base.misc.fairy, skins?: SkinChoice): Candidate => {
         const p = withBuild(skills, c, fairy, skins);
-        const s = calculateStats(p, libs, o.excludeSubstats);
+        const s = calculateStats(p, libs);
         scored++;
         return {
             skills, petSet: c.petSet, mount: c.mount, fairy, skins,

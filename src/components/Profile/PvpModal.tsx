@@ -4,7 +4,6 @@ import { X, UploadCloud, Loader2, Trophy } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
-import { useComparison } from '../../context/ComparisonContext';
 import { buildGameDictionaries } from '../../utils/ocr/gameLocalization';
 import { preloadOcr, terminateOcr } from '../../utils/ocr/ocrEngine';
 import { extractScreenshot } from '../../utils/ocr/extract';
@@ -64,8 +63,7 @@ function StatList({ d }: { d: DuelStats }) {
 
 export function PvpModal({ onClose }: { onClose: () => void }) {
     const { profile } = useProfile();
-    const { excludeSubstats } = useComparison();
-    const computed = useGlobalStats(excludeSubstats);
+    const computed = useGlobalStats();
 
     const { data: autoItemMapping } = useGameData<any>('AutoItemMapping.json');
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');

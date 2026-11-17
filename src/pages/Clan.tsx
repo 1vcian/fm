@@ -22,7 +22,6 @@ import { useClan } from '../context/ClanContext';
 import { useGameData } from '../hooks/useGameData';
 import { useGameDataContext } from '../context/GameDataContext';
 import { useGlobalStats } from '../hooks/useGlobalStats';
-import { useComparison } from '../context/ComparisonContext';
 import { getTechNodeName, getClanIconStyle } from '../utils/techUtils';
 import { formatCompactNumber } from '../utils/statsCalculator';
 import { cn } from '../lib/utils';
@@ -107,8 +106,7 @@ function diffLevels(mine: Map<number, number>, theirs: Map<number, number>): Tre
 export default function Clan() {
     const { profile, getTechLevel, updateProfile } = useProfile();
     const { selectedVersion } = useGameDataContext();
-    const { excludeSubstats } = useComparison();
-    const stats = useGlobalStats(excludeSubstats);
+    const stats = useGlobalStats();
     const clan = useClan();
 
     // The header's clan chip lands on `#/clan?tab=clan`, so the tab is readable from the URL. It is

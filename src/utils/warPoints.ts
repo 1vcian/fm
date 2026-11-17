@@ -82,7 +82,7 @@
  *     allocation is made, reported in `gemAllocation`, and every category that did not get the gems
  *     says so in its reason.
  *
- * NOT IN SCOPE: `statEngine.ts` and the New/Old stats toggle. No war category reads `power`, and
+ * NOT IN SCOPE: `statEngine.ts`. No war category reads `power`, and
  * nothing here calls `calculateStats`. `power` is untouched.
  */
 
