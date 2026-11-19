@@ -79,6 +79,22 @@ export function computeWarDaysMap(dayConfig: any): Partial<Record<WarCategory, n
  */
 export function getWarPointsForTask(dayConfig: any, taskName: string): number {
     if (!dayConfig) return 0;
+    const exact = findWarPointsReward(dayConfig, taskName);
+    if (exact !== undefined) return exact;
+    // Config 2026_11_16 (2.12.1) merged the per-rarity tasks into one rarity-less task:
+    // `Summon<Rarity>Skill`, `Upgrade<Rarity>Skill`, `Summon<Rarity>Mount`, `Merge<Rarity>Mount`
+    // and `Merge<Rarity>Pet` became `SummonSkill`, `UpgradeSkill`, `SummonMount`, `MergeMount`
+    // and `MergePet` (eggs and forge keep their per-rarity/per-age names). Older configs still
+    // carry the rarity names, so callers keep asking for those and fall back here.
+    const m = /^(Summon|Merge|Upgrade)[A-Z][a-z]+(Skill|Mount|Pet)$/.exec(taskName);
+    if (m) {
+        const flat = findWarPointsReward(dayConfig, m[1] + m[2]);
+        if (flat !== undefined) return flat;
+    }
+    return 0;
+}
+
+function findWarPointsReward(dayConfig: any, taskName: string): number | undefined {
     for (const dayData of Object.values(dayConfig) as any[]) {
         const task = dayData?.Tasks?.find((t: any) => t.Task === taskName);
         if (task) {
@@ -86,7 +102,7 @@ export function getWarPointsForTask(dayConfig: any, taskName: string): number {
             if (reward?.Amount !== undefined) return reward.Amount;
         }
     }
-    return 0;
+    return undefined;
 }
 
 /**
