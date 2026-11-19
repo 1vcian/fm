@@ -14,6 +14,11 @@ export interface EggOptimizationResult {
     mergePoints: number;
     /** Points from declared ready merges (pets already hatched), included in totalPoints. */
     readyMergePoints: number;
+    /** Eggs left unhatched in the window. An unopened egg can be merged too, for the same MergePet
+     *  reward as a pet (owner's statement), so each one still adds its merge points. */
+    unhatchedEggs: number;
+    /** Merge points of the unhatched eggs, included in mergePoints and totalPoints. */
+    unhatchedMergePoints: number;
     timeUsed: number;
     baseTimeUsed: number;
     gemTimeUsed: number;
@@ -33,7 +38,13 @@ export interface TimelineEvent {
 
 export type Timeline = TimelineEvent[][];
 
-export function useEggsCalculator() {
+/**
+ * @param opts.eggsOverride Plan these eggs instead of the inventory, read only (the Summons
+ * calculator's Eggs tab passes the eggs a simulated pull gives). Ready merges are left out then:
+ * the plan is for those eggs alone.
+ */
+export function useEggsCalculator(opts: { eggsOverride?: Record<string, number> | null } = {}) {
+    const eggsOverride = opts.eggsOverride ?? null;
     // Game Data
     const { data: eggLibrary } = useGameData<any>('EggLibrary.json');
     const { data: guildWarConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
@@ -219,6 +230,8 @@ export function useEggsCalculator() {
     // --- Optimization Logic ---
     const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
 
+    const planEggs = eggsOverride ?? ownedEggs;
+    const planReadyMerges = eggsOverride ? 0 : readyMerges;
     const optimization = useMemo((): EggOptimizationResult | null => {
         if (!hatchValuesProfile || !warPoints || !forgeConfig) return null;
 
@@ -236,7 +249,7 @@ export function useEggsCalculator() {
 
         const allCandidates: EggCandidate[] = [];
         rarities.forEach(rarity => {
-            const count = ownedEggs[rarity] || 0;
+            const count = planEggs[rarity] || 0;
             if (count <= 0) return;
 
             const timeSeconds = (hatchValuesProfile[rarity] || 0);
@@ -244,10 +257,10 @@ export function useEggsCalculator() {
 
             const h = warPoints[rarity]?.hatch || 0;
             const m = warPoints[rarity]?.merge || 0;
-            const totalP = h + m;
 
-            // Efficiency: Points / Seconds (Higher precision)
-            const eff = timeSeconds > 0 ? totalP / timeSeconds : 999999;
+            // Efficiency: hatch points per second. The merge points come whether the egg hatches
+            // or is merged unopened, so only the hatch reward depends on getting a slot.
+            const eff = timeSeconds > 0 ? h / timeSeconds : 999999;
 
             for (let i = 0; i < count; i++) {
                 allCandidates.push({ rarity, time, timeSeconds, eff, hPoints: h, mPoints: m });
@@ -349,13 +362,24 @@ export function useEggsCalculator() {
 
         const makeSpan = Math.max(...slots);
 
+        // Eggs that did not fit: merged unopened, same MergePet reward as a pet.
+        let unhatchedEggs = 0;
+        let unhatchedMergePoints = 0;
+        for (const rarity of rarities) {
+            const left = (planEggs[rarity] || 0) - (toOpen[rarity] || 0);
+            if (left <= 0) continue;
+            unhatchedEggs += left;
+            unhatchedMergePoints += left * (warPoints[rarity]?.merge || 0);
+        }
+        mPoints += unhatchedMergePoints;
+
         // Declared ready merges from pets already hatched (cheapest rarity where the
         // config differs; the reward is flat across rarities in every config shipped).
         let readyMergeFlat = 0;
         Object.values(warPoints || {}).forEach((pts) => {
             if (pts.merge > 0) readyMergeFlat = readyMergeFlat === 0 ? pts.merge : Math.min(readyMergeFlat, pts.merge);
         });
-        const readyMergePoints = readyMerges * readyMergeFlat;
+        const readyMergePoints = planReadyMerges * readyMergeFlat;
 
         return {
             toOpen,
@@ -363,6 +387,8 @@ export function useEggsCalculator() {
             hatchPoints: hPoints,
             mergePoints: mPoints,
             readyMergePoints,
+            unhatchedEggs,
+            unhatchedMergePoints,
             timeUsed: makeSpan,
             baseTimeUsed: Math.min(makeSpan, (timeLimitHours * 60)),
             gemTimeUsed: Math.max(0, makeSpan - (timeLimitHours * 60)),
@@ -371,12 +397,15 @@ export function useEggsCalculator() {
             totalGemsUsed: totalGemCost
         };
 
-    }, [ownedEggs, readyMerges, timeLimitHours, availableSlots, hatchValuesProfile, warPoints, forgeConfig, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
+    }, [planEggs, planReadyMerges, timeLimitHours, availableSlots, hatchValuesProfile, warPoints, forgeConfig, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
 
 
     return {
         // Optimization
         ownedEggs, setOwnedEggs, updateOwnedEggs,
+        /** The eggs the plan is for: `eggsOverride` when given, else the inventory. */
+        planEggs,
+        isPreview: eggsOverride !== null,
         readyMerges, setReadyMerges,
         timeLimitHours, setTimeLimitHours,
         availableSlots, setAvailableSlots, maxSlots,

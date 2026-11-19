@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useEggsCalculator } from '../hooks/useEggsCalculator';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { decodeEggPlan } from '../utils/eggPlanLink';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/UI/Card';
 import { cn } from '../lib/utils';
 import { Calculator, Plus } from 'lucide-react';
@@ -18,8 +19,12 @@ import { FromAscensionBadge } from '../components/UI/FromAscensionBadge';
 
 export default function Eggs() {
     const { profile, updateNestedProfile } = useProfile();
+    // `?plan=` (Summons calculator, Eggs tab): plan the eggs a simulated pull gives, read only.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const planParam = searchParams.get('plan');
+    const eggsOverride = useMemo(() => decodeEggPlan(planParam), [planParam]);
     const {
-        ownedEggs, updateOwnedEggs,
+        ownedEggs, planEggs, isPreview, updateOwnedEggs,
         readyMerges, setReadyMerges,
         timeLimitHours, setTimeLimitHours,
         availableSlots, setAvailableSlots, maxSlots,
@@ -28,7 +33,7 @@ export default function Eggs() {
         warPoints,
         warPointBonuses,
         sandbox
-    } = useEggsCalculator();
+    } = useEggsCalculator({ eggsOverride });
     const eggWarBoost = Math.max(warPointBonuses?.hatch || 0, warPointBonuses?.merge || 0);
     const { selectedVersion } = useGameDataContext();
     // Rarity -> first pet ascension whose egg summon table can roll it.
@@ -110,6 +115,30 @@ export default function Eggs() {
             </div>
 
             <SandboxPanel fields={sandbox.fields} onReset={sandbox.reset} />
+
+            {isPreview && (
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-accent-primary/40 bg-accent-primary/10">
+                    <div className="text-sm text-text-primary">
+                        <span className="font-bold text-accent-primary">Plan for the eggs from the summon simulation.</span>{' '}
+                        Your inventory is not changed and ready merges are left out.
+                    </div>
+                    <div className="flex gap-2">
+                        <Link
+                            to="/calculators/summons?tab=eggs"
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                        >
+                            Back to summons
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={() => { const next = new URLSearchParams(searchParams); next.delete('plan'); setSearchParams(next); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-accent-primary text-black hover:opacity-90"
+                        >
+                            Back to my eggs
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Tabs */}
             <div className="flex justify-center gap-2 sm:gap-4 mb-6 flex-wrap">
@@ -273,14 +302,14 @@ export default function Eggs() {
                             panel has to go on asking about slot 4 while the plan for it is empty,
                             and the player changing their slot count must add or drop an anchor
                             without disturbing the ones already set. */}
-                        <PlannerAlarms
+                        {!isPreview && <PlannerAlarms
                             planner="eggs"
                             route="#/eggs"
                             lanes={alarmLanes}
                             slotCount={availableSlots}
                             laneLabel={(i) => `slot ${i + 1}`}
                             assumption="Each slot is timed from its own reading, so the only thing still assumed is that you reload a slot the moment its egg pops and follow the order shown for that slot."
-                        />
+                        />}
 
                         <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
                             <CardHeader>
@@ -291,7 +320,7 @@ export default function Eggs() {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {Object.entries(ownedEggs).map(([rarity, count]) => (
+                                    {Object.entries(isPreview ? planEggs : ownedEggs).map(([rarity, count]) => (
                                         <div key={rarity} className="relative flex flex-col items-center gap-2 p-3 bg-bg-tertiary rounded-lg border border-border/50 pt-6">
                                             {/* Points Info */}
                                             {warPoints && warPoints[rarity] && (
@@ -308,6 +337,7 @@ export default function Eggs() {
 
                                             <div className="flex items-center gap-1 w-full">
                                                 <button
+                                                    disabled={isPreview}
                                                     onClick={() => updateOwnedEggs(rarity, Math.max(0, count - 1))}
                                                     className="p-1 bg-black/40 rounded hover:bg-red-500/20 text-text-secondary hover:text-red-400 transition-colors"
                                                 >
@@ -317,11 +347,13 @@ export default function Eggs() {
                                                     type="number"
                                                     min="0"
                                                     value={count}
+                                                    readOnly={isPreview}
                                                     onChange={(e) => updateOwnedEggs(rarity, parseInt(e.target.value) || 0)}
                                                     className="w-full text-center bg-transparent border-none outline-none font-mono text-sm h-6 p-0"
                                                     onFocus={(e) => e.target.select()}
                                                 />
                                                 <button
+                                                    disabled={isPreview}
                                                     onClick={() => updateOwnedEggs(rarity, count + 1)}
                                                     className="p-1 bg-black/40 rounded hover:bg-green-500/20 text-text-secondary hover:text-green-400 transition-colors"
                                                 >
@@ -339,9 +371,9 @@ export default function Eggs() {
                                     ))}
                                 </div>
 
-                                {/* Always visible: pet merges the merge screen already offers,
-                                    from pets already hatched. Synced with Resources. */}
-                                <div className="mt-3 flex items-center justify-between gap-3 p-3 bg-bg-tertiary rounded-lg border border-border/50">
+                                {/* Pet merges the merge screen already offers, from pets already hatched.
+                                    Synced with Resources. Hidden for a summon plan, which leaves them out. */}
+                                {!isPreview && <div className="mt-3 flex items-center justify-between gap-3 p-3 bg-bg-tertiary rounded-lg border border-border/50">
                                     <div className="min-w-0">
                                         <div className="text-sm font-bold text-text-primary">Ready Pet Merges</div>
                                         <div className="text-[10px] text-text-muted">From pets already hatched. Counted in the war points below and synced with Resources.</div>
@@ -368,7 +400,7 @@ export default function Eggs() {
                                             +
                                         </button>
                                     </div>
-                                </div>
+                                </div>}
                             </CardContent>
                         </Card>
                     </div>
@@ -400,6 +432,12 @@ export default function Eggs() {
                                                 <span>Hatch Pts: <span className="text-text-primary font-bold">{Math.floor(optimization.hatchPoints).toLocaleString()}</span></span>
                                                 <span>Merge Pts: <span className="text-text-primary font-bold">{Math.floor(optimization.mergePoints).toLocaleString()}</span></span>
                                             </div>
+                                            {(optimization.unhatchedEggs || 0) > 0 && (
+                                                <div className="col-span-2 flex justify-between text-sm">
+                                                    <span className="text-text-secondary">Unhatched eggs merged unopened ({optimization.unhatchedEggs.toLocaleString()})</span>
+                                                    <span className="text-accent-secondary font-bold">+{Math.floor(optimization.unhatchedMergePoints).toLocaleString()} pts</span>
+                                                </div>
+                                            )}
                                             {(optimization.readyMergePoints || 0) > 0 && (
                                                 <div className="col-span-2 flex justify-between text-sm">
                                                     <span className="text-text-secondary">Ready Pet Merges ({readyMerges.toLocaleString()})</span>

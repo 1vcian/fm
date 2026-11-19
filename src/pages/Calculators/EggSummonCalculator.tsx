@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEggsCalculator } from '../../hooks/useEggsCalculator';
+import { encodeEggPlan } from '../../utils/eggPlanLink';
 import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
@@ -18,6 +21,25 @@ export default function EggSummonCalculator() {
     const { profile, updateNestedProfile } = useProfile();
     const { selectedVersion } = useGameDataContext();
     const eggSummon = useEggSummonCalculator();
+    const navigate = useNavigate();
+    // The eggs the pull gives (whole eggs only), planned with the hatch planner's own schedule:
+    // its slots, hatch times, time window and gem setting, so the war points are the most those
+    // eggs can earn in that window and match what the planner shows for them.
+    const pulledEggs = useMemo(() => {
+        const out: Record<string, number> = {};
+        for (const b of eggSummon.results?.breakdown || []) {
+            const n = Math.floor(b.count);
+            if (n > 0) out[b.rarity] = n;
+        }
+        return out;
+    }, [eggSummon.results]);
+    const hatch = useEggsCalculator({ eggsOverride: pulledEggs });
+    const plan = hatch.optimization;
+    const pulledTotal = Object.values(pulledEggs).reduce((a, b) => a + b, 0);
+    const plannedTotal = plan ? Object.values(plan.toOpen).reduce((a, b) => a + b, 0) : 0;
+    const sandboxFields = [...eggSummon.sandbox.fields, ...hatch.sandbox.fields];
+    const sandboxReset = () => { eggSummon.sandbox.reset(); hatch.sandbox.reset(); };
+    const fmtHours = (min: number) => `${Math.floor(min / 60)}h ${Math.round(min % 60)}m`;
 
 
     if (eggSummon.loading) {
@@ -40,7 +62,7 @@ export default function EggSummonCalculator() {
 
     return (
             <div className="space-y-6">
-                <SandboxPanel fields={eggSummon.sandbox.fields} onReset={eggSummon.sandbox.reset} />
+                <SandboxPanel fields={sandboxFields} onReset={sandboxReset} />
 
             <SummonGoalPlanner
                 title="Egg summon levels and ascensions"
@@ -199,6 +221,45 @@ export default function EggSummonCalculator() {
                         <CardContent className="space-y-6 relative z-10">
                             {eggSummon.results && eggSummon.results.totalSummons > 0 ? (
                                 <>
+                                    {/* War points: the hatch plan for the pulled eggs */}
+                                    {plan && (
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate(`/eggs?plan=${encodeEggPlan(pulledEggs)}`)}
+                                            className="w-full text-left p-4 bg-bg-primary rounded-xl border border-border hover:border-accent-primary/60 transition-colors group"
+                                            title="Open this plan in the hatch planner"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <div className="text-xs text-text-secondary font-bold uppercase mb-1">Max War Points (hatch plan)</div>
+                                                    <div className="text-3xl font-black text-white drop-shadow-md">
+                                                        {Math.floor(plan.totalPoints).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <GameAssetIcon asset={{ sheet: 'ClanTechTreeIcons', index: 8 }} size={32} className="opacity-50" />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                                <div className="bg-bg-tertiary/30 p-2 rounded-lg border border-white/5 text-center">
+                                                    <div className="text-[9px] text-text-muted uppercase font-bold">Hatch Points</div>
+                                                    <div className="text-sm font-mono font-bold text-white">+{Math.floor(plan.hatchPoints).toLocaleString()}</div>
+                                                </div>
+                                                <div className="bg-bg-tertiary/30 p-2 rounded-lg border border-white/5 text-center">
+                                                    <div className="text-[9px] text-text-muted uppercase font-bold">Merge Points</div>
+                                                    <div className="text-sm font-mono font-bold text-accent-secondary">+{Math.floor(plan.mergePoints).toLocaleString()}</div>
+                                                </div>
+                                            </div>
+                                            <div className="text-[10px] text-text-muted mt-2 leading-relaxed">
+                                                Hatches <span className="text-white font-bold">{plannedTotal.toLocaleString()}</span> of {pulledTotal.toLocaleString()} eggs
+                                                in {hatch.availableSlots} slot{hatch.availableSlots === 1 ? '' : 's'} within {hatch.timeLimitHours}h
+                                                ({fmtHours(plan.timeUsed)} used{plan.totalGemsUsed > 0 ? `, ${plan.totalGemsUsed.toLocaleString()} gems` : ''}).
+                                                Every hatched pet is merged{plan.unhatchedEggs > 0 ? <>, and the other <span className="text-white font-bold">{plan.unhatchedEggs.toLocaleString()}</span> eggs are merged unopened (+{Math.floor(plan.unhatchedMergePoints).toLocaleString()})</> : ''}.
+                                            </div>
+                                            <div className="text-[10px] font-bold text-accent-primary mt-2 group-hover:underline">
+                                                Open the plan in the hatch planner
+                                            </div>
+                                        </button>
+                                    )}
+
                                     {eggSummon.results.summonsToMax && (
                                         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
@@ -274,6 +335,11 @@ export default function EggSummonCalculator() {
                                                         <span className="font-mono font-bold text-accent-primary leading-none">
                                                             {item.count.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                                         </span>
+                                                        {plan && (pulledEggs[item.rarity] || 0) > 0 && (
+                                                            <span className="text-[9px] font-mono text-text-muted leading-none">
+                                                                hatched: <span className="text-white font-bold">{(plan.toOpen[item.rarity] || 0).toLocaleString()}</span>
+                                                            </span>
+                                                        )}
 
                                                         {eggSummon.results?.simulateAscension && eggSummon.results?.phases && eggSummon.results?.phases.length > 1 && (
                                                             <div className="flex flex-wrap gap-1 justify-end max-w-[150px] mt-1">
