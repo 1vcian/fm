@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Target, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LossProgressBar } from '../components/Battle/LossProgressBar';
 import { BattlePool } from '../progress/battlePool';
-import { searchFrontier } from '../progress/frontierSearch';
+import { readHint, saveHint, searchFrontier } from '../progress/frontierSearch';
 import type { BattleTarget } from '../progress/battleWorker';
 import type { UserProfile } from '../types/Profile';
 import { useBattleSimulation } from '../hooks/useBattleSimulation';
@@ -71,15 +71,6 @@ function batchedStatuses<K>(setWin: (f: (m: Map<K, number>) => Map<K, number>) =
         flush() { if (timer !== null) window.clearTimeout(timer); flush(); },
         cancel() { if (timer !== null) window.clearTimeout(timer); timer = null; win = []; loss = []; },
     };
-}
-
-/** Where the last search for this profile ended (index in its battle line), to start the next one there. */
-const hintKey = (profile: UserProfile, mode: string) => `fm.progressHint.${profile.id}.${mode}`;
-function readHint(profile: UserProfile, mode: string): number {
-    try { return Math.max(0, Number(localStorage.getItem(hintKey(profile, mode))) || 0); } catch { return 0; }
-}
-function saveHint(profile: UserProfile, mode: string, index: number) {
-    try { localStorage.setItem(hintKey(profile, mode), String(Math.max(0, index))); } catch { /* storage blocked */ }
 }
 
 /** A cell's lost-run progress: a thin bar under the number (see LossProgressBar). */
