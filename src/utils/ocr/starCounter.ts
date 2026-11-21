@@ -33,8 +33,13 @@ export interface StarDebug {
     count: number;
 }
 
-/** Count ascension stars (0..3) in the star-band of a tile within the given canvas. */
-export function countStars(src: HTMLCanvasElement, tile: Rect): number {
+/**
+ * Count ascension stars (0..3) in the star-band of a tile within the given canvas.
+ * `accept`, when given, is a further test on each candidate pocket (its box in canvas pixels):
+ * a caller that knows where its stars sit and how big they are can reject gold shapes in the
+ * art around them (the skills grid's band also covers the lower half of the skill icon).
+ */
+export function countStars(src: HTMLCanvasElement, tile: Rect, accept?: (pocket: Rect) => boolean): number {
     const IW = src.width, IH = src.height;
     // star band relative to tile, clamped to the image
     const x0 = Math.max(0, Math.round(tile.x + STAR.bandX0 * tile.w));
@@ -112,6 +117,7 @@ export function countStars(src: HTMLCanvasElement, tile: Rect): number {
         if (area < minArea) rej = `area ${area}<${minArea.toFixed(1)}`;
         else if (ar < STAR.aspectLo || ar > STAR.aspectHi) rej = `aspect ${ar.toFixed(2)}`;
         else if (msat < STAR.minSaturation) rej = `sat ${msat.toFixed(0)}`;
+        else if (accept && !accept({ x: x0 + minx - 1, y: y0 + miny - 1, w: bw, h: bh })) rej = 'placement';
         if (dbgEnclosed) dbgPockets.push({ x: minx, y: miny, w: bw, h: bh, area, sat: Math.round(msat), rej });
         // white digit-loops have low saturation; gold stars high
         if (rej) continue;

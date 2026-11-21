@@ -416,7 +416,24 @@ function readCellStars(canvas: HTMLCanvasElement, cell: GridCell, cw: number): n
         w: Math.round(2 * STAR_HW * cw),
         h: Math.round(STAR_H * cw),
     };
-    try { return countStars(canvas, rect); } catch { return 0; }
+    try { return countStars(canvas, rect, (p) => isStarPocket(p, cell, cw)); } catch { return 0; }
+}
+
+/**
+ * A star's pocket in a skill cell: small and in the star row under the "Lv." text. The band
+ * countStars searches also covers the lower half of the icon, and icons with an enclosed gold
+ * shape (Meat's drumstick, Berserk's flame, Morale's star, Cannon Barrage's wheel) read as stars
+ * there: a skills screen with no ascension at all came out ★1 or ★2 on six of 15 skills.
+ * Measured: a real star's pocket is ~0.20 cw across, centred ~1.0 cw below the icon top
+ * (examples/skills.webp, every cell); the icon-art pockets were 0.29..0.60 cw across or centred
+ * 0.52..0.79 cw down. Overlapping 2-/3-star pockets are smaller, never bigger, so the size cap
+ * only cuts art.
+ */
+const STAR_POCKET_MAX = 0.27;               // largest side, in cw
+const STAR_ROW_LO = 0.85, STAR_ROW_HI = 1.2; // pocket centre, cw below the icon top
+function isStarPocket(p: Rect, cell: GridCell, cw: number): boolean {
+    const cy = (p.y + p.h / 2 - cell.ty) / cw;
+    return Math.max(p.w, p.h) <= STAR_POCKET_MAX * cw && cy >= STAR_ROW_LO && cy <= STAR_ROW_HI;
 }
 
 /**
