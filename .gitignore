@@ -44,3 +44,6 @@ public/__*/
 /.*.mjs
 /*.tsv
 
+
+# Test output
+test-results/
