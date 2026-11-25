@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),{Worker}=require('node:worker_threads'),assert=require('node:assert/strict');
 const root=__dirname+'/..',source=fs.readFileSync(root+'/engine.js','utf8')+'\n'+fs.readFileSync(root+'/lab-core.js','utf8')+'\n'+fs.readFileSync(root+'/worker.js','utf8');
 const c=vm.createContext({structuredClone});vm.runInContext(fs.readFileSync(root+'/engine.js','utf8')+'\n'+fs.readFileSync(root+'/lab-core.js','utf8')+'\nglobalThis.api={makeJob};',c);
-const observed=JSON.parse(fs.readFileSync(__dirname+'/observed.json'));
+const observed=JSON.parse(fs.readFileSync(__dirname+'/../example.json'));
 const job=c.api.makeJob({level:observed.forgeLevel,observations:observed.observations});
 assert(!('start'in job)&&!('end'in job));
 const worker=new Worker("const {parentPort}=require('node:worker_threads');globalThis.postMessage=m=>parentPort.postMessage(m);parentPort.on('message',data=>onmessage({data}));\n"+source,{eval:true});
