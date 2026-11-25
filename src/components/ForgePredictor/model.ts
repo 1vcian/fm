@@ -14,7 +14,15 @@ export const statName = (k:number|string) => getStatName(STAT_IDS[Number(k)]??''
 export const statCount = (config:any,ascension:number,age:number):number => ascension>0?config.ascendedStatCount:config.statCounts[age];
 export function restoreInputs(forgeLevel=1,ascension=0):Inputs {
     const fallback:Inputs={schemaVersion:1,model:{version:LATEST,ascension},forgeLevel,method:'auto',autoSearch:true,observations:[blankRoll()]};
-    try{const saved=JSON.parse(localStorage.getItem(STORAGE)??'null');if(!saved)return fallback;return normalizeInputs(saved);}catch{return fallback;}
+    try{
+        const saved=JSON.parse(localStorage.getItem(STORAGE)??'null');
+        if(!saved)return fallback;
+        const config=MODELS[saved.model?.version??'legacy211'];
+        const level=Number(saved.forgeLevel??saved.level);
+        const cap=config?.maxDisplayedByAscension?.[saved.model?.ascension??0];
+        const safeLevel=Number.isInteger(level)&&level>=1?Math.min(level,cap??level):Math.min(forgeLevel,cap??forgeLevel);
+        return normalizeInputs({...saved,forgeLevel:safeLevel});
+    }catch{return fallback;}
 }
 export function normalizeInputs(data:any):Inputs {
     const model=data.model??{version:'legacy211',ascension:0},config=MODELS[model.version];
@@ -31,7 +39,7 @@ export function normalizeInputs(data:any):Inputs {
 }
 export function readiness(input:Inputs){
     const config=MODELS[input.model.version];let complete=0,unfinished=false;
-    for(const roll of input.observations){if(roll.skip)continue;const stats=roll.stats.filter(s=>String(s.k)!==''&&/^\d+(?:[.,]\d{1,4})?$/.test(String(s.percent).replace(/^-/,'').trim()));const count=statCount(config,input.model.ascension,roll.age);const ready=stats.length>0&&stats.length===count||String(roll.displayLevel??'').trim()!==''||count===0&&String(roll.idx)!=='';if(ready)complete++;else unfinished=true;}
+    for(const roll of input.observations){if(roll.skip)continue;const stats=roll.stats.filter(s=>String(s.k)!==''&&/^\d+(?:[.,]\d{1,4})?$/.test(String(s.percent).replace(/^-/,'').trim()));const count=statCount(config,input.model.ascension,roll.age);const locked=(config.ageUnlockAscension?.[roll.age]??0)>input.model.ascension;const ready=!locked&&(stats.length>0&&stats.length===count||String(roll.displayLevel??'').trim()!==''||count===0&&String(roll.idx)!=='');if(ready)complete++;else unfinished=true;}
     return {complete,unfinished};
 }
 export function bonusOptions(config:any,roll:Roll,index:number){

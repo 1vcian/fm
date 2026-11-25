@@ -9,7 +9,7 @@ import { ItemPicker, ItemThumbnail, usePredictorArtwork } from '../../components
 import { MODELS, LATEST, SLOTS, STORAGE, Roll, Inputs, blankRoll, restoreInputs, normalizeInputs, readiness, bonusOptions, statName, statCount, downloadJson, timeLabel } from '../../components/ForgePredictor/model';
 import { useProfile } from '../../context/ProfileContext';
 import { cn } from '../../lib/utils';
-import example from '../../../scripts/forge-seed-lab/tests/observed.json';
+import example from '../../../scripts/forge-seed-lab/example.json';
 
 const selectClass='w-full bg-bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-primary';
 const newWorker=()=>new Worker(`${import.meta.env.BASE_URL}forge-seed-lab/predictor-worker.js`);
@@ -49,7 +49,7 @@ export default function ForgePredictor(){
     const closePicker=useCallback(()=>setPicker(false),[]);
     useEffect(()=>{try{localStorage.setItem(STORAGE,JSON.stringify(input));}catch{}},[input]);
     useEffect(()=>{if(!input.autoSearch||ready.complete<3||ready.unfinished)return;const timer=setTimeout(()=>run({kind:'recover',input}),900);return()=>clearTimeout(timer);},[input,run]);
-    useEffect(()=>{const w=newWorker();const timer=setTimeout(()=>w.postMessage({kind:'hammer',model:input.model,hammers:Number(hammers),forgeLevel:Number(input.forgeLevel),caps:caps.map(Number),sellBonus:Number(sellBonus),freeChance:Number(freeChance)}),200);w.onmessage=({data:r})=>{if(r.kind==='error'){setHammer(null);setHammerError(r.message);}else{setHammer(r.value);setHammerError('');}};w.onerror=()=>setHammerError('Unable to calculate hammer value.');return()=>{clearTimeout(timer);w.terminate();};},[hammers,caps,sellBonus,freeChance,input.model,input.forgeLevel]);
+    useEffect(()=>{const level=Number(input.forgeLevel);if(tab!=='hammers'||!Number.isInteger(level)||level<1||level>cap)return;const w=newWorker();const timer=setTimeout(()=>w.postMessage({kind:'hammer',model:input.model,hammers:Number(hammers),forgeLevel:level,caps:caps.map(Number),sellBonus:Number(sellBonus),freeChance:Number(freeChance)}),200);w.onmessage=({data:r})=>{if(r.kind==='error'){setHammer(null);setHammerError(r.message);}else{setHammer(r.value);setHammerError('');}};w.onerror=()=>setHammerError('Unable to calculate hammer value.');return()=>{clearTimeout(timer);w.terminate();};},[tab,cap,hammers,caps,sellBonus,freeChance,input.model,input.forgeLevel]);
     function changeModel(version:string,asc:number){const next=MODELS[version];if(target.minAge!==''&&(next.ageUnlockAscension?.[Number(target.minAge)]??0)>asc)setTarget({...target,minAge:''});patchInput({model:{version,ascension:asc},forgeLevel:Math.min(Number(input.forgeLevel)||1,next.maxDisplayedByAscension[asc])});}
     function addRoll(){if(input.observations.length>=100)return;const list=[...input.observations,blankRoll(active.age,active.type)];patchInput({observations:list});setSelected(list.length-1);setHistoryOpen(true);setTab('recover');}
     function removeRoll(){const list=input.observations.filter((_,i)=>i!==selected);patchInput({observations:list.length?list:[blankRoll()]});setSelected(Math.max(0,Math.min(selected,list.length-1)));}
