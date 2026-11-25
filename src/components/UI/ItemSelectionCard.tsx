@@ -104,6 +104,7 @@ interface ItemSelectionCardProps {
      */
     layout?: 'tile' | 'row';
     currentLevel?: number;
+    hideLevelBadge?: boolean;
     maxLevel?: number;
     /**
      * Artwork frame size, when the container is tighter than the default 96/128px well.
@@ -149,6 +150,7 @@ export function ItemSelectionCard({
     variant = 'default',
     layout = 'tile',
     currentLevel,
+    hideLevelBadge = false,
     // No cap of its own: callers that let the level be typed pass the config's max level
     // (and clamp again in their handler).
     maxLevel = Infinity,
@@ -277,11 +279,11 @@ export function ItemSelectionCard({
                                 <Plus className="w-2.5 h-2.5 text-white/70 hover:text-white" />
                             </button>
                         </div>
-                    ) : (
+                    ) : !hideLevelBadge ? (
                         <span className="bg-black/60 text-white text-[10px] md:text-[11px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 shrink-0 w-fit">
                             Lv{displayLevel}
                         </span>
-                    )}
+                    ) : null}
 
                     {/* Ascension Stars */}
                     {onAscensionChange ? (
