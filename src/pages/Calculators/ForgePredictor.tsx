@@ -6,7 +6,8 @@ import { Input } from '../../components/UI/Input';
 import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { ItemThumbnail, usePredictorArtwork } from '../../components/ForgePredictor/ItemPicker';
 import { RollEditor, Select } from '../../components/ForgePredictor/RollEditor';
-import { MODELS, LATEST, SLOTS, STORAGE, Roll, Inputs, blankRoll, restoreInputs, normalizeInputs, readiness, statName, downloadJson, timeLabel } from '../../components/ForgePredictor/model';
+import { useForgeModel } from '../../components/ForgePredictor/useForgeModel';
+import { SLOTS, STORAGE, Roll, Inputs, blankRoll, restoreInputs, normalizeInputs, readiness, statName, downloadJson, timeLabel } from '../../components/ForgePredictor/model';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useForgeTreeBonuses } from '../../hooks/useForgeTreeBonuses';
@@ -16,19 +17,23 @@ import example from '../../../scripts/forge-seed-lab/example.json';
 const RECENT='forge-seed-lab-recent';
 
 const newWorker=()=>new Worker(`${import.meta.env.BASE_URL}forge-seed-lab/predictor-worker.js`);
-function normalizeCurrentInputs(data: any) {
-    return normalizeInputs({...data, model:{version:LATEST, ascension:data.model?.ascension ?? 0}});
-}
 
 export default function ForgePredictor(){
+    const {model,failed}=useForgeModel();
+    if(!model)return <Card className="p-4 text-sm text-text-muted">{failed?'The Forge Predictor does not support the selected game data version. Choose a newer version in Configs.':'Loading game data…'}</Card>;
+    return <ForgePredictorPage key={model.version} model={model}/>;
+}
+
+function ForgePredictorPage({model}:{model:any}){
     const {profile,updateNestedProfile}=useProfile();
-    const latest=MODELS[LATEST];
+    const latest=model,version=model.version as string;
+    const normalizeCurrentInputs=(data:any)=>normalizeInputs({...data,model:{version,ascension:data.model?.ascension??0}},model);
     const profileAscension=Math.min(Math.max(0,profile.misc.forgeAscensionLevel??0),latest.primaryMultipliers.length-1);
     const profileLevel=Math.min(Math.max(1,profile.misc.forgeLevel||1),latest.maxDisplayedByAscension[profileAscension]);
-    const [input,setInput]=useState<Inputs>(()=>({...restoreInputs(profileLevel,profileAscension),model:{version:LATEST,ascension:profileAscension},forgeLevel:profileLevel}));
+    const [input,setInput]=useState<Inputs>(()=>({...restoreInputs(model,version,profileLevel,profileAscension),model:{version,ascension:profileAscension},forgeLevel:profileLevel}));
     const [tab,setTab]=useState('recover'),[selected,setSelected]=useState(0),[historyOpen,setHistoryOpen]=useState(true),[result,setResult]=useState<any>(null),[job,setJob]=useState<any>(null),[scan,setScan]=useState<any>(null),[status,setStatus]=useState('Enter consecutive results. Searches begin at three complete rolls.'),[error,setError]=useState(''),[busy,setBusy]=useState(false),[progress,setProgress]=useState<any>(null);
     const worker=useRef<Worker|null>(null),deadline=useRef<ReturnType<typeof setTimeout>>(),mounted=useRef(true),importRef=useRef<HTMLInputElement>(null);
-    const config=MODELS[input.model.version],ascension=input.model.ascension,cap=config.maxDisplayedByAscension[ascension],ready=readiness(input),artwork=usePredictorArtwork(input.model.version);
+    const config=model,ascension=input.model.ascension,cap=config.maxDisplayedByAscension[ascension],ready=readiness(input,config),artwork=usePredictorArtwork(input.model.version);
     const [target,setTarget]=useState({minAge:'',type:'',query:'',stat:'',percent:'15',comparison:'gt',certainty:'all'}),[scanMode,setScanMode]=useState('range'),[scanCount,setScanCount]=useState('20000'),[wanted,setWanted]=useState('1'),[sort,setSort]=useState('roll'),[visible,setVisible]=useState(100),[seconds,setSeconds]=useState('');
     const [hammer,setHammer]=useState<any>(null),[hammerError,setHammerError]=useState(''),[overrides,setOverrides]=useState<{sellBonus?:string;freeChance?:string;caps?:string[]}>({});
     const tree=useForgeTreeBonuses(),{data:balancing}=useGameData<{ItemBaseMaxLevel:number}>('ItemBalancingConfig.json');
@@ -46,26 +51,26 @@ export default function ForgePredictor(){
         w.onmessage=({data:r})=>{if(worker.current!==w)return;
             if(r.kind==='error'){setError(r.message);setStatus('Check the inputs or add more evidence. No uniqueness is claimed.');finish();return;}
             if(r.kind==='ready'){setJob(r.job);return;}
-            if(r.kind==='validated'){const loaded=normalizeInputs(r.input);updateInputs(loaded);updateNestedProfile('misc',{forgeAscensionLevel:loaded.model.ascension,forgeLevel:Number(loaded.forgeLevel)});setSelected(0);setHistoryOpen(true);setStatus('Inputs loaded.');finish();return;}
+            if(r.kind==='validated'){const loaded=normalizeInputs(r.input,config);updateInputs(loaded);updateNestedProfile('misc',{forgeAscensionLevel:loaded.model.ascension,forgeLevel:Number(loaded.forgeLevel)});setSelected(0);setHistoryOpen(true);setStatus('Inputs loaded.');finish();return;}
             if(r.kind==='scan-progress'||r.kind==='scan-done'){setScan(r);setStatus(r.reason??`Scanned ${r.scanned.toLocaleString()} rolls; ${r.matches.toLocaleString()} matches.`);if(r.kind==='scan-done')finish();return;}
             if(r.kind==='locate-progress'){setProgress({progress:r.scanned/r.limit});return;}
             if(r.kind==='located'){if(r.located){setJob(r.job);setResult({complete:true,count:1,seeds:[r.located.startSeed],projections:[{startSeed:r.located.startSeed,next:r.located.next}]});setStatus(`Up to date: found your latest forge ${(r.located.offset+r.job.observations.length).toLocaleString()} forges after the saved seed. The new position is saved to your profile.`);}else setStatus(r.matches.length?`${r.matches.length>=20?'20 or more':r.matches.length} positions match. Add another consecutive recent forge.`:`No match within ${r.scanned.toLocaleString()} forges after the saved seed. Check the entries and forge level, or search further.`);finish();return;}
             setProgress(r);if(r.kind==='done'){setResult(r);setStatus(r.reason??(r.complete&&r.count===1?'Current seed recovered. Check the next item against a fresh in-game forge.':r.complete?'Add more consecutive results to resolve the remaining candidates.':'Recovery incomplete. No unique seed established.'));if(r.complete&&r.count===1)setHistoryOpen(false);finish();}
         };
         w.onerror=e=>{if(worker.current!==w)return;setError(e.message||'Worker failed.');finish();};
-        setStatus(message.kind==='scan'?'Searching future rolls…':'Recovering forge seed…');w.postMessage(message);
-    },[stop,updateNestedProfile]);
+        setStatus(message.kind==='scan'?'Searching future rolls…':'Recovering forge seed…');w.postMessage({...message,modelData:model});
+    },[stop,updateNestedProfile,model]);
     function updateInputs(next:Inputs){stop();setResult(null);setJob(null);setScan(null);setProgress(null);setError('');setStatus('Enter consecutive forge results to search.');setInput(next);}
     function patchInput(patch:Partial<Inputs>){updateInputs({...input,...patch});}
     useEffect(()=>{try{localStorage.setItem(STORAGE,JSON.stringify(input));}catch{}},[input]);
-    const saved=profile.misc.forgePredictor?.version===LATEST?profile.misc.forgePredictor:undefined;
+    const saved=profile.misc.forgePredictor?.version===version?profile.misc.forgePredictor:undefined;
     const [recent,setRecent]=useState<Roll[]>(()=>{try{const list=JSON.parse(localStorage.getItem(RECENT)??'null');return Array.isArray(list)&&list.length?list:[blankRoll()];}catch{return [blankRoll()];}}),[recentSelected,setRecentSelected]=useState(0),[recentOpen,setRecentOpen]=useState(true),[catchUpLimit,setCatchUpLimit]=useState('100000');
     useEffect(()=>{try{localStorage.setItem(RECENT,JSON.stringify(recent));}catch{}},[recent]);
-    const recentReady=readiness({...input,observations:recent});
+    const recentReady=readiness({...input,observations:recent},config);
     function locate(){if(!saved)return;const limit=Number(catchUpLimit);if(!Number.isSafeInteger(limit)||limit<1||limit>100000000){setError('Forges to search must be a whole number from 1 to 100,000,000.');return;}run({kind:'locate',model:input.model,forgeLevel:input.forgeLevel,observations:structuredClone(recent),fromSeed:saved.currentSeed,limit});}
     useEffect(()=>{if(!input.autoSearch||ready.unfinished||ready.complete<3)return;const timer=setTimeout(()=>run({kind:'recover',input}),900);return()=>clearTimeout(timer);},[input,run]);
-    useEffect(()=>{const level=Number(input.forgeLevel);if(tab!=='hammers'||!Number.isInteger(level)||level<1||level>cap)return;const w=newWorker();const timer=setTimeout(()=>w.postMessage({kind:'hammer',model:input.model,hammers:Number(hammers),forgeLevel:level,caps:caps.map(Number),sellBonus:Number(sellBonus),freeChance:Number(freeChance)}),200);w.onmessage=({data:r})=>{if(r.kind==='error'){setHammer(null);setHammerError(r.message);}else{setHammer(r.value);setHammerError('');}};w.onerror=()=>setHammerError('Unable to calculate hammer value.');return()=>{clearTimeout(timer);w.terminate();};},[tab,cap,hammers,caps,sellBonus,freeChance,input.model,input.forgeLevel]);
-    function applyForge(asc:number,level:number){if(target.minAge!==''&&(latest.ageUnlockAscension?.[Number(target.minAge)]??0)>asc)setTarget({...target,minAge:''});patchInput({model:{version:LATEST,ascension:asc},forgeLevel:level});}
+    useEffect(()=>{const level=Number(input.forgeLevel);if(tab!=='hammers'||!Number.isInteger(level)||level<1||level>cap)return;const w=newWorker();const timer=setTimeout(()=>w.postMessage({kind:'hammer',modelData:model,model:input.model,hammers:Number(hammers),forgeLevel:level,caps:caps.map(Number),sellBonus:Number(sellBonus),freeChance:Number(freeChance)}),200);w.onmessage=({data:r})=>{if(r.kind==='error'){setHammer(null);setHammerError(r.message);}else{setHammer(r.value);setHammerError('');}};w.onerror=()=>setHammerError('Unable to calculate hammer value.');return()=>{clearTimeout(timer);w.terminate();};},[tab,cap,hammers,caps,sellBonus,freeChance,input.model,input.forgeLevel]);
+    function applyForge(asc:number,level:number){if(target.minAge!==''&&(latest.ageUnlockAscension?.[Number(target.minAge)]??0)>asc)setTarget({...target,minAge:''});patchInput({model:{version,ascension:asc},forgeLevel:level});}
     function changeAscension(asc:number){const level=Math.min(Number(input.forgeLevel)||profileLevel,latest.maxDisplayedByAscension[asc]);applyForge(asc,level);updateNestedProfile('misc',{forgeAscensionLevel:asc,forgeLevel:level});}
     function changeForgeLevel(value:string){patchInput({forgeLevel:value});const level=Number(value);if(Number.isInteger(level)&&level>=1&&level<=cap)updateNestedProfile('misc',{forgeLevel:level});}
     useEffect(()=>{if(input.model.ascension!==profileAscension||Number(input.forgeLevel)!==profileLevel)applyForge(profileAscension,profileLevel);},[profileAscension,profileLevel]);

@@ -7,11 +7,11 @@ import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { getItemImage } from '../../utils/itemAssets';
 import { resolveTextureVersion } from '../../utils/ascensionUtils';
 import { useGameData } from '../../hooks/useGameData';
-import { LATEST, SLOTS, Roll, bonusOptions, statCount } from './model';
+import { SLOTS, Roll, bonusOptions, statCount } from './model';
 
 export function usePredictorArtwork(version:string){
     const {data:mapping}=useGameData<any>('AutoItemMapping.json');
-    return (age:number,type:number,idx:number,config:any)=>!config.ageNames[age]?null:getItemImage(config.ageNames[age],SLOTS[type],idx,mapping,resolveTextureVersion(version==='legacy211'?'2026_10_27_09_45':LATEST));
+    return (age:number,type:number,idx:number,config:any)=>!config.ageNames[age]?null:getItemImage(config.ageNames[age],SLOTS[type],idx,mapping,resolveTextureVersion(version==='legacy211'?'2026_10_27_09_45':version));
 }
 export function ItemThumbnail({src,name,size='w-14 h-14'}:{src:string|null;name:string;size?:string}){
     const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[src]);
@@ -24,7 +24,7 @@ export function ItemPicker({roll, config, version, ascension, forgeLevel, onSele
     const [draft, setDraft] = useState<Roll>(() => ({...roll, stats: roll.stats.filter(s => String(s.k) !== '' || s.percent !== '')}));
     const dialog = useRef<HTMLDialogElement>(null);
     const artwork = usePredictorArtwork(version);
-    const texture = resolveTextureVersion(version === 'legacy211' ? '2026_10_27_09_45' : LATEST);
+    const texture = resolveTextureVersion(version === 'legacy211' ? '2026_10_27_09_45' : version);
     const {age, type, idx} = draft;
     const indices: number[] = (config.items[age] ?? []).find((group: any) => group.type === type)?.indices ?? [];
     const locked = (a: number) => (config.ageUnlockAscension?.[a] ?? 0) > ascension;

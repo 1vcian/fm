@@ -1,8 +1,5 @@
-import configs from '../../../scripts/forge-seed-lab/model-data.json';
 import { getStatName } from '../../utils/statNames';
 
-export const MODELS = configs as Record<string, any>;
-export const LATEST = '2026_11_16_09_55';
 export const SLOTS = ['Helmet','Armour','Gloves','Necklace','Ring','Weapon','Shoes','Belt'];
 export const STAT_IDS = ['CriticalChance','CriticalMulti','BlockChance','HealthRegen','LifeSteal','DoubleDamageChance','DamageMulti','MeleeDamageMulti','RangedDamageMulti','AttackSpeed','SkillDamageMulti','SkillCooldownMulti','HealthMulti'];
 export type Bonus = { k: string | number; percent: string };
@@ -12,21 +9,17 @@ export const STORAGE = 'forge-seed-lab-input';
 export const blankRoll = (age=8,type=6):Roll => ({age,type,idx:'',displayLevel:'',stats:[]});
 export const statName = (k:number|string) => getStatName(STAT_IDS[Number(k)]??'');
 export const statCount = (config:any,ascension:number,age:number):number => ascension>0?config.ascendedStatCount:config.statCounts[age];
-export function restoreInputs(forgeLevel=1,ascension=0):Inputs {
-    const fallback:Inputs={schemaVersion:1,model:{version:LATEST,ascension},forgeLevel,method:'auto',autoSearch:true,observations:[blankRoll()]};
+export function restoreInputs(config:any,version:string,forgeLevel:number,ascension:number):Inputs {
+    const fallback:Inputs={schemaVersion:1,model:{version,ascension},forgeLevel,method:'auto',autoSearch:true,observations:[blankRoll()]};
     try{
         const saved=JSON.parse(localStorage.getItem(STORAGE)??'null');
         if(!saved)return fallback;
-        const config=MODELS[saved.model?.version??'legacy211'];
-        const level=Number(saved.forgeLevel??saved.level);
-        const cap=config?.maxDisplayedByAscension?.[saved.model?.ascension??0];
-        const safeLevel=Number.isInteger(level)&&level>=1?Math.min(level,cap??level):Math.min(forgeLevel,cap??forgeLevel);
-        return normalizeInputs({...saved,forgeLevel:safeLevel});
+        return normalizeInputs({...saved,model:{version,ascension},forgeLevel},config);
     }catch{return fallback;}
 }
-export function normalizeInputs(data:any):Inputs {
-    const model=data.model??{version:'legacy211',ascension:0},config=MODELS[model.version];
-    if(!config||!Number.isInteger(model.ascension)||model.ascension<0||model.ascension>=config.primaryMultipliers.length)throw Error('Select a supported data version and forge ascension.');
+export function normalizeInputs(data:any,config:any):Inputs {
+    const model=data.model;
+    if(!config||!model||!Number.isInteger(model.ascension)||model.ascension<0||model.ascension>=config.primaryMultipliers.length)throw Error('Select a supported data version and forge ascension.');
     if(!Array.isArray(data.observations)||data.observations.length<1||data.observations.length>100)throw Error('Input files must contain 1 to 100 rolls.');
     const forgeLevel=Number(data.forgeLevel??data.level);
     if(!Number.isInteger(forgeLevel)||forgeLevel<1||forgeLevel>config.maxDisplayedByAscension[model.ascension])throw Error('Forge level is outside the selected ascension cap.');
@@ -37,8 +30,8 @@ export function normalizeInputs(data:any):Inputs {
     });
     return {schemaVersion:1,model,forgeLevel,method:'auto',autoSearch:data.autoSearch!==false,observations,searchSeconds:300};
 }
-export function readiness(input:Inputs){
-    const config=MODELS[input.model.version];let complete=0,unfinished=false;
+export function readiness(input:Inputs,config:any){
+    let complete=0,unfinished=false;
     for(const roll of input.observations){if(roll.skip)continue;const stats=roll.stats.filter(s=>String(s.k)!==''&&/^\d+(?:[.,]\d{1,4})?$/.test(String(s.percent).replace(/^-/,'').trim()));const count=statCount(config,input.model.ascension,roll.age);const locked=(config.ageUnlockAscension?.[roll.age]??0)>input.model.ascension;const ready=!locked&&(stats.length>0&&stats.length===count||String(roll.displayLevel??'').trim()!==''||count===0&&String(roll.idx)!=='');if(ready)complete++;else unfinished=true;}
     return {complete,unfinished};
 }

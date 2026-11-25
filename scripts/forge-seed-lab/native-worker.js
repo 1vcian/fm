@@ -7,6 +7,7 @@ function nativeInput(input){
  return input;
 }
 onmessage=async({data})=>{try{
+ if(data.modelData)MODEL_CONFIGS[data.modelData.version]=data.modelData;
  if(data.kind==='validate'){nativeInput(data.input);postMessage({kind:'validated',input:data.input});return;}
  if(data.kind==='hammer'){applyModel(data.model);postMessage({kind:'hammer-done',value:calculateHammerValue(data.hammers,data.forgeLevel,data.caps,data.sellBonus,data.freeChance)});return;}
  if(data.kind==='locate'){postMessage(await locateForges(data));return;}

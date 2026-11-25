@@ -1,6 +1,6 @@
 # Forge Predictor data audit
 
-Configuration: `public/parsed_configs/2026_11_16_09_55` in this repository. Legacy 2.11.1 remains a separate selection. Inputs and forecasts record the selected model and forge ascension. Do not combine observations across configuration, forge level or ascension changes.
+Configuration: the calculator builds its tables from `public/parsed_configs/<selected version>`, the same files the rest of the app reads; the table below describes `2026_11_16_09_55`. Legacy 2.11.1 remains a separate selection. Inputs and forecasts record the selected model and forge ascension. Do not combine observations across configuration, forge level or ascension changes.
 
 | Rule | Latest model |
 | --- | --- |
