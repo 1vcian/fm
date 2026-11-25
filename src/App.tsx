@@ -31,6 +31,7 @@ import ProgressPrediction from './pages/ProgressPrediction';
 import PvpArena from './pages/PvpArena';
 import SubstatsCalculator from './pages/Calculators/SubstatsCalculator';
 import ForgeCalculator from './pages/Calculators/ForgeCalculator';
+import ForgePredictor from './pages/Calculators/ForgePredictor';
 import SummonsCalculator from './pages/Calculators/SummonsCalculator';
 import TreeCalculator from './pages/Calculators/TreeCalculator';
 import WarPrizesCalculator from './pages/Calculators/WarPrizesCalculator';
@@ -97,6 +98,8 @@ function App() {
                                     <Route path="faq" element={<FAQ />} />
                                     <Route path="pvp-arena" element={<PvpArena />} />
                                     <Route path="calculators/forge" element={<ForgeCalculator />} />
+                                    <Route path="calculators/forge-predictor" element={<ForgePredictor />} />
+                                    <Route path="calculators/forge-seed" element={<Navigate to="/calculators/forge-predictor" replace />} />
                                     <Route path="calculators/summons" element={<SummonsCalculator />} />
                                     {/* The mount and skill calculators are tabs of the Summons calculator now. */}
                                     <Route path="calculators/mounts" element={<Navigate to="/calculators/summons?tab=mounts" replace />} />
