@@ -12,6 +12,9 @@ onmessage=async({data})=>{try{
  if(data.kind==='scan'){applyModel(data.job.model);postMessage(await scanFuture(data));return;}
  const input=nativeInput(data.input),job=makeJob({model:input.model,level:input.forgeLevel,observations:input.observations,method:input.method});
  postMessage({kind:'ready',job});
+ if(job.observations.some(o=>!o.skip&&o.stats.some(s=>{const [lo,hi]=numericIntervals(s);return lo>hi;}))){
+  postMessage({kind:'done',complete:true,count:0,seeds:[],projections:[],reason:'No match in the bundled model. At least one entered substat falls outside its modeled range.'});return;
+ }
  if(job.method==='levels'){importScripts('predictor-solver.js');postMessage(await recoverLevels(job,m=>postMessage(m)));}
  else postMessage(await recover(job,m=>postMessage(m)));
  }catch(e){postMessage({kind:'error',message:e.message,complete:false});}};
