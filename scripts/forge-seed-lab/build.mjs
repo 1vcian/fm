@@ -24,3 +24,8 @@ const output = path.join(root, 'public/forge-seed-lab');
 mkdirSync(output, { recursive: true });
 writeFileSync(path.join(output, 'index.html'), html);
 console.log('Built public/forge-seed-lab/index.html');
+
+const engine = read('engine.js').split('\nconst MODEL_CONFIGS=')[0] + '\n' + read('model-runtime.js').replace('@@MODEL_DATA@@', () => read('model-data.json')) + '\napplyModel({version:"legacy211",ascension:0});\n';
+const hammer = read('hammer-ui.js').split('function renderHammerValue')[0];
+writeFileSync(path.join(output, 'predictor-worker.js'), [engine, ...['lab-core.js','worker.js','target-core.js','scan-worker.js','levels.js','hammer-model.js'].map(read), hammer, read('native-worker.js')].join('\n'));
+writeFileSync(path.join(output, 'predictor-solver.js'), read('vendor/solver-runtime.js'));
