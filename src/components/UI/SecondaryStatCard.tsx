@@ -48,6 +48,7 @@ export const SecondaryStatCard: React.FC<SecondaryStatCardProps> = ({
                     ))}
                 </select>
                 <button
+                    type="button"
                     onClick={onRemove}
                     className="p-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                     title="Remove Stat"
