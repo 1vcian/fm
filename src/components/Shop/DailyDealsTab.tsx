@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { GameIcon } from '../UI/GameIcon';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { cn } from '../../lib/utils';
-import { DEALS_PER_SET, rollDailyDeals, type DailyDealRow } from '../../utils/dailyDeals';
+import type { DailyDealRow } from '../../utils/dailyDeals';
 
 /**
- * Daily Deals: today's three deals (rolled the way the game rolls them, src/utils/dailyDeals.ts),
- * the next sets and days, how the deals work, and every deal with what a dollar buys in it.
+ * Daily Deals: the best deal for each resource, how the deals work, and every deal with what a
+ * dollar buys in it. Deliberately no preview of which deals the shop shows on a given day.
  */
 
 import { rewardIcon, rewardKey, rewardLabel, fmtAmount, fmtRate, TYPE_ICON, type Reward, type Product } from './shopValue';
@@ -65,65 +65,8 @@ export function DailyDealsTab({ library, products }: { library: Record<string, D
     }, [library, priceOf]);
     const bestFor = (d: DealInfo) => (d.price ? d.rewards.filter(r => r.Amount / d.price! >= (best.get(rewardKey(r)) ?? Infinity) * 0.995) : []);
 
-    // Today (UTC), the countdown to the next day, and which day / set is shown.
-    const [now, setNow] = useState(() => new Date());
-    useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
-    const [dayOffset, setDayOffset] = useState(0);
-    const [resets, setResets] = useState(0);
-    const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    const shownDate = new Date(today + dayOffset * 86400000);
-    const msLeft = today + 86400000 - now.getTime();
-    const countdown = `${Math.floor(msLeft / 3600000)}h ${String(Math.floor(msLeft / 60000) % 60).padStart(2, '0')}m ${String(Math.floor(msLeft / 1000) % 60).padStart(2, '0')}s`;
-    // Cheapest first (the game rolls them in random order).
-    const deals = useMemo(() => rollDailyDeals(library, shownDate, resets).map(d => info(d.type, d.sizeId))
-        .sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity)),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [library, shownDate.getTime(), resets, priceOf]);
-    const dayLabel = (o: number) => (o === 0 ? 'Today' : o === 1 ? 'Tomorrow' : new Date(today + o * 86400000).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }));
-
     return (
         <div className="space-y-8">
-            {/* Today's deals */}
-            <section className="rounded-3xl border border-accent-primary/30 bg-gradient-to-b from-accent-primary/10 via-bg-secondary/20 to-transparent p-4 sm:p-6 space-y-5">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
-                            <GameAssetIcon asset={{ icon: 'Timer' }} size={22} /> {dayOffset === 0 ? "Today's deals" : `Deals of ${dayLabel(dayOffset)}`}
-                        </h2>
-                        <p className="text-xs text-text-secondary mt-1 max-w-2xl">
-                            The same three for every player: the game rolls them from the date alone. New ones at 00:00 UTC, in <span className="font-mono font-bold text-text-primary">{countdown}</span>.
-                            Buy all three and a new set is rolled at once.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                        {Array.from({ length: 7 }, (_, o) => (
-                            <button key={o} onClick={() => { setDayOffset(o); setResets(0); }}
-                                className={cn('px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors', dayOffset === o ? 'bg-accent-primary text-black border-accent-primary' : 'border-border text-text-secondary hover:bg-bg-input')}>
-                                {dayLabel(o)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* No limit in the game: no code reads ResetsToday as one, every complete purchase rolls a new set. */}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="text-text-muted font-bold uppercase tracking-wider">Set</span>
-                    <button onClick={() => setResets(r => Math.max(0, r - 1))} disabled={resets === 0}
-                        className="w-8 h-8 rounded-lg border border-border font-black text-text-secondary hover:bg-bg-input disabled:opacity-30">-</button>
-                    <span className="min-w-[13rem] text-center font-bold text-white px-3 py-1.5 rounded-lg bg-white/10 border border-white/20">
-                        {resets === 0 ? 'First set of the day' : `After buying all three ${resets === 1 ? 'once' : `${resets} times`}`}
-                    </span>
-                    <button onClick={() => setResets(r => r + 1)}
-                        className="w-8 h-8 rounded-lg border border-border font-black text-text-secondary hover:bg-bg-input">+</button>
-                    <span className="text-text-muted">No limit: every time you buy all three, a new set comes.</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {deals.map(d => <DealCard key={`${d.type}-${d.sizeId}`} deal={d} bestFor={bestFor(d)} best={best} big />)}
-                </div>
-                {deals.length < DEALS_PER_SET && <p className="text-xs text-text-muted">The config gives fewer than {DEALS_PER_SET} deals for this day.</p>}
-            </section>
-
             {/* The best deal for each resource, across every type and size */}
             <section className="rounded-2xl border border-green-400/25 bg-green-400/[0.04] p-5 space-y-3">
                 <h3 className="text-sm font-black uppercase tracking-widest text-text-secondary flex items-center gap-2">
@@ -157,10 +100,9 @@ export function DailyDealsTab({ library, products }: { library: Record<string, D
                 </h3>
                 <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-xs text-text-secondary list-disc pl-4">
                     <li>Three deals at a time, each of a different type and a different size, picked at random.</li>
-                    <li>Nothing of yours changes them: not your progress, age, forge, spending or past purchases. Every player sees the same deals.</li>
                     <li>The price depends only on the size: {[...priceOf.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => `${p.Name.replace(/ Daily Deal$/, '')} $${p.Price}`).join(', ')}.</li>
                     <li>The contents are fixed: they do not grow with your progress.</li>
-                    <li>Each deal can be bought once. Buying all three rolls the next set straight away, with no limit on how many sets a day.</li>
+                    <li>Each deal can be bought once. Buying all three brings a new set straight away.</li>
                     <li>A new day, and new deals, start at 00:00 UTC.</li>
                 </ul>
             </section>
@@ -193,15 +135,14 @@ export function DailyDealsTab({ library, products }: { library: Record<string, D
     );
 }
 
-function DealCard({ deal, bestFor, best, big = false }: { deal: DealInfo; bestFor: Reward[]; best: Map<string, number>; big?: boolean }) {
+function DealCard({ deal, bestFor, best }: { deal: DealInfo; bestFor: Reward[]; best: Map<string, number> }) {
     const bestKeys = new Set(bestFor.map(rewardKey));
     return (
-        <div className={cn('rounded-2xl border flex flex-col overflow-hidden', big ? 'border-accent-primary/40 bg-bg-primary/60 shadow-lg' : 'border-border/50 bg-bg-primary/40')}>
-            <div className={cn('flex items-center justify-between gap-2 px-4 py-3 border-b border-border/40', big && 'bg-accent-primary/10')}>
+        <div className={'rounded-2xl border flex flex-col overflow-hidden border-border/50 bg-bg-primary/40'}>
+            <div className={'flex items-center justify-between gap-2 px-4 py-3 border-b border-border/40'}>
                 <div className="flex items-center gap-2 min-w-0">
-                    {big && <GameIcon name={TYPE_ICON[deal.type] ?? 'Star'} size={28} />}
                     <div className="min-w-0">
-                        <div className={cn('font-black uppercase tracking-tight', big ? 'text-base' : 'text-sm')}>{big ? `${deal.type} ` : ''}{deal.sizeName}</div>
+                        <div className={'font-black uppercase tracking-tight text-sm'}>{deal.sizeName}</div>
                         {bestFor.length > 0 && <div className="text-[10px] font-bold text-green-300">Best for {bestFor.map(rewardLabel).join(', ')}</div>}
                     </div>
                 </div>
