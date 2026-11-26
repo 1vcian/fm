@@ -100,7 +100,7 @@ import { getTechNodeName } from './techUtils';
 import { clanNodeValueAtLevel } from './clanTechStacking';
 import { techNodeTierStats } from './gameDataTransforms';
 import { optimizeTechTree, type TechTreeLevels } from './techOptimizer';
-import { simulateSummons, baseSummonCount, summonCost, maxAscensionFrom, summonLevelsByAscension, summonLevelsAt } from './summonEngine';
+import { simulateSummons, baseSummonCount, summonCost, summonPricing, bestSummonPlan, maxAscensionFrom, summonLevelsByAscension, summonLevelsAt } from './summonEngine';
 
 /* ------------------------------------------------------------------------------------------ *
  * Public shape
@@ -854,7 +854,8 @@ export function computeWarPoints(
             const extraChance = sumPlayerNode(configs, profile, 'ExtraSkillChance')
                 + sumPlayerNode(configs, profile, 'ExtraSummonChance');
             const costPerSummon = Math.max(1, summonCost(unitCost, perSummon, costReduction));
-            const summons = Math.floor(tickets / costPerSummon);
+            // Best batch mix (bulk batches round once, summonPricing).
+            const summons = bestSummonPlan(tickets, summonPricing(configs.skillSummonConfig, costReduction)).summons;
             const units = summons * perSummon * (1 + extraChance);
 
             // Rarity-flat: read the reward once and assert it by taking the lowest, so a config that
@@ -910,7 +911,8 @@ export function computeWarPoints(
             const costReduction = sumPlayerNode(configs, profile, 'MountSummonCost'); // unclamped: CanAffordSummon 0x7CF2028 rounds the summed stat
             const extraChance = sumPlayerNode(configs, profile, 'ExtraMountChance');
             const costPerSummon = Math.max(1, summonCost(unitCost, perSummon, costReduction));
-            const summons = Math.floor(winders / costPerSummon);
+            // Best batch mix (bulk batches round once, summonPricing).
+            const summons = bestSummonPlan(winders, summonPricing(configs.mountSummonConfig, costReduction)).summons;
             const units = summons * perSummon * (1 + extraChance);
 
             let summonFlat = 0;
@@ -1019,7 +1021,8 @@ export function computeWarPoints(
                 const extraChance = sumPlayerNode(configs, profile, 'ExtraEggChance');
                 const perSummon = unitsPerSummon(configs.eggSummonConfig);
                 const costPerSummon = Math.max(1, summonCost(shellCost, perSummon, costReduction));
-                shellSummons = Math.floor(shells / costPerSummon);
+                // Best batch mix (bulk batches round once, summonPricing).
+                shellSummons = bestSummonPlan(shells, summonPricing(configs.eggSummonConfig, costReduction)).summons;
 
                 const pool = simulateSummonPool({
                     levelsByAscension: summonLevelsByAscension(configs.eggSummonConfig),

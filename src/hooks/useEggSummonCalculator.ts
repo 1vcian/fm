@@ -3,7 +3,7 @@ import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { useTreeLimits } from './useTreeLimits';
-import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt } from '../utils/summonEngine';
+import { simulateSummons, summonCost, summonPricing, bestSummonPlan, cheapestSummonPlan, currencyToReach, type SummonPricing, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt } from '../utils/summonEngine';
 
 /** Egg summon simulation for a currency pile, shaped for the Summons calculator's Eggs tab. */
 export function buildEggSummonResults(p: {
@@ -12,13 +12,15 @@ export function buildEggSummonResults(p: {
     level: number;
     progress: number;
     currency: number;
-    costPerSummon: number;
+    pricing: SummonPricing;
     unitsPerSummon: number;
     startAscension: number;
     simulateAscension: boolean;
     maxAscension: number;
 }) {
-    const totalSummons = affordableSummons(p.currency, p.costPerSummon);
+    // The batch mix that buys the most summons (bulk batches round once, see summonPricing).
+    const summonPlan = bestSummonPlan(p.currency, p.pricing);
+    const totalSummons = summonPlan.summons;
     const sim = simulateSummons({
         levelsByAscension: p.levelsByAscension,
         startLevel: p.level,
@@ -32,10 +34,13 @@ export function buildEggSummonResults(p: {
     const endProbs = summonRowAt(summonLevelsAt(p.levelsByAscension, sim.endAscension), sim.endLevel);
     return {
         totalSummons,
+        summonPlan,
         endLevel: sim.endLevel,
         endProgress: Math.round(sim.endProgress),
         endAscensionLevel: sim.endAscension,
         summonsToMax: sim.summonsToMax,
+        /** Currency the cheapest batches take to reach the top level, null when it is not reached. */
+        toMaxCost: sim.summonsToMax ? cheapestSummonPlan(sim.summonsToMax, p.pricing).cost : null,
         simulateAscension: p.simulateAscension,
         phases: sim.phases,
         breakdown: Object.entries(sim.byRarity)
@@ -109,6 +114,7 @@ export function useEggSummonCalculator() {
     // SummonConfig.CanAffordSummon (RVA 0x7CF2028): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(BASE_COST, BASE_EGGS_PER_SUMMON, techBonuses.costReduction);
+    const pricing = useMemo(() => summonPricing(eggSummonConfig, techBonuses.costReduction), [eggSummonConfig, techBonuses.costReduction]);
 
     // Levels data. SummonConfig.GetLevels(ascension) (RVA 0x7D03870): the table of the ascension
     // the summoner is at; eggs follow the Pets ascension (SummonableId.GetAscensionModel, RVA 0x7D02FEC).
@@ -128,7 +134,7 @@ export function useEggSummonCalculator() {
                 level,
                 progress,
                 currency: eggshellCount,
-                costPerSummon: finalCostPerSummon,
+                pricing,
                 unitsPerSummon: EGGS_PER_SUMMON,
                 startAscension,
                 simulateAscension: profile?.misc?.simulateAscensionInCalculators ?? true,
@@ -138,7 +144,7 @@ export function useEggSummonCalculator() {
             baseCost: BASE_COST * BASE_EGGS_PER_SUMMON,
             costReduction: techBonuses.costReduction
         };
-    }, [eggshellCount, level, progress, eggSummonConfig, levelsByAscension, levels, techBonuses, finalCostPerSummon, BASE_COST, BASE_EGGS_PER_SUMMON, EGGS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
+    }, [eggshellCount, level, progress, eggSummonConfig, levelsByAscension, levels, techBonuses, finalCostPerSummon, pricing, BASE_COST, BASE_EGGS_PER_SUMMON, EGGS_PER_SUMMON, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Apply results to profile
     const applyResultsToProfile = () => {
@@ -156,7 +162,7 @@ export function useEggSummonCalculator() {
         targetLevel,
         targetAscension,
         unitsPerSummon: EGGS_PER_SUMMON,
-        costPerSummon: finalCostPerSummon,
+        pricing,
         maxAscension,
     });
 

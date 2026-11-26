@@ -105,6 +105,9 @@ export interface PvpLoadout {
     hasMount: boolean;
     radius?: number;
     tag?: string;
+    /** BaseConfig.NthAttackInterval (UnitSpec.nthAttackInterval): without it the unit defaults to 0
+     *  and the Nth-attack damage bonus never fires. */
+    nthAttackInterval?: number;
 }
 
 /** m(p) — GetMultiplier (0x77988D0). */
@@ -146,6 +149,7 @@ export function setupPvp(a: PvpLoadout, b: PvpLoadout, cfg: PvpHpConfig, scene: 
             projectile: p.projectile,
             radius: p.radius,
             tag: p.tag,
+            nthAttackInterval: p.nthAttackInterval,
         });
     return {
         scene,

@@ -69,6 +69,7 @@ export function fighterFromProfile(
         skillCount: equipped.length,
         hasMount: !!profile.mount?.active,
         tag: name,
+        nthAttackInterval: spec.nthAttackInterval,
     };
     const weapon = profile.items?.Weapon;
     return {

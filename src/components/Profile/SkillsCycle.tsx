@@ -71,6 +71,7 @@ export function SkillsCycle({ skills }: SkillsCycleProps) {
             // The HP multiplier does not move skill damage: the dummy never attacks.
             petCount: 0, skillCount: 0, hasMount: false,
             tag: 'player',
+            nthAttackInterval: spec.nthAttackInterval,
         };
         const cfg = { ...pvpConfig, PvpMatchTimerSeconds: T };
         const list = equipped.map(s => ({ id: s.id, level: s.level }));

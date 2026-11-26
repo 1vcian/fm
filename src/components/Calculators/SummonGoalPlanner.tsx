@@ -4,7 +4,7 @@ import { AscensionStars, type AscensionType } from '../UI/AscensionStars';
 import { GameAssetIcon } from '../UI/GameAssetIcon';
 import { RARITIES } from '../../utils/constants';
 import { RARITY_TIERS, rarityIndexOf } from '../../utils/gameTiers';
-import { summonLevelsAt } from '../../utils/summonEngine';
+import { summonLevelsAt, formatSummonPlan, type SummonPlan } from '../../utils/summonEngine';
 
 
 /** The best rarity a summon level can drop and its chance, from the summon config's Levels row. */
@@ -44,7 +44,7 @@ function TopRarityCard({ row, level }: { row: any; level: number }) {
  */
 export function SummonGoalPlanner({
     title, type, levelsByAscension, level, progress, startAscension, profileAscension, onStartAscension, maxAscension,
-    needed, costPerSummon, currencyIcon, currencyLabel, available, onSetAvailable,
+    needed, currencyIcon, currencyLabel, available, onSetAvailable,
 }: {
     title: string;
     type: AscensionType;
@@ -56,9 +56,8 @@ export function SummonGoalPlanner({
     profileAscension: number;
     onStartAscension: (v: number) => void;
     maxAscension: number;
-    /** Currency to go from the start to (level, ascension). */
-    needed: (targetLevel: number, targetAscension: number) => number;
-    costPerSummon: number;
+    /** The cheapest batches that go from the start to (level, ascension). */
+    needed: (targetLevel: number, targetAscension: number) => SummonPlan;
     currencyIcon: string;
     currencyLabel: string;
     available: number;
@@ -72,8 +71,9 @@ export function SummonGoalPlanner({
     const [endLevelInput, setEndLevel] = useState<number | null>(null);
     const minEnd = endAsc === startAscension ? Math.min(maxLevel, Math.max(1, level)) : 1;
     const endLevel = Math.min(maxLevel, Math.max(minEnd, endLevelInput ?? maxLevel));
-    const cost = needed(endLevel, endAsc);
-    const summons = costPerSummon > 0 ? Math.round(cost / costPerSummon) : 0;
+    const plan = needed(endLevel, endAsc);
+    const cost = plan.cost;
+    const summons = plan.summons;
     const missing = Math.max(0, cost - available);
     const num = (v: number) => new Intl.NumberFormat('en-US').format(Math.round(v));
 
@@ -139,7 +139,9 @@ export function SummonGoalPlanner({
                 <div className="rounded-xl px-3 py-2 border border-white/10 bg-bg-input/40">
                     <div className="text-[10px] uppercase font-bold text-text-muted">Summons</div>
                     <div className="font-black font-mono text-lg">{num(summons)}</div>
-                    <div className="text-[10px] text-text-muted">{num(costPerSummon)} each</div>
+                    {plan.batches.length > 0 && (
+                        <div className="text-[10px] text-text-muted" title="Batches to press; bulk batches round their price once">as {formatSummonPlan(plan)}</div>
+                    )}
                 </div>
                 <div className="rounded-xl px-3 py-2 border border-white/10 bg-bg-input/40">
                     <div className="text-[10px] uppercase font-bold text-text-muted flex items-center gap-1"><GameAssetIcon asset={{ icon: currencyIcon }} size={14} /> Still missing</div>

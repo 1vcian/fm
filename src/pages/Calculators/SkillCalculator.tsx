@@ -7,6 +7,7 @@ import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { Minus, Plus, RefreshCcw } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
+import { formatSummonPlan } from '../../utils/summonEngine';
 import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
 import { RARITY_TIERS } from '../../utils/gameTiers';
 import { useGameData } from '../../hooks/useGameData';
@@ -97,7 +98,6 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
                 onStartAscension={sandbox.ascension.onChange}
                 maxAscension={maxAscension}
                 needed={calculateNeededCurrency}
-                costPerSummon={finalCostPerSummon}
                 currencyIcon="SkillTicket"
                 currencyLabel="Tickets"
                 available={ticketCount}
@@ -204,6 +204,12 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
                                 </div>
                                 <div className="text-[10px] text-text-muted px-1">
                                     Estimated cost per summon: <span className="text-accent-primary font-bold">{finalCostPerSummon}</span> <GameAssetIcon asset={{ icon: 'SkillTicket' }} size={14} className="inline-block align-middle" />
+                                    {results && results.summonPlan.batches.length > 0 && (
+                                        <div className="mt-1">
+                                            Best way to summon: <span className="text-accent-primary font-bold">{formatSummonPlan(results.summonPlan)}</span>
+                                            {' '}({results.summonPlan.cost.toLocaleString()} spent). Bulk batches round their price once, so they can buy more.
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {/* Ascension Toggle */}
@@ -279,8 +285,8 @@ export default function SkillCalculator({ embedded = false }: { embedded?: boole
                                         <div className="flex-1">
                                             <div className="text-xs font-bold text-amber-400 uppercase">Max Level Milestone</div>
                                             <div className="text-[11px] text-text-secondary leading-relaxed">
-                                                You reach <span className="text-white font-bold">Max Level</span> in <span className="text-amber-400 font-bold">{results.summonsToMax.toLocaleString()} summons</span> ({(results.summonsToMax * results.finalCost).toLocaleString()} tickets).
-                                                The remaining <span className="text-white font-bold">{((results.numSummons - results.summonsToMax) * results.finalCost).toLocaleString()}</span> tickets progress 
+                                                You reach <span className="text-white font-bold">Max Level</span> in <span className="text-amber-400 font-bold">{results.summonsToMax.toLocaleString()} summons</span> ({(results.toMaxCost ?? 0).toLocaleString()} tickets).
+                                                The remaining <span className="text-white font-bold">{(results.summonPlan.cost - (results.toMaxCost ?? 0)).toLocaleString()}</span> tickets progress 
                                                 into <span className="text-amber-400 font-bold">{results.simulateAscension ? `Ascension ${results.endAscensionLevel}` : 'Max Level'}</span>.
                                             </div>
                                         </div>

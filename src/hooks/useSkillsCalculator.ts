@@ -5,7 +5,7 @@ import { useProfile } from '../context/ProfileContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { useTreeLimits } from './useTreeLimits';
 import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
-import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt, SUMMON_RARITIES } from '../utils/summonEngine';
+import { simulateSummons, summonCost, summonPricing, bestSummonPlan, cheapestSummonPlan, currencyToReach, type SummonPricing, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt, SUMMON_RARITIES } from '../utils/summonEngine';
 
 /** Skill summon simulation plus war points, shaped for the Summons calculator's Skills tab. */
 export function buildSkillSummonResults(p: {
@@ -14,14 +14,16 @@ export function buildSkillSummonResults(p: {
     level: number;
     progress: number;
     currency: number;
-    costPerSummon: number;
+    pricing: SummonPricing;
     unitsPerSummon: number;
     startAscension: number;
     simulateAscension: boolean;
     maxAscension: number;
     pointsPerSkill: Record<string, number>;
 }) {
-    const numSummons = affordableSummons(p.currency, p.costPerSummon);
+    // The batch mix that buys the most summons (bulk batches round once, see summonPricing).
+    const summonPlan = bestSummonPlan(p.currency, p.pricing);
+    const numSummons = summonPlan.summons;
     const sim = simulateSummons({
         levelsByAscension: p.levelsByAscension,
         startLevel: p.level,
@@ -61,10 +63,13 @@ export function buildSkillSummonResults(p: {
         ascensionPoints: phases.filter(ph => ph.startAscension > 0).reduce((sum, ph) => sum + ph.points, 0),
         phases,
         numSummons,
+        summonPlan,
         endLevel: sim.endLevel,
         endProgress: Math.round(sim.endProgress),
         endAscensionLevel: sim.endAscension,
         summonsToMax: sim.summonsToMax,
+        /** Currency the cheapest batches take to reach the top level, null when it is not reached. */
+        toMaxCost: sim.summonsToMax ? cheapestSummonPlan(sim.summonsToMax, p.pricing).cost : null,
         simulateAscension: p.simulateAscension
     };
 }
@@ -165,6 +170,7 @@ export function useSkillsCalculator() {
     // SummonConfig.CanAffordSummon (RVA 0x7CF2028): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(unitCost, SKILLS_PER_SUMMON, costReduction);
+    const pricing = useMemo(() => summonPricing(skillSummonConfig, costReduction), [skillSummonConfig, costReduction]);
     const maxPossibleLevel = levels.length;
     const ready = levels.length > 0 && Number.isFinite(unitCost) && Number.isFinite(SKILLS_PER_SUMMON);
 
@@ -193,7 +199,7 @@ export function useSkillsCalculator() {
                 level,
                 progress,
                 currency: ticketCount,
-                costPerSummon: finalCostPerSummon,
+                pricing,
                 unitsPerSummon: SKILLS_PER_SUMMON * (1 + extraChance),
                 startAscension,
                 simulateAscension: profile?.misc?.simulateAscensionInCalculators ?? true,
@@ -204,7 +210,7 @@ export function useSkillsCalculator() {
             baseCost: BASE_SUMMON_COST,
             costReduction: techBonuses.costReduction,
         };
-    }, [ticketCount, level, progress, levelsByAscension, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, extraChance, costReduction, finalCostPerSummon, BASE_SUMMON_COST, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
+    }, [ticketCount, level, progress, levelsByAscension, warPointsPerSummonSkill, SKILLS_PER_SUMMON, techBonuses, extraChance, costReduction, finalCostPerSummon, pricing, BASE_SUMMON_COST, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Apply results
     const applyResultsToProfile = () => {
@@ -222,7 +228,7 @@ export function useSkillsCalculator() {
         targetLevel,
         targetAscension,
         unitsPerSummon: SKILLS_PER_SUMMON * (1 + extraChance),
-        costPerSummon: finalCostPerSummon,
+        pricing,
         maxAscension,
     });
 

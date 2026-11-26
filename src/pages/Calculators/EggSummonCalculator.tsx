@@ -4,6 +4,7 @@ import { useEggsCalculator } from '../../hooks/useEggsCalculator';
 import { encodeEggPlan } from '../../utils/eggPlanLink';
 import { GameAssetIcon } from '../../components/UI/GameAssetIcon';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
+import { formatSummonPlan } from '../../utils/summonEngine';
 import { SummonGoalPlanner } from '../../components/Calculators/SummonGoalPlanner';
 import { useEggSummonCalculator } from '../../hooks/useEggSummonCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
@@ -75,7 +76,6 @@ export default function EggSummonCalculator() {
                 onStartAscension={eggSummon.sandbox.ascension.onChange}
                 maxAscension={eggSummon.maxAscension}
                 needed={eggSummon.calculateNeededCurrency}
-                costPerSummon={eggSummon.finalCostPerSummon}
                 currencyIcon="Eggshell"
                 currencyLabel="Eggshells"
                 available={eggSummon.eggshellCount}
@@ -181,6 +181,12 @@ export default function EggSummonCalculator() {
                                     </div>
                                     <div className="text-[10px] text-text-muted px-1">
                                         Estimated cost per summon: <span className="text-accent-primary font-bold">{eggSummon.finalCostPerSummon}</span> <GameAssetIcon asset={{ icon: 'Eggshell' }} size={14} className="inline-block align-middle" />
+                                    {eggSummon.results && eggSummon.results.summonPlan.batches.length > 0 && (
+                                        <div className="mt-1">
+                                            Best way to summon: <span className="text-accent-primary font-bold">{formatSummonPlan(eggSummon.results.summonPlan)}</span>
+                                            {' '}({eggSummon.results.summonPlan.cost.toLocaleString()} spent). Bulk batches round their price once, so they can buy more.
+                                        </div>
+                                    )}
                                     </div>
                                 </div>
 
@@ -268,8 +274,8 @@ export default function EggSummonCalculator() {
                                             <div className="flex-1">
                                                 <div className="text-xs font-bold text-amber-400 uppercase">Max Level Milestone</div>
                                                 <div className="text-[11px] text-text-secondary leading-relaxed">
-                                                    You reach <span className="text-white font-bold">Max Level</span> in <span className="text-amber-400 font-bold">{eggSummon.results.summonsToMax.toLocaleString()} summons</span> ({(eggSummon.results.summonsToMax * eggSummon.results.finalCost).toLocaleString()} shells).
-                                                    The remaining <span className="text-white font-bold">{((eggSummon.results.totalSummons - eggSummon.results.summonsToMax) * eggSummon.results.finalCost).toLocaleString()}</span> shells progress
+                                                    You reach <span className="text-white font-bold">Max Level</span> in <span className="text-amber-400 font-bold">{eggSummon.results.summonsToMax.toLocaleString()} summons</span> ({(eggSummon.results.toMaxCost ?? 0).toLocaleString()} shells).
+                                                    The remaining <span className="text-white font-bold">{(eggSummon.results.summonPlan.cost - (eggSummon.results.toMaxCost ?? 0)).toLocaleString()}</span> shells progress
                                                     into <span className="text-amber-400 font-bold">{eggSummon.results.simulateAscension ? `Ascension ${eggSummon.results.endAscensionLevel}` : 'Max Level'}</span>.
                                                 </div>
                                             </div>

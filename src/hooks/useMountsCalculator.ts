@@ -4,7 +4,7 @@ import { useProfile } from '../context/ProfileContext';
 import { useTreeModifiers } from './useCalculatedStats';
 import { useTreeLimits } from './useTreeLimits';
 import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
-import { simulateSummons, summonCost, affordableSummons, currencyToReach, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt, SUMMON_RARITIES } from '../utils/summonEngine';
+import { simulateSummons, summonCost, summonPricing, bestSummonPlan, cheapestSummonPlan, currencyToReach, type SummonPricing, summonRowAt, maxAscensionFrom, baseSummonCount, summonLevelsByAscension, summonLevelsAt, SUMMON_RARITIES } from '../utils/summonEngine';
 
 /** Mount summon simulation plus war points, shaped for the Summons calculator's Mounts tab. */
 export function buildMountSummonResults(p: {
@@ -13,7 +13,7 @@ export function buildMountSummonResults(p: {
     level: number;
     progress: number;
     currency: number;
-    costPerSummon: number;
+    pricing: SummonPricing;
     unitsPerSummon: number;
     startAscension: number;
     simulateAscension: boolean;
@@ -36,7 +36,9 @@ export function buildMountSummonResults(p: {
         };
     });
 
-    const totalSummons = affordableSummons(p.currency, p.costPerSummon);
+    // The batch mix that buys the most summons (bulk batches round once, see summonPricing).
+    const summonPlan = bestSummonPlan(p.currency, p.pricing);
+    const totalSummons = summonPlan.summons;
     const sim = simulateSummons({
         levelsByAscension: p.levelsByAscension,
         startLevel: p.level,
@@ -94,10 +96,13 @@ export function buildMountSummonResults(p: {
             }))
             .filter(b => b.count > 0 || b.percentage > 0),
         totalSummons,
+        summonPlan,
         endLevel: sim.endLevel,
         endProgress: Math.round(sim.endProgress),
         endAscensionLevel: sim.endAscension,
-        summonsToMax: sim.summonsToMax
+        summonsToMax: sim.summonsToMax,
+        /** Currency the cheapest batches take to reach the top level, null when it is not reached. */
+        toMaxCost: sim.summonsToMax ? cheapestSummonPlan(sim.summonsToMax, p.pricing).cost : null,
     };
 }
 
@@ -177,6 +182,7 @@ export function useMountsCalculator() {
     // SummonConfig.CanAffordSummon (RVA 0x7CF2028): RoundToInt(CalculateValue(Cost, Amount * count)),
     // so the reduction applies to the whole batch and rounds to nearest, not up.
     const finalCostPerSummon = summonCost(BASE_COST, BASE_MOUNTS_PER_SUMMON, costReduction);
+    const pricing = useMemo(() => summonPricing(mountSummonConfig, costReduction), [mountSummonConfig, costReduction]);
     // SummonConfig.GetLevels(ascension) (RVA 0x7D03870): the table of the ascension the summoner is at.
     const levelsByAscension = useMemo(() => summonLevelsByAscension(mountSummonConfig), [mountSummonConfig]);
     const levels: any[] = summonLevelsAt(levelsByAscension, startAscension);
@@ -195,7 +201,7 @@ export function useMountsCalculator() {
                 level,
                 progress,
                 currency: windersCount,
-                costPerSummon: finalCostPerSummon,
+                pricing,
                 unitsPerSummon: MOUNTS_PER_SUMMON,
                 startAscension,
                 simulateAscension: profile?.misc?.simulateAscensionInCalculators ?? true,
@@ -210,7 +216,7 @@ export function useMountsCalculator() {
             baseCost: BASE_COST * BASE_MOUNTS_PER_SUMMON,
             costReduction: techBonuses.costReduction,
         };
-    }, [windersCount, level, progress, levelsByAscension, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, BASE_COST, BASE_MOUNTS_PER_SUMMON, MOUNTS_PER_SUMMON, mountSummonWarBonus, mountMergeWarBonus, dayBoost, readyMerges, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
+    }, [windersCount, level, progress, levelsByAscension, guildWarDayConfigLibrary, techBonuses, finalCostPerSummon, pricing, BASE_COST, BASE_MOUNTS_PER_SUMMON, MOUNTS_PER_SUMMON, mountSummonWarBonus, mountMergeWarBonus, dayBoost, readyMerges, profile?.misc?.simulateAscensionInCalculators, maxAscension, startAscension]);
 
     // Action to apply results to profile
     const applyResultsToProfile = () => {
@@ -228,7 +234,7 @@ export function useMountsCalculator() {
         targetLevel,
         targetAscension,
         unitsPerSummon: MOUNTS_PER_SUMMON,
-        costPerSummon: finalCostPerSummon,
+        pricing,
         maxAscension,
     });
 
