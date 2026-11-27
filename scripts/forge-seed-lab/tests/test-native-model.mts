@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { normalizeInputs, readiness, bonusOptions } from '../../../src/components/ForgePredictor/model';
+
+const MODELS = JSON.parse(fs.readFileSync(new URL('../model-data.json', import.meta.url), 'utf8'));
+const legacy = MODELS.legacy211;
+const latest = MODELS['2026_11_16_09_55'];
+const data = { model: { version: 'legacy211', ascension: 0 }, forgeLevel: 29, observations: Array.from({ length: 3 }, () => ({ age: 7, type: 0, idx: '', stats: [{ k: 0, percent: '4.4300' }, { k: 1, percent: '19.40' }] })) };
+const input = normalizeInputs(data, legacy);
+assert.equal(input.model.version, 'legacy211');
+assert.equal(input.observations[0].stats[0].percent, '4.4300');
+assert.equal(input.method, 'auto');
+assert.equal(readiness(input, legacy).complete, 3);
+const options = bonusOptions(legacy, input.observations[0], 1);
+assert(options.find(o => o.id === '0')?.disabled);
+assert.equal(options.find(o => o.id === '6')?.disabled, false);
+const weapon = { age: 7, type: 5, idx: 0, stats: [] };
+const ranged = legacy.weapons['7:0'];
+assert(bonusOptions(legacy, weapon, 0).find(o => o.id === String(ranged ? 7 : 8))?.disabled);
+assert.throws(() => normalizeInputs({ ...data, forgeLevel: 36 }, legacy), /Forge level/);
+assert.throws(() => normalizeInputs({ forgeLevel: 1, observations: data.observations }, legacy), /data version/);
+assert.equal(normalizeInputs({ ...data, model: { version: '2026_11_16_09_55', ascension: 3 }, forgeLevel: 50 }, latest).forgeLevel, 50);
+assert.equal(readiness({ ...input, observations: [...input.observations, { age: 8, type: 0, idx: '', stats: [] }] }, legacy).unfinished, true);
+console.log('PASS: precision-preserving imports, explicit data version, canonical stat eligibility, weapon restrictions and readiness');

@@ -6,6 +6,7 @@ import { cn } from '../../lib/utils';
 interface SecondaryStatOption {
     id: string | number;
     name: string;
+    disabled?: boolean;
 }
 
 interface SecondaryStatCardProps {
@@ -17,6 +18,8 @@ interface SecondaryStatCardProps {
     onRemove: () => void;
     range?: { min: number, max: number } | null;
     className?: string;
+    valueInput?: React.ReactNode;
+    label?: string;
 }
 
 export const SecondaryStatCard: React.FC<SecondaryStatCardProps> = ({
@@ -27,36 +30,41 @@ export const SecondaryStatCard: React.FC<SecondaryStatCardProps> = ({
     onValueChange,
     onRemove,
     range,
-    className
+    className,
+    valueInput,
+    label
 }) => {
     return (
         <div className={cn("bg-black/20 rounded-xl p-2.5 border border-white/5 space-y-2", className)}>
             <div className="flex items-center gap-2">
                 <select
+                    aria-label={label}
                     value={statId}
                     onChange={(e) => onStatIdChange(e.target.value)}
                     className="flex-1 bg-bg-input border border-border rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-accent-primary transition-all transition-colors"
                 >
                     {options.map(opt => (
-                        <option key={opt.id} value={opt.id}>{opt.name}</option>
+                        <option key={opt.id} value={opt.id} disabled={opt.disabled}>{opt.name}</option>
                     ))}
                 </select>
                 <button
+                    type="button"
                     onClick={onRemove}
                     className="p-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                     title="Remove Stat"
+                    aria-label={label ? `Clear ${label}` : 'Remove Stat'}
                 >
                     <Trash2 className="w-3.5 h-3.5" />
                 </button>
             </div>
             <div className="flex flex-col gap-1 px-1">
-                <SecondaryStatInput
+                {valueInput ?? <SecondaryStatInput
                     value={value}
                     onChange={onValueChange}
                     min={(range?.min || 0) * 100}
                     max={(range?.max || 1) * 100}
                     className="w-full text-sm py-1.5"
-                />
+                />}
                 {range && (
                     <div className="flex justify-between text-[8px] text-text-muted uppercase font-bold tracking-tighter">
                         <span>Range</span>

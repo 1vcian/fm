@@ -1,0 +1,142 @@
+{
+  "forgeLevel": 29,
+  "source": "Synthetic regression sequence generated from public test seed 42. Not player data.",
+  "observations": [
+    {
+      "age": 7,
+      "type": 6,
+      "idx": 1,
+      "name": "Antimatter Feet",
+      "stats": [
+        {
+          "k": 3,
+          "percent": "3.11"
+        },
+        {
+          "k": 2,
+          "percent": "1.42"
+        }
+      ]
+    },
+    {
+      "age": 7,
+      "type": 5,
+      "idx": 1,
+      "name": "Black Gun",
+      "stats": [
+        {
+          "k": 5,
+          "percent": "10.59"
+        },
+        {
+          "k": 10,
+          "percent": "25.84"
+        }
+      ]
+    },
+    {
+      "age": 7,
+      "type": 7,
+      "idx": 0,
+      "name": "Black Belt",
+      "stats": [
+        {
+          "k": 5,
+          "percent": "2.51"
+        },
+        {
+          "k": 4,
+          "percent": "19.28"
+        }
+      ]
+    },
+    {
+      "age": 7,
+      "type": 0,
+      "idx": 1,
+      "name": "Hair Bandana",
+      "stats": [
+        {
+          "k": 8,
+          "percent": "14.44"
+        },
+        {
+          "k": 11,
+          "percent": "6.05"
+        }
+      ]
+    },
+    {
+      "age": 6,
+      "type": 2,
+      "idx": 0,
+      "name": "Impulse",
+      "stats": [
+        {
+          "k": 10,
+          "percent": "8.84"
+        }
+      ]
+    },
+    {
+      "age": 6,
+      "type": 6,
+      "idx": 0,
+      "name": "Ethereal Socks",
+      "stats": [
+        {
+          "k": 3,
+          "percent": "3.68"
+        }
+      ]
+    },
+    {
+      "age": 6,
+      "type": 3,
+      "idx": 0,
+      "name": "Crystal Amulet",
+      "stats": [
+        {
+          "k": 8,
+          "percent": "1.43"
+        }
+      ]
+    },
+    {
+      "age": 6,
+      "type": 1,
+      "idx": 0,
+      "name": "HoloArmor",
+      "stats": [
+        {
+          "k": 0,
+          "percent": "7.34"
+        }
+      ]
+    },
+    {
+      "age": 6,
+      "type": 4,
+      "idx": 0,
+      "name": "Connection Ring",
+      "stats": [
+        {
+          "k": 3,
+          "percent": "1.57"
+        }
+      ]
+    },
+    {
+      "age": 6,
+      "type": 1,
+      "idx": 1,
+      "name": "Spectral Plates",
+      "stats": [
+        {
+          "k": 9,
+          "percent": "33.28"
+        }
+      ]
+    }
+  ]
+}

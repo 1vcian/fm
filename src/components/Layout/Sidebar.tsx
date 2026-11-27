@@ -183,6 +183,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Offline', path: '/offline', icon: NAV.offline },
                 { name: 'Dungeons', path: '/dungeons', icon: NAV.dungeons },
                 { name: 'Forge', path: '/calculators/forge', icon: NAV.forgeCalc },
+                { name: 'Forge Predictor', path: '/calculators/forge-predictor', icon: NAV.forgeCalc },
                 { name: 'Tech Tree - Planner', path: '/calculators/tree', icon: NAV.treePlanner },
                 { name: 'Eggs', path: '/eggs', icon: NAV.eggs },
                 { name: 'Summons', path: '/calculators/summons', icon: NAV.summons },

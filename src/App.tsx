@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { GameDataProvider, useGameDataContext } from './context/GameDataContext';
 import { ProfileProvider } from './context/ProfileContext';
@@ -47,6 +47,8 @@ import AchievementsWiki from './pages/AchievementsWiki';
 import SecondaryStatsWiki from './pages/SecondaryStatsWiki';
 import MissionsWiki from './pages/MissionsWiki';
 import MissionSolo from './pages/MissionSolo';
+
+const ForgePredictor = lazy(() => import('./pages/Calculators/ForgePredictor'));
 
 /** Developer pages (Verify) exist only with ?debug=true; anyone else lands on the profile. */
 function DebugOnly({ children }: { children: ReactNode }) {
@@ -97,6 +99,7 @@ function App() {
                                     <Route path="faq" element={<FAQ />} />
                                     <Route path="pvp-arena" element={<PvpArena />} />
                                     <Route path="calculators/forge" element={<ForgeCalculator />} />
+                                    <Route path="calculators/forge-predictor" element={<Suspense fallback={null}><ForgePredictor /></Suspense>} />
                                     <Route path="calculators/summons" element={<SummonsCalculator />} />
                                     {/* The mount and skill calculators are tabs of the Summons calculator now. */}
                                     <Route path="calculators/mounts" element={<Navigate to="/calculators/summons?tab=mounts" replace />} />

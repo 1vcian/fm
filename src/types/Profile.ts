@@ -165,6 +165,17 @@ export interface UserProfile {
             autoForgeSummons?: number;
             autoForgeInterval?: number;
         };
+        /** Forge Predictor: the last recovered seed position, so it follows the account across devices. */
+        forgePredictor?: {
+            version: string;
+            ascension: number;
+            forgeLevel: number;
+            startSeed: string;
+            currentSeed: string;
+            job: unknown;
+            next: unknown;
+            savedAt: string;
+        };
         skillCalculatorLevel?: number;
         skillCalculatorTickets?: number;
         // Resource counts also edited from the Clan/Profile "Resources" panel. These are the
